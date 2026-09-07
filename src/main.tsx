@@ -6,6 +6,7 @@ import { store } from './state/store.ts';
 import { loadSave, flushSave } from './state/save.ts';
 import { initSdk, registerLifecycles, sdkReady } from './sdk/runSdk.ts';
 import { warmAssets } from './assets/preload.ts';
+import { initMusic } from './audio/music.ts';
 import './styles/app.css';
 
 /**
@@ -51,6 +52,11 @@ async function boot() {
 
     // 6. Loading done — hand over to the menu.
     store.patch({ phase: 'menu' });
+
+    // Start the title theme now that there's a menu to play it under. Not
+    // awaited — the 2.7MB track streams in the background; play() itself
+    // may still be gated on a first user gesture (see audio/music.ts).
+    initMusic();
 
     // 7. Host lifecycle hooks. Register AFTER boot so handlers never race
     //    half-initialized state.
