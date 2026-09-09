@@ -1,0 +1,123 @@
+name: Build, release and publish
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish the verified build to RUN.world
+        type: boolean
+        default: true
+      run_bump:
+        description: RUN platform version bump (separate from GitHub build tags)
+        type: choice
+        options: [Patch, Minor, Major]
+        default: Patch
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    outputs:
+      tag: ${{ steps.metadata.outputs.tag }}
+    steps:
+      - name: Require main
+        run: |
+          if [[ "$GITHUB_REF" != refs/heads/main ]]; then
+            echo '::error::Run this release workflow from main.'
+            exit 1
+          fi
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: cachix/install-nix-action@b85815f71a6de0ddee80b8a80a98d43f4bcc66c7 # v31
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install locked dependencies
+        run: nix develop -c npm ci
+      - name: Test
+        run: nix develop -c npm test
+      - name: Build production game
+        run: nix develop -c npm run build
+      - name: Package verified build
+        id: metadata
+        run: |
+          echo "tag=build-${GITHUB_RUN_NUMBER}-${GITHUB_SHA:0:7}" >> "$GITHUB_OUTPUT"
+          bash tools/ci/package-build.sh
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: verified-build-${{ github.sha }}
+          path: .release/
+          if-no-files-found: error
+          retention-days: 30
+          overwrite: true
+
+  release:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RELEASE_TAG: ${{ needs.build.outputs.tag }}
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: verified-build-${{ github.sha }}
+          path: .release
+      - name: Verify archive
+        working-directory: .release
+        run: sha256sum --check SHA256SUMS
+      - name: Create GitHub release
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            target=$(gh api "repos/$GH_REPO/git/ref/tags/$RELEASE_TAG" --jq '.object.sha')
+            [[ "$target" == "$GITHUB_SHA" ]] || { echo '::error::Existing release tag points to a different commit.'; exit 1; }
+          else
+            gh release create "$RELEASE_TAG" --target "$GITHUB_SHA" \
+              --title "Build ${GITHUB_RUN_NUMBER} (${GITHUB_SHA:0:7})" \
+              --generate-notes
+          fi
+          gh release upload "$RELEASE_TAG" .release/working-on-it.tar.gz .release/SHA256SUMS .release/build.json --clobber
+          echo "GitHub release: https://github.com/$GH_REPO/releases/tag/$RELEASE_TAG" >> "$GITHUB_STEP_SUMMARY"
+
+  publish:
+    if: github.event_name == 'workflow_dispatch' && inputs.publish
+    needs: [build, release]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    concurrency:
+      group: run-world-publish
+      cancel-in-progress: false
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RELEASE_TAG: ${{ needs.build.outputs.tag }}
+      RUN_BUMP: ${{ inputs.run_bump }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: verified-build-${{ github.sha }}
+          path: .release
+      - uses: cachix/install-nix-action@b85815f71a6de0ddee80b8a80a98d43f4bcc66c7 # v31
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish the release artifact to RUN
+        env:
+          RUNDOT_API_KEY: ${{ secrets.RUNDOT_API_KEY }}
+        run: bash tools/ci/publish-run.sh

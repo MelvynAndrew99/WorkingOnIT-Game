@@ -220,3 +220,11 @@ Installed Claude Code removed both tutorial Practice buttons; Codex retired the 
 ## 2026-09-09 — Tutorial toast and real-button highlighting
 
 User requested prominent mobile-style control discovery. Codex implemented a yellow callout above the objective plus category/tool pointers and pulsing outlines after installed Claude reached its session limit without delivery. Home/Store/Road targets follow actual placement/connectivity, support live free prices, dismissal and reduced motion, and yield to dialogs/emergency priority. Browser placement checks pass at 320,390,1440 wide/forced portrait; production build passes. See docs/tutorial-highlights/README.md. Local only, no publication.
+
+## 2026-09-09 — v0.1 milestone uploaded as RUN 1.6.0
+
+User authorized uploading the accumulated tutorial/traffic build before moving development to v0.2. `rundot deploy --bump Minor --public` succeeded for existing game l7mD5BHH8LslWkr5mC7d, version1.6.0, visibility review. Release notes: docs/releases/v0.1-changelog.md. No server config changes were detected. The approved thumbnail and game identity were preserved.
+
+Final status check: private/review tags point to1.6.0; public still points to1.5.0. Publication was requested with the upload, but1.6.0 is not yet verified live. Public URL: https://w.run/melvynandrew99/working-on-it . No hosted gameplay verification of1.6.0 was performed.
+
+After the user reported a branch swap, confirmed main at e099d45 (merged v0.1), current queue/EMS/control-cost changes present, all192 tests passing, and a fresh production build passing. User confirmed no duplicate upload was needed if the earlier upload had finished; no second version was created. Future work moves to the user's v0.2 milestone, distinct from RUN's platform version sequence.

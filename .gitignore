@@ -73,3 +73,6 @@ Thumbs.db
 /assets/source/**/*.7z
 /assets/source/**/*.rar
 /assets/source/**/*.url
+
+# CI release packaging
+/.release/
