@@ -1,74 +1,51 @@
-# AI Overlord
+# Working ON IT!
 
-A father-and-son RUN.world Back to Work jam project. Master an AI's increasingly chaotic job, accumulate tokens, and decide what to do when mistakes become affordable.
+**Fix the commute. Take the credit.**
 
-## Development environment
+A local city-building and traffic optimization milestone. Place homes and stores, connect their entrances, watch trips, and shorten routes. Inspired by the observe–improve–watch-results loop and creative ownership. Balance remains provisional.
 
-Use Ubuntu/WSL on x86_64 with Nix flakes enabled. The flake pins nixpkgs through flake.lock and packages RUN CLI 7.14.3 with a verified release checksum. It supplies Node.js 24, npm, Git, curl, ripgrep, and the RUN CLI with its native libraries.
+## Run locally
 
-From Ubuntu:
+Use Ubuntu/WSL with Nix flakes. Run npm and rundot inside the shell:
 
 ```bash
-cd /home/phil/Code/jams/AI-Overlord
 nix develop
 npm ci
 npm run dev
 ```
 
-Open http://localhost:5173 on this computer. The flake files are visible to Git (intent-to-add), so ordinary nix develop works. No nix-env installation is required.
+Open the local URL printed by Vite (normally http://localhost:5173).
 
-From PowerShell, first enter Ubuntu:
+## Play
 
-```powershell
-wsl -d Ubuntu
-```
+- Select Home, Store, or Road, then tap/click the map. Drag to paint roads.
+- Rotate buildings with the Rotate button or R. Keys 1–4 select tools.
+- Entrance arrows mark the road tiles buildings use. Roads connect cardinally. A home's arrow turns green when it can reach a store.
+- Cars make trips to stores and return home. Average roundtrip shows planned driving time; shorter roads can reduce it. Current traffic has no congestion or collisions.
+- Start with $10,000. Receive $200 plus $100 per connected home every 10 simulated seconds. Roads cost $20, homes $200, and stores $400. Removal refunds 100%.
+- **Expand** previews free land on the selected edge; **Add land** extends the town, up to 64×64 tiles.
+- Select **Pan** and drag to explore. Pinch, use the mouse wheel, or press +/− to zoom. **Town** returns to your construction. Selecting a build tool exits Pan mode.
+- Pause freezes time while allowing construction. Space also pauses. Menu and reload preserve your city. There is no offline income.
 
-Then use the commands above. Keep npm installation and builds inside the Nix shell rather than mixing Windows npm with WSL dependencies.
+The map starts at 16×14 logical tiles, each 10 m, and expands without relocating existing construction. Homes occupy 2×2 tiles; stores occupy 3×2 before rotation. Artwork does not determine footprints, entrances, paths, or saves.
 
-## Current milestone
+## Verify
 
-This is the official September Jam Bare Bones starter, not yet the traffic gameplay prototype. The template contains a bouncing-sprite demo, React menu/HUD, Pixi rendering, and RUN SDK lifecycle and save integration.
-
-```bash
-npm run build          # TypeScript check and production build
-npm run build:bundled  # Standalone production bundle
-npm run preview        # Preview the latest production build
-rundot --version
-```
-
-## RUN account and deployment
+Inside `nix develop`:
 
 ```bash
-rundot login
-rundot whoami
+npm test              # Spatial rules, routes, economy, saves
+npm run build         # TypeScript and RUN-integrated production bundle
+npm run build:bundled # Standalone production bundle
+npm run preview       # Serve the most recent build locally
 ```
 
-RUN sign-in was completed during initial setup. On another computer or after session expiry, complete sign-in in your browser. If WSL cannot open the browser, use the login URL printed by the CLI. Do not put account credentials in the repository.
+See docs/DEVLOG.md for browser verification evidence and limitations.
 
-AI Overlord is registered and privately deployed on RUN (game ID l7mD5BHH8LslWkr5mC7d). Version 1.0.1 is the starter demo with the accepted cover and an explicit prototype label. Traffic gameplay is next. Use rundot game info to retrieve the private share link.
+## Preservation and platform
 
-For each iteration, inside nix develop:
+The clean pre-pivot game at commit `84eac54` is preserved in [archive/ai-overlord](archive/ai-overlord/README.md), including a complete tracked-source archive. Existing artwork remains on disk; the old cover is not new-game branding. The old `ai-overlord:traffic:v1` save is untouched. City saves use `city-workshop:city:v1`, mirrored locally and to RUN when available.
 
-```bash
-npm run dev       # local iteration
-npm run deploy    # type-check, build, and update the private game
-```
+The existing RUN game identity, jam kit metadata, SDK boot/lifecycles, and Nix tooling remain. No deployment is included in this milestone, and public publication is not authorized. Do not run `rundot init` again. Live text generation stays disabled.
 
-Do not run rundot init again for this game. Preserve game.config.prod.json and its kitId, plus rundot/kit.json. The current public/thumbnail.jpg is the accepted city cover. Future art changes remain reviewable candidates until selected.
-
-Live text generation is explicitly disabled in rundot/textGen.config.json; the current prototype needs no runtime model calls. The CLI initially auto-enabled it, and private version 1.0.1 applies the opt-out.
-
-Public publishing is a separate decision after a playable traffic shift is ready. Keep --public out of routine deployment commands.
-
-The jam requires an eligible starter and public submission before September 14, 2026 at noon Pacific. See https://events.run.world/events/september-2026-jam/ for current rules.
-
-## Project documents
-
-- docs/DESIGN.md: agreed concept, prototype scope, open economy questions, and later roles.
-- docs/DEVLOG.md: setup evidence and recording notes.
-- docs/RUN-TEMPLATE.md: preserved upstream starter README.
-- CLAUDE.md: upstream architecture and SDK conventions.
-
-Source: https://github.com/series-ai/september-jam-barebones, scaffolded using rundot jam init september-jam-barebones.
-
-Temporary bootstrap downloads live under ignored .tools/; the Nix environment does not depend on them.
+Current direction: [AGENTS.md](AGENTS.md), [docs/DESIGN.md](docs/DESIGN.md). Architecture: [CLAUDE.md](CLAUDE.md). Shared evidence: [docs/IMPLEMENTATION-LESSONS.md](docs/IMPLEMENTATION-LESSONS.md). Original starter reference: [docs/RUN-TEMPLATE.md](docs/RUN-TEMPLATE.md).

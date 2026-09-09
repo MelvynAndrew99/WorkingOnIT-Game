@@ -1,0 +1,33 @@
+.title-screen{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#10443e;color:#fff1cf}
+.title-composition{position:relative;width:min(100%,calc(100dvh * 941 / 1671));aspect-ratio:941/1671;max-height:100%;container-type:inline-size}
+/* Preserve the supplied composition above its baked-in menu. Real controls replace that menu. */
+.title-art{position:absolute;inset:0 0 24.5%;overflow:hidden}
+.title-art img{display:block;width:100%;height:auto}
+.title-fallback{padding:8% 6%;background:radial-gradient(ellipse at bottom,#367566,#10443e);height:100%}
+.title-fallback strong{font-size:clamp(40px,15cqw,90px);font-weight:900;line-height:1}.title-fallback p{font-size:clamp(17.6px,4cqw,26px);margin-top:20px}
+.title-navigation{position:absolute;inset:75.5% 0 0;background:linear-gradient(#10443e,#104943);padding:0 6.6%;display:flex;flex-direction:column;justify-content:space-around;gap:4px}
+.commute-button{display:flex;align-items:center;justify-content:center;gap:5%;width:100%;min-height:44px;padding:9px 12px;border:1px solid #ffe4a0;border-bottom:4px solid #ce954e;border-radius:14px;background:linear-gradient(110deg,#ffde75,#ffd15b);color:#064947;font-size:clamp(17.6px,5.4cqw,32px);font-weight:900;line-height:1.2;cursor:pointer}
+.commute-button span{font-size:1.4em;line-height:1}
+.title-links{display:flex;align-items:center;justify-content:space-around}.title-links button{min-height:44px;font-size:clamp(17.6px,4.6cqw,26px);font-weight:700;padding:3px 9px}.title-links>span{height:28px;width:1px;background:#64958a}
+.title-navigation>p{text-align:center;color:#a2c7b9;font-size:1.1rem;line-height:1.25;margin:0 0 4px}
+.title-dialog{margin:auto;max-width:min(420px,calc(100% - 28px));max-height:85dvh;overflow-y:auto;touch-action:pan-y;border:1px solid #83afa0;border-radius:16px;padding:24px;background:#164d43;color:#fff1cf;font-size:1.1rem;line-height:1.5}
+.title-dialog::backdrop{background:#071e1bd9}.title-dialog h2{font-size:1.6rem;font-weight:800;margin-bottom:14px}.title-dialog p{margin:14px 0}.title-dialog label{display:flex;align-items:center;gap:12px;min-height:44px}.title-dialog input{width:22px;height:22px;accent-color:#ffd46b}.title-dialog .commute-button{font-size:1.1rem}.title-dialog-close{width:100%;min-height:44px;margin-top:12px;border:1px solid #83afa0;border-radius:8px;padding:8px}
+.hide-gameplay-tips .city-controls>p{visibility:hidden}
+
+/* Pointer hover is optional; press and keyboard feedback work on every device. */
+.title-screen button{transition:transform 140ms ease,background-color 140ms ease,color 140ms ease,box-shadow 140ms ease,filter 140ms ease}
+.title-screen .commute-button span{transition:transform 140ms ease}
+.title-links button{border-radius:8px}
+@media(hover:hover) and (pointer:fine){
+    .title-screen .commute-button:hover{transform:translateY(-2px);filter:brightness(1.08);box-shadow:0 5px 16px #051f2440}
+    .title-screen .commute-button:hover span{transform:translateX(4px)}
+    .title-links button:hover,.title-dialog-close:hover{background-color:#ffffff14;color:#ffe08a;transform:translateY(-2px)}
+}
+.title-screen button:focus-visible{outline:3px solid #ffe6a2;outline-offset:4px;box-shadow:0 0 0 6px #123f39}
+.title-screen button:active{transform:translateY(1px) scale(.98);filter:brightness(.95)}
+.title-screen .commute-button:active{box-shadow:none}
+.title-screen .commute-button:active span{transform:translateX(2px)}
+.title-links button:active,.title-dialog-close:active{background-color:#ffffff20;color:#ffe08a}
+@media(prefers-reduced-motion:reduce){
+    .title-screen button,.title-screen .commute-button span{transition:none!important;transform:none!important}
+}

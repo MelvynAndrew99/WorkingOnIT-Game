@@ -11,7 +11,7 @@ import { useEffect, useRef } from 'react';
 import type { Application } from 'pixi.js';
 import { createPixiApp } from './pixiApp.ts';
 import { createStage, type Stage } from './stage.ts';
-import { createTrafficScene, type Scene } from './trafficScene.ts';
+import { createCityScene, type Scene } from './cityScene.ts';
 import { store, useStore } from '../state/store.ts';
 
 export default function GameCanvas() {
@@ -35,7 +35,7 @@ export default function GameCanvas() {
             // pixels, so layout is proportional on every device (stage.ts).
             stage = createStage(app);
             // ADAPT: replace the demo scene with the real game scene.
-            scene = createTrafficScene(app, stage);
+            scene = createCityScene(app, stage);
             // Respect a pause that landed while the canvas was initializing.
             if (store.get().paused) app.ticker.stop();
         })();

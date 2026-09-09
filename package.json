@@ -1,12 +1,12 @@
 {
-    "name": "ai-overlord",
+    "name": "working-on-it",
     "version": "1.0.0",
-    "description": "AI Overlord - early chaos game prototype",
+    "description": "Working ON IT! Fix the commute. Take the credit.",
     "private": true,
     "type": "module",
     "scripts": {
         "dev": "vite --host 0.0.0.0",
-        "test": "node --experimental-strip-types --test src/game/trafficModel.test.ts",
+        "test": "node --experimental-strip-types --test src/game/cityModel.test.ts src/game/cityCamera.test.ts",
         "_build": "tsc --noEmit && vite build",
         "build": "npm run _build",
         "build:bundled": "cross-env RUNDOT_GAME_DISABLE_EMBEDDED_LIBS=true npm run _build",
@@ -42,6 +42,7 @@
         "@vitejs/plugin-react": "^4.4.1",
         "cross-env": "^7.0.3",
         "firebase": "^12.16.0",
+        "pngjs": "^5.0.0",
         "tailwindcss": "^4.1.5",
         "typescript": "^5.8.0",
         "vite": "^6.3.5"

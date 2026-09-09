@@ -1,6 +1,23 @@
 # Current project direction
 
-Read AGENTS.md first. It records the user's gameplay decisions, SNES/PS1/N64 visual direction, rejection of glossy generated thumbnails, requested Grok Build workflow, and requirement for user selection before adopting artwork. Console-era inspiration means layouts and feel, not mandatory period graphics or technical limitations. Modern rendering can be appropriate. The platform instructions below remain applicable.
+Read AGENTS.md, docs/DESIGN.md, and docs/IMPLEMENTATION-LESSONS.md first. The September 8, 2026 pivot replaces AI Overlord with a city-building and traffic optimization game. The first milestone is homes, stores, roads, visible connected trips, and a forgiving economy. The old gameplay and cover brief are historical. The approved title is Working ON IT!, with tagline “Fix the commute. Take the credit.” City Workshop is the former working label.
+
+Keep simulation geometry independent of artwork: tile scale, rotated footprints, explicit entrances, and cardinal road connectivity are the model contract. Preserve RUN SDK initialization/lifecycles, local/RUN saves, and Nix tooling. Run npm and rundot inside nix develop. Preserve the existing save key and RUN game identity during this pivot; display-title changes do not authorize abandoning old saves. Work locally; no deployment or public publication is included.
+
+The reference below describes the inherited starter, not the current gameplay implementation. Demo field names, scene filenames, and sample verification steps are historical examples; inspect current source before adapting them. The pre-pivot source is preserved at archive/ai-overlord/source-before-pivot.tar (84eac54).
+
+## Upcoming tutorial/progression requirement
+
+Read the tutorial and external-city sections in AGENTS.md and docs/DESIGN.md before extending mechanics. Teach in an expandable disconnected town, offer connection to enter the main game, and support skipping directly into main play without tutorial gates. Persist progression separately from artwork and keep completed/skipped players out of forced re-onboarding when lessons change. These are planned requirements, not currently implemented functionality.
+
+## Active city milestone
+
+- `src/game/cityModel.ts` owns logical tiles, rotated footprints, entrances, routes, economy, and save validation; it imports no artwork or renderer.
+- `src/game/cityMap.ts` owns expandable bounds; `cityCamera.ts` owns renderer-independent pan/zoom transforms; `cityControls.ts` connects HUD commands to the mounted scene.
+- `src/game/cityScene.ts` drives the model, renders its geometry in Pixi, and owns construction input and scene cleanup. `GameCanvas.tsx` mounts this scene.
+- `src/state/store.ts` carries construction tools and discrete HUD reports. `src/state/save.ts` persists the city to a separate namespace using timestamped local/host snapshots and serialized host writes.
+- `npm test` runs 14 city model tests and four camera math tests. Current local run instructions and controls are in README.md.
+- Old gameplay code is in the pre-pivot source archive. The starter file list and recipes below describe the original template, not current demo/score fields.
 
 # Minimal Template: Pixi.js v8 + React 19 + Tailwind v4
 
@@ -53,7 +70,7 @@ rewards, IAP, quests, tutorial, and more).
 - **New small assets** → `public/images/`, listed in `src/assets/manifest.ts` (critical if needed before gameplay, deferred otherwise).
 - **New large/CDN assets** → `public/cdn-assets/`, loaded via `RundotGameAPI.cdn.fetchAsset()` (pattern in its README).
 - **UI screens / HUD** → React components in `src/ui/`, routed by phase in `App.tsx`; style with Tailwind; game-facing state through `store.patch()`.
-- **Title** → `<title>` in index.html + heading strings in `LoadingScreen.tsx` / `MainMenu.tsx` + `name` in package.json + `SAVE_KEY` in `src/state/save.ts` (two games scaffolded from this template must not share a save key, or their localStorage saves collide in dev).
+- **Title** → `<title>` in index.html + heading strings in `LoadingScreen.tsx` / `MainMenu.tsx` + `name` in package.json. City persistence uses `city-workshop:city:v1`; historical `ai-overlord:traffic:v1` is untouched. Future display-title changes must not discard either save namespace.
 - **Palette** → the `@theme` block in `src/styles/app.css`.
 - **Orientation** → portrait is default. For landscape: `rundot init --orientation Landscape` and adjust the 9:16 media query in `app.css` (see `ADAPT:`).
 - **Save/persistence** → extend `SaveData`/`parse()` in `src/state/save.ts` and patch the new fields in `main.tsx` step 2. The boot load and lifecycle flushes are already wired.
@@ -89,7 +106,7 @@ After ANY recipe, run `npx tsc --noEmit` — the compiler catches leftovers (`no
 - Create `src/ui/YourScreen.tsx`; route it in `src/ui/App.tsx` (`phase === 'yourscreen'`); add an entry button that patches `phase` (e.g. in `MainMenu.tsx`) and a back button that patches it back.
 - Follow the UI Copy Style rules below; scrollable lists need `touch-pan-y` (the app frame locks `touch-action` for game input).
 
-**"Rename the game"** — `<title>` in index.html, headings in `MainMenu.tsx` + `LoadingScreen.tsx`, `name` in package.json, `SAVE_KEY` in `src/state/save.ts`.
+**"Rename the game"** — Update display metadata in `<title>` in index.html, headings in `MainMenu.tsx` + `LoadingScreen.tsx`, and `name` in package.json as appropriate. Retain the current city save namespace and RUN identity on future renames; preserve the historical traffic save separately.
 
 **"Add audio / leaderboards / rewarded ads / a meta economy"** — copy the working system from the jam kit's tower defense template (github.com/series-ai/september-jam-tower-defense; it documents its own file list in its CLAUDE.md), or copy modules from the `@series-inc/run-game-helpers` npm package. Copy files in; never import that package at runtime.
 
