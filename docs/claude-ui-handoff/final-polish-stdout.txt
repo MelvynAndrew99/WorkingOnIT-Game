@@ -1,0 +1,7 @@
+Done. Single change in `src/ui/BuildPalette.tsx`: the bulldoze entry's visible label is now **`Clear`**.
+
+Everything identifying the tool is untouched — `tool: 'bulldoze'` (so shortcut `4`, coach/objective selection and `categoryOf` behave identically) and `name: 'Remove, full refund'`, which is what `fullName()` feeds to the `aria-label`, the tooltip and the selection message. Only the glyph on the card face is shorter, the same way `Stops`, `Lights` and `Divert` are short forms. The price cell still reads `Refund`.
+
+Not verified — no shell or browser here. Worth confirming `Clear` measures under 71px at 320px with the same method you used for `Remove`, and that the accessible name still announces "Remove, full refund".
+
+Notes in `docs/claude-ui-handoff/final-polish-result.md`. No commit, no deploy.

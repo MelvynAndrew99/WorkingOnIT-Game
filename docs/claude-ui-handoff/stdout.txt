@@ -1,0 +1,25 @@
+Done. Here's what changed and why.
+
+## The diagnosis
+
+The problem wasn't type size — it was that **four full-width bands each answered "what do I do next?"**: header, tutorial coach, mission strip, dock. That left 229px of map at 320×640, and on a 1440px desktop it just made the same bands wider.
+
+## The layout
+
+**One objective panel** replaces the coach + mission strip, with a strict priority: crash → claimable reward → lesson → current job. When a job completes, the panel *becomes* `Claim $200`. Explanation lives behind **More** on a phone, always open in the desktop rail.
+
+**Two reserved bands only** (header, dock) — the renderer keeps measuring exactly the elements it already measures, so it needs no change to work. Camera controls became an edge rail and the Map modal is gone entirely.
+
+**Desktop composes horizontally**: 312px left rail (objective + all four jobs), 152px right rail (labelled camera controls + live traffic readout), and a dock showing **all eleven tools at once** with no category tabs. Composition keys off a measured `#app-frame` width, not the viewport, since a desktop player can force the portrait frame.
+
+## Grok's contract landed mid-session
+
+`docs/economy-rework/contract.md` appeared while I was working, so the UI is wired to it rather than just proposing a shape: the dock reads `toolPrices(getSave().city)` instead of the `COSTS` catalog, a waived tool shows **Free** in cyan (distinct from the grey "Free" on stops/lights/Remove), `waived.reason` shows on the objective panel, and refund copy now says "refunds what you paid". Grok also fixed the three "free worked example" strings, so a stopgap filter I'd added is deleted.
+
+## What I did not do
+
+**I had no shell in this session — I ran no typecheck, no tests, no browser.** The map-height figures in `result.md` (~350px at 320×640, ~570px at 390×844) are arithmetic from the CSS, not measurements. I re-read every changed file and specifically checked import wiring after the component split, unused-import cleanliness, and CSS specificity against the shared `.city-ui.dispatch-ui button` base and `app.css`'s `.city-controls p` — that last one silently centres and recolours any paragraph in the footer, and it caught two real collisions.
+
+Deliverables: `docs/claude-ui-handoff/contract.md` (renderer bounding-box contract, incl. an optional non-blocking side-inset request) and `result.md` (rationale, tradeoffs to argue with, changed selectors your browser harness needs, and five reusable lessons). Nothing outside `src/ui` and `docs/claude-ui-handoff` was touched; no commit, no deploy.
+
+Two items are yours per Grok's ownership split: `store.ts` still initialises `funds: 10000` so the header may flash `$10,000` before the first snapshot, and any scene-side funds-delta check must become `constructionChanged(before, after)` now that `place()` can succeed at $0.

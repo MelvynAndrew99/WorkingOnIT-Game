@@ -22,8 +22,7 @@ async function boot() {
     //    reflects real progress instead of popping it in after a beat.
     //    ADAPT: patch your own SaveData fields here; if the game is
     //    localized, restore the language here too — before any UI renders.
-    const save = await loadSave();
-    store.patch({ best: save.best });
+    await loadSave();
 
     // 3. Mount React. `phase` starts at 'loading', so this paints the
     //    loading screen (progress bar at 0%).
@@ -51,6 +50,11 @@ async function boot() {
 
     // 6. Loading done — hand over to the menu.
     store.patch({ phase: 'menu' });
+
+    // Start the title theme now that there's a menu to play it under. Not
+    // awaited — the 2.7MB track streams in the background; play() itself
+    // may still be gated on a first user gesture (see audio/music.ts).
+    // Historical theme retained on disk; city milestone uses no music yet.
 
     // 7. Host lifecycle hooks. Register AFTER boot so handlers never race
     //    half-initialized state.

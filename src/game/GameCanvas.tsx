@@ -11,7 +11,7 @@ import { useEffect, useRef } from 'react';
 import type { Application } from 'pixi.js';
 import { createPixiApp } from './pixiApp.ts';
 import { createStage, type Stage } from './stage.ts';
-import { createDemoScene, type Scene } from './demoScene.ts';
+import { createCityScene, type Scene } from './cityScene.ts';
 import { store, useStore } from '../state/store.ts';
 
 export default function GameCanvas() {
@@ -22,6 +22,7 @@ export default function GameCanvas() {
     useEffect(() => {
         let disposed = false;
         let scene: Scene | null = null;
+        let sizeObserver: ResizeObserver | null = null;
         let stage: Stage | null = null;
         (async () => {
             // hostRef is always attached by the time the effect runs.
@@ -31,16 +32,23 @@ export default function GameCanvas() {
                 return;
             }
             appRef.current = app;
+            // CSS display-mode changes can resize the host without a window resize event.
+            sizeObserver = new ResizeObserver(()=>{
+                const host=hostRef.current;
+                if(!disposed&&host&&(app.screen.width!==host.clientWidth||app.screen.height!==host.clientHeight))app.resize();
+            });
+            sizeObserver.observe(hostRef.current!);
             // Design-resolution stage: scenes position in design units, not
             // pixels, so layout is proportional on every device (stage.ts).
             stage = createStage(app);
             // ADAPT: replace the demo scene with the real game scene.
-            scene = createDemoScene(app, stage);
+            scene = createCityScene(app, stage);
             // Respect a pause that landed while the canvas was initializing.
             if (store.get().paused) app.ticker.stop();
         })();
         return () => {
             disposed = true;
+            sizeObserver?.disconnect();
             try { scene?.destroy(); } catch { /* scene already torn down */ }
             try { stage?.destroy(); } catch { /* stage already torn down */ }
             if (appRef.current) {

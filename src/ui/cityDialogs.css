@@ -1,0 +1,17 @@
+/* City report. Theme colours come from gameInterface.css. */
+.city-dialog{pointer-events:auto;margin:auto;width:min(92vw,560px);max-height:88dvh;overflow-y:auto;border-radius:12px;padding:20px;touch-action:pan-y}
+.city-dialog-heading{position:sticky;top:-20px;z-index:1;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:8px 0}
+.city-dialog h2{font-size:24px;font-weight:800}
+.city-dialog h3{font-size:19px;font-weight:700;margin-top:18px}
+.city-dialog p{font-size:17.6px;line-height:1.5;margin:12px 0}
+.city-ui.dispatch-ui .city-dialog button{min-height:44px;border-radius:7px;padding:10px 13px}
+.incident-detail{margin-top:14px;padding-left:12px;border-left:3px solid var(--yellow,#ffd22e)}
+.incident-detail p{margin:5px 0}
+
+/* Wide viewports read a long report badly in one column. */
+@media(min-width:900px){
+  .city-dialog{width:min(92vw,860px)}
+  .city-report-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 28px;align-items:start}
+  .city-report-grid section:first-child h3{margin-top:0}
+}
+@media(max-width:370px){.city-dialog{padding:14px}.city-dialog-heading{top:-14px}.city-dialog h2{font-size:21px}}

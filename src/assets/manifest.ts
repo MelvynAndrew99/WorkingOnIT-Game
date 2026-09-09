@@ -28,10 +28,10 @@ export const MANIFEST: Manifest = {
         {
             name: 'critical',
             assets: [
-                // ADAPT: replace with the game's real first-screen assets.
-                // Reference loaded assets by alias: Assets.get('placeholder'),
-                // Sprite.from('placeholder').
-                { alias: 'placeholder', src: 'images/placeholder.png' },
+                // The whole town is drawn from one small packed sheet, built by
+                // tools/build-city-atlas.mjs from the Kenney CC0 source pack.
+                // Frame rectangles: src/game/cityAtlas.ts. Meaning: cityArt.ts.
+                { alias: 'city-atlas', src: 'images/city/city-atlas.png' },
             ],
         },
         {

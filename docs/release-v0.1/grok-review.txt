@@ -1,0 +1,142 @@
+I'll start with the approved source-access list and the required design docs, then inspect only those files for a read-only pre-release report.Approved Grok scope is the economy/model files plus shared briefs. I’ll read those next and flag anything outside that list.Tutorial docs still mention retired Practice/free-help paths. I’ll check the economy contract and the model constants next.Checking a few remaining model strings and whether `validEmergencyPasses` can reject an otherwise-valid town.# Working ON IT! v0.1 pre-release review (Grok, read-only)
+
+**Scope:** Approved Grok files only (`docs/economy-rework/source-access.md`): economy/model/tests, `store.ts`, `save.ts`, tutorial README, shared briefs/contracts. No edits, tests, browser, images, or unapproved sources. Filename search for `flushSave`/`connectExternalCity` also hit `cityScene.ts`, `main.tsx`, `MainMenu.tsx`; those hits are leads for the owner, not a scene/UI review.
+
+**Premise:** This is not a greenfield first upload. Lead already records public 1.4.0 and a queued 1.5.0 on the same RUN identity. “v0.1” is a player label, not a new game. The bar is a playable construction/traffic sandbox plus skippable tutorial, not the backlog. Known emergency limits (returning crews obey diversions; a second clinic does not replace a stuck assigned ambulance) are **not** automatic ship blockers. I did not run the 171 tests or the 320/390/1440 checks.
+
+**Verdict from inspected model/economy code:** no standalone ship-stopper. Do not treat that as “upload now.” Two load-bearing paths are **UI/scene owned** and can stall a first session if they are missing.
+
+---
+
+## 1. Release blockers / must-clear before upload
+
+None of these are “the model is broken.” They are the checks that can still lose a town or stall the taught path.
+
+### 1. Safety acknowledgement is load-bearing (model fact; UI unreviewed)
+
+After the player follows Home → Store → Road → Stop, `accident-response` does **not** auto-complete. A stop prevents the crash that would complete it. The only completions then are `canAcknowledgeSafety` or a new unsigned conflict.
+
+```69:73:src/game/cityTutorial.ts
+function safeCrossing(city:City,p:TutorialProgress):Point|undefined {
+  const lesson=current(p)?.id;
+  if((lesson!=='accident-response'&&lesson!=='rescue')||city.incidents.some(i=>i.status==='active'))return undefined;
+  return city.controls[0];
+}
+```
+
+```227:230:src/game/cityTutorial.ts
+  if(action==='acknowledge-safety'){
+    if(!tutorialSnapshot(city).canAcknowledgeSafety)return {message:'At the safety lesson, clear active incidents and protect a crossing with a Stop or Light first.'};
+    for(const id of ['accident-response','rescue'])if(!p.completed.includes(id))p.completed.push(id);
+```
+
+The happy-path integration test only finishes by calling that action (`cityTutorial.integration.test.ts` ~124–126). `driver-rules` is the same shape: no tool, only `acknowledge-drivers`.
+
+**Check (UI, out of this scope):** On a new town, place home, store, roads, then a stop. Confirm a visible **Keep my safe crossing** (or equivalent) control, and an **Understood** control on “Meet your drivers.” If either is hidden behind a menu, the taught path stalls. Specialist notes claim the button remains; I did not open `src/ui`.
+
+### 2. `parseCity` null becomes a new town (existing pattern, higher stakes on a public update)
+
+Malformed `economy` / `paid` / emergency-pass geometry rejects the **whole** city, not just the ancillary field:
+
+```608:613:src/game/cityModel.ts
+  const economy = parseEconomyProgress(r.economy, city.elapsed);
+  if (!economy) return null;
+  ...
+  return city;
+```
+
+```23:39:src/state/save.ts
+export async function loadSave(): Promise<SaveData> {
+    ...
+    data = loaded ?? { city: createCity(), updatedAt: 0 };
+    return data;
+}
+```
+
+That is intentional versus silently refilling grants (`cityEconomy.test.ts` “malformed economy or paid fields reject the save”). For a **public** 1.4.0 → this build update it is the difference between a rejected blob and a wiped town.
+
+**Check:** Parse a real 1.4.0 / in-progress 1.5.0 save (especially mid-emergency-pass, `paid: 0` practice leftovers, missing `economy`). Confirm the town reloads. I did not inspect private saves or `game.config.prod.json`.
+
+### 3. Pause, host flush, skip-on-title, connect-ends-tutorial (unapproved files)
+
+Inspected: `store.paused` exists; `flushSave` exists; skip is a model action; `connectExternalCity` does **not** itself end the tutorial.
+
+```25:31:src/game/cityExternal.ts
+export function connectExternalCity(city:City,gateway:Point):string {
+  if(city.external?.gateway)return 'The outside city is already connected. Extend roads from its gateway.';
+  ...
+  return 'Outside city connected. Visitors enter through this gateway when a destination has room.';
+}
+```
+
+Filename search suggests `main.tsx` flushes on sleep/quit, `cityScene.ts` autosaves ~2s and skips tutorial after a successful connect, `MainMenu.tsx` has Skip tutorial. **I did not read those files.** Lead should confirm those three behaviors on a device, not from this report.
+
+---
+
+## 2. Smaller fixes (not upload-stoppers)
+
+**Clinic vs Hospital (inspected, player-facing).** Construction label is `Hospital` (`cityModel.ts` `LABELS`). Rescue copy says “Clinic” (`cityTutorial.ts` hint; `MAYOR_OFFER.rescue` in `cityEconomy.ts`). Incident text says `no hospital` (`cityIncidents.ts` `STATION_LABEL`). Players hunting a Clinic on the Services dock will see Hospital $800. Unify the word before or just after upload.
+
+**`first-visit` snapshot tool is `road`, not Home** (`cityTutorial.ts` line 35). Highlights are supposed to follow Home → Store → Road from live placement. If any UI still keys the pulse off `snapshot.tool` alone, Road lights up first. Confirm the Codex locator uses building counts, not this field.
+
+**Park is not immediately affordable (inspected, intended).** Starter math: $900 − home $200 − store $400 − 7 roads $140 = **$160** (`cityEconomy.test.ts`). Park is $300. Recovery is $20/10s plus the next $100 shop. The broke-placement line is only “Wait for the next income payment or remove something for a full refund” (`cityModel.ts` `charge`). It never mentions the 60s mayor waiver. Tight, recoverable, not a dead end.
+
+**Mission “spent” uses catalog prices**, including waived $0 tiles (`cityMissions.ts` `roadsSpent` / `buildingsSpent`). Inflates the invoice if that HUD is shown.
+
+**Agent docs are stale, not player-facing.** `docs/tutorial/README.md` still describes practice districts and “free help” in the body, then supersedes them at the bottom. `docs/claude-ui-handoff/contract.md` still says practice is presented as “Add a practice crossing.” Current model: `canPractice: false`, `practice` is a no-op (`cityTutorial.ts` 202–210).
+
+**`package.json` `version` is `1.0.0`.** User wants player-facing v0.1; RUN already has 1.4.0/1.5.0. Lead already owns version semantics. I did not read rundot config.
+
+---
+
+## 3. Safe to defer (do not hold v0.1)
+
+- Manager inactivity advice, mayor Help/Later, driving-style prototype, crisis expense.
+- Replacement dispatch from a second clinic; returning crews blocked by diversions.
+- Forced ambulance viewing. One `acknowledge-safety` completes **both** `accident-response` and `rescue` without `observedServices` or incidents (`cityTutorial.test.ts` 58–70). That is the recorded practice-removal path, not a missed implementation. Natural fire requires `accidentCount % 3 === 2` (`cityIncidents.ts` 140). Do not claim the default tutorial “teaches ambulance dispatch” from the ack test.
+- New music/effects. Existing theme is enough.
+- Campaign/missions beyond the four growth jobs; bus/one-way/wider roads.
+- `docs/DESIGN.md` still contains historical “no tutorial yet” paragraphs. Not player-facing.
+
+Inspected numbers **match the brief:** new towns $900; roads $20 / home $200 / store $400; shop $100 once (`SHOP_INCOME`); stall 60s; finite per-lesson waiver; `RESCUE_SECONDS = 90`; skip preserves town and does not connect; `STARTING_FUNDS` is now also the store HUD seed (`store.ts` line 50, so the old 10k flash in the economy contract is fixed). Fatalities still happen; clearance after `lost` still runs (`maybeClear` does not require `rescued`).
+
+---
+
+## 4. What I could not verify
+
+| Item | Why |
+| --- | --- |
+| 171 tests, production build, 320/390/1440 browsers | No shell; lead evidence only |
+| Yellow toast, category pulse, Home→Store→Road, reduced motion | `src/ui` not in Grok list |
+| Pause freezes `stepCity` / waiver clock | Scene ticker unreviewed |
+| Title Skip, New game confirm, connect UI gate | `MainMenu` / `cityScene` unreviewed |
+| onSleep/onQuit/host coalescing on device | `main.tsx` unreviewed |
+| Exact 1.4.0 public save round-trip | No private saves |
+| Artwork, audio mixer, thumbnail, rundot version | Excluded |
+| Phone performance at 64×64 | Not in these files |
+
+---
+
+## 5. Brief vs code (inspected)
+
+| Brief | Code |
+| --- | --- |
+| New towns $900, old balances kept | `STARTING_FUNDS = 900`; parse keeps `funds` |
+| Practice removed, stale action no-op | `canPractice: false`; `practice` returns without mutation |
+| Waiver after 60s sim, player places, $0 refund | `STALL_SECONDS`, `activateGrant`, `paid: 0` |
+| Skip does not silently connect | skip only sets `tutorial.status`; `external.gateway` stays null in tests |
+| 90s serious/fire deadline | `RESCUE_SECONDS = 90` |
+| Longer straight emergency passes | `tryPass` has no 6-tile cap; straight corridor until bend |
+| Second clinic vs stuck ambulance | `serviceAssigned` skips a kind already assigned | known limit |
+| HUD may flash $10,000 | **Fixed** in `store.ts` (`funds: STARTING_FUNDS`) |
+
+---
+
+## Proposed reusable lessons (not edits)
+
+1. **Name the dock the same as the lesson.** “Clinic” in copy and “Hospital” on the tool is a findability bug, not flavor.
+2. **A model test that calls `acknowledge-safety` does not prove the player can.** If completion is a UI action, the ship check is that control on the taught path.
+3. **Rejecting a save to protect grants is correct accounting and dangerous on a live namespace.** `parseCity` null + `loadSave` fallback = new town. Public updates need a real old save, not only malformed-fixture tests.
+4. **Do not advertise dispatch teaching from the ack path.** That path records an explanation and zero rescues. Say so in player copy if the rescue body still says “Watch police clear a crash.”
+
+I am not recommending a delay for unfinished comedy, crisis charges, or audio. I am recommending the ack/Understood visibility check and one real public-save parse before the rundot upload.

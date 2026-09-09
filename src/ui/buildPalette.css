@@ -1,0 +1,41 @@
+/* Construction dock. Compact frames: tabs plus one shelf. Wide frames: no tabs,
+   every tool visible at once. Both keep 44px targets and 17.6px labels.
+   Selectors carry .city-ui.dispatch-ui so they outrank the shared button base. */
+/* Row 1: category tabs + rotate. Row 2: the shelves, full width. */
+.build-palette{display:grid;grid-template-columns:1fr 44px;align-items:end;gap:5px;pointer-events:auto;touch-action:manipulation;color:#ecf2fa}
+.city-ui.dispatch-ui .build-palette button{min-width:44px;margin:0;padding:6px 8px;line-height:1.15;border:1px solid transparent;transition:background-color .12s,color .12s}
+.build-categories{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;border-bottom:1px solid #30435e}
+.city-ui.dispatch-ui .build-categories .build-category{position:relative;background:transparent;color:#aebed4;border-radius:7px 7px 0 0;padding:5px 2px;font-weight:650}
+.city-ui.dispatch-ui .build-categories .build-category[aria-pressed=true]{background:#172b45;color:#f3cf78}
+.build-category[aria-pressed=true]::after{content:"";position:absolute;left:14px;right:14px;bottom:0;height:3px;background:#f3cf78;border-radius:2px}
+.build-groups{grid-column:1/-1;display:flex;align-items:flex-end;gap:6px}
+.build-group{display:flex;flex:1;min-width:0;flex-direction:column;gap:4px}
+.build-group[data-active=false]{display:none}
+.build-group-label{display:none}
+.build-shelf{display:grid;gap:5px}
+.city-ui.dispatch-ui .build-shelf .build-tool{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:60px;min-width:0;padding:5px 2px;background:#192c46;color:#ecf2fa;border-color:#253c58}
+.build-tool strong{font-size:17.6px;font-weight:700;white-space:nowrap}
+.build-cost{font-size:17.6px;color:#f3cf78;white-space:nowrap;font-variant-numeric:tabular-nums}
+/* A cost the mayor has waived reads as an offer, not as an ordinary free control. */
+.build-tool[data-waived=true] .build-cost{color:#5ddbe8;font-weight:750}
+.city-ui.dispatch-ui .build-shelf .build-tool[aria-pressed=true]{background:#5ddbe8;border-color:#99f4fa;color:#102536;box-shadow:inset 0 0 0 1px #99f4fa}
+.build-tool[aria-pressed=true] .build-cost{color:#123246}
+.build-tool[data-afford=false] .build-cost{color:#ffae82}
+.build-tool[data-afford=false][aria-pressed=true] .build-cost{color:#612510}
+.city-ui.dispatch-ui .build-palette .build-rotate{display:flex;flex:none;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:44px;height:44px;padding:2px;background:#16263c;color:#f3cf78;border-color:#253c58;font-size:24px}
+.build-rotate em{display:none}
+
+.dispatch-ui[data-layout=wide] .build-palette{display:flex;justify-content:center;align-items:flex-end;gap:20px}
+.dispatch-ui[data-layout=wide] .build-categories{display:none}
+.dispatch-ui[data-layout=wide] .build-groups{order:1;flex-wrap:wrap;justify-content:center;gap:10px 20px}
+.dispatch-ui[data-layout=wide] .build-group{flex:0 0 auto}
+.dispatch-ui[data-layout=wide] .build-group[data-active=false]{display:flex}
+.dispatch-ui[data-layout=wide] .build-group-label{display:block;color:#8fa6c2;font-size:17.6px;font-weight:700;letter-spacing:.04em;line-height:1.2;text-align:left}
+.dispatch-ui[data-layout=wide] .build-shelf{display:flex;gap:6px}
+.city-ui.dispatch-ui[data-layout=wide] .build-shelf .build-tool{width:98px}
+.city-ui.dispatch-ui[data-layout=wide] .build-palette .build-rotate{order:2;width:92px;height:60px;font-size:20px}
+.dispatch-ui[data-layout=wide] .build-rotate em{display:block;font-size:17.6px;font-style:normal;text-transform:capitalize}
+
+/* Staged teaching keeps later tools discoverable without making them selectable. */
+.city-ui.dispatch-ui .build-tool:disabled{opacity:.55;cursor:not-allowed;filter:saturate(.4)}
+.city-ui.dispatch-ui .build-tool:disabled .build-cost{color:#b9c5d5}

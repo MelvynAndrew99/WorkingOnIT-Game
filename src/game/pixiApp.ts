@@ -2,7 +2,11 @@
  * Pixi v8 Application factory. One place owns renderer options so the rest of
  * the game never touches them.
  */
-import { Application } from 'pixi.js';
+import { Application, TextureStyle } from 'pixi.js';
+
+// The city art is 16px pixel art scaled up several times: bilinear filtering
+// would smear every kerb line and window frame. Nearest keeps them crisp.
+TextureStyle.defaultOptions.scaleMode = 'nearest';
 
 /**
  * Create and mount a Pixi app inside a host element. The canvas auto-resizes
@@ -24,10 +28,8 @@ export async function createPixiApp(host: HTMLElement): Promise<Application> {
         // scene paints every pixel — cheaper than compositing transparency.
         backgroundAlpha: 0,
         antialias: true,
-        // ADAPT: pixel-art games want roundPixels: true here, plus
-        //     import { TextureStyle } from 'pixi.js';
-        //     TextureStyle.defaultOptions.scaleMode = 'nearest';
-        // at module scope, and integer design resolutions.
+        // Whole-pixel sprite positions stop tile seams shimmering while panning.
+        roundPixels: true,
     });
     host.appendChild(app.canvas);
     return app;
