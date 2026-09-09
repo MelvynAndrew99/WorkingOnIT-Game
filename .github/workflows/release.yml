@@ -35,16 +35,18 @@ jobs:
             echo '::error::Run this release workflow from main.'
             exit 1
           fi
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@7
         with:
           persist-credentials: false
-      - uses: cachix/install-nix-action@b85815f71a6de0ddee80b8a80a98d43f4bcc66c7 # v31
+      - uses: cachix/install-nix-action@v31
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
       - name: Install locked dependencies
         run: nix develop -c npm ci
       - name: Test
         run: nix develop -c npm test
+      - name: Test publishing safeguards
+        run: python3 tools/ci/test-publish.py
       - name: Build production game
         run: nix develop -c npm run build
       - name: Package verified build
@@ -52,10 +54,11 @@ jobs:
         run: |
           echo "tag=build-${GITHUB_RUN_NUMBER}-${GITHUB_SHA:0:7}" >> "$GITHUB_OUTPUT"
           bash tools/ci/package-build.sh
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@v7
         with:
           name: verified-build-${{ github.sha }}
           path: .release/
+          include-hidden-files: true
           if-no-files-found: error
           retention-days: 30
           overwrite: true
@@ -71,7 +74,7 @@ jobs:
       GH_REPO: ${{ github.repository }}
       RELEASE_TAG: ${{ needs.build.outputs.tag }}
     steps:
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+      - uses: actions/download-artifact@v8
         with:
           name: verified-build-${{ github.sha }}
           path: .release
@@ -88,7 +91,16 @@ jobs:
               --title "Build ${GITHUB_RUN_NUMBER} (${GITHUB_SHA:0:7})" \
               --generate-notes
           fi
-          gh release upload "$RELEASE_TAG" .release/working-on-it.tar.gz .release/SHA256SUMS .release/build.json --clobber
+          for asset in working-on-it.tar.gz SHA256SUMS build.json; do
+            existing=$(gh release view "$RELEASE_TAG" --json assets --jq ".assets[].name" | { grep -Fx "$asset" || true; })
+            if [[ -n "$existing" ]]; then
+              saved=$(mktemp -d)
+              gh release download "$RELEASE_TAG" --pattern "$asset" --dir "$saved"
+              cmp ".release/$asset" "$saved/$asset" || { echo '::error::Existing release bytes differ; start a new workflow run instead of replacing them.'; exit 1; }
+            else
+              gh release upload "$RELEASE_TAG" ".release/$asset"
+            fi
+          done
           echo "GitHub release: https://github.com/$GH_REPO/releases/tag/$RELEASE_TAG" >> "$GITHUB_STEP_SUMMARY"
 
   publish:
@@ -107,14 +119,14 @@ jobs:
       RELEASE_TAG: ${{ needs.build.outputs.tag }}
       RUN_BUMP: ${{ inputs.run_bump }}
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+      - uses: actions/download-artifact@v8
         with:
           name: verified-build-${{ github.sha }}
           path: .release
-      - uses: cachix/install-nix-action@b85815f71a6de0ddee80b8a80a98d43f4bcc66c7 # v31
+      - uses: cachix/install-nix-action@v31
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
       - name: Publish the release artifact to RUN
