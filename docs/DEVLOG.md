@@ -228,3 +228,9 @@ User authorized uploading the accumulated tutorial/traffic build before moving d
 Final status check: private/review tags point to1.6.0; public still points to1.5.0. Publication was requested with the upload, but1.6.0 is not yet verified live. Public URL: https://w.run/melvynandrew99/working-on-it . No hosted gameplay verification of1.6.0 was performed.
 
 After the user reported a branch swap, confirmed main at e099d45 (merged v0.1), current queue/EMS/control-cost changes present, all192 tests passing, and a fresh production build passing. User confirmed no duplicate upload was needed if the earlier upload had finished; no second version was created. Future work moves to the user's v0.2 milestone, distinct from RUN's platform version sequence.
+
+## 2026-09-09 — Main release pipeline and manual RUN publishing
+
+Added .github/workflows/release.yml: main pushes install locked dependencies through Nix, run tests/build, package a checksummed artifact and create a GitHub release tagged by workflow number/commit. Manual workflow_dispatch uses the same build and optionally publishes the exact artifact to existing RUN identity, with selectable platform bump. Normal main pushes do not publish RUN. Only release/publish jobs get contents:write. A repository RUNDOT_API_KEY secret is required only for publishing; local credentials are not copied.
+
+Pinned action commits, preserved source identity/checksum, immutable release assets on rerun, and persisted RUN attempt/success receipts prevent blind duplicate uploads after uncertain failures. Read docs/releases/PIPELINE.md for operation and recovery. Local validation passed: clean npm ci,192 game tests, six mocked publishing tests, production build, actionlint and shellcheck. A hosted GitHub Actions run has not been verified.

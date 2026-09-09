@@ -57,3 +57,7 @@ The bottom palette exposes homes, stores, parks, roads, Police, Fire, Clinic and
 Open Missions for four growth jobs, saved recognition, construction spending and accident-specific detour/service advice. Hide guidance to free build; reopen it whenever you want. Goals count completed visits from distinct households, allow early completion, and do not gate tools or punish early services. Open the Tutorial page for guided lessons, optional free worked solutions, Skip tutorial and the explicit outside-city connection. See [tutorial and outside drivers](docs/tutorial/README.md). See [verification and collaboration notes](docs/interface-missions/README.md).
 
 Latest interface: the tutorial now stays on the gameplay screen, missions show claimable rewards, and the dock groups Roads/Places/Services. Map holds camera/expansion/report controls. See [interface screenshots and verification](docs/interface-redesign/README.md) and the [audio production handoff](docs/AUDIO-CUE-LIST.md).
+
+## Automated releases
+
+Pushes to `main` test/build the game and create a GitHub release with the verified archive. Use **Actions → Build, release and publish → Run workflow** on `main` to run the same pipeline and optionally publish to RUN. Add the repository secret `RUNDOT_API_KEY` before publishing. See [pipeline setup, versioning and recovery](docs/releases/PIPELINE.md).

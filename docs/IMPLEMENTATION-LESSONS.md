@@ -240,3 +240,7 @@ Reachable-destination filtering can hide demand by preventing any on-road journe
 ## Pricing existing traffic controls
 
 Charge after road/junction validation and distinguish installation/replacement from free timing changes and removal. Keep actual payment on the shared junction controller; historical free controls default to zero refund. Replacement affordability includes the old refund atomically. Road-edit retirement must refund dropped controllers, not just explicit bulldozing. Check low-fund timing edits, failed replacement, upgrade/downgrade, reload and malformed payment fields.
+
+## Release artifact and deployment retries
+
+Build once, then release and publish the same checksummed artifact at the triggering commit. A missing success receipt does not prove an external deployment failed: persist an attempt before mutation and stop ambiguous retries for status inspection. Preserve matching release assets and reject changed bytes on rerun. Explicitly include hidden files when the artifact staging directory itself is hidden; stage only intended public release files there. Validate workflow expressions with actionlint and shell scripts with shellcheck; mock external tools to test publish failure modes without spending a real platform version.

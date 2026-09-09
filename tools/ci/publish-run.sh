@@ -12,6 +12,11 @@ if [[ "$receipt_count" != 0 ]]; then
   echo 'This release already has a successful RUN upload receipt.' >> "$GITHUB_STEP_SUMMARY"
   exit 0
 fi
+attempt_count=$(gh release view "$RELEASE_TAG" --json assets --jq '[.assets[] | select(.name == "run-world-attempt.json")] | length')
+if [[ "$attempt_count" != 0 ]]; then
+  echo 'A previous RUN attempt has no success receipt. Inspect RUN before retrying; no duplicate upload was attempted.' >&2
+  exit 1
+fi
 : "${RUNDOT_API_KEY:?Add the RUNDOT_API_KEY repository secret before publishing}"
 (cd .release && sha256sum --check SHA256SUMS)
 python3 - <<'PY'
@@ -29,6 +34,15 @@ tar -xzf .release/working-on-it.tar.gz -C dist
 gh release view "$RELEASE_TAG" --json body --jq .body > .release/run-changelog.md
 printf '%s' "$RUNDOT_API_KEY" | nix develop -c rundot login --api-key-stdin
 unset RUNDOT_API_KEY
+python3 - <<'PY_MARKER'
+import json, os
+from pathlib import Path
+attempt = json.loads(Path('.release/build.json').read_text())
+attempt['bump'] = os.environ['RUN_BUMP']
+Path('.release/run-world-attempt.json').write_text(json.dumps(attempt, indent=2) + '\n')
+PY_MARKER
+# Persist intent before the external mutation. An ambiguous failure must not redeploy.
+gh release upload "$RELEASE_TAG" .release/run-world-attempt.json
 # Do not log the JSON verbatim: share URLs may contain private review-link keys.
 nix develop -c rundot deploy --build-path ./dist --bump "$RUN_BUMP" --public \
   --changelog-file .release/run-changelog.md --json > .release/run-output.log
