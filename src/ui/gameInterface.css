@@ -1,0 +1,85 @@
+/* Gameplay chrome: quiet navy surfaces, yellow actions/rewards, cyan guidance.
+   Composition is driven by data-layout on .city-ui, set from the measured
+   #app-frame width, because a desktop player can force the portrait frame. */
+.city-ui.dispatch-ui{--ink:#101c2d;--panel:#101c2df5;--muted:#afbdd0;--line:#33475e;--yellow:#ffd22e;--cyan:#42d9e8;color:#f5f7fc;font-size:17.6px;gap:0}
+.city-ui.dispatch-ui button{min-height:44px;font-size:17.6px;border:1px solid #465b75;border-radius:8px;background:#1b2c42;color:#f5f7fc;line-height:1.15;padding:6px 9px}
+.city-ui.dispatch-ui button:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+@media(hover:hover){.city-ui.dispatch-ui button:hover{filter:brightness(1.14)}}
+
+/* Band 1: status. The renderer measures this height. */
+.dispatch-ui .city-header{display:flex;flex-direction:column;gap:3px;background:linear-gradient(180deg,#101c2d,#101c2deb);border:0;border-bottom:1px solid var(--line);padding:6px 10px;pointer-events:auto}
+.dispatch-ui .city-bar{display:flex;align-items:center;gap:8px;min-height:44px}
+.dispatch-ui .city-funds{flex:1;min-width:0;font-size:23px;font-weight:850;letter-spacing:-.025em;color:var(--yellow);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dispatch-ui .city-quick{display:flex;flex:none;gap:6px}
+.dispatch-ui .city-quick button[aria-pressed=true]{color:var(--ink);background:var(--yellow);border-color:var(--yellow)}
+.dispatch-ui .city-live{display:flex;flex-wrap:wrap;gap:4px 14px;margin:0;color:var(--muted);font-size:17.6px;line-height:22px;font-variant-numeric:tabular-nums}
+.dispatch-ui .city-live b{color:#f5f7fc;font-weight:750}
+.city-ui.dispatch-ui .city-alert{width:100%;text-align:left;border-color:var(--yellow);color:var(--yellow);background:#382d19}
+.dispatch-ui .city-warning{margin:0;font-size:17.6px;line-height:1.2;color:var(--yellow)}
+
+/* Band 2: the map. Overlays claim their own pointer events; the layer does not. */
+.dispatch-ui .city-stage{position:relative;flex:1;min-height:0;pointer-events:none}
+.dispatch-ui .city-rail{position:absolute;display:flex;flex-direction:column;gap:6px;pointer-events:auto}
+/* Never spill over the dock on a short frame; in practice this does not scroll. */
+.dispatch-ui .city-rail-right{top:8px;right:8px;width:56px;max-height:calc(100% - 16px);overflow-y:auto;scrollbar-width:none}
+/* Content-sized, never a full-height transparent block: an oversized rail would
+   silently swallow map taps in its empty area. */
+.dispatch-ui .city-rail-left{top:8px;left:10px;width:312px;max-height:calc(100% - 16px);gap:10px;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;padding-right:2px}
+.dispatch-ui .city-toast{position:absolute;left:10px;right:72px;bottom:8px;padding:8px 10px;border:1px solid #657993;border-left:3px solid var(--yellow);border-radius:8px;background:#101c2df2;color:#fff1b9;font-size:17.6px;line-height:1.25;max-height:4em;overflow:hidden;box-shadow:0 4px 16px #0006;pointer-events:none}
+
+/* Band 3: construction. The renderer measures this height. */
+.dispatch-ui .city-controls{position:relative;display:flex;flex-direction:column;gap:6px;padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));background:linear-gradient(0deg,#091321,#101c2df7);border:0;border-top:1px solid var(--line);pointer-events:auto;min-width:0}
+
+/* Narrow frame (< 380px): funds plus three actions do not fit at compact spacing and
+   the figure was truncating to "$9,…". Tighten the gaps and button padding, never the
+   type — 44px targets and the 17.6px floor are unchanged. */
+.dispatch-ui[data-layout=narrow] .city-header{padding-inline:8px}
+.dispatch-ui[data-layout=narrow] .city-bar{gap:5px}
+.dispatch-ui[data-layout=narrow] .city-quick{gap:4px}
+.city-ui.dispatch-ui[data-layout=narrow] .city-quick button{padding-inline:5px}
+.dispatch-ui[data-layout=narrow] .city-live{gap:2px 10px}
+.dispatch-ui[data-layout=narrow] .city-controls{padding-inline:6px}
+
+/* Wide frame: one status row, an objective/jobs rail left, camera and metrics right. */
+.dispatch-ui[data-layout=wide] .city-header{flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px 18px;padding:6px 14px}
+.dispatch-ui[data-layout=wide] .city-bar{display:contents}
+.dispatch-ui[data-layout=wide] .city-funds{order:1;flex:none;font-size:26px}
+.dispatch-ui[data-layout=wide] .city-live{order:2;flex:1;gap:22px}
+.dispatch-ui[data-layout=wide] .city-quick{order:3}
+.dispatch-ui[data-layout=wide] .city-alert,.dispatch-ui[data-layout=wide] .city-warning{order:4;flex:0 0 100%}
+.dispatch-ui[data-layout=wide] .city-rail-right{top:12px;right:12px;width:152px}
+.dispatch-ui[data-layout=wide] .city-toast{left:50%;right:auto;transform:translateX(-50%);width:max-content;max-width:min(560px,60%)}
+.dispatch-ui[data-layout=wide] .city-controls{padding:8px 14px calc(8px + env(safe-area-inset-bottom,0px))}
+.dispatch-ui .city-readout{display:grid;gap:5px;margin:2px 0 0;padding:8px 9px;border:1px solid var(--line);border-radius:10px;background:#101c2df2;font-size:17.6px;line-height:1.25}
+.dispatch-ui .city-readout div{display:flex;justify-content:space-between;gap:8px}
+.dispatch-ui .city-readout dt{color:var(--muted)}
+.dispatch-ui .city-readout dd{margin:0;font-variant-numeric:tabular-nums}
+.city-ui.dispatch-ui .city-readout-more{width:100%}
+
+/* Dialogs stay reference material: dense detail, never routine teaching. */
+.dispatch-ui .mission-dialog,.dispatch-ui .city-dialog,.dispatch-ui .expansion-dialog{background:var(--ink);color:#f5f7fc;border:1px solid #536780;border-radius:16px;box-shadow:0 14px 60px #0009;padding:16px;font-size:17.6px;max-height:90dvh;max-width:calc(100% - 20px);margin:auto;touch-action:pan-y}
+.dispatch-ui dialog::backdrop{background:#030914bb}
+.dispatch-ui .mission-dialog header,.dispatch-ui .city-dialog-heading{background:var(--ink);top:-16px;padding:8px 0;gap:10px}
+.dispatch-ui .mission-dialog h2,.dispatch-ui .city-dialog h2{color:#f5f7fc;font-size:23px;line-height:1.15}
+.dispatch-ui dialog p{color:#d8e2ef;text-align:left;font-size:17.6px;line-height:1.4}
+.dispatch-ui dialog .mission-budget,.dispatch-ui .mission-list li{background:#17263a;border:1px solid var(--line);border-radius:10px;padding:12px}
+.dispatch-ui dialog .mission-standing,.dispatch-ui .mission-budget dd,.dispatch-ui .mission-item-heading span{color:var(--yellow)}
+.dispatch-ui .mission-list h3{font-size:19px;font-weight:800;margin:0}
+.dispatch-ui .mission-list progress{accent-color:var(--cyan)}
+.dispatch-ui .mission-reward-row{display:flex;align-items:center;justify-content:space-between;gap:8px;color:var(--yellow)}
+.dispatch-ui dialog .mission-links button[aria-pressed=true],.city-ui.dispatch-ui .connection-primary{background:var(--yellow);color:var(--ink);border-color:var(--yellow);font-weight:750}
+.city-ui.dispatch-ui .connection-primary{margin-top:12px}
+.dispatch-ui .mission-dialog select{background:#1b2c42;border-color:#536780;color:#f5f7fc}
+.dispatch-ui .expansion-dialog{z-index:5}
+.dispatch-ui .expansion-preview{background:#091321}
+.city-ui.dispatch-ui .expansion-directions button[aria-pressed=true]{background:var(--cyan);color:var(--ink);border-color:var(--cyan)}
+.city-ui.dispatch-ui .expand-confirm{background:var(--yellow);color:var(--ink);border-color:var(--yellow);font-weight:800}
+
+@media(max-height:700px){
+  .dispatch-ui .city-header{padding-block:4px}
+  .dispatch-ui .city-controls{gap:4px;padding-top:4px;padding-bottom:calc(4px + env(safe-area-inset-bottom,0px))}
+  .dispatch-ui .city-rail-right{top:4px;right:4px}
+}
+
+body{background:radial-gradient(ellipse at top,#172941,#07111e)}
+#app-frame[data-phase="playing"]{background:#091321}

@@ -7,7 +7,7 @@ import { createCity, parseCity, type City } from '../game/cityModel.ts';
 // Separate namespace preserves all AI Overlord saves.
 const SAVE_KEY = 'city-workshop:city:v1';
 export interface SaveData { city: City; updatedAt: number; }
-let data: SaveData = { city: createCity(), updatedAt: 0 };
+let data: SaveData = { city: createCity(true), updatedAt: 0 };
 let pendingHost: string | null = null;
 let writingHost = false;
 function parse(raw: string | null): SaveData | null {
@@ -35,7 +35,7 @@ export async function loadSave(): Promise<SaveData> {
         const local = parse(localStorage.getItem(SAVE_KEY));
         if (local && (!loaded || local.updatedAt >= loaded.updatedAt)) loaded = local;
     } catch { /* blocked storage */ }
-    data = loaded ?? { city: createCity(), updatedAt: 0 };
+    data = loaded ?? { city: createCity(true), updatedAt: 0 };
     return data;
 }
 
@@ -69,6 +69,6 @@ async function drainHostWrites(): Promise<void> {
 
 /** Called only after the player chooses New game (and confirms replacing an existing town). */
 export function startNewCity(): void {
-    data.city = createCity();
+    data.city = createCity(true);
     flushSave();
 }

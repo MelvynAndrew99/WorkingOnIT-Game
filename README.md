@@ -46,6 +46,14 @@ See docs/DEVLOG.md for browser verification evidence and limitations.
 
 The clean pre-pivot game at commit `84eac54` is preserved in [archive/ai-overlord](archive/ai-overlord/README.md), including a complete tracked-source archive. Existing artwork remains on disk; the old cover is not new-game branding. The old `ai-overlord:traffic:v1` save is untouched. City saves use `city-workshop:city:v1`, mirrored locally and to RUN when available.
 
-The existing RUN game identity, jam kit metadata, SDK boot/lifecycles, and Nix tooling remain. No deployment is included in this milestone, and public publication is not authorized. Do not run `rundot init` again. Live text generation stays disabled.
+The existing RUN game identity, jam kit metadata, SDK boot/lifecycles, and Nix tooling remain. The user approved the Working ON IT! thumbnail and authorized public release on run.world. See docs/DEVLOG.md for release status. Do not run `rundot init` again. Live text generation stays disabled.
 
 Current direction: [AGENTS.md](AGENTS.md), [docs/DESIGN.md](docs/DESIGN.md). Architecture: [CLAUDE.md](CLAUDE.md). Shared evidence: [docs/IMPLEMENTATION-LESSONS.md](docs/IMPLEMENTATION-LESSONS.md). Original starter reference: [docs/RUN-TEMPLATE.md](docs/RUN-TEMPLATE.md).
+
+## Building tools and optional missions
+
+The bottom palette exposes homes, stores, parks, roads, Police, Fire, Clinic and removal directly, with construction prices. Stops, lights, diversion, entrance rotation and pause stay alongside them. Report contains detailed traffic, income and emergency information.
+
+Open Missions for four growth jobs, saved recognition, construction spending and accident-specific detour/service advice. Hide guidance to free build; reopen it whenever you want. Goals count completed visits from distinct households, allow early completion, and do not gate tools or punish early services. Open the Tutorial page for guided lessons, optional free worked solutions, Skip tutorial and the explicit outside-city connection. See [tutorial and outside drivers](docs/tutorial/README.md). See [verification and collaboration notes](docs/interface-missions/README.md).
+
+Latest interface: the tutorial now stays on the gameplay screen, missions show claimable rewards, and the dock groups Roads/Places/Services. Map holds camera/expansion/report controls. See [interface screenshots and verification](docs/interface-redesign/README.md) and the [audio production handoff](docs/AUDIO-CUE-LIST.md).

@@ -1,0 +1,34 @@
+/* Desktop rail summary plus the full jobs dialog. The leading job and its reward
+   are shown by the objective panel; this is the overview, never the only route. */
+.mission-rail{padding:10px;border:1px solid var(--line,#33475e);border-radius:12px;background:#101c2df2;color:#f5f7fc;pointer-events:auto}
+.mission-rail h2{display:flex;justify-content:space-between;gap:8px;margin:0 0 8px;font-size:19px;font-weight:800}
+.mission-rail h2 span{flex:none;color:var(--yellow,#ffd22e);font-variant-numeric:tabular-nums}
+.mission-rail ol{display:grid;gap:9px;margin:0;padding:0;list-style:none}
+.mission-rail li{display:grid;gap:5px}
+.mission-rail-row{display:flex;justify-content:space-between;gap:8px;font-size:17.6px;line-height:1.2}
+.mission-rail-row strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+.mission-rail-row span{flex:none;color:var(--muted,#afbdd0);font-variant-numeric:tabular-nums}
+.mission-rail li[data-done=true] .mission-rail-row span{color:var(--yellow,#ffd22e)}
+.mission-rail progress{display:block;width:100%;height:8px;accent-color:var(--cyan,#42d9e8)}
+.city-ui.dispatch-ui .mission-claim{width:100%;background:var(--yellow,#ffd22e);color:#101c2d;border-color:var(--yellow,#ffd22e);font-weight:800}
+.city-ui.dispatch-ui .mission-rail-all{width:100%;margin-top:10px}
+
+.mission-dialog{pointer-events:auto;margin:auto;width:min(94vw,620px);max-height:90dvh;overflow-y:auto;touch-action:pan-y;border-radius:12px;padding:18px;font-size:17.6px;line-height:1.4}
+.mission-dialog header{position:sticky;top:-18px;z-index:1;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0}
+.mission-dialog h2{font-size:24px;font-weight:800}
+.mission-dialog h3{font-size:19px;font-weight:700}
+.mission-dialog p{margin:12px 0}
+.city-ui.dispatch-ui .mission-dialog button{min-height:44px;border-radius:7px;padding:8px 12px;font-size:17.6px}
+.mission-dialog summary{cursor:pointer;min-height:44px;align-content:center}
+.mission-dialog summary:focus-visible{outline:3px solid var(--cyan,#42d9e8);outline-offset:2px}
+.mission-list{display:grid;gap:14px;margin:16px 0;padding:0;list-style:none}
+.mission-item-heading{display:flex;justify-content:space-between;align-items:start;gap:10px}
+.mission-item-heading span{white-space:nowrap}
+.mission-list progress{display:block;width:100%;height:9px;margin:10px 0}
+.mission-crew{color:#c8dccd}
+.mission-links{display:flex;flex-wrap:wrap;gap:8px}
+.mission-budget dl>div{display:flex;justify-content:space-between;gap:10px;margin:7px 0}
+.mission-budget dd{white-space:nowrap}
+.mission-dialog .mission-budget{margin-top:16px}
+.mission-dialog select{display:block;width:100%;min-height:44px;margin-top:8px;padding:6px;border:1px solid #536780;border-radius:7px;font:inherit}
+@media(max-width:370px){.mission-dialog{padding:12px}.mission-dialog header{top:-12px}.mission-item-heading{flex-wrap:wrap}}

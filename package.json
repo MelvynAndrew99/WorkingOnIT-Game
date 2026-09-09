@@ -6,7 +6,7 @@
     "type": "module",
     "scripts": {
         "dev": "vite --host 0.0.0.0",
-        "test": "node --experimental-strip-types --test src/game/cityModel.test.ts src/game/cityCamera.test.ts",
+        "test": "node --experimental-strip-types --test src/game/*.test.ts",
         "_build": "tsc --noEmit && vite build",
         "build": "npm run _build",
         "build:bundled": "cross-env RUNDOT_GAME_DISABLE_EMBEDDED_LIBS=true npm run _build",

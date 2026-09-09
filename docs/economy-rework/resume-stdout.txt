@@ -1,0 +1,1 @@
+I’ll recover from the cancelled write: read Claude’s contract and the lead notes, then write the economy contract before changing model code.Claude’s UI contract expects a `waived` snapshot and live prices, not a Free Help button. I’ll write the economy contract to that, then implement the model.

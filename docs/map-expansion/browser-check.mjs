@@ -12,7 +12,7 @@ async function expand(side){await page.getByRole('button',{name:'Expand',exact:t
 await tile(6,5);assert.equal((await saved()).buildings.length,1);
 await page.getByRole('button',{name:'Store $400'}).click();await tile(10,5);assert.equal((await saved()).buildings.length,2);
 await page.getByRole('button',{name:'Road $20'}).click();
-for(let x=6;x<=11;x++)await tile(x,7);await page.getByText('1/1 homes connected').waitFor();
+for(let x=6;x<=11;x++)await tile(x,7);await page.getByText('1/1 homes connected',{exact:true}).waitFor();
 const before=await saved();
 await page.getByRole('button',{name:'Expand',exact:true}).click();await page.getByRole('button',{name:'Cancel',exact:true}).click();assert.deepEqual((await saved()).map,before.map);
 for(const side of ['North','West','East','South'])await expand(side);

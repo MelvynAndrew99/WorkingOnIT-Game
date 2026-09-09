@@ -1,21 +1,25 @@
 import { useEffect, useRef, useState } from 'react';
-import { store } from '../state/store.ts';
-import { getSave, startNewCity } from '../state/save.ts';
+import { store, type DisplayMode } from '../state/store.ts';
+import { tutorialAction } from '../game/cityTutorial.ts';
+import { getSave, startNewCity, flushSave } from '../state/save.ts';
 import './titleScreen.css';
 
 export default function MainMenu() {
     const city = getSave().city;
-    const hasTown = city.buildings.length > 0 || city.roads.length > 0 || city.elapsed > 0;
+    const untouchedStarter = city.tutorial?.hRoad?.stage === 0 && city.buildings.length === 0 && city.elapsed === 0;
+    const hasTown = !untouchedStarter && (city.buildings.length > 0 || city.roads.length > 0 || city.elapsed > 0);
     const [panel, setPanel] = useState<'new' | 'settings' | null>(null);
     const [artAvailable, setArtAvailable] = useState(true);
+    const [displayMode,setDisplayMode] = useState<DisplayMode>(store.get().displayMode);
     const [showTips, setShowTips] = useState(store.get().showTips);
     const dialog = useRef<HTMLDialogElement>(null);
     useEffect(() => {
         if (panel) dialog.current?.showModal();
         else dialog.current?.close();
     }, [panel]);
-    const play = () => store.patch({ phase: 'playing', paused: false });
-    const newGame = () => { startNewCity(); setPanel(null); play(); };
+    const resetTools = () => store.patch({ tool: null, rotation: 0, panning: false, toolSelection: store.get().toolSelection + 1 });
+    const play = () => { if (!hasTown) resetTools(); store.patch({ phase: 'playing', paused: false }); };
+    const newGame = () => { startNewCity(); resetTools(); setPanel(null); play(); };
     return <main className="title-screen" aria-label="Working ON IT! title screen">
         <div className="title-composition">
             <h1 className="sr-only">Working ON IT!</h1>
@@ -31,6 +35,7 @@ export default function MainMenu() {
                     <span aria-hidden="true" />
                     <button onClick={() => setPanel('settings')}>Settings</button>
                 </div>
+                {city.tutorial?.status!=='skipped'&&city.tutorial?.status!=='complete'&&<button className="tutorial-skip" onClick={()=>{tutorialAction(city,'skip');flushSave();play();}}>Skip tutorial</button>}
                 <p>A better commute starts here.</p>
             </nav>
         </div>
@@ -42,12 +47,24 @@ export default function MainMenu() {
                 <button className="title-dialog-close" onClick={() => setPanel(null)}>Keep current city</button>
             </> : <>
                 <h2 id="title-dialog-heading">Settings</h2>
+                <label className="display-mode-setting">Game display
+                    <select value={displayMode} onChange={e=>{
+                        const value=e.target.value as DisplayMode;setDisplayMode(value);store.patch({displayMode:value});
+                        try { localStorage.setItem('working-on-it:display-mode',value); } catch { /* session preference still works */ }
+                    }}>
+                        <option value="auto">Automatic (match the screen)</option>
+                        <option value="wide">Desktop (wide view)</option>
+                        <option value="portrait">Mobile (portrait view)</option>
+                    </select>
+                </label>
+                <p>Automatic uses a wide view in larger landscape windows and portrait on smaller screens. This changes your view, not your town.</p>
                 <label><input type="checkbox" checked={showTips} onChange={e => {
                     const value = e.target.checked; setShowTips(value); store.patch({ showTips: value });
                     try { localStorage.setItem('working-on-it:show-tips', String(value)); } catch { /* settings remain usable in memory */ }
                 }} /> Show gameplay control tips</label>
-                <p>Place homes and stores. Connect their entrance markers with roads. Drag to draw roads, or use keys 1–4 to choose a tool and R to rotate.</p>
-                <p>Construction receives a full refund when removed. Your town saves automatically.</p>
+                <p>Place homes and stores. Connect their entrance markers with roads. Drag to draw roads, or use keys 1–6 to choose a tool and R to rotate.</p>
+                <p>Unsigned intersections give east–west traffic priority; north–south drivers wait for a gap. Use All-way stop or Traffic lights to share access. Adjoining junction tiles share one controller. Tap lights again to favor north/south or east/west. Watch waiting cars and completed trips to judge your changes.</p>
+                <p>Removing construction refunds what you paid. Free construction refunds $0. Your town saves automatically.</p>
                 <button className="title-dialog-close" onClick={() => setPanel(null)}>Done</button>
             </>}
         </dialog>

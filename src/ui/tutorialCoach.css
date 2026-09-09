@@ -1,0 +1,5 @@
+/* Tutorial-specific pieces of the objective panel. Layout lives in objectiveBar.css. */
+.objective-bar .objective-hint{color:#b9c8dd}
+.objective-emergency{margin-bottom:10px;padding-left:9px;border-left:3px solid var(--yellow,#ffd22e)}
+.objective-bar .objective-detail .objective-emergency p{color:#f0f4fb}
+.objective-bar .objective-detail .objective-emergency strong{color:var(--yellow,#ffd22e)}

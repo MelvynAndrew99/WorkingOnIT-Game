@@ -22,6 +22,7 @@ export default function GameCanvas() {
     useEffect(() => {
         let disposed = false;
         let scene: Scene | null = null;
+        let sizeObserver: ResizeObserver | null = null;
         let stage: Stage | null = null;
         (async () => {
             // hostRef is always attached by the time the effect runs.
@@ -31,6 +32,12 @@ export default function GameCanvas() {
                 return;
             }
             appRef.current = app;
+            // CSS display-mode changes can resize the host without a window resize event.
+            sizeObserver = new ResizeObserver(()=>{
+                const host=hostRef.current;
+                if(!disposed&&host&&(app.screen.width!==host.clientWidth||app.screen.height!==host.clientHeight))app.resize();
+            });
+            sizeObserver.observe(hostRef.current!);
             // Design-resolution stage: scenes position in design units, not
             // pixels, so layout is proportional on every device (stage.ts).
             stage = createStage(app);
@@ -41,6 +48,7 @@ export default function GameCanvas() {
         })();
         return () => {
             disposed = true;
+            sizeObserver?.disconnect();
             try { scene?.destroy(); } catch { /* scene already torn down */ }
             try { stage?.destroy(); } catch { /* stage already torn down */ }
             if (appRef.current) {

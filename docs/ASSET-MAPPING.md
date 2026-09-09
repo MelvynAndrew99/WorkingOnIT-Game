@@ -148,3 +148,11 @@ Screenshots of all eight orientations (home and store × four rotations) are in
   art supports that later; the model does not model it yet.
 - No crosswalk, traffic-light or gateway art is used yet. Modern City contains all three if
   the external-connection milestone wants them.
+
+## Approved service buildings (2026-09-09)
+
+The atlas also includes twelve user-approved service frames, `building_{hospital,fireStation,policeStation}_{N,E,S,W}`, from [the service building source folder](artwork/service-buildings/README.md). These combine Kenney roof/wall textures with code-drawn service details. Native sizes are 48×32 for north/south access and 32×48 for east/west. `cityArt.ts` chooses by kind and actual entrance side; the scene preserves the separate plot/apron/road arrow and placement tint. The atlas builder checks dimensions before packing.
+
+## Approved emergency vehicles (2026-09-09)
+
+`car_{police,ems,fire}_{N,E,S,W}` frames come from the [editable service-vehicle source](artwork/service-vehicles/README.md). The user approved the code-drawn patrol car, box ambulance and ladder-equipped engine. Frames retain native 36×24 side and 22×29 front/rear canvases. `vehicleView` selects by service/facing; the scene consumes persisted lane shift and only flashes lights during response/scene work. Simulation footprints remain independent of sprite dimensions.

@@ -31,3 +31,5 @@
 @media(prefers-reduced-motion:reduce){
     .title-screen button,.title-screen .commute-button span{transition:none!important;transform:none!important}
 }
+
+.title-navigation .tutorial-skip{min-height:44px;font-size:17.6px;padding:8px 16px;text-decoration:underline;color:#fff1d2}

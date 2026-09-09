@@ -6,7 +6,8 @@
  * funds, routes or save data, and nothing in cityModel.ts knows about atlas
  * coordinates. Scene code asks for pieces in TILE units and places them.
  *
- * Art: Kenney "Roguelike Modern City" (CC0) throughout. The untouched pack and
+ * Art: Kenney "Roguelike Modern City" (CC0), with approved service-building
+ * compositions (docs/artwork/service-buildings/). The untouched pack and
  * its licence stay in src/assets/source/kenny/, alongside the RPG Urban Pack,
  * which is present but unused. See docs/ASSET-MAPPING.md.
  */
@@ -157,9 +158,15 @@ const roofSlice = (i: number, w: number, j: number, rows: number): string => {
  * @param side which face of that tile the entrance sits against
  */
 export function buildingPieces(
-    kind: 'home' | 'store', id: number, w: number, h: number,
+    kind: 'home' | 'store' | 'hospital' | 'fireStation' | 'policeStation', id: number, w: number, h: number,
     access: { x: number; y: number }, side: Side,
 ): Piece[] {
+    if (kind !== 'home' && kind !== 'store') {
+        return [
+            { name: `building_${kind}_${side}`, tx: 0, ty: 0, tw: w, th: h },
+            entranceApron(access, side),
+        ];
+    }
     const skin = skinFor(kind, id);
     const pieces: Piece[] = [];
     const roofRows = Math.max(1, h - 1);
@@ -193,6 +200,11 @@ export function buildingPieces(
 
     // Paved apron on the plot, flush with the face the entrance touches, so the
     // way out of the building is visible even when there is no door on it.
+    pieces.push(entranceApron(access, side));
+    return pieces;
+}
+
+function entranceApron(access: { x: number; y: number }, side: Side): Piece {
     const apron: Record<Side, [number, number, number, number]> = {
         N: [access.x + 0.16, access.y, 0.68, 0.3],
         S: [access.x + 0.16, access.y + 0.7, 0.68, 0.3],
@@ -200,8 +212,7 @@ export function buildingPieces(
         E: [access.x + 0.7, access.y + 0.16, 0.3, 0.68],
     };
     const [ax, ay, aw, ah] = apron[side];
-    pieces.push({ name: 'plot', tx: ax, ty: ay, tw: aw, th: ah });
-    return pieces;
+    return { name: 'plot', tx: ax, ty: ay, tw: aw, th: ah };
 }
 
 /** Small dressing placed on the pavement outside a store's entrance. */
@@ -228,7 +239,8 @@ const VEHICLE_SKINS: VehicleSkin[] = [
     { colour: 'silver', tint: 0xf0d47a },
 ];
 
-export function vehicleView(tripId: number, facing: Side): { name: FrameName; tint?: number } {
+export function vehicleView(tripId: number, facing: Side, service?: 'police' | 'ems' | 'fire'): { name: FrameName; tint?: number } {
+    if (service) return { name: `car_${service}_${facing}` };
     const skin = VEHICLE_SKINS[tripId % VEHICLE_SKINS.length];
     return { name: `car_${skin.colour}_${facing}` as FrameName, tint: skin.tint };
 }

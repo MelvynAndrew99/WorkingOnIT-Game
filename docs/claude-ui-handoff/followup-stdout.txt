@@ -1,0 +1,17 @@
+Five bounded fixes, all inside my UI scope.
+
+**1. Funds truncation at 320.** Added `data-layout="narrow"` (frame < 380) that tightens header inline padding, bar/action gaps and button horizontal padding — returning ~35px to the figure. Per your instruction, no type was shrunk: funds stays 23px, body 17.6px, targets 44px.
+
+**2. Claim instruction wrapping seven lines.** The objective row stacks on narrow frames — eyebrow and instruction full width (~292px instead of ~70px), primary and More beneath. Net **shorter**: ~181px → ~128px. At 390 the side-by-side row is still the shorter arrangement, so it stays; 380 is the switch point.
+
+**3. Remove clipping.** Rotate was a fifth member of the shelf row. It's now a *sibling* of the shelves: the dock is a two-row grid (tabs + rotate on row 1, shelves full-width on row 2), so tool columns go ~60px → ~72px. On wide it moves to the end of the tool row at 92×60 via flex `order`. This is the "rearrange alignment rather than shrink text" route you asked for.
+
+**4. Right rail overflow guard** — `max-height: calc(100% - 16px)` so it can't spill over the dock on a short frame.
+
+**5. Emergency waiver note** — `emergencyObjective` now carries `s.tutorial?.waived?.reason`. You were right that this was the case that mattered most: the emergency objective outranks the lesson, so a rescue grant was invisible during exactly the wreck it was granted for.
+
+Expected effect at 320×640: map height ~241 → ~300px. Width stays ~243px (rail + inset, not something this pass touched). 390 and 1440 keep their composition; only rotate's placement changes.
+
+**Still no shell in this session** — no typecheck, tests or browser run, and I'm claiming none. The three things I'd attack first: a large balance at 320, that the dock's new two-row grid didn't disturb the wide single-row dock at 1440, and whether rotate still reads as a control beside the tabs rather than beside the tools.
+
+Details in `docs/claude-ui-handoff/followup-result.md`. No commit, no deploy.
