@@ -1,5 +1,15 @@
 # Shared implementation lessons
 
+## UI verification budget (2026-09-10 user decision)
+
+Default to two representative layouts, desktop and narrow. Expand coverage only for a concrete issue or task-specific need, explaining why. Earlier multi-size test records document completed work; they do not mandate repeating those matrices. Continue checking actual interaction and screenshots within the selected layouts.
+
+## Integrated UI and modal precedence (2026-09-10)
+
+- Let briefing dialogs own modal interaction while simulation is paused. A PauseMenu driven only by `paused` covered the mayor's funding acknowledgement. Observe other open dialogs and queue PauseMenu until they close, without silently resuming. The real two-expansion tutorial reproduced the blocker and verifies the correction.
+- Keep mission headings and actions anchored; scroll only longer task copy and secondary details. Measure two-line buttons as well as nominal 44px controls. Reusing the reserved feedback band for tutorial guidance reclaimed narrow map space without reducing type or targets.
+- Run final browser checks against an isolated source snapshot. Editing verification/docs in the active Vite tree reloaded a long tutorial test and invalidated its imported state handles. Full desktop/narrow pointer-built tutorial, real EMS clearance/outside arrivals, saved continuation, 232 tests and production build pass; see [UI-05](ui-overhaul/UI-05.md). Physical-device comfort remains unverified.
+
 ## Land progression and sequential dialogs (2026-09-09)
 
 - Save expansion entitlement separately from geometry. Spend only after a valid successful edge expansion. Verify earning through real household visits, monotonic receipts after later road edits, cash-claim independence and reload. Extending the active tutorial must not reactivate a completed historical tutorial.
@@ -244,3 +254,37 @@ Charge after road/junction validation and distinguish installation/replacement f
 ## Release artifact and deployment retries
 
 Build once, then release and publish the same checksummed artifact at the triggering commit. A missing success receipt does not prove an external deployment failed: persist an attempt before mutation and stop ambiguous retries for status inspection. Preserve matching release assets and reject changed bytes on rerun. Explicitly include hidden files when the artifact staging directory itself is hidden; stage only intended public release files there. Validate workflow expressions with actionlint and shell scripts with shellcheck; mock external tools to test publish failure modes without spending a real platform version.
+
+## Mission diagnostics and automatic transition (2026-09-09)
+
+Keep tuning, mission outcome evaluation, read-only diagnostics and presentation separate. Mark full reserved visitor capacity separately from an actual household waiting for capacity; do not infer road failure from occupancy alone. Both-direction reachability supplements real visit evidence, but does not prove stable throughput or a completed return. Automatic authorized road additions must happen before traffic-index construction, preserve actual-payment provenance, and retry only with persisted consent. Evidence:199 simulation tests and phone/desktop browser checks; current foundation is not a validated full puzzle campaign.
+
+### Patrols share service occupancy (verified)
+
+A routine service vehicle can reuse ordinary return-driving occupancy while retaining an explicit patrol flag. Reassignment must commit through the same occupied-lane check as replanning, rather than spawning a replacement at its station. Emergency recovery tests should assert response completion independently of later routine patrol presence. Verified by real dispatch/return and save tests; routine patrol geometry remains separate from artwork.
+
+### Gridlock and replacement response recovery (verified)
+
+Strict emergency junction emptiness must cover the junction itself; exit tiles still use lane compatibility. Requiring the opposite exit lane to be empty can deadlock the very civilian yielding to the responder. A stopped-traffic retry must find a real alternative before backing up, and must concern the remaining route rather than unrelated stationary cars. Otherwise it creates repeated reverse/creep or pointless route trimming.
+
+A stale response assignment must not permanently monopolize a service request. Replacement transfers responsibility, not the original vehicle's position: preserve its occupied path and fractional progress, save explicit cancelled-return state, then route it home physically. Validate legacy assignment -> replacement -> reload -> exactly-once service work for each crew. Verified in 210 model tests including dedicated gridlock and backup fixtures. The user's live account save was not accessible, so exact-city recovery still needs playtesting.
+
+### Crew scene occupancy versus return admission (verified)
+
+Whole-road scene occupancy plus immediate U-turn return can trap crews against each other. Separate parked work from road occupancy; retain the actual arrival position and explicitly check clear road space before departure. Save completed-but-parked crews and retain their incident references until they return. Recovery from old scene-turn states must back up at simulation speed before switching parking state. Verified simultaneous police/EMS/fire work, blocked return -> reload -> reopen -> every original crew home, plus an old fractional-progress return snapshot. Tutorial timing tests must target actual incomplete work rather than depend on crews previously blocking each other.
+
+### Vehicle diagnostics reuse movement rules
+
+Expose read-only snapshots from the occupancy module instead of guessing blockages in the renderer. Share the road index/grid across the inspected batch, and clone returned paths so UI/report use cannot mutate trips. Separate response intent from vehicle type: a returning police car correctly follows ordinary traffic rules. Provide copied snapshots and a text fallback because host clipboard access may differ. Read-only blocker and disconnected-scene-return tests pass.
+
+### Siren yielding must consider the blocking vehicle (verified regression)
+
+User's live inspector showed EMS waiting on a civilian whose own reason was yielding with no conflicting reservation. Reproduced a circular wait at an incident approach: response admission requires the exit tile exclusively, while its occupant yields to the responder approaching the junction. Direction-only lead-car exceptions miss this opposing-approach case. Yield logic now checks the responder's actual next admission reservations against the civilian's held space, permitting that blocker to clear through ordinary movement gates. Keep committed passing-corridor yields and all occupancy checks. Regression fails before the fix; after it, the blocking car clears and each service reaches scene work. No exact user save was supplied.
+
+### Weighted routes retain physical admission (verified)
+
+Select the destination before weighting its route, and validate departure occupancy against that selected path. Compare old and candidate costs on one directional snapshot, exclude the querying car, and avoid charging control delay twice. New bypass construction can turn the stopped car's tile into a junction: excluding every junction from replanning breaks recovery. Permit sustained-stop reconsideration through existing gradual reversal and reservation checks, while moving committed junction traffic keeps its route. Save cooldown continuity separately from derived observations. Verified in 224 tests and 390/1440 browser save/reload checks; workstation query timings do not establish physical-phone performance. See docs/traffic-world/routing-implementation.md.
+
+### Emergency weighted routing keeps intent separate from vehicle type (J3)
+
+Cost dispatch and subsequent scene-approach reconsideration consistently; otherwise a tile-count retarget can overwrite the weighted choice. Active responses may omit control delay and cross civilian diversions only because physical movement already supports those exceptions. Routine returns use ordinary speed and restrictions even before their old response speed field is updated. Reserve ordinary query capacity separately from prioritized responses and test repeated response pressure. Route selection never replaces safe admission, committed passing, parked work or return merges. Evidence:232 model tests and390/1440 browser response/reload/work/return plus civilian completions; physical-phone performance remains unmeasured.

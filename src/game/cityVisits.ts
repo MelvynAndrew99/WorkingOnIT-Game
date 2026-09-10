@@ -1,3 +1,4 @@
+import {civilianRoute} from './cityRouting.ts';
 /**
  * Household demand, destination capacity, and off-road visits.
  * Counts here are households, not people: one home owns one car and one visitor slot.
@@ -135,10 +136,12 @@ export function spawnTrips(city: City, index: RoadIndex): void {
     for (const purpose of order) {
       if ((purpose === 'shopping' ? h.shopping : h.leisure) <= 0) continue;
       const choice = chooseDestination(city, home, purpose);
-      if (!choice || startBlocked(city, index, choice.path)) continue;
+      if (!choice) continue;
       const goal = choice.path[choice.path.length - 1];
+      const path=civilianRoute(city, choice.path[0], goal) ?? choice.path;
+      if(startBlocked(city,index,path))continue;
       city.trips.push({ id: city.nextId++, homeId: home.id, storeId: choice.building.id, progress: 0,
-        wait: 0, hold: 0, path: choice.path, phase: 'outbound', purpose, visitRemaining: 0, rewarded: false,
+        wait: 0, hold: 0, path, phase: 'outbound', purpose, visitRemaining: 0, rewarded: false,
         target: { ...goal } });
       break;
     }
@@ -181,7 +184,7 @@ export function stepVisits(city: City, index: RoadIndex, dt: number): void {
     }
     const goal = trip.external ? trip.external.origin : entrance(home!);
     trip.target = { ...goal };
-    const path = findPath(city, trip.path[trip.path.length - 1], goal);
+    const path = civilianRoute(city, trip.path[trip.path.length - 1], goal, trip);
     if (!path || startBlocked(city, index, path)) continue;
     trip.phase = 'returning';
     trip.path = path;
@@ -216,7 +219,7 @@ export function buildingStatus(city: City, b: Building): VisitorSlots {
       label: `${out ? 'Car out' : 'Car at home'}, ${waiting} trip${waiting === 1 ? '' : 's'} wanted${homeRoadIssue(city,b)?` · ${homeRoadIssue(city,b)}`:''}` };
   }
   const responding = city.trips.some(t => t.service && t.stationId === b.id);
-  return { occupied: responding ? 1 : 0, capacity: 1, inbound: 0, label: responding ? 'Vehicle responding' : 'Vehicle ready' };
+  return { occupied: responding ? 1 : 0, capacity: 1, inbound: 0, label: city.trips.some(t=>t.stationId===b.id&&t.patrol)?'Police on local patrol':responding ? 'Vehicle responding' : 'Vehicle ready' };
 }
 /** Unmet household needs and current parked visits, for the HUD and for demand checks. */
 export function demandSummary(city: City): { shopping: number; leisure: number; visits: number } {

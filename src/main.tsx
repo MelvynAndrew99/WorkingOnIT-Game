@@ -1,3 +1,5 @@
+import {initMusic,setMusicSleeping} from './audio/music.ts';
+import {initVehicleAudio,setVehicleAudioSleeping} from './audio/vehicles.ts';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import RundotGameAPI from '@series-inc/rundot-game-sdk/api';
@@ -51,10 +53,8 @@ async function boot() {
     // 6. Loading done — hand over to the menu.
     store.patch({ phase: 'menu' });
 
-    // Start the title theme now that there's a menu to play it under. Not
-    // awaited — the 2.7MB track streams in the background; play() itself
-    // may still be gated on a first user gesture (see audio/music.ts).
-    // Historical theme retained on disk; city milestone uses no music yet.
+    initMusic();
+    initVehicleAudio();
 
     // 7. Host lifecycle hooks. Register AFTER boot so handlers never race
     //    half-initialized state.
@@ -64,7 +64,8 @@ async function boot() {
     registerLifecycles({
         onPause: () => store.patch({ paused: true }),
         onResume: () => store.patch({ paused: false }),
-        onSleep: () => flushSave(),
+        onSleep: () => {setMusicSleeping(true);setVehicleAudioSleeping(true);flushSave();},
+        onAwake: () => {setMusicSleeping(false);setVehicleAudioSleeping(false);},
         onQuit: () => flushSave(), // treat onSleep as the reliable one
     });
 

@@ -1,3 +1,5 @@
+import {routingSnapshot,responseRoute,civilianRoute} from './cityRouting.ts';
+import {patrolAvoid} from './cityPatrols.ts';
 /** Logical tiles and routes never depend on sprite dimensions or rendering units. */
 import { INITIAL_WIDTH, INITIAL_HEIGHT, initialMap, containsTile, expandedMap, parseMap, type MapBounds, type ExpansionDirection } from './cityMap.ts';
 import {
@@ -10,7 +12,7 @@ import {
   MAX_VISIT_SECONDS, type Household,
 } from './cityVisits.ts';
 import { parseIncidentState, stepIncidents, type Incident, type JunctionRisk, type ServiceKind } from './cityIncidents.ts';
-import { createExternalConnection, parseExternalConnection, stepExternal, validExternalTrip, type ExternalConnection } from './cityExternal.ts';
+import { createExternalConnection, parseExternalConnection, retryAutomaticConnection, stepExternal, validExternalTrip, type ExternalConnection } from './cityExternal.ts';
 import { createTutorialProgress, parseTutorialProgress, refreshTutorial, noteTutorialConstruction, type TutorialProgress } from './cityTutorial.ts';
 import { createMissionProgress, parseMissionProgress, type MissionProgress } from './cityMissions.ts';
 import {initializeStarter, starterPlacementError} from './cityStarterTutorial.ts';
@@ -43,7 +45,7 @@ export const TILE_METERS = 10;
 export type BuildingKind = 'home' | 'store' | 'park' | 'hospital' | 'fireStation' | 'policeStation';
 export type Tool = BuildingKind | 'road' | 'bulldoze' | 'stop' | 'signal' | 'closure';
 export type Point = { x: number; y: number };
-export type Building = { id: number; kind: BuildingKind; x: number; y: number; rotation: number; paid?: number };
+export type Building = { id: number; kind: BuildingKind; x: number; y: number; rotation: number; paid?: number; patrolReadyAt?: number };
 /**
  * Journey stage. Missing phase is a pre-visit save: one immediate roundtrip, credited on return.
  * outbound/returning drive, visiting is parked off the carriageway, waiting holds a road tile
@@ -53,6 +55,12 @@ export type TripPhase = 'legacy' | 'outbound' | 'visiting' | 'returning' | 'wait
 export type TripPurpose = 'shopping' | 'leisure';
 /** progress and path stay the only source of vehicle position; wait/hold are queue metadata. */
 export type Trip = {
+  /** Optional query schedule survives reload; derived costs do not. */
+  nextRouteQueryAt?: number;
+  patrol?: true;
+  /** This real crew was replaced and must return without doing scene work. */
+  responseCancelled?: true;
+  sceneParked?: true;
   external?: { origin: Point };
   id: number; path: Point[]; progress: number; homeId: number; storeId: number; wait: number; hold: number;
   /** Every field below is optional so pre-visit saves and their fixtures still load. */
@@ -243,7 +251,7 @@ const beforeCentre = (trip: Trip, k: number) => k >= 1 && trip.progress > k - 0.
  * occupies keeps the vehicle exactly where it is; passing any other tile places it there.
  * Returns false only when the trip has nowhere left to belong.
  */
-export function retarget(city: City, trip: Trip, from: Point, avoid?: Set<string>): boolean {
+export function retarget(city: City, trip: Trip, from: Point, avoid?: Set<string>, selectedRoute?: Point[]): boolean {
   if (trip.emergencyPass) return false;
   let goal = goalOf(city, trip);
   if (!goal) return false;
@@ -257,7 +265,9 @@ export function retarget(city: City, trip: Trip, from: Point, avoid?: Set<string
   const lead = smooth ? [{ ...trip.path[k - 1] }] : [];
   const offset = smooth ? round6(trip.progress - (k - 1)) : 0;
   const responding = isEmergencyResponse(trip);
-  let route = findPath(city, from, goal, responding, avoid);
+  if(trip.patrol)avoid=new Set([...patrolAvoid(city,trip),...(avoid??[])]);
+  let route = selectedRoute ?? (trip.service && !responding && !trip.patrol && !avoid
+    ? civilianRoute(city,from,goal,trip) : findPath(city, from, goal, responding, avoid));
   if(!route&&!trip.service&&!avoid){
     const planned=plannedRoadPath(city,from,goal);
     // Advance along existing clear roads, stopping before the first blocked tile.
@@ -267,14 +277,9 @@ export function retarget(city: City, trip: Trip, from: Point, avoid?: Set<string
   if (responding) {
     const incident = city.incidents.find(i => i.id === trip.incidentId && i.status === 'active');
     if (incident) {
-      // The assignment is to the scene, not forever to the first selected side of it.
-      for (const access of [{x:incident.x+1,y:incident.y}, {x:incident.x-1,y:incident.y},
-        {x:incident.x,y:incident.y+1}, {x:incident.x,y:incident.y-1}]) {
-        const candidate = findPath(city, from, access, true, avoid);
-        if (candidate && (!route || candidate.length < route.length)) {
-          route = candidate; goal = access;
-        }
-      }
+      // Selected optional paths already compared all scene approaches on one snapshot.
+      route = selectedRoute ?? responseRoute(routingSnapshot(city,roadIndex(city),true),from,incident,trip.id,avoid)?.path ?? null;
+      if(route)goal=route[route.length-1];
     }
   }
   trip.target = { ...goal };
@@ -348,7 +353,7 @@ function revalidateTrips(city: City): void {
  */
 function removalGuard(city: City, b: Building): string | null {
   if (isStation(b) && city.trips.some(t => t.service && t.stationId === b.id))
-    return `A ${LABELS[b.kind].toLowerCase()} vehicle is still out on a call.`;
+    return b.kind==='policeStation' ? 'A police vehicle is out on patrol or a call. Remove the station when it returns.' : `A ${LABELS[b.kind].toLowerCase()} vehicle is still out on a call.`;
   if (b.kind === 'home' && city.trips.some(t => !t.service && t.homeId === b.id))
     return 'This home has a car out. Wait for it to get back.';
   if (isDestination(b) && city.trips.some(t => !t.service && t.storeId === b.id))
@@ -440,6 +445,7 @@ export function place(city: City, tool: Tool, x: number, y: number, rotation = 0
 }
 export function stepCity(city: City, dt: number): void {
   if (!finite(dt) || dt === 0) return;
+  retryAutomaticConnection(city);
   const index = roadIndex(city);
   // Advance exactly across tick/payment/departure boundaries so frame rate cannot change outcomes.
   while (dt > 1e-9) {
@@ -489,6 +495,10 @@ function parseTrip(city: City, raw: Trip, nextId: number): Trip | null {
   if (!raw.path.every(p => point(p) && containsTile(city.map, p))) return null;
   const trip: Trip = { id: raw.id, homeId: raw.homeId, storeId: raw.storeId, progress: raw.progress, wait, hold,
     path: raw.path.map(p => ({ x: p.x, y: p.y })) };
+  if(raw.nextRouteQueryAt!==undefined){if(!finite(raw.nextRouteQueryAt))return null;trip.nextRouteQueryAt=raw.nextRouteQueryAt;}
+  if(raw.patrol!==undefined){if(raw.patrol!==true||raw.service!=='police'||raw.incidentId!==undefined)return null;trip.patrol=true;}
+  if(raw.sceneParked!==undefined){if(raw.sceneParked!==true||!raw.service||raw.phase!=='working'||raw.responseCancelled||raw.patrol)return null;trip.sceneParked=true;}
+  if(raw.responseCancelled!==undefined){if(raw.responseCancelled!==true||!raw.service||raw.patrol||raw.incidentId===undefined)return null;trip.responseCancelled=true;}
   if (raw.phase !== undefined) { if (!PHASES.includes(raw.phase)) return null; trip.phase = raw.phase; }
   if (raw.purpose !== undefined) {
     if (raw.purpose !== 'shopping' && raw.purpose !== 'leisure') return null;
@@ -576,6 +586,9 @@ export function parseCity(raw: unknown): City | null {
     place(city, b.kind, b.x, b.y, b.rotation);
     if (city.buildings.length !== count + 1) return null;
     city.buildings[count].id = b.id; ids.add(b.id);
+    if(b.patrolReadyAt!==undefined){
+      if(b.kind!=='policeStation'||!finite(b.patrolReadyAt))return null;city.buildings[count].patrolReadyAt=b.patrolReadyAt;
+    }
     savedPaid.push(paid);
   }
   for (const value of r.roads) {

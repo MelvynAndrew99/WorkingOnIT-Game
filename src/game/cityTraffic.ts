@@ -1,6 +1,8 @@
+import {routingSnapshot, responseRoute, weightedRoute, routeCost, worthwhileRoute, type RoutingSnapshot} from './cityRouting.ts';
+import {CITY_RULES} from './cityRules.ts';
 import {COSTS} from './cityEconomy.ts';
 /** Logical queues, junction arbitration, and player traffic control. No artwork or renderer imports. */
-import { isBlocked, blockedTiles, findPath, retarget, type City, type Point, type Trip } from './cityModel.ts';
+import { entrance, isBlocked, blockedTiles, findPath, goalOf, retarget, type City, type Point, type Trip } from './cityModel.ts';
 import { beginVisit } from './cityVisits.ts';
 import { recordConflict, arriveResponse } from './cityIncidents.ts';
 import { junctionAreas } from './junctionAreas.ts';
@@ -48,7 +50,7 @@ const heading = (a: Point, b: Point): string => (b.x > a.x ? 'E' : b.x < a.x ? '
 const axisOf = (dir: string): Axis => (dir === 'E' || dir === 'W' ? 'ew' : 'ns');
 const phaseOf = (t: Trip) => t.phase ?? 'legacy';
 /** Parked visitors are off the carriageway; every other phase has a body on a road tile. */
-const onRoad = (t: Trip) => phaseOf(t) !== 'visiting';
+const onRoad = (t: Trip) => phaseOf(t) !== 'visiting' && !t.sceneParked;
 /** Only these phases are trying to drive somewhere this tick. */
 const driving = (t: Trip) => {
   const phase = phaseOf(t);
@@ -213,6 +215,7 @@ function priorityBlocker(city: City, index: RoadIndex, trip: Trip, k: number): n
 function junctionClear(index: RoadIndex, g: Grid, trip: Trip, k: number): boolean {
   const [start, end] = heldRange(index, trip.path, k + 1);
   for (let i = start; i <= end; i++) {
+    if(!index.junctions.has(tileKey(trip.path[i])))continue;
     const m = g.get(tileKey(trip.path[i]));
     if (!m) continue;
     for (const owner of m.keys()) if (owner !== trip.id) return false;
@@ -304,6 +307,19 @@ export function isYielding(city: City, trip: Trip, preparedIndex?: RoadIndex): b
     if (area===undefined) continue;
     if (pass && passSlots(index,responder).some(s=>s.junction && index.areas.get(s.tile)===area)) return true;
     const rk=bodyTile(responder);
+    // Yielding must not freeze the vehicle whose occupied space the responder needs.
+    // The ordinary movement gate still checks lanes, controls and a clear junction exit.
+    if(rk+1<responder.path.length){
+      const occupied=heldSlots(index,trip.path,k,blocksWholeTile(trip));
+      const [start,end]=heldRange(index,responder.path,rk+1);
+      let mustClear=false;
+      for(let i=start;i<=end&&!mustClear;i++){
+        const base=slotAt(index,responder.path,i);
+        const required=i===responder.path.length-1?{...base,exclusive:true}:base;
+        mustClear=occupied.some(slot=>slot.tile===required.tile&&!compatible(required,slot));
+      }
+      if(mustClear)continue;
+    }
     for (let j=rk;j<=Math.min(responder.path.length-1,rk+2);j++) {
       if(index.areas.get(tileKey(responder.path[j]))!==area) continue;
       const from=j>0 ? responder.path[j-1] : responder.path[j];
@@ -418,22 +434,42 @@ function tryRetarget(city:City,index:RoadIndex,trip:Trip,from:Point, avoid?: Set
   if(!retarget(city,candidate,from,avoid))return;
   // A congestion detour is optional; retain the current route if no alternate exists.
   if(avoid && candidate.phase==='waiting')return;
+  commitTripRoute(city,index,trip,candidate);
+}
+/** Commit a changed assignment only when its actual lane/junction space is free. */
+export function commitTripRoute(city:City,index:RoadIndex,trip:Trip,candidate:Trip):boolean {
   const {grid:g}=grid(city,index);
   const slots=heldSlots(index,candidate.path,bodyTile(candidate),blocksWholeTile(candidate)).map(slot =>
     isEmergencyResponse(candidate) && slot.tile===tileKey(candidate.path[candidate.path.length-1])
       ? {...slot,exclusive:true} : slot);
   // Changing the route can change the occupied lane or turn. Wait for that space before doing so.
-  if(slots.some(slot=>!vacant(g,slot,trip.id)))return;
-  Object.assign(trip,candidate);
+  if(slots.some(slot=>!vacant(g,slot,trip.id)))return false;
+  Object.assign(trip,candidate);return true;
 }
 function replan(city: City, index: RoadIndex): Set<number> {
   const reversing=new Set<number>();
-  for (const trip of city.trips) {
+  let snapshot:RoutingSnapshot|undefined, responseSnapshot:RoutingSnapshot|undefined, queries=0, responseQueries=0;
+  // Response work runs first; a separate ordinary quota cannot be consumed by it.
+  const ordered=[...city.trips].sort((a,b)=>Number(isEmergencyResponse(b))-Number(isEmergencyResponse(a))
+    || (a.nextRouteQueryAt??0)-(b.nextRouteQueryAt??0) || a.id-b.id);
+  for (const trip of ordered) {
     const phase = phaseOf(trip);
     const blocked = blockedTiles(city, isEmergencyResponse(trip));
     if (trip.emergencyPass) continue;
+    const scene=trip.service&&city.incidents.find(i=>i.id===trip.incidentId&&i.completedServices.includes(trip.service!));
+    const sceneK=bodyTile(trip),here=trip.path[sceneK];
+    if(scene&&trip.hold>=CITY_RULES.routing.sceneReturnRecoverySeconds&&(phase==='returning'||phase==='waiting'&&trip.resume==='returning')&&
+      here&&Math.abs(scene.x-here.x)+Math.abs(scene.y-here.y)===1&&trip.progress>sceneK+1e-9){
+      trip.progress=round6(Math.max(sceneK,trip.progress-stepOf(trip)));reversing.add(trip.id);continue;
+    }
     if (phase === 'waiting') {
-      if (trip.target)tryRetarget(city,index,trip,trip.path[bodyTile(trip)]);
+      if (trip.target){
+        const k=bodyTile(trip);
+        if(trip.progress>k+1e-9){
+          trip.progress=round6(Math.max(k,trip.progress-stepOf(trip)));
+          reversing.add(trip.id);
+        }else tryRetarget(city,index,trip,trip.path[k]);
+      }
       continue;
     }
     if (phase === 'visiting' || phase === 'crashed' || phase === 'working') continue;
@@ -449,17 +485,52 @@ function replan(city: City, index: RoadIndex): Set<number> {
       ahead = blocked.has(tile) || !index.roads.has(tile);
     }
     if (!ahead) {
-      if (stalled && isEmergencyResponse(trip)) {
-        // Try another real road/scene approach around stopped bodies. Moving traffic and
-        // opposing-lane passing retain their ordinary occupancy handling.
+      // Optional queries never reverse a moving car or rewrite a committed junction.
+      // Rotating due times and a per-tick budget keep old routes usable while queries wait.
+      if(!trip.patrol && phase!=='legacy') {
+        const response=isEmergencyResponse(trip);
+        trip.nextRouteQueryAt ??= city.elapsed + (trip.id % CITY_RULES.routing.queryCooldownSeconds)*TRAFFIC_TICK;
+        if((safe || trip.hold>=CITY_RULES.routing.civilianReplanSeconds) && (!index.junctions.has(tileKey(trip.path[k])) || trip.hold>=CITY_RULES.routing.civilianReplanSeconds)
+          && (response?responseQueries<CITY_RULES.routing.responseQueriesPerTick:queries<CITY_RULES.routing.queriesPerTick) && city.elapsed+1e-9>=trip.nextRouteQueryAt) {
+          trip.nextRouteQueryAt=round6(city.elapsed+CITY_RULES.routing.queryCooldownSeconds);
+          const goal=goalOf(city,trip);
+          if(goal) {
+            let view:RoutingSnapshot;
+            if(response){responseQueries++;view=responseSnapshot??=routingSnapshot(city,index,true);}
+            else {queries++;view=snapshot??=routingSnapshot(city,index);}
+            const scene=response?city.incidents.find(i=>i.id===trip.incidentId&&i.status==='active'):undefined;
+            const speed=response?EMERGENCY_TILES_PER_SECOND:trip.service?TRAVEL_TILES_PER_SECOND:trip.speed;
+            const result=scene?responseRoute(view,trip.path[k],scene,trip.id):weightedRoute(view,trip.path[k],goal,speed,trip.id);
+            const old=routeCost(view,trip.path.slice(k),speed,trip.id);
+            if(result && worthwhileRoute(old.total,result.cost.total)) {
+              if(!safe) {
+                // Back up only inside space already owned. Recheck costs/admission at the centre.
+                trip.progress=round6(Math.max(k,trip.progress-stepOf(trip)));
+                trip.nextRouteQueryAt=city.elapsed;
+                reversing.add(trip.id);continue;
+              }
+              const candidate={...trip};
+              if(retarget(city,candidate,trip.path[k],undefined,result.path)&&commitTripRoute(city,index,trip,candidate))continue;
+            }
+          }
+        }
+      }
+      if (stalled && trip.service && (isEmergencyResponse(trip)||trip.hold>=CITY_RULES.routing.civilianReplanSeconds)) {
+        // Retry the same destination around stationary traffic, including newly built roads.
         const avoid = new Set(city.trips.filter(t => t.id!==trip.id && onRoad(t)
           && (t.hold>=REPLAN_PATIENCE || blocksWholeTile(t)))
           .map(t => tileKey(t.path[bodyTile(t)])));
-        if (avoid.size) {
-          if(!safe) {
-            trip.progress=round6(Math.max(k,trip.progress-stepOf(trip)));
-            reversing.add(trip.id);
-          } else tryRetarget(city,index,trip,trip.path[k],avoid);
+        avoid.delete(tileKey(trip.path[k]));
+        if (trip.path.slice(k+1).some(p=>avoid.has(tileKey(p)))) {
+          const candidate={...trip};
+          // Do not reverse merely because traffic exists. Without a usable alternative that
+          // creates a back-up/creep loop which prevents the queue ahead from ever clearing.
+          if(retarget(city,candidate,trip.path[k],avoid) && candidate.phase!=='waiting') {
+            if(!safe) {
+              trip.progress=round6(Math.max(k,trip.progress-stepOf(trip)));
+              reversing.add(trip.id);
+            } else commitTripRoute(city,index,trip,candidate);
+          }
         }
       }
       continue;
@@ -706,3 +777,48 @@ export function parseHistory(raw: unknown, elapsed: number): TripRecord[] | null
   }
   return records.sort((a,b)=>a.at-b.at);
 }
+
+/** Read-only inspector using the same lane reservations and gates as movement. */
+export function vehicleDebug(city:City,trip:Trip,index=roadIndex(city),g=grid(city,index).grid){
+  const k=bodyTile(trip),position=trip.path[k],next=trip.path[k+1];
+  const blockers=new Set<number>();
+  const control=next?governingControl(city,index,next):null;
+  let reason='Route available; moving or approaching the next tile';
+  if(trip.sceneParked){
+    if(trip.workRemaining)reason='Parked at scene; crew working';
+    else {
+      const station=city.buildings.find(b=>b.id===trip.stationId);
+      const route=station?findPath(city,position,entrance(station)):null;
+      reason=route?'Work complete; waiting for safe merge back onto road':'Work complete; no open road route back to station';
+      if(route){const [start,end]=heldRange(index,route,0);for(let i=start;i<=end;i++)for(const id of g.get(tileKey(route[i]))?.keys()??[])if(id!==trip.id)blockers.add(id);}
+    }
+  }
+  else if(trip.phase==='working')reason='Crew working at scene';
+  else if(trip.phase==='visiting')reason='Parked at destination';
+  else if(trip.phase==='crashed')reason='Vehicle involved in crash';
+  else if(trip.emergencyPass)reason=`Emergency pass: ${trip.emergencyPass.stage}`;
+  else if(trip.phase==='waiting')reason=trip.target&&findPath(city,position,trip.target,isEmergencyResponse(trip))?'Route exists; waiting for safe lane reservation':'No open route to current target';
+  else if(!next)reason='At route endpoint';
+  else if(unusable(city,index,next,isEmergencyResponse(trip)))reason='Next tile is closed, wrecked, or missing';
+  else {
+    const [start,end]=heldRange(index,trip.path,k+1);
+    for(let i=start;i<=end;i++){
+      const base=slotAt(index,trip.path,i);
+      const slot=isEmergencyResponse(trip)&&i===trip.path.length-1?{...base,exclusive:true}:base;
+      for(const [id,slots] of g.get(slot.tile)??[])if(id!==trip.id&&slots.some(other=>!compatible(slot,other)))blockers.add(id);
+    }
+    if(isYielding(city,trip,index))reason='Yielding to an approaching emergency vehicle';
+    else if(blockers.size)reason='Waiting for occupied lane, junction, or scene approach';
+    else if(!index.junctions.has(tileKey(position))&&index.junctions.has(tileKey(next))&&!gated(city,index,g,trip,k))
+      reason=control?`Waiting at ${control.kind}${control.kind==='signal'?` (${signalAxis(city,control)??'all red'})`:''}`:'Waiting for priority traffic at uncontrolled junction';
+  }
+  return {id:trip.id,label:trip.service?.toUpperCase()??'Car',phase:trip.phase??'legacy',intent:trip.resume??trip.phase??'legacy',
+    emergency:isEmergencyResponse(trip),patrol:!!trip.patrol,sceneParked:!!trip.sceneParked,cancelledResponse:!!trip.responseCancelled,
+    stoppedSeconds:trip.hold,totalWaitSeconds:trip.wait,reason,blockerIds:[...blockers],position:{...position},next:next?{...next}:null,
+    progress:trip.progress,target:trip.target?{...trip.target}:trip.path.at(-1)?{...trip.path.at(-1)!}:null,
+    stationId:trip.stationId??null,incidentId:trip.incidentId??null,homeId:trip.homeId,destinationId:trip.storeId,
+    workRemaining:trip.workRemaining??null,control:control?{...control}:null,path:trip.path.map(p=>({...p}))};
+}
+export type VehicleDebug = ReturnType<typeof vehicleDebug>;
+
+export function debugVehicles(city:City):VehicleDebug[]{const index=roadIndex(city),g=grid(city,index).grid;return city.trips.map(t=>vehicleDebug(city,t,index,g));}

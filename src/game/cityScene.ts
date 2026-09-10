@@ -1,15 +1,18 @@
+import {CITY_RULES} from './cityRules.ts';
+import {cityDiagnostics} from './cityDiagnostics.ts';
 import {homeRoadIssue} from './cityVisits.ts';
 import {incidentServices} from './cityIncidents.ts';
 import { Container, Graphics, Sprite, Text, Rectangle, type Application, type FederatedPointerEvent } from 'pixi.js';
 import type { Stage } from './stage.ts';
 import { buildingStatus, demandSummary, expandCity, footprint, entrance, place, stepCity, connectedHomes, income, routeForHome, averageTripSeconds, trafficMetrics, signalAxis, type Point, type Building, type Tool, type City } from './cityModel.ts';
 import {
-    ensureCityArt, frame, groundFrame, scenery, buildingPieces, roadFrame, arrowFrame,
+    ensureCityArt, parkTexture, frame, groundFrame, scenery, buildingPieces, roadFrame, arrowFrame,
     vehicleView, facingFor, storeStall, ROAD_BIT, SIDE_STEP,
     VEHICLE_WIDTH, VEHICLE_LANE_OFFSET, COLORS, type Piece, type Side,
 } from './cityArt.ts';
 import { containsTile } from './cityMap.ts';
-import {roadIndex, emergencyLaneOffset, isEmergencyResponse, type JunctionControl} from './cityTraffic.ts';
+import {debugVehicles, roadIndex, emergencyLaneOffset, isEmergencyResponse, type JunctionControl} from './cityTraffic.ts';
+import {setFiretruckResponding,setPoliceResponding} from '../audio/vehicles.ts';
 import {incidentSummary} from './cityIncidents.ts';
 import {BUILDING_LABELS, isBuildingTool} from '../ui/cityLabels.ts';
 import {areaTiles} from './junctionAreas.ts';
@@ -18,7 +21,7 @@ import { onCityCommand } from './cityControls.ts';
 import { getSave, flushSave } from '../state/save.ts';
 import { tutorialSnapshot, tutorialAction } from './cityTutorial.ts';
 import {starterSnapshot, starterBypassTiles, starterDiversionPoint} from './cityStarterTutorial.ts';
-import { connectExternalCity } from './cityExternal.ts';
+import { finishTutorialAndConnect, connectExternalCity } from './cityExternal.ts';
 import { missionSnapshot, refreshMissions } from './cityMissions.ts';
 import { store } from '../state/store.ts';
 export interface Scene { destroy(): void }
@@ -30,6 +33,11 @@ export interface Scene { destroy(): void }
  */
 export function createCityScene(app: Application, stage: Stage): Scene {
     const city = getSave().city;
+    // The map is its own clipped compositing layer. Scrolling dock surfaces must
+    // never paint over it; native dialogs retain their top-layer modal behavior.
+    app.canvas.style.position = 'relative';
+    app.canvas.style.transform = 'translateZ(0)';
+    app.canvas.style.zIndex = '1';
     const root = new Container();
     const ground = new Container();      // terrain + scenery, rebuilt on resize only
     const world = new Container();       // roads, markers and buildings
@@ -89,8 +97,10 @@ export function createCityScene(app: Application, stage: Stage): Scene {
     function report() {
         refreshMissions(city);
         store.patch({
-            missions: missionSnapshot(city), tutorial: tutorialSnapshot(city),
+            vehicleDebug:store.get().vehicleDebugOpen?debugVehicles(city):[],
+            diagnostics: cityDiagnostics(city), missions: missionSnapshot(city), tutorial: tutorialSnapshot(city),
             roadIssues: city.buildings.filter(b=>b.kind==='home').flatMap(b=>{const reason=homeRoadIssue(city,b);return reason?[{homeId:b.id,x:b.x,y:b.y,reason}]:[]}),
+            elapsedSeconds: Math.floor(city.elapsed),
             map: city.map, funds: city.funds, income: income(city), connected: connectedHomes(city),
             tripSeconds: averageTripSeconds(city), homes: city.buildings.filter(b => b.kind === 'home').length,
             completed: city.completed, activeTrips: city.trips.filter(t=>!t.service && t.phase!=='visiting' && t.phase!=='crashed').length,
@@ -119,6 +129,11 @@ export function createCityScene(app: Application, stage: Stage): Scene {
     function drawBuilding(layer: Container, b: Building, alpha?: number, tint?: number) {
         const s = shape(b);
         if (b.kind === 'park') {
+            const texture=parkTexture(s.side);
+            if(texture){
+                const sprite=new Sprite(texture);sprite.position.set(px(s.x0),py(s.y0));sprite.setSize(px(s.w),py(s.h));
+                sprite.alpha=alpha??1;sprite.tint=tint??0xffffff;layer.addChild(sprite);return;
+            }
             for (const p of s.cells) cell(layer, 'grassA', p.x, p.y, tint, alpha);
             const path = new Graphics();
             path.moveTo(px(s.anchor.x+.5),py(s.anchor.y+.5)).lineTo(px(s.x0+s.w/2),py(s.y0+s.h/2))
@@ -247,7 +262,7 @@ export function createCityScene(app: Application, stage: Stage): Scene {
         outline.clear();
         if (!hover || store.get().panning || gesture) return;
         const s = store.get();
-        if(s.tool===null)return;
+        if(s.tool===null||s.vehicleDebugOpen)return;
         const candidate = structuredClone(city) as City;
         const before = candidate.funds;
         place(candidate, s.tool, hover.x, hover.y, s.rotation);
@@ -262,6 +277,7 @@ export function createCityScene(app: Application, stage: Stage): Scene {
         if (isBuildingTool(s.tool)) {
             const b: Building = { id: 0, kind: s.tool, ...hover, rotation: s.rotation };
             const g = shape(b);
+            if(b.kind==='policeStation')outline.circle(px(g.entrance.x+.5),py(g.entrance.y+.5),CITY_RULES.policePatrol.radiusTiles*tile).fill({color:0x7bdfff,alpha:.06}).stroke({color:0x7bdfff,width:2,alpha:.8});
             box = { x: g.x0, y: g.y0, w: g.w, h: g.h };
             drawBuilding(ghost, b, valid ? .68 : .4, valid ? 0xffffff : COLORS.invalid);
             // The access tile is part of the decision, so preview it as loudly as the footprint.
@@ -314,8 +330,18 @@ export function createCityScene(app: Application, stage: Stage): Scene {
             sprite.setSize(w, w * sprite.texture.height / sprite.texture.width);
             // The simulation owns passing and its lateral transition, including across saves.
             const lane = VEHICLE_LANE_OFFSET * (1 - 2 * emergencyLaneOffset(trip));
-            const x = px(a.x + dx * f + .5) - laneDy * tile * lane;
-            const y = py(a.y + dy * f + .5) + laneDx * tile * lane;
+            let x = px(a.x + dx * f + .5) - laneDy * tile * lane;
+            let y = py(a.y + dy * f + .5) + laneDx * tile * lane;
+            if(trip.sceneParked){
+                const scene=city.incidents.find(i=>i.id===trip.incidentId);
+                if(scene){
+                    const slot=trip.service==='police'?-1:trip.service==='ems'?0:1;
+                    const vx=scene.x-a.x,vy=scene.y-a.y;
+                    x=px(a.x+.5+vx*.28-vy*slot*.25);
+                    y=py(a.y+.5+vy*.28+vx*slot*.25);
+                    sprite.setSize(w*.7,w*.7*sprite.texture.height/sprite.texture.width);
+                }
+            }
             sprite.position.set(x, y);
             carShadows.ellipse(x, y + sprite.height * .36, sprite.width * .44, tile * .1)
                 .fill({ color: 0x0d1614, alpha: .32 });
@@ -334,6 +360,29 @@ export function createCityScene(app: Application, stage: Stage): Scene {
             let t=statusLabels.get(key);
             if(!t){t=new Text({text,style:{fontFamily:'system-ui',fontSize:12,fontWeight:'bold',fill:color,stroke:{color:0x122d26,width:3}}});t.anchor.set(.5);activityLabels.addChild(t);statusLabels.set(key,t);}
             t.text=text;t.style.fill=color;t.style.fontSize=17.6/(stage.scale()*camera.zoom);t.style.stroke={color:0x122d26,width:3/(stage.scale()*camera.zoom)};t.position.set(px(x),py(y));
+        }
+        const station=city.buildings.find(b=>b.id===inspectedId&&b.kind==='policeStation');
+        if(station){const e=entrance(station);activity.circle(px(e.x+.5),py(e.y+.5),CITY_RULES.policePatrol.radiusTiles*tile).fill({color:0x7bdfff,alpha:.06}).stroke({color:0x7bdfff,width:2,alpha:.8});}
+        const selected=store.get().vehicleDebugOpen&&city.trips.find(t=>t.id===store.get().selectedVehicleId);
+        if(selected){
+            for(const p of selected.path)activity.rect(px(p.x)+2,py(p.y)+2,tile-4,tile-4).stroke({color:0x42d9e8,width:2,alpha:.75});
+            const sprite=carPool.get(selected.id);if(sprite)activity.circle(sprite.x,sprite.y,tile*.45).stroke({color:0xffd22e,width:3});
+        }
+        const mode=store.get().diagnosticView, diagnostics=store.get().diagnostics;
+        if(diagnostics && mode!=='normal') {
+            if(mode==='traffic') for(const t of diagnostics.traffic){
+                activity.rect(px(t.x)+2,py(t.y)+2,tile-4,tile-4).fill({color:0xffa24b,alpha:.3}).stroke({color:0xffa24b,width:2});
+                label(`wait-${t.id}`,`${t.hold.toFixed(0)}s`,t.x+.5,t.y+.2,0xffd779);
+            }
+            if(mode==='access') for(const h of diagnostics.homes){
+                const color=h.status==='access'?0xff8866:0x42d9e8;
+                activity.rect(px(h.x)+2,py(h.y)+2,tile*2-4,tile*2-4).stroke({color,width:3});
+                label(`access-${h.id}`,h.status==='access'?'NO ROUTE':'ACCESS',h.x+1,h.y+.4,color);
+            }
+            if(mode==='capacity') for(const d of diagnostics.destinations){
+                const full=d.inbound+d.occupied>=d.capacity,color=full?0xffd22e:0x42d9e8;
+                label(`capacity-${d.id}`,`${d.occupied} parked + ${d.inbound} arriving / ${d.capacity}`,d.x+1.5,d.y+.65,color);
+            }
         }
         const guide=city.tutorial?.status==='active'?starterSnapshot(city):null;
         const bypass=starterBypassTiles(city);
@@ -409,23 +458,24 @@ export function createCityScene(app: Application, stage: Stage): Scene {
                 }
                 const stationKind=kind==='ems'?'hospital':kind==='fire'?'fireStation':'policeStation';
                 const serviceName=kind==='ems'?'EMS':kind==='fire'?'Fire':'Police';
-                const trip=city.trips.find(t=>t.incidentId===incident.id&&t.service===kind);
+                const trip=city.trips.find(t=>t.incidentId===incident.id&&t.service===kind&&!t.responseCancelled);
                 badge.text.text=trip?.phase==='working'?`${serviceName} on scene`
                     :trip?.phase==='waiting'||(trip&&trip.hold>=3)?`${serviceName} waiting`
                     :trip?`${serviceName} en route`
                     :!city.buildings.some(b=>b.kind===stationKind)?`Build ${kind==='ems'?'Clinic':serviceName}`
                     :`${serviceName} needed`;
                 badge.container.scale.set(1/screenScale);
-                badge.container.position.set(px(incident.x+.5),py(incident.y)-(34+(needed.length-1-row)*35)/screenScale);
+                badge.container.position.set(px(incident.x+.5),py(incident.y)-(64+(needed.length-1-row)*35)/screenScale);
             }
         }
         for(const t of city.trips)if(t.service) {
             const sprite=carPool.get(t.id);if(!sprite)continue;
             if(isEmergencyResponse(t)||t.phase==='working')
                 activity.circle(sprite.x-4,sprite.y-5,3).fill(Math.floor(city.elapsed*5)%2?0x7bdfff:0xff6a60);
+            if(t.sceneParked)continue; // The scene badges already identify these tightly parked crews.
             const passing = emergencyLaneOffset(t)>0;
             const labelY = (sprite.y-sprite.height/2)/tile-12/(tile*stage.scale()*camera.zoom);
-            label(`t${t.id}`,t.service.toUpperCase(),sprite.x/tile,labelY,passing?0xffd779:0xffeed6);
+            label(`t${t.id}`,t.patrol?'PATROL':t.service.toUpperCase(),sprite.x/tile,labelY,passing?0xffd779:0xffeed6);
         }
         for(const [key,t] of statusLabels)if(!live.has(key)){t.destroy();statusLabels.delete(key);}
         for(const [key,badge] of responderBadges)if(!liveBadges.has(key)){badge.container.destroy({children:true});responderBadges.delete(key);}
@@ -445,14 +495,21 @@ export function createCityScene(app: Application, stage: Stage): Scene {
         hover = null; updateCamera();
     }
     function layout() {
-        const scale = stage.scale();
-        const top = (document.querySelector('.city-header')?.getBoundingClientRect().height ?? 160) / scale + 6 / scale;
-        const bottom = (document.querySelector('.city-controls')?.getBoundingClientRect().height ?? 255) / scale + 6 / scale;
-        const railWidth = (selector:string) => (document.querySelector(selector)?.getBoundingClientRect().width ?? 0) / scale;
-        const leftRail = railWidth('.city-rail-left'), rightRail = railWidth('.city-rail-right');
-        const left = 14 + (leftRail ? leftRail + 8 / scale : 0);
-        const right = 14 + (rightRail ? rightRail + 8 / scale : 0);
-        viewport = {x:left,y:top,width:Math.max(1,stage.width-left-right),height:Math.max(1,stage.designHeight()-top-bottom)};
+        // React owns one reserved rectangle. Convert its actual CSS bounds through
+        // the canvas into stage units, including letterboxing and display modes.
+        const region = document.querySelector('.city-map-viewport')?.getBoundingClientRect();
+        if (!region) return;
+        const canvas = app.canvas.getBoundingClientRect();
+        const sx = app.screen.width / canvas.width / stage.scale();
+        const sy = app.screen.height / canvas.height / stage.scale();
+        const next = {x:(region.left-canvas.left)*sx, y:(region.top-canvas.top)*sy,
+            width:region.width*sx, height:region.height*sy};
+        if (next.x !== viewport.x || next.y !== viewport.y || next.width !== viewport.width || next.height !== viewport.height) {
+            // A resize during a drag must not connect the old pointer to a new tile.
+            pointers.clear(); gesture=false; drawing=false; last=null; panStart=null; downPoint=null; hover=null;
+        }
+        viewport = next;
+        app.canvas.style.clipPath = `inset(${Math.max(0,region.top-canvas.top)}px ${Math.max(0,canvas.right-region.right)}px ${Math.max(0,canvas.bottom-region.bottom)}px ${Math.max(0,region.left-canvas.left)}px)`;
         clip.clear().rect(viewport.x,viewport.y,viewport.width,viewport.height).fill(0xffffff);
         input.hitArea = new Rectangle(viewport.x,viewport.y,viewport.width,viewport.height);
         updateCamera(); renderWorld();  preview(); renderCars(); renderControls(); renderActivity(); paint();
@@ -476,10 +533,16 @@ export function createCityScene(app: Application, stage: Stage): Scene {
     }
     function build(p: Point) {
         const s = store.get();
+        if(s.vehicleDebugOpen){
+            const choices=city.trips.filter(t=>t.path.length).map(t=>({t,p:t.path[Math.min(t.path.length-1,Math.max(0,Math.ceil(t.progress-.5-1e-9)))]}))
+              .filter(c=>Math.hypot(c.p.x-p.x,c.p.y-p.y)<=1.1).sort((a,b)=>Math.hypot(a.p.x-p.x,a.p.y-p.y)-Math.hypot(b.p.x-p.x,b.p.y-p.y));
+            if(choices[0])store.patch({selectedVehicleId:choices[0].t.id});
+            report();return;
+        }
         if(s.tool===null){store.patch({message:'Select a building or road tool from the menu first.'});return;}
         if(isBuildingTool(s.tool)) {
             const existing=city.buildings.find(b=>footprint(b).some(q=>same(p,q)));
-            if(existing){inspectedId=existing.id;const status=buildingStatus(city,existing);store.patch({message:`${BUILDING_LABELS[existing.kind]}: ${status.label}. Open City report for details.`});report();return;}
+            if(existing){inspectedId=existing.id;const status=buildingStatus(city,existing);store.patch({message:`${BUILDING_LABELS[existing.kind]}: ${status.label}. Open Dashboard for details.`});report();return;}
         }
         const message = place(city, s.tool, p.x, p.y, s.rotation);
         store.patch({ message }); report(); flushSave(); refresh();
@@ -561,6 +624,9 @@ export function createCityScene(app: Application, stage: Stage): Scene {
             if(result.focus){camera.x=result.focus.x+.5;camera.y=result.focus.y+.5;}
             report();flushSave();renderGround();updateCamera();refresh();
         }
+        if(command.type==='finish-tutorial'){
+            store.patch({message:finishTutorialAndConnect(city)});report();flushSave();paint();
+        }
         if(command.type==='connect'){
             const t=city.tutorial;
             const allowed=t?.status==='skipped'||t?.status==='complete'||!t?.hRoad&&city.buildings.some(b=>b.kind==='home')&&city.buildings.some(b=>b.kind==='store');
@@ -588,6 +654,8 @@ export function createCityScene(app: Application, stage: Stage): Scene {
         const dt = Math.min(app.ticker.deltaMS / 1000, .1);
         const noticed=city.tutorial?.noticedIncident;
         stepCity(city, dt); renderCars(); renderControls(); renderActivity();
+        setFiretruckResponding(city.trips.some(t=>t.service==='fire'&&!t.patrol&&!t.responseCancelled&&isEmergencyResponse(t)));
+        setPoliceResponding(city.trips.some(t=>t.service==='police'&&!t.patrol&&!t.responseCancelled&&isEmergencyResponse(t)));
         if(city.tutorial?.status==='active'&&!city.tutorial.hRoad&&!noticed&&city.tutorial.noticedIncident){
             store.patch({tutorialNotice:true,message:'A crash needs attention. Traffic is running; build another route and keep emergency access open.'});
             report();flushSave();
@@ -599,17 +667,9 @@ export function createCityScene(app: Application, stage: Stage): Scene {
     const unsub = store.subscribe(() => { preview(); paint(); });
     const unresize = stage.onResize(layout);
     const observer = new ResizeObserver(layout);
-    const observedPanels = new Set<Element>();
-    function observePanels() {
-        const panels = new Set(document.querySelectorAll('.city-header, .city-controls, .city-rail-left, .city-rail-right'));
-        for (const el of observedPanels) if (!panels.has(el)) { observer.unobserve(el); observedPanels.delete(el); }
-        for (const el of panels) if (!observedPanels.has(el)) { observer.observe(el); observedPanels.add(el); }
-    }
-    observePanels();
-    // Responsive UI mounts/unmounts the objective rail without remounting the scene.
-    const panelObserver = new MutationObserver(() => { observePanels(); layout(); });
-    const uiStage = document.querySelector('.city-stage');
-    if (uiStage) panelObserver.observe(uiStage, {childList:true});
+    // Observe the region AND its allocating bands: a band's change can move the
+    // rectangle without resizing it. The region stays mounted across panel changes.
+    for (const el of document.querySelectorAll('.city-map-viewport, .city-header, .city-controls, .city-stage')) observer.observe(el);
     window.addEventListener('keydown', keyboard);
     window.addEventListener('blur', cancel);
     window.addEventListener('pointerup', outsideUp);
@@ -627,7 +687,9 @@ export function createCityScene(app: Application, stage: Stage): Scene {
     focusTown();
     return {
         destroy() {
-            flushSave(); observer.disconnect(); panelObserver.disconnect(); unsub(); unresize();
+            setFiretruckResponding(false);
+            setPoliceResponding(false);
+            flushSave(); observer.disconnect(); unsub(); unresize();
             window.removeEventListener('keydown', keyboard);
             window.removeEventListener('blur', cancel);
             window.removeEventListener('pointerup', outsideUp);

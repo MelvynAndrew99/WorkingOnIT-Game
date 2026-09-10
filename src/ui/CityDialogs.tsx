@@ -1,16 +1,23 @@
 import { useEffect, useRef } from 'react';
+import DiagnosticViews from './DiagnosticViews.tsx';
 import { useStore } from '../state/store.ts';
 import './cityDialogs.css';
 
-/**
- * Dense reference reading, on request only. Every building it used to duplicate is
- * now one tap away in the dock, so this is purely the city report.
- */
-export default function CityDialogs({ panel, close }: { panel: 'report' | null; close: () => void }) {
-  const ref = useRef<HTMLDialogElement>(null), s = useStore();
-  useEffect(() => { if (panel) ref.current?.showModal(); else ref.current?.close(); }, [panel]);
-  return <dialog ref={ref} className="city-dialog" onCancel={close} onClose={close} aria-labelledby="city-dialog-title">
-    <div className="city-dialog-heading"><h2 id="city-dialog-title">City report</h2><button onClick={close} aria-label="Close city report">Close</button></div>
+/** Existing report content, now a reserved nonmodal Dashboard. */
+export default function CityDialogs({ panel, close, openDebug }: { panel: 'report' | null; close: () => void; openDebug: () => void }) {
+  const heading = useRef<HTMLHeadingElement>(null), s = useStore();
+  useEffect(() => { if (panel) heading.current?.focus(); }, [panel]);
+  if (!panel) return null;
+  return <section className="city-dashboard" id="city-dashboard" aria-labelledby="city-dashboard-title" onKeyDown={e=>{if(e.key==='Escape'){e.stopPropagation();close();}}}>
+    <div className="dashboard-heading"><h2 ref={heading} tabIndex={-1} id="city-dashboard-title">Dashboard</h2><button onClick={close} aria-label="Close Dashboard">Close</button></div>
+    <section aria-label="Map views"><h3>Map views</h3><DiagnosticViews onDebug={openDebug} /></section>
+    <section className="dashboard-definitions" aria-label="Statistics definitions">
+      <h3>What the numbers mean</h3>
+      <p>Visitors: people currently parked for shopping or leisure, excluding reserved arriving spaces.</p>
+      <p>On Road: active civilian journeys, including waiting drivers. Excludes parked visits, crashed vehicles and emergency crews.</p>
+      <p>Time: saved simulation elapsed time. Pause freezes it. Weather is not simulated.</p>
+      <p>Fatalities: total lives lost in this city.</p>
+    </section>
     <div className="city-report-grid">
       <section><h3>Visits and income</h3>
         <p>${s.funds.toLocaleString()} available · ${s.income} recurring income / 10s</p>
@@ -35,5 +42,5 @@ export default function CityDialogs({ panel, close }: { panel: 'report' | null; 
       </section>
     </div>
     <p>{s.paused ? 'Paused: visit and rescue timers are frozen.' : 'The city continues running while this report is open. Use Pause before planning a longer repair.'}</p>
-  </dialog>;
+  </section>;
 }

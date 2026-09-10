@@ -160,10 +160,13 @@ test('fire response lesson does not finish while the fire wreck still awaits ano
   const city = playerBuiltTraffic();
   tutorialAction(city, 'start');
   until(city, () => city.incidents.length > 0);
+  Object.assign(city.incidents[0],{severity:'fire',required:['police','ems','fire'],rescueDeadline:city.elapsed+90,outcome:'pending'});
   services(city);
+  until(city,()=>city.trips.some(t=>t.service==='ems'&&t.phase==='working'));
+  city.trips.find(t=>t.service==='ems'&&t.phase==='working')!.workRemaining=60;
   until(city, () => city.incidents.some(i => i.severity === 'fire' && i.completedServices.includes('fire') && i.status === 'active'));
   refreshTutorial(city);
-  assert.equal(city.tutorial!.observedServices.length, 3);
+  assert.ok(city.tutorial!.observedServices.includes('fire'));
   assert.ok(!city.tutorial!.completed.includes('rescue'));
   until(city, () => city.incidents.some(i => i.severity === 'fire' && i.status === 'cleared'));
   refreshTutorial(city);

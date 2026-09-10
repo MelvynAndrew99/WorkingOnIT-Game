@@ -1,6 +1,8 @@
+import {musicSettings,setMusicVolume,setMusicMuted} from '../audio/music.ts';
+import {effectsSettings,setEffectsVolume,setEffectsMuted} from '../audio/vehicles.ts';
+import {finishTutorialAndConnect} from '../game/cityExternal.ts';
 import { useEffect, useRef, useState } from 'react';
 import { store, type DisplayMode } from '../state/store.ts';
-import { tutorialAction } from '../game/cityTutorial.ts';
 import { getSave, startNewCity, flushSave } from '../state/save.ts';
 import './titleScreen.css';
 
@@ -11,6 +13,8 @@ export default function MainMenu() {
     const [panel, setPanel] = useState<'new' | 'settings' | null>(null);
     const [artAvailable, setArtAvailable] = useState(true);
     const [displayMode,setDisplayMode] = useState<DisplayMode>(store.get().displayMode);
+    const [music,setMusic]=useState(musicSettings);
+    const [effects,setEffects]=useState(effectsSettings);
     const [showTips, setShowTips] = useState(store.get().showTips);
     const dialog = useRef<HTMLDialogElement>(null);
     useEffect(() => {
@@ -35,7 +39,7 @@ export default function MainMenu() {
                     <span aria-hidden="true" />
                     <button onClick={() => setPanel('settings')}>Settings</button>
                 </div>
-                {city.tutorial?.status!=='skipped'&&city.tutorial?.status!=='complete'&&<button className="tutorial-skip" onClick={()=>{tutorialAction(city,'skip');flushSave();play();}}>Skip tutorial</button>}
+                {city.tutorial?.status!=='skipped'&&city.tutorial?.status!=='complete'&&<button className="tutorial-skip" onClick={()=>{if(!window.confirm('Skip the tutorial and connect automatically to outside traffic? A free access road may be added.'))return;finishTutorialAndConnect(city);flushSave();play();}}>Skip tutorial</button>}
                 <p>A better commute starts here.</p>
             </nav>
         </div>
@@ -47,6 +51,15 @@ export default function MainMenu() {
                 <button className="title-dialog-close" onClick={() => setPanel(null)}>Keep current city</button>
             </> : <>
                 <h2 id="title-dialog-heading">Settings</h2>
+                <label><input type="checkbox" checked={!music.muted} onChange={e=>{setMusicMuted(!e.target.checked);setMusic(musicSettings());}} /> Background music</label>
+                <label className="display-mode-setting">Music volume · {Math.round(music.volume*100)}%
+                    <input aria-label="Music volume" type="range" min="0" max="100" step="1" value={Math.round(music.volume*100)} onChange={e=>{setMusicVolume(Number(e.target.value)/100);setMusic(musicSettings());}} />
+                </label>
+                <p>Tranquil City · Music plays while your city is running.</p>
+                <label><input type="checkbox" checked={!effects.muted} onChange={e=>{setEffectsMuted(!e.target.checked);setEffects(effectsSettings());}} /> Sound effects</label>
+                <label className="display-mode-setting">Effects volume · {Math.round(effects.volume*100)}%
+                    <input aria-label="Effects volume" type="range" min="0" max="100" step="1" value={Math.round(effects.volume*100)} onChange={e=>{setEffectsVolume(Number(e.target.value)/100);setEffects(effectsSettings());}} />
+                </label>
                 <label className="display-mode-setting">Game display
                     <select value={displayMode} onChange={e=>{
                         const value=e.target.value as DisplayMode;setDisplayMode(value);store.patch({displayMode:value});

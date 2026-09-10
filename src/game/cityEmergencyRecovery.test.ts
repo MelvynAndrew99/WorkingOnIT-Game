@@ -59,14 +59,14 @@ test('all outbound crews cross a civilian diversion and clearance finishes after
     }
   }
   assert.deepEqual([...crossed].sort(), ['ems', 'fire', 'police']);
-  assert.equal(crash.status, 'active', 'a returning crew physically occupies the sole scene access while its return is blocked');
-  const returning = city.trips.find(t => t.phase === 'waiting' && t.resume === 'returning');
+  assert.equal(crash.status, 'cleared', 'parked crews leave the sole scene approach available to the other services');
+  const returning = city.trips.find(t => t.sceneParked && t.workRemaining===0);
   assert.ok(returning, 'routine return obeys the civilian diversion');
   assert.ok(returning.path[bodyTile(returning)].y > 5);
   const restored = reload(city);
   place(restored, 'closure', 8, 5);
   stepCity(restored, 30);
-  assert.equal(restored.trips.length, 0);
+  assert.equal(restored.trips.filter(t=>!t.patrol).length, 0);
   assert.equal(restored.incidents[0].status, 'cleared');
 });
 
@@ -120,7 +120,7 @@ test('an already dispatched responder chooses another side of the scene after it
   }
   assert.ok(approaches.has(JSON.stringify({ x: 7, y: 8 })), 'existing responder must reach the newly connected side');
   assert.equal(restored.incidents.find(i => i.id === crash.id)!.status, 'cleared');
-  assert.equal(restored.trips.length, 0);
+  assert.equal(restored.trips.filter(t=>!t.patrol).length, 0);
 });
 
 test('a missed rescue remains a fatality but reconnecting the saved town permits full clearance and continued play', () => {
@@ -142,7 +142,7 @@ test('a missed rescue remains a fatality but reconnecting the saved town permits
   const continued = reload(restored);
   stepCity(continued, 10);
   assert.equal(continued.fatalities, 1);
-  assert.equal(continued.trips.length, 0);
+  assert.equal(continued.trips.filter(t=>!t.patrol).length, 0);
 });
 
 /** Isolated lane fixture: stationary cars represent a queue with an unobstructed opposing lane. */
@@ -268,8 +268,9 @@ test('same-tick response arrival reserves its scene endpoint against an opposite
   city.trips.push(responder, civilian);
   for (let i = 0; i < 40; i++) {
     trafficTick(city, roadIndex(city));
-    assert.deepEqual(civilian.path[bodyTile(civilian)], { x: 3, y: 1 }, 'civilian cannot share an arriving or working crew tile');
+    if(!responder.sceneParked)assert.deepEqual(civilian.path[bodyTile(civilian)], { x: 3, y: 1 }, 'civilian cannot share an arriving crew tile');
   }
-  assert.equal(responder.phase, 'working');
+  assert.equal(responder.phase, 'working');assert.equal(responder.sceneParked,true);
+  assert.ok(civilian.progress>.5,'parking clears the road after arrival');
   assert.deepEqual(responder.path[bodyTile(responder)], { x: 2, y: 1 });
 });

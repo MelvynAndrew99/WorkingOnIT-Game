@@ -1,5 +1,43 @@
 # Working ON IT! backlog
 
+## Next UI cleanup: UI-06 — remove Jobs & city link clutter (2026-09-10)
+
+**Status: requested and recorded only; implement in a fresh context window.** User wants the persistent “Jobs & city link” entry and its Jobs / City link & guide screens removed. Completed jobs/levels, the finished tutorial list and gateway-coordinate reference are clutter, not useful ongoing tasks. This is a new cleanup request after the completed UI-01–05 scope and supersedes its requirement to retain that full board. Schedule this focused cleanup before J4; do not reopen the entire overhaul.
+
+Keep the current mission, live progress/reward and any earned-but-unclaimed reward actionable. “Completed” must not discard an unclaimed payout: preserve its current-card claim flow and exactly-once saved receipt. Preserve underlying mission/level/permit progression, completion history in saves, tutorial gates, explicit Skip and consent to outside traffic. Remove the historical UI, not the player's earned state. Do not replace it with a renamed archive or move the same clutter into another menu.
+
+Implementation handoff: [UI-06 cleanup brief](ui-overhaul/UI-06.md). No runtime edits or removal have been made by this recording pass.
+
+## UI overhaul completed locally (2026-09-10)
+
+Latest verification scope: require desktop and narrow only to conserve tokens. Add other configurations when a specific need arises; the former six-layout matrix is no longer mandatory.
+
+User prioritizes the entire gameplay layout for clarity and hierarchy before further routing explanations or advanced vehicle behavior. UI-01 is implemented locally: reserved gameplay regions, measured camera/input rectangle, and responsive scrolling. See [UI-01 evidence](ui-overhaul/UI-01.md). UI-02 is implemented locally: six-stat top bar, Heatmap and reserved Dashboard; see [UI-02 evidence](ui-overhaul/UI-02.md). UI-03 is implemented locally: one current mission card with visible title, progress and reward; see [UI-03 evidence](ui-overhaul/UI-03.md). UI-04 is implemented locally: uniform tool grid, responsive composition and verified placement; see [UI-04 evidence](ui-overhaul/UI-04.md). UI-05 is complete for the agreed desktop/narrow browser scope: improved narrow map space, fixed mission/briefing controls, full tutorial and saved-town verification. See [UI-05 evidence and limitations](ui-overhaul/UI-05.md). J4 routing explanations remain the next larger feature after the subsequently requested UI-06 cleanup; they were not implemented by this UI task. Blocking correctness regressions remain first. See [UI overhaul plan](ui-overhaul/PLAN.md) for exact layout, data definitions, phone adaptation, file boundaries and completion gates.
+
+| Order | Item | Gate |
+| --- | --- | --- |
+| 1 | UI-01: shell, spacing and reserved map rectangle (local complete) | Top/center/bottom regions; no persistent panel overlap; correct map input on resize |
+| 2 | UI-02: unified stats bar, Heatmap and Dashboard (local complete) | Funds/Visitors/On Road/Fatalities/Time/Weather have truthful sources and working actions |
+| 3 | UI-03: anchored mission card (local complete) | Title, description, progress and reward; preserve tutorials, claims and city link |
+| 4 | UI-04: uniform build grid and responsive composition (local complete) | Desktop bottom-right grid; phone adaptation; real selection, guidance and placement |
+| 5 | UI-05: whole-interface verification (local complete) | Desktop and narrow checks, saved-town continuity and production build |
+
+Retain the Claude UI / Codex integration ownership preference. UI-01 was delivered by Codex after the bounded installed-Claude attempt returned no files; details are in its evidence record. Weather simulation is absent, and Heatmap initially maps to existing traffic diagnostics; the plan explicitly separates these facts from new mechanics. Desktop mission-left/build-right placement is requested; narrow-screen stacking is a proposed adaptation. No mockups; variations last. J3 is implemented and submitted as RUN1.7.6; J4/J5 remain queued after UI. Earlier lists below retain historical work/status and do not override this priority.
+
+## Previous priority: simple opening mechanics (2026-09-09)
+
+User confirmed clear road-congestion versus store-capacity feedback, and “Keep it simple to start”: no new currencies, upkeep charges or broad upgrade trees in the first slice. [Actual Claude/Grok/Codex roundtable](mechanics-roundtable/README.md) recommends this work order; design discussion is complete, gameplay implementation has not started under these items. This takes priority over earlier speculative crisis-charge/driver expansion work; blocking routing bugs remain first.
+
+| Order | Item | Assigned owner | Gate |
+| --- | --- | --- | --- |
+| 1 | MECH-01: audit trip intent and diagnostic reasons | Codex | Preserve real goals, queues, reservations and reload behavior outside tutorial; identify access versus capacity failures |
+| 2 | MECH-02: clear feedback and one untimed growth objective | Claude UI; Codex integration; Grok economy review | Existing buildings/tools/prices; show affected origins/destinations; two real solutions and successful foresight accepted |
+| 3 | MECH-03: capacity puzzle and measured economy tuning proposal | Grok; Codex fixtures | Measure income sources and meaningful build pacing before changing balance |
+| Later | MECH-04: bounded outside demand; MECH-05: optional occupancy | Codex simulation; Claude progression; Grok balance | First loop must be understandable and satisfying; future systems remain proposals |
+
+This is dependency ordering and assignment, not a promised calendar date or running background implementation.
+
+
 Lead-maintained queue, September 9, 2026. The lead owns scheduling, specialist briefs, integration and verification.
 
 ## Latest tutorial / manager work
@@ -181,3 +219,40 @@ Owner: Codex lead. Review docs/TRAFFIC-RULES.md with the user after this tutoria
 ### Audio handoff and future radio perk
 
 Next audio integration: receive/audition the two user-selected 96 BPM background songs, preserve masters, establish loop or track transitions and music controls, then verify browser/RUN playback. Files have not yet been supplied here. What a Jam! belongs to ending credits. Later possibility: unlockable radio station offering radio-style songs, including What a Jam!; unlock rules, UI and any physical building remain undecided. Keep this separate from ordinary background music integration.
+
+## Foundation delivered locally (2026-09-09)
+
+User requested modular mission/level structure, toggled diagnostics and a tweakable rules file: first foundation implemented; [details and limits](mechanics-roundtable/IMPLEMENTED.md). Full destination-intent audit and sustained-flow puzzle validation are still outstanding; do not mark MECH-01/02 fully finished solely from UI foundations. Automatic city link now follows confirmed tutorial exit (supersedes manual coordinate selection). Actual Claude park sprite candidate is ready for user selection; no park gameplay changes requested.
+
+Park artwork: user approved Claude candidate; installed locally with four entrance variants. Production build and isolated in-game rendering verified; no gameplay changes.
+
+## Next UI correction: explain building rotation
+
+User reports building rotation is unclear during the v0.2 upload. Make the Rotate control and current entrance direction obvious, show the entrance move in the placement preview, and explain that artwork stays upright while the logical footprint/entrance rotates. Include phone tapping and keyboard R guidance without relying on keyboard-only instructions. Queued after this upload; not included in RUN1.7.0.
+
+Rotation visibility fix implemented locally: selected buildings expose a yellow “Rotate” button with entrance direction; desktop also displays R. Phone control shares the category row to retain map space. Tap/R update the preview through existing rotation state. Build and320/390/1440 browser checks passed. Not included in the earlier RUN1.7.0 upload.
+
+## Pause clarity and future pause music
+
+User clarified missing music was caused by the city being paused and finds the pause state confusing. Make the paused state unmistakable with a clear Resume action; investigate any unexpected automatic pause source before changing simulation behavior. User plans a separate pause music track; none supplied yet. Do not relabel the gameplay track as pause music or silently change its full outro/restart.
+
+Separately, investigation reproduced a lifecycle edge case: onSleep marks music sleeping, while onResume alone clears only store.paused, leaving audio stopped if onAwake did not occur. Queue a bounded lifecycle correction with host-event coverage; this was not the cause of the user's clarified report and is not included in RUN1.7.1.
+
+Pause clarity delivered locally: persistent yellow GAME PAUSED banner with Resume game action and traffic/music explanation, visible for any paused gameplay state, including after tutorial. Header Play label now Resume; redundant tutorial-only pause row removed. Phone/desktop pointer and Space checks passed. Not uploaded with RUN1.7.1.
+
+Pause presentation revised per user: darkened game with centered pause menu replaces banner. Resume game and Main menu, focus containment and Escape resume implemented locally. Future radio controls can extend this component. Build and320/390/1440 browser checks pass. Not uploaded yet.
+
+### Saved-city gridlock follow-up (2026-09-09)
+
+User reports multiple stuck emergency crews and civilian queues that do not respond to added roads. Prioritize working rescue access and automatic rerouting before advice. Main-game manager should offer delayed, situation-specific help for unresolved access/congestion ("MORE roads!" only when a usable alternate route would help). Trip abandonment is not approved as a universal timeout: preserve mandatory destinations; separately design optional leisure cancellation with unmet-demand/city-cost feedback. Never require a city reset to apply routing fixes. Existing congestion recovery work is being verified against saved-state emergency continuations.
+
+### Rich traffic world, delivered affordably (user vision, 2026-09-09)
+
+User supplied broad future direction: varied purposeful vehicles, emergent congestion/spillback, advanced road/control tools, scenario variants, blueprint diagnostics and modular city assets. Requested Grok/agent review and token/cost conservation. Scope and short reusable prompt: docs/traffic-world/README.md and reusable-prompt.txt.
+
+Work order proposal: current real-player responder diagnostics/recovery first; then the routing-cost/adaptive-rerouting plan and one measured junction puzzle with current tools; one-way/roundabout prototype; lane simulation; later buses, pedestrian conflicts and grade separation; scenario and visual variations last. Mockups are removed. This initial proposal defers mass asset generation and a broad upgrade tree. Treat six named scenarios as shared-map data presets with explicit demand rules. New artwork still requires user selection before adoption. Agent suggestions are design proposals, not implemented behavior or playtested balance.
+
+
+### Advanced routing direction — jam interpretation (latest user addition)
+
+Plan added in docs/traffic-world/routing-plan.md. Priority: real responder diagnosis/recovery; shared cost snapshots; bounded stable weighted rerouting; emergency policy; decision traces in the current live debugger; one measured mission. Preserve goals, hard route constraints, safe occupancy and return paths. Lead proposes the global network observer be advisory in the jam; requested automatic retiming/lane/detour strategies remain later player-enabled tools to resolve, not silently implemented behavior. Rules and narrow typed events keep simulation independent of Pixi. No per-car LLM or new hosted dependency proposed. User explicitly removes mockups entirely and puts variations last; this supersedes the prior first-comparison-sheet assignment. Planning only, no code change in this update.

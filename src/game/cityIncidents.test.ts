@@ -234,12 +234,12 @@ test('a responder with a severed return route waits physically and resumes after
   const access = { ...responder.path.at(-1)! };
   place(city, 'closure', 8, 5);
   stepCity(city, WORK_SECONDS.police + 1);
-  assert.equal(responder.phase, 'waiting'); assert.equal(responder.resume, 'returning');
+  assert.equal(responder.phase, 'working'); assert.equal(responder.sceneParked,true);assert.equal(responder.workRemaining,0);
   assert.deepEqual(responder.path[bodyTile(responder)], access, 'waiting responder stays on its actual access tile');
-  assert.deepEqual(responder.target, entrance(city.buildings.find(b => b.id === responder.stationId)!));
-  const restored = reload(city); assert.equal(restored.trips[0].phase, 'waiting');
+  assert.deepEqual(responder.target, access);
+  const restored = reload(city); assert.equal(restored.trips[0].sceneParked,true);
   place(restored, 'closure', 8, 5); stepCity(restored, 20);
-  assert.equal(restored.trips.length, 0); assert.equal(restored.incidents[0].status, 'cleared');
+  assert.equal(restored.trips.filter(t=>!t.patrol).length, 0); assert.equal(restored.incidents[0].status, 'cleared');
 });
 
 test('cooled conflict risk expires and a quiet junction never finishes an old warning as an accident', () => {

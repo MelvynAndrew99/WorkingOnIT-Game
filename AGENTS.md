@@ -1,5 +1,9 @@
 # Project instructions: city building and traffic optimization
 
+## UI verification scope (2026-09-10, latest user decision)
+
+Require only two representative layouts for future UI work: desktop and narrow. Conserve token usage by checking those two by default. Add other sizes or display-mode combinations only when a specific issue or task warrants them, and explain that need briefly. This supersedes earlier mandatory six-layout matrices, including UI-05; historical verification evidence remains valid. Preserve responsive behavior and saved display preferences.
+
 ## Land progression and final tutorial lesson (2026-09-09)
 
 User requests teaching map expansion at the tutorial's end: manager boasts that more land means more roads and it is free; after two expansions he backtracks because the mayor requires completed missions/levels for more funding. Direction controls must align with physical growth: North above, West left, East right, South below.

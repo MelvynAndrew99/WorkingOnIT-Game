@@ -12,21 +12,6 @@ function claim(id: string): void {
   flushSave();
 }
 
-/** Desktop rail summary. The current job and its reward already lead in ObjectiveBar. */
-export function MissionList({ openAll }: { openAll: () => void }) {
-  const s = useStore(), jobs = s.missions;
-  if (!jobs) return null;
-  return <section className="mission-rail" aria-labelledby="mission-rail-heading">
-    <h2 id="mission-rail-heading">Jobs <span>{jobs.recognition}/{jobs.items.length}</span></h2>
-    <ol>{jobs.items.map(j => <li key={j.id} data-done={j.done}>
-      <div className="mission-rail-row"><strong>{j.title}</strong><span>{j.claimed ? (j.landReward ? 'Land earned' : 'Paid') : j.done ? 'Ready' : `${j.current}/${j.target}`}</span></div>
-      <progress aria-label={`${j.title} progress`} value={j.current} max={j.target} />
-      {j.done && !j.claimed && <button className="mission-claim" onClick={() => claim(j.id)}>Claim ${j.reward}</button>}
-    </li>)}</ol>
-    <button className="mission-rail-all" onClick={openAll}>Job details & city link</button>
-  </section>;
-}
-
 /** The full list, the manager's advice and the outside-city link. Opened on request. */
 export default function MissionBoard({ open, close }: { open: boolean; close: () => void }) {
   const s = useStore(), jobs = s.missions;
@@ -37,12 +22,14 @@ export default function MissionBoard({ open, close }: { open: boolean; close: ()
     <header><h2 id="mission-heading">{tab === 'missions' ? 'Your next big idea' : 'A growing town'}</h2><button onClick={close}>Close</button></header>
     <div className="mission-links"><button aria-pressed={tab === 'missions'} onClick={() => setTab('missions')}>Jobs</button><button aria-pressed={tab === 'connection'} onClick={() => setTab('connection')}>City link & guide</button></div>
     {tab === 'connection' ? <TutorialPanel close={close} /> : <>
-      <p className="mission-standing">Recognition {jobs?.recognition ?? 0}/{jobs?.items.length ?? 4} · {s.paused ? 'Town paused' : 'Town running'}</p>
+      <p className="mission-standing">Level {jobs?.level ?? 0} · {jobs?.levelCurrent ?? 0}/{jobs?.levelTarget ?? 6} households served · {s.paused ? 'Town paused' : 'Town running'}</p>
       <p>Bring people to town. Complete a job and claim its reward. {s.tutorial?.status === 'active' && s.tutorial.currentId.startsWith('h-') ? 'Tools unlock as you learn. Follow the current tutorial objective first.' : 'Every tool is available; planning ahead counts.'}</p>
       <ol className="mission-list">{jobs?.items.map(j => <li key={j.id} data-done={j.done}>
-        <div className="mission-item-heading"><h3>{j.title}</h3><span>{j.claimed ? (j.landReward ? 'Land earned' : 'Claimed') : j.done ? 'Ready' : `${j.current}/${j.target}`}</span></div>
-        <p>{j.task}</p><progress aria-label={`${j.title} progress`} value={j.current} max={j.target} />
-        <div className="mission-reward-row"><strong>{j.landReward ? `Reward: ${j.landReward} land expansion + level up` : `Reward $${j.reward}`}</strong>{j.done
+        <div className="mission-item-heading"><h3>{j.title}</h3><span>{j.claimed ? (j.landReward ? 'Land earned' : j.reward ? 'Claimed' : 'Learned') : j.done ? 'Ready' : `${j.current}/${j.target}`}</span></div>
+        <p>{j.task}</p><p><strong>{j.pattern}:</strong> {j.lesson}</p>
+        {!j.available && <p>{j.lockedReason}</p>}
+        <button onClick={()=>{store.patch({diagnosticView:j.diagnosticView});close();}}>Show {j.diagnosticView==='capacity'?'visitor capacity':j.diagnosticView} view</button><progress aria-label={`${j.title} progress`} value={j.current} max={j.target} />
+        <div className="mission-reward-row"><strong>{j.landReward ? `Reward: ${j.landReward} land expansion + level up` : j.reward ? `Reward $${j.reward}` : 'Pattern learned'}</strong>{j.done
           ? j.landReward ? <span>Permit awarded on completion</span> : <button disabled={j.claimed} onClick={() => claim(j.id)}>{j.claimed ? 'Collected' : `Claim $${j.reward}`}</button>
           : <button disabled={!starterToolAllowed(getSave().city, j.tool)} title={!starterToolAllowed(getSave().city, j.tool) ? 'This tool unlocks in a later tutorial lesson' : undefined} onClick={() => { if (!starterToolAllowed(getSave().city, j.tool)) return; store.patch({ tool: j.tool, panning: false, toolSelection: s.toolSelection + 1 }); close(); }}>Choose tool</button>}</div>
         <details><summary>The manager’s advice</summary><p>“{j.manager}”</p><p className="mission-crew"><strong>Crew:</strong> {j.crew}</p></details>

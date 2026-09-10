@@ -44,13 +44,23 @@ export function frame(name: FrameName): Texture {
     return textures[name] ?? Texture.WHITE;
 }
 
+/** Approved park art stays upright; variants change only the entrance path. */
+export function parkTexture(side: Side): Texture | undefined {
+    const texture: Texture | undefined = Assets.get(`park-${side}`);
+    if(texture) texture.source.scaleMode='nearest';
+    return texture;
+}
+
 /**
  * Run `ready` as soon as atlas textures exist. Normally the boot warm-up has
  * already loaded them; if it failed, load once here so a missing asset degrades
  * to a late repaint rather than a broken scene.
  */
 export function ensureCityArt(ready: () => void): void {
-    if (initCityArt()) { ready(); return; }
+    if (initCityArt()) { ready(); }
+    for(const side of ['N','E','S','W']) if(!Assets.get(`park-${side}`))
+        Assets.load({alias:`park-${side}`,src:`images/city/park-${side}.png`}).then(ready).catch(err=>console.warn('[cityArt] park unavailable',err));
+    if(initCityArt()) return;
     Assets.load({ alias: ATLAS_ALIAS, src: ATLAS_URL })
         .then(() => { if (initCityArt()) ready(); })
         .catch((err) => console.warn('[cityArt] atlas unavailable', err));

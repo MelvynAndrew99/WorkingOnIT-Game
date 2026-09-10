@@ -234,3 +234,59 @@ After the user reported a branch swap, confirmed main at e099d45 (merged v0.1), 
 Added .github/workflows/release.yml: main pushes install locked dependencies through Nix, run tests/build, package a checksummed artifact and create a GitHub release tagged by workflow number/commit. Manual workflow_dispatch uses the same build and optionally publishes the exact artifact to existing RUN identity, with selectable platform bump. Normal main pushes do not publish RUN. Only release/publish jobs get contents:write. A repository RUNDOT_API_KEY secret is required only for publishing; local credentials are not copied.
 
 Pinned action commits, preserved source identity/checksum, immutable release assets on rerun, and persisted RUN attempt/success receipts prevent blind duplicate uploads after uncertain failures. Read docs/releases/PIPELINE.md for operation and recovery. Local validation passed: clean npm ci,192 game tests, six mocked publishing tests, production build, actionlint and shellcheck. A hosted GitHub Actions run has not been verified.
+
+### Tranquil background music installed locally
+
+User supplied the first tranquil city MP3. Renamed without re-encoding to public/audio/music/tranquil-city.mp3. Gameplay loops it at default30% with saved music toggle/volume in Settings; pauses at menu, gameplay pause, hidden tab and RUN sleep. Existing historical soundtrack remains untouched. Verified89.92s real browser playback, loop restart, pause/resume, mute/volume reload and production build. Not uploaded by this change; seam/phone-speaker listening remains a playtest matter.
+
+### RUN1.7.0 uploaded — music and city feedback
+
+User explicitly requested immediate upload without more testing for current players. Deployed the existing production dist, including tranquil-city.mp3 and approved park sprites, to existing game l7mD5BHH8LslWkr5mC7d using rundot inside nix develop, Minor bump and public request. CLI confirmed success, version1.7.0, visibility review. No tests rerun and no duplicate upload. Public availability awaits platform review; do not claim live from upload success. Changelog: docs/releases/v0.2-changelog.md. User's subsequent rotation-clarity feedback is queued separately, not in this artifact.
+
+### Building rotation discoverability
+
+Replaced icon-only rotation with a labeled yellow Rotate control for selected buildings, current entrance direction and desktop R shortcut. Phone layout keeps it beside category tabs, avoiding an extra dock row. Uses existing rotation/preview mechanics and explicitly describes upright artwork. Production build and isolated phone/desktop button/keyboard checks passed; no simulation changes.
+
+### Rotation fix uploaded as RUN1.7.1
+
+User requested public upload. Existing dist deployed with Patch bump; CLI success for game l7mD5BHH8LslWkr5mC7d, version1.7.1, visibility review. Read-only tags confirmed public1.7.0 and private/review1.7.1. No duplicate deployment. User clarified reported missing post-tutorial audio was because the game was paused, not a failed track; music behavior remains unchanged.
+
+### Persistent pause indicator
+
+User repeatedly mistook paused gameplay for stopped traffic/music. Added a global yellow GAME PAUSED banner and direct Resume game action, independent of tutorial and transient tips. Compact styling fits320px phones, and the existing measured header keeps input outside the banner. Removed duplicated tutorial pause row. Verified click and keyboard pause/resume and no horizontal overflow at320/390/1440; production build passed. Pause timing/automatic behavior unchanged; no pause track supplied.
+
+### Pause menu replaces banner
+
+User explicitly prefers dimmed canvas and a Resume menu, expandable for a future radio station. Added isolated PauseMenu component/CSS, removed the banner, and used native modal focus/input containment. Resume, Escape and Main menu use existing state/save actions. Production build and mobile/desktop Resume/Escape checks pass; visually inspected390px rendering. Local only.
+
+### Local police patrol implementation
+
+Added modular cityPatrols, configurable six-tile road radius, station rest, real-car emergency reassignment, saved patrol state, PATROL labels, and placement/inspection radius. Existing emergency recovery assertions now distinguish finished response trips from subsequent patrol trips. Verified 203/203 model tests, production build, and visible moving patrol in an isolated browser. Local only; no RUN upload performed for this change.
+
+### RUN 1.7.2 — saved-city traffic recovery
+
+Uploaded successfully to the existing RUN identity with public release requested. CLI reports version1.7.2, visibilityreview; upload success is not proof it is public yet. Includes automatic civilian congestion rerouting, lane-compatible emergency junction clearance, no-alternative reverse-loop fix, backup station takeover for stalled responses, and previously local police patrol/pause menu. All210 model tests and production build pass. Regression saves preserve original vehicles and replacement assignments; exact user account save was unavailable for inspection. Release notes: docs/releases/v0.2.2-changelog.md.
+
+### RUN 1.7.3 — scene parking and responder returns
+
+User clarified crews never returned after a crash cleared. Implemented compact scene parking outside road occupancy, safe return admission, and gradual recovery of saved completed crews stuck turning beside their scene. Existing road disconnections still require access. Verified 212/212 model tests, production build, and isolated browser scene rendering; removed duplicate parked-crew labels and raised incident badges to reduce overlap. Uploaded successfully as1.7.3 with public release requested; CLI visibilityreview, not yet confirmed public. Exact user account save remains uninspected. Notes: docs/releases/v0.2.3-changelog.md.
+
+### RUN 1.7.4 — vehicle debug inspector
+
+Added Debug beside map views, service-first selection plus map taps, live state/intent/wait/target/station/incident/work details, occupancy blocker IDs, selected-route overlay, and Copy debug report with selectable fallback. Reports share a read-only occupancy snapshot and do not alter routes. Verified214/214 model tests, production build, and320/390/1440 browser selection/capture/no-overflow checks with an isolated working responder. Uploaded successfully as1.7.4, visibilityreview; public availability is not yet confirmed. See docs/releases/v0.2.4-changelog.md.
+
+### RUN 1.7.5 — reciprocal emergency yielding
+
+User identified the blocking civilian as yielding to the ambulance with no conflicting lane reservation. Reproduced the scene-approach circular wait, then changed yielding to let a vehicle clear space required by the responder's next admission. Existing movement gates and committed-pass yields remain. All217 tests pass, including EMS/police/fire arrival regressions, and production build passes. Uploaded as1.7.5 with public release requested; CLI visibilityreview, not confirmed public. No save reset or migration needed. Exact live account save was not available. Release notes: docs/releases/v0.2.5-changelog.md.
+
+### First weighted civilian routing slice (local)
+
+Implemented revisioned directional routing snapshots, stable weighted Dijkstra, weighted departures and real returns without changing destination selection, and bounded optional rerouting through physical reservation checks. Retained emergency recovery and legacy saves. All224 model tests and production build pass;390/1440 browser departure/reload checks pass. Workstation dense-road queries measured1.5ms median and4.6–5.0ms p95; physical-phone timing and a comparative mission remain unverified. See docs/traffic-world/routing-implementation.md for scope and limits. No publication, mockups, or variations in this implementation pass.
+
+### J3 emergency weighted routing — RUN1.7.6 submitted
+
+Implemented shared weighted response route selection for police/EMS/fire dispatch, replacement selection and scene-approach recovery. Active response and ordinary return costs remain distinct; two ordinary optional requests per tick are reserved alongside two prioritized response requests. Existing physical admission, passing, scene parking/work, assignments and saves remain authoritative. Preserved the accumulated uncommitted work.
+
+232 model tests and production build pass. Chromium390/1440 verified simultaneous real dispatch, exact assignment/position reload continuity, rescue and all scene work, every original crew returned and civilian roundtrips completed. See docs/traffic-world/routing-implementation.md. No mockups or variations.
+
+Authorized Patch/public upload succeeded for the existing RUN identity as1.7.6; final tags show private/review1.7.6 and public1.7.5. New release awaits platform review; no hosted1.7.6 gameplay verification is claimed.

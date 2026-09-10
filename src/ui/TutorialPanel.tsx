@@ -2,21 +2,19 @@ import { useState } from 'react';
 import { useStore } from '../state/store.ts';
 import { getSave } from '../state/save.ts';
 import { cityCommand } from '../game/cityControls.ts';
-import { boundaryGatewayCandidates } from '../game/cityExternal.ts';
 
 /** Optional connection/reference sheet; active teaching belongs to TutorialCoach on the map. */
 export default function TutorialPanel({close}:{close:()=>void}) {
   const s=useStore(),t=s.tutorial,city=getSave().city;
-  const [selected,setSelected]=useState('');
+  const [confirmEnd,setConfirmEnd]=useState(false);
   if(!t)return null;
-  const activeStarter=t.status==='active'&&!!city.tutorial?.hRoad;
-  const canConnect=!activeStarter&&(t.status==='skipped'||t.status==='complete'||city.buildings.some(b=>b.kind==='home')&&city.buildings.some(b=>b.kind==='store'));
-  const edges=boundaryGatewayCandidates(city),chosen=edges.find(p=>`${p.x},${p.y}`===selected)??edges[0];
   return <>
-    <section className="mission-budget"><h3>Connect to the outside city</h3>
+    <section className="mission-budget"><h3>Outside traffic</h3>
       {city.external?.gateway?<p>Connected at {city.external.gateway.x}, {city.external.gateway.y}. Outside visitors use real roads and parking. Arrivals grow with your town.</p>:<>
-        <p>Invite more drivers when you are ready. Connecting keeps your town and ends active tutorial guidance.</p>
-        {canConnect?chosen?<><label>Road at the map edge<select value={`${chosen.x},${chosen.y}`} onChange={e=>setSelected(e.target.value)}>{edges.map(p=><option key={`${p.x},${p.y}`} value={`${p.x},${p.y}`}>{p.x}, {p.y}</option>)}</select></label><button className="connection-primary" onClick={()=>{cityCommand({type:'connect',point:chosen});close();}}>Connect city</button></>:<p>Draw a road to any map edge, then choose it here. Connect a store or park to attract visitors.</p>:<p>{activeStarter?'Finish the guided road, diversion and rescue lessons to unlock the outside connection. Skip tutorial also unlocks it.':'Add a home and store, or exit the tutorial to make the connection available.'}</p>}
+        {city.external?.autoConnectRequested?<p>Outside traffic is enabled. It will connect automatically once your roads have a clear route to the map edge.</p>:<>
+          <p>Finish the tutorial when you are ready for outside visitors. Your town stays intact and its city link is arranged automatically.</p>
+          {confirmEnd?<div role="group" aria-label="Finish tutorial confirmation"><p>Finish the tutorial and invite outside traffic? A short, free access road is added if needed, without replacing your buildings.</p><button className="connection-primary" onClick={()=>{cityCommand({type:'finish-tutorial'});close();}}>Finish and welcome visitors</button><button onClick={()=>setConfirmEnd(false)}>Keep learning</button></div>:<button className="connection-primary" onClick={()=>setConfirmEnd(true)}>{t.status==='complete'?'Ready for outside visitors':'Finish tutorial'}</button>}
+        </>}
       </>}
     </section>
     <section className="mission-budget"><h3>Your tutorial</h3><p>{t.completed}/{t.total} lessons completed. {t.status==='active'?'The current instruction stays on your game screen.':'Review the lessons here, or resume the on-screen guide.'}</p>

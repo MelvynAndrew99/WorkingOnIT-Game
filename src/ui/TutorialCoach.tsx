@@ -31,23 +31,25 @@ const SHORT: Record<string, { title: string; instruction: string } | undefined> 
   detour: { title: 'A way around', instruction: 'Join both sides of the crossing with a bypass.' },
 };
 
-export function tutorialObjective(s: AppState, ctx: { openJobs: () => void }): Objective | null {
+export function tutorialObjective(s: AppState): Objective | null {
   const t = s.tutorial;
   const connectInvitation = t?.currentId === 'h-connect' && t.status === 'complete' && !getSave().city.external?.gateway;
   if (!t || (t.status !== 'active' && t.status !== 'available' && !connectInvitation)) return null;
-  const act = (value: TutorialAction) => cityCommand({ type: 'tutorial', action: value });
+  const finish = () => { if(window.confirm('End the tutorial and welcome outside traffic? A free access road will be added across vacant land if needed. Your town is preserved.')) cityCommand({type:'finish-tutorial'}); };
+  const act = (value: TutorialAction) => value==='skip' ? finish() : cityCommand({ type: 'tutorial', action: value });
 
   if (t.status === 'available') return {
     key: 'guide-offer',
     eyebrow: 'Optional guide',
+    title: 'Your town, your pace',
+    progress: {current:t.completed,target:t.total,label:'Tutorial lessons completed'},
     instruction: 'Learn the roads on the town you already have.',
     primary: { label: 'Start guide', run: () => act('start') },
     detail: <>
       <p>Short steps, on your own map. Nothing is built for you, and you can leave at any point.</p>
       <p>{t.completed}/{t.total} lessons already done.</p>
       <div className="objective-extras">
-        <button onClick={ctx.openJobs}>Jobs</button>
-        <button onClick={() => act('skip')}>No thanks</button>
+          <button onClick={() => act('skip')}>No thanks</button>
       </div>
     </>,
   };
@@ -83,8 +85,7 @@ export function tutorialObjective(s: AppState, ctx: { openJobs: () => void }): O
     : { label: s.paused ? 'Run traffic' : 'Pause', run: () => store.patch({ paused: !s.paused }) };
 
   const detail: ReactNode = <>
-    <h3>{t.title}</h3>
-    <p>{t.body}</p>
+    {lesson && lesson.instruction !== t.body && <p>{t.body}</p>}
     {!!t.hint && <p className="objective-hint">{t.hint}</p>}
     {t.currentId === 'driver-rules' && <p>Ordinary drivers respect traffic controls. Outbound emergency crews can cross red lights when clear and pass using available opposing lanes. Returning crews follow ordinary road rules.</p>}
     {t.canAcknowledgeSafety && <p>A stop or light on your crossing prevents these collisions. Keep it in place and read the crew explanation. Acknowledging safe design is not a rescue: a real crash still needs crews with a route to it.</p>}
@@ -92,7 +93,6 @@ export function tutorialObjective(s: AppState, ctx: { openJobs: () => void }): O
       {!s.paused && <button onClick={() => store.patch({ paused: true })}>Pause traffic</button>}
       {t.focus && !starter && <button onClick={() => cityCommand({ type: 'focus', point: t.focus! })}>Show lesson area</button>}
       {t.canAcknowledgeSafety && <button onClick={() => act('acknowledge-safety')}>Keep my safe crossing</button>}
-      <button onClick={ctx.openJobs}>Jobs</button>
       {t.status === 'active' && <button className="objective-exit" onClick={() => act('skip')}>Skip tutorial</button>}
     </div>
   </>;
@@ -101,9 +101,10 @@ export function tutorialObjective(s: AppState, ctx: { openJobs: () => void }): O
     key: `lesson-${t.currentId}-${lesson?.title ?? ''}-${t.waived ? 'waived' : ''}`,
     eyebrow: `Step ${step} of ${t.total} · Traffic ${s.paused ? 'paused' : 'running'}`,
     title: lesson?.title ?? t.title,
+    progress: {current:t.completed,target:t.total,label:'Tutorial lessons completed'},
     instruction: lesson?.instruction ?? t.body,
     note: t.waived?.reason,
-    primary: starter && t.currentId === 'h-connect' ? { label: 'City link', run: ctx.openJobs } : primary,
+    primary: starter && t.currentId === 'h-connect' ? { label: 'Finish tutorial', run: finish } : primary,
     secondary: starter && t.focus ? { label: 'Show lesson area', run: () => {
       if(diversion)chooseTool(t.tool ?? 'road');
       cityCommand({ type: 'focus', point: t.focus! });

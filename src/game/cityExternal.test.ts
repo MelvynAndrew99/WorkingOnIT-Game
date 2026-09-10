@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createCity, place, stepCity, parseCity, expandCity, TRAFFIC_TICK, type City } from './cityModel.ts';
-import { connectExternalCity, externalDemand, boundaryGatewayCandidates } from './cityExternal.ts';
+import { connectExternalCity, externalDemand, boundaryGatewayCandidates, finishTutorialAndConnect } from './cityExternal.ts';
 import { visitorSlots } from './cityVisits.ts';
 import { recordConflict, RISK_THRESHOLD } from './cityIncidents.ts';
 
@@ -25,6 +25,65 @@ function until(c:City,ready:()=>boolean,limit=180):void {
   assert.ok(ready(),`condition not reached by ${c.elapsed}s`);
 }
 function reload(c:City):City {const copy=parseCity(JSON.parse(JSON.stringify(c)));assert.ok(copy,'external town must reload');return copy;}
+
+test('confirmed tutorial exit adds a free safe access corridor and keeps the town across reload',()=>{
+  const c=createTestCity();
+  for(let x=3;x<=12;x++)place(c,'road',x,6);
+  place(c,'store',9,4);
+  const buildings=structuredClone(c.buildings), roads=structuredClone(c.roads), funds=c.funds;
+  assert.equal(c.external!.gateway,null);
+  assert.match(finishTutorialAndConnect(c),/connected/);
+  assert.equal(c.tutorial!.status,'skipped');
+  assert.deepEqual(c.buildings,buildings);assert.equal(c.funds,funds);
+  assert.deepEqual(c.roads.slice(0,roads.length),roads);
+  const added=c.roads.slice(roads.length);assert.ok(added.length>0);
+  for(const p of added)assert.equal(c.roadPaid![`${p.x},${p.y}`],0);
+  let saved=reload(c);const gateway=structuredClone(saved.external!.gateway);
+  const roadCount=saved.roads.length;finishTutorialAndConnect(saved);run(saved,0.5);
+  assert.equal(saved.roads.length,roadCount);assert.deepEqual(saved.external!.gateway,gateway);
+  until(saved,()=>saved.external!.completed>0);
+  saved=reload(saved);assert.ok(saved.external!.completed>0);
+});
+
+test('automatic gateway favors the store network over an isolated boundary road',()=>{
+  const c=createTestCity();place(c,'road',0,0);
+  for(let x=3;x<=12;x++)place(c,'road',x,6);
+  place(c,'store',9,4);
+  finishTutorialAndConnect(c);
+  assert.notDeepEqual(c.external!.gateway,{x:0,y:0});
+  until(c,()=>c.external!.completed>0);
+});
+
+test('empty-town consent persists and connects after the first real road without a second menu',()=>{
+  let c=createTestCity();finishTutorialAndConnect(c);
+  assert.equal(c.external!.gateway,null);assert.equal(c.external!.autoConnectRequested,true);
+  c=reload(c);place(c,'road',5,6);const funds=c.funds;
+  stepCity(c,TRAFFIC_TICK);
+  assert.ok(c.external!.gateway);assert.equal(c.funds,funds);
+  assert.ok(reload(c));
+});
+
+test('ordinary disconnected saves never auto-connect and malformed consent is rejected',()=>{
+  const c=town();run(c,20);assert.equal(c.external!.gateway,null);
+  const bad=structuredClone(c);bad.external!.autoConnectRequested='yes' as never;
+  assert.equal(parseCity(bad),null);
+  c.external!.autoConnectRequested=true;
+  // Resuming teaching explicitly suspends a pending connection.
+  c.tutorial!.status='active';stepCity(c,TRAFFIC_TICK);
+  assert.equal(c.external!.gateway,null);
+});
+
+test('a fully enclosed road waits for player access without replacing buildings',()=>{
+  let c=createTestCity();place(c,'road',5,5);
+  // Legal lots form a ring around the single road tile.
+  place(c,'home',3,4);place(c,'home',6,5);place(c,'home',5,3);place(c,'home',4,6);
+  assert.equal(c.buildings.length,4);
+  const before=structuredClone(c.buildings);
+  finishTutorialAndConnect(c);assert.equal(c.external!.gateway,null);
+  assert.deepEqual(c.buildings,before);c=reload(c);
+  place(c,'bulldoze',3,4);stepCity(c,TRAFFIC_TICK);
+  assert.ok(c.external!.gateway);assert.ok(reload(c));
+});
 
 test('outside traffic requires explicit boundary-road connection and preserves the original town',()=>{
   const c=town();run(c,60);assert.equal(c.trips.length,0);

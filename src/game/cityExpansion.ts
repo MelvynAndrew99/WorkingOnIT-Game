@@ -6,7 +6,7 @@ export const createExpansionProgress=():ExpansionProgress=>({version:1,used:0,le
 export const expansionTarget=(level:number)=>6+3*level;
 export function expansionHouseholds(city:City):number {
  const visited=new Set(city.missions?.shoppers??[]),shops=city.buildings.filter(b=>b.kind==='store');
- return city.buildings.filter(b=>b.kind==='home'&&visited.has(b.id)&&shops.some(s=>!!findPath(city,entrance(b),entrance(s)))).length;
+ return city.buildings.filter(b=>b.kind==='home'&&visited.has(b.id)&&shops.some(s=>!!findPath(city,entrance(b),entrance(s))&&!!findPath(city,entrance(s),entrance(b)))).length;
 }
 export function refreshExpansionProgress(city:City):void {
  const e=city.expansion??=createExpansionProgress(),served=expansionHouseholds(city);

@@ -1,6 +1,9 @@
+import {routingSnapshot,weightedRoute,routeCost,civilianRoute} from './cityRouting.ts';
+import {stepPolicePatrols} from './cityPatrols.ts';
+import {CITY_RULES} from './cityRules.ts';
 /** Unsigned-junction crashes, service dispatch, and rescue outcomes. No renderer or HUD imports. */
 import { entrance, findPath, retarget, stations, SERVICE_OF, isBlocked, type City, type Point, type Trip } from './cityModel.ts';
-import { startBlocked, roadIndex, bodyTile, governingControl, EMERGENCY_TILES_PER_SECOND, TRAVEL_TILES_PER_SECOND, TRAFFIC_TICK } from './cityTraffic.ts';
+import { commitTripRoute, startBlocked, roadIndex, bodyTile, governingControl, EMERGENCY_TILES_PER_SECOND, TRAVEL_TILES_PER_SECOND, TRAFFIC_TICK } from './cityTraffic.ts';
 
 export type ServiceKind = 'ems' | 'fire' | 'police';
 export type Incident = {
@@ -28,6 +31,8 @@ export const MAX_ACTIVE_INCIDENTS = 3;
 /** Serious/fire rescue clock. A game deadline, not a real medical response time. */
 export const RESCUE_SECONDS = 90;
 export const WORK_SECONDS: Record<ServiceKind, number> = { police: 6, ems: 6, fire: 10 };
+/** Sustained stationary response before an available backup may take over. */
+export const BACKUP_WAIT_SECONDS = CITY_RULES.routing.emergencyBackupSeconds;
 const MAX_CLEARED = 16;
 const COOL_SECONDS = 1;
 const SEVERITIES = ['minor', 'serious', 'fire'] as const;
@@ -193,15 +198,19 @@ function spawnBlocked(city: City, path: Point[]): boolean {
   return startBlocked(city,roadIndex(city),path,true);
 }
 
-function bestApproach(city: City, station: ReturnType<typeof stations>[number], incident: Incident): Point[] | null {
+function bestApproach(city: City, station: ReturnType<typeof stations>[number], incident: Incident, avoid?: Set<string>): Point[] | null {
   const from = entrance(station);
   if (isBlocked(city, from, true)) return null;
   let best: Point[] | null = null;
+  let cost=Infinity;
+  const snapshot=routingSnapshot(city,roadIndex(city),true);
+  const view=avoid?{...snapshot,blocked:new Set([...snapshot.blocked,...avoid])}:snapshot;
   for (const access of accessTiles(city, incident)) {
-    const path = findPath(city, from, access, true);
+    const result = weightedRoute(view,from,access,EMERGENCY_TILES_PER_SECOND);
+    const path=result?.path;
     if (!path || path.some((p, i) => i > 0 && at(p, incident.x, incident.y))) continue;
     if (spawnBlocked(city, path)) continue;
-    if (!best || path.length < best.length) best = path;
+    if (result!.cost.total < cost) {best = path;cost=result!.cost.total;}
   }
   return best;
 }
@@ -210,11 +219,20 @@ function stationBusy(city: City, stationId: number): boolean {
   return city.trips.some(t => t.service && t.stationId === stationId);
 }
 
-function serviceAssigned(city: City, incidentId: number, kind: ServiceKind): boolean {
-  return city.trips.some(t => t.incidentId === incidentId && t.service === kind);
-}
 
 function sendHome(city: City, trip: Trip): void {
+  if(trip.sceneParked){
+    const station=city.buildings.find(b=>b.id===trip.stationId);
+    const from=trip.path[bodyTile(trip)];
+    if(!station||!from)return;
+    const path=civilianRoute(city,from,entrance(station),trip);
+    // Crews wait in their scene parking space until an actual lane can accept the return.
+    if(!path||startBlocked(city,roadIndex(city),path,true))return;
+    delete trip.resume;delete trip.sceneParked;
+    Object.assign(trip,{path,progress:0,phase:'returning',
+      target:copy(entrance(station)),speed:TRAVEL_TILES_PER_SECOND,hold:0,workRemaining:0});
+    return;
+  }
   const from = trip.path[bodyTile(trip)] ?? trip.path[trip.path.length - 1];
   const station = city.buildings.find(b => b.id === trip.stationId);
   trip.workRemaining = 0;
@@ -261,17 +279,58 @@ function finishWork(city: City, trip: Trip): void {
 }
 
 function dispatch(city: City): void {
+  let responseCosts:ReturnType<typeof routingSnapshot>|undefined;
+  const cost=(path:Point[])=>routeCost(responseCosts??=routingSnapshot(city,roadIndex(city),true),path,EMERGENCY_TILES_PER_SECOND).total;
   const live = active(city).sort((a, b) => a.createdAt - b.createdAt || a.id - b.id);
   for (const incident of live) {
     for (const kind of SERVICE_ORDER) {
       if (!incidentServices(incident).includes(kind) || incident.completedServices.includes(kind)) continue;
-      if (serviceAssigned(city, incident.id, kind)) continue;
+      const assigned=city.trips.find(t=>t.incidentId===incident.id&&t.service===kind&&!t.responseCancelled);
+      if(assigned){
+        const intent=assigned.phase==='waiting'?assigned.resume:assigned.phase;
+        if(intent!=='outbound'||assigned.emergencyPass||assigned.hold<BACKUP_WAIT_SECONDS)continue;
+        // Only replace with a real, available vehicle whose route avoids stationary bodies.
+        const avoid=new Set(city.trips.filter(t=>t.phase!=='visiting'&&!t.sceneParked&&(t.hold>=BACKUP_WAIT_SECONDS||t.phase==='working'||t.phase==='crashed'))
+          .map(t=>key(t.path[bodyTile(t)])));
+        const backup=stations(city,kind).filter(s=>!stationBusy(city,s.id))
+          .map(station=>({station,path:bestApproach(city,station,incident,avoid)}))
+          .filter((option):option is {station:ReturnType<typeof stations>[number];path:Point[]}=>!!option.path)
+          .sort((a,b)=>cost(a.path)-cost(b.path)||a.station.id-b.station.id)[0];
+        if(!backup)continue;
+        const station=city.buildings.find(b=>b.id===assigned.stationId);
+        if(!station)continue;
+        const candidate:Trip={...assigned,responseCancelled:true,phase:'waiting',resume:'returning',
+          target:copy(entrance(station)),workRemaining:0,speed:TRAVEL_TILES_PER_SECOND};
+        // Preserve the occupied lane and exact position; traffic replans the return safely.
+        const prospective={...city,trips:city.trips.map(t=>t===assigned?candidate:t)};
+        if(spawnBlocked(prospective,backup.path)||!commitTripRoute(city,roadIndex(city),assigned,candidate))continue;
+        const replacement:Trip={id:city.nextId++,homeId:0,storeId:0,path:backup.path,progress:0,hold:0,wait:0,
+          phase:'outbound',service:kind,stationId:backup.station.id,incidentId:incident.id,
+          workRemaining:0,speed:EMERGENCY_TILES_PER_SECOND,target:copy(backup.path[backup.path.length-1])};
+        city.trips.push(replacement);
+        if(replacement.path.length===1)arriveResponse(city,replacement);
+        continue;
+      }
+      // Reassign the real patrol car in place; never spawn a duplicate at its station.
+      let reassigned=false;
+      if(kind==='police')for(const patrol of city.trips.filter(t=>t.patrol)){
+        const from=patrol.path[bodyTile(patrol)];
+        if(!from)continue;
+        const access=accessTiles(city,incident).find(p=>!!findPath(city,from,p,true));
+        if(!access)continue;
+        const candidate:Trip={...patrol,patrol:undefined,phase:'outbound',resume:undefined,incidentId:incident.id,target:copy(access),speed:EMERGENCY_TILES_PER_SECOND};
+        if(retarget(city,candidate,from)&&candidate.phase==='outbound'&&commitTripRoute(city,roadIndex(city),patrol,candidate)){
+          if(patrol.progress>=patrol.path.length-1)arriveResponse(city,patrol);
+          reassigned=true;break;
+        }
+      }
+      if(reassigned)continue;
       let chosen: { stationId: number; path: Point[] } | null = null;
       for (const station of stations(city, kind)) {
         if (stationBusy(city, station.id)) continue;
         const path = bestApproach(city, station, incident);
         if (!path) continue;
-        if (!chosen || path.length < chosen.path.length || (path.length === chosen.path.length && station.id < chosen.stationId)) {
+        if (!chosen || cost(path) < cost(chosen.path) || (cost(path) === cost(chosen.path) && station.id < chosen.stationId)) {
           chosen = { stationId: station.id, path };
         }
       }
@@ -319,14 +378,19 @@ function pruneCleared(city: City): void {
 
 export function arriveResponse(city: City, trip: Trip): void {
   if (!trip.service) return;
-  if (trip.phase === 'outbound') {
+  if (trip.phase === 'outbound' && !trip.responseCancelled) {
     const incident = city.incidents.find(i => i.id === trip.incidentId && i.status === 'active');
     if (!incident) { sendHome(city, trip); return; }
     trip.phase = 'working';
+    trip.sceneParked = true;
     trip.workRemaining = WORK_SECONDS[trip.service];
     trip.progress = Math.max(0, trip.path.length - 1);
     stabilize(city, trip, incident);
     return;
+  }
+  if (trip.phase === 'returning') {
+    const station=city.buildings.find(b=>b.id===trip.stationId);
+    if(station?.kind==='policeStation')station.patrolReadyAt=city.elapsed+CITY_RULES.policePatrol.stationRestSeconds;
   }
   if (trip.phase === 'returning') city.trips = city.trips.filter(t => t.id !== trip.id);
 }
@@ -349,21 +413,33 @@ export function stepIncidents(city: City, dt: number): void {
   advanceDeadlines(city);
   for (const trip of [...city.trips]) {
     if (!trip.service) continue;
+    const scene=city.incidents.find(i=>i.id===trip.incidentId);
+    const k=bodyTile(trip),atScene=trip.path[k];
+    const returning=trip.phase==='returning'||trip.phase==='waiting'&&trip.resume==='returning';
+    // Recover old saves with a completed crew stuck turning around at its scene.
+    if(returning&&trip.hold>=CITY_RULES.routing.sceneReturnRecoverySeconds&&scene?.completedServices.includes(trip.service)&&atScene&&
+      Math.abs(scene.x-atScene.x)+Math.abs(scene.y-atScene.y)===1&&Math.abs(trip.progress-k)<1e-9){
+      trip.path=[copy(atScene)];trip.progress=0;trip.phase='working';trip.sceneParked=true;
+      trip.workRemaining=0;trip.target=copy(atScene);delete trip.resume;delete trip.responseCancelled;
+    }
     // Traffic owns route retries and exact positions for waiting responders.
     if (trip.phase === 'waiting') continue;
     if (trip.phase !== 'working') continue;
+    // Existing on-scene saves adopt the same parking behavior without moving the approach.
+    trip.sceneParked=true;
     trip.workRemaining = round6(Math.max(0, (trip.workRemaining ?? 0) - dt));
     if ((trip.workRemaining ?? 0) > 1e-9) continue;
     finishWork(city, trip);
   }
   dispatch(city);
+  stepPolicePatrols(city);
   pruneCleared(city);
 }
 
 function serviceNeed(city: City, incident: Incident, kind: ServiceKind): string {
   const label = SERVICE_LABEL[kind];
   if (incident.completedServices.includes(kind)) return '';
-  const trip = city.trips.find(t => t.incidentId === incident.id && t.service === kind);
+  const trip = city.trips.find(t => t.incidentId === incident.id && t.service === kind && !t.responseCancelled);
   if (trip) {
     const phase = phaseOf(trip);
     if (phase === 'working') return `${label} (on scene)`;
@@ -487,23 +563,30 @@ function tripRefsOk(city: City, incidents: Incident[]): boolean {
     const incident=incidents.find(i=>i.id===trip.incidentId);
     if(trip.incidentId!==undefined && !incident)return false;
     if(trip.service) {
-      if(trip.homeId!==0 || trip.storeId!==0 || !incident)return false;
+      if(trip.homeId!==0 || trip.storeId!==0 || (!incident&&!trip.patrol))return false;
       const station=city.buildings.find(b=>b.id===trip.stationId);
       if(!station || SERVICE_OF[station.kind]!==trip.service || stationIds.has(station.id))return false;
       stationIds.add(station.id);
+      if(trip.patrol){
+        const intent=trip.phase==='waiting'?trip.resume:trip.phase,goal=trip.phase==='waiting'?trip.target:trip.path.at(-1),home=entrance(station);
+        if(trip.service!=='police'||incident||intent!=='returning'||trip.emergencyPass||trip.purpose||trip.rewarded||trip.workRemaining||!goal||!at(goal,home.x,home.y))return false;
+        continue;
+      }
+      if(!incident)return false;
       if(!incident.required.includes(trip.service))return false;
       const assignment=`${incident.id}:${trip.service}`;
-      if(assignments.has(assignment))return false;
-      assignments.add(assignment);
+      if(!trip.responseCancelled){if(assignments.has(assignment))return false;assignments.add(assignment);}
       const phase=phaseOf(trip),intent=phase==='waiting'?trip.resume:phase;
+      if(trip.responseCancelled&&(intent!=='returning'||trip.emergencyPass||trip.workRemaining||trip.purpose||trip.rewarded))return false;
       if(intent!=='outbound' && intent!=='working' && intent!=='returning')return false;
       const goal=phase==='waiting'?trip.target:trip.path[trip.path.length-1];
       if(!goal)return false;
       if(intent==='returning') {
         const home=entrance(station);
-        if(!at(goal,home.x,home.y) || (!incident.completedServices.includes(trip.service)&&!(incident.tutorialEmsOnly&&trip.service!=='ems')))return false;
+        if(!at(goal,home.x,home.y) || (!trip.responseCancelled&&!incident.completedServices.includes(trip.service)&&!(incident.tutorialEmsOnly&&trip.service!=='ems')))return false;
       } else {
-        if((incident.status!=='active'&&!(incident.tutorialEmsOnly&&trip.service!=='ems')) || incident.completedServices.includes(trip.service))return false;
+        if(!trip.sceneParked&&((incident.status!=='active'&&!(incident.tutorialEmsOnly&&trip.service!=='ems')) || incident.completedServices.includes(trip.service)))return false;
+        if(trip.sceneParked&&incident.completedServices.includes(trip.service)&&trip.workRemaining!==0)return false;
         if(Math.abs(goal.x-incident.x)+Math.abs(goal.y-incident.y)!==1)return false;
         if(intent==='working' && (phase==='waiting' || trip.progress!==trip.path.length-1 || !isTime(trip.workRemaining)))return false;
       }

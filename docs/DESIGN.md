@@ -1,5 +1,18 @@
 # City building and traffic optimization
 
+## Modular missions, views and automatic city link (2026-09-09)
+
+Latest user authorizes implementation of a mission structure carrying learned patterns into growth/levels, switchable diagnostics, and modular tweakable rules. Park request is explicitly appearance-only: actual Claude authored a candidate SVG; adoption awaits user selection. The user now wants automatic external connection after asking whether they want to end the tutorial, superseding manual edge selection. Confirmed exit/Skip arranges a free vacant-land access road if needed; ordinary saved towns do not silently connect. Pending consent persists when no safe corridor exists.
+
+Implemented locally: data-driven mission patterns/dependencies, current growth level/land progress, an all-households access outcome, and mission links to Normal/Traffic/Access/Visitors views. Diagnostic module only reads simulation; central cityRules.ts tunes first-slice targets, rewards and stopped-vehicle threshold. No new currency, upkeep or broad upgrades. Existing completion receipts remain earned. See [implementation and tuning](mechanics-roundtable/IMPLEMENTED.md).
+
+## Simple opening efficiency loop (2026-09-09, latest user confirmation)
+
+The user explicitly agrees: distinguish a road that cannot carry enough traffic from a store that cannot serve enough visitors, with clear feedback that makes the manager's advice understandable and funny. Keep the first slice simple: no new currencies, upkeep charges or broad upgrade trees. Ample early space permits inefficient solutions; chosen growth and density create later road puzzles without making ordinary play feel rushed. Preserve successful foresight and existing cities.
+
+Actual Claude Code, Grok Build and Codex researched and cross-reviewed economy, buildings and road puzzles. Their recommendation is to audit trip intent, expose congestion/access versus visitor-capacity reasons, and test one untimed growth objective using existing tools before adding systems. Future occupancy, economy rebalancing and specific mission targets remain proposals. See [roundtable and incremental work order](mechanics-roundtable/README.md), including withdrawn specialist ideas and the distinction between user decisions and recommendations. Earlier crisis-charge ordering does not authorize adding ordinary upkeep/pressure to this first slice.
+
+
 ## Expansion teaches progression (2026-09-09)
 
 The tutorial now ends by demonstrating two map expansions. The manager promises more land for more roads, “free,” then clarifies after the second that the mayor funds further expansions through completed missions and levels. Preserve his enthusiasm and embellishment; useful growth does not have to be a mistake.
@@ -416,3 +429,49 @@ Keep a scene approach clear for emergency work: a civilian approaching a wreck s
 ## Modest traffic-control prices (2026-09-09 user correction)
 
 Stops and Lights must cost money, but remain inexpensive. Lead-selected initial prices: Stops $25 and Lights $75 per governed intersection. This supersedes all earlier free-control defaults. Repeated signal taps only adjust timing and are free. Changing control type refunds its actual purchase before charging the replacement; removal and controls retired by road edits refund actual payment once. Invalid/unaffordable placement changes nothing. Historical controls without payment provenance were free and refund $0. Prices appear in the tool dock. Existing tutorial earnings cover the control lesson; no new control waiver is introduced.
+
+### Park artwork approval and adoption
+
+User approved Claude's park sprite. Installed locally with upright fountain/benches/trees and entrance-specific paving variants, preserving source and original preview. Actual logical footprint, visitor capacity and gameplay are unchanged. See docs/artwork/park/README.md for exports and visual verification.
+
+### Pause menu presentation (latest user correction)
+
+User prefers darkened canvas with Resume over a pause banner, providing a future home for the radio station. Implemented locally: modal dark backdrop and centered Paused / Resume game / Main menu panel. Independent PauseMenu component has an extension slot for later controls; no radio feature or pause recording has been added. Existing paused simulation/music behavior remains. Supersedes the earlier yellow pause banner design.
+
+### Local police patrols (2026-09-09)
+
+User requested visible police cars staying within a radius of their station. Implemented one real road patrol per station, using the approved police artwork. Lead-selected initial tuning in `src/game/cityRules.ts`: six tiles (60 m) from the road entrance and four seconds at the station between outings. All patrol route tiles stay within that circle; disconnected roads do not count. Placement and station inspection display the circle. Routine patrols obey normal lanes and controls, generate no visitor income and do not create incidents.
+
+The same car can take an incident assignment from its current position, using the existing occupancy-safe routing and emergency driving rules. Emergency response and subsequent return may leave the patrol circle. Saves preserve patrol assignment and station rest. Road closures can strand a patrol until access is restored; no teleportation or free replacement vehicle bypasses the road puzzle. Station removal waits until its vehicle returns. Patrols are not a crime or crash-prevention mechanic in this slice.
+
+### Congestion recovery clarification (2026-09-09)
+
+A newly built connected bypass must be usable without toggling Divert. Long-stopped civilian vehicles now reconsider the same destination around stationary traffic after a provisional eight seconds (`CITY_RULES.routing.civilianReplanSeconds`). Emergency vehicles retry sooner. Only an actual alternative triggers a reversing maneuver; absent one, remain visibly queued rather than repeatedly backing up and creeping forward. Emergency stop/red exceptions require a clear junction, while ordinary lane compatibility determines whether its exit is usable; an opposing exit lane alone must not deadlock a yielding car and responder.
+
+User floated eventually going home after a longer delay, but expressed uncertainty. This update preserves trip intent. Optional trip cancellation and delayed main-game manager advice remain separate follow-up work; do not conceal broken rescue routing by deleting demand or vehicles.
+
+Available emergency stations can replace an outbound responder stopped for ten seconds when a real replacement route avoids stationary bodies. This provisional delay is in `CITY_RULES.routing.emergencyBackupSeconds`. The old crew retains its physical position and saves a cancelled assignment while returning; it cannot duplicate scene work. Moving or working crews are not replaced. Congested physical road layouts still need usable road/scene access.
+
+### Scene parking and completed responder returns (2026-09-09)
+
+User clarified responders remained after the wreck cleared, and approved closer parking at scenes. New arrivals still reserve clear approach space, then park in distinct compact service slots at the scene, outside driving occupancy. Completed crews stay parked until a real road route and clear merge space permit their ordinary return. No crew waits across the entire approach while another is trying to work; multiple services can use the same access point sequentially for arrival and departure. Scene parking persists, completed work is credited once, and parked departures use normal controls and return speed.
+
+Existing working saves adopt parking. A completed returning crew stuck at an adjacent scene tile for eight seconds can back to its tile centre physically and recover via scene parking. This is limited to the actual scene, not a teleport from arbitrary traffic. The delay is tweakable in CITY_RULES.routing. Road access is still required. This supersedes the historical rule that working crews always occupy both travel lanes.
+
+### Live vehicle debug inspector (2026-09-09)
+
+User requested a Debug button to diagnose stuck ambulances and police waiting in traffic. Header Debug opens a nonmodal inspector; tap a car or choose from a service-first vehicle list, view its current route and exact model state, and inspect conflicting vehicle IDs. Reports distinguish outbound emergency rules from routine return, scene work versus blocked return access/merge, and lane reservation conflicts. Copy captures vehicle and incident diagnostics locally to clipboard with a selectable text fallback. No credentials or account information are included; nothing is sent automatically. Diagnostics read the movement system's current reservations and gates; they are a current snapshot, not a complete event history or a guarantee of future movement. Debug map taps inspect instead of building; closing it returns normal tool use. No save schema change.
+
+
+### Routing-intelligence vision and jam scope (latest user direction)
+
+User added dynamic cost maps, congestion-aware/predictive routing, lane/intersection policy, a global optimizer, scenario conditions, debugging overlays and modular tuning/events to the long-term traffic world. Latest explicit correction: mockups are removed entirely; variations come last. See docs/traffic-world/routing-plan.md for the proposed jam subset and acceptance gates. Mechanics-first order supersedes the earlier comparison-sheet-first brief. Lead recommendation is deterministic bounded route costs/replans and an advisory network observer first, retaining player control and existing safe physical movement; full prediction, lane reassignment and automatic signal/detour optimization remain later proposals. This records direction and interpretation, not implementation or user acceptance of every tradeoff.
+
+### Emergency yielding correction
+
+Cars must not yield in place when their existing reservation is what prevents the approaching responder from entering its junction or scene approach. Such vehicles continue under ordinary lane/control admission rules; this does not grant collision immunity or override a committed opposing-lane pass. Confirmed by the user reporting reciprocal wait reasons in the live debugger and a matching local scene-approach regression for EMS/police/fire. Existing trip state needs no migration.
+
+
+### Gameplay UI overhaul priority (2026-09-10)
+
+User requests one global stats top bar with Heatmap/Dashboard actions, anchored bottom-left mission title/description/progress/reward, a uniform bottom-right build grid, and a reserved center map with responsive non-overlapping containers. This is the next feature priority ahead of J4/J5 and advanced driver behavior; correctness regressions remain first. See docs/ui-overhaul/PLAN.md and UI-01 through UI-05 in docs/BACKLOG.md. Phone stacking and precise stat meanings are documented implementation proposals; weather is not currently simulated. Preserve functioning tutorials, saved towns, view controls and real map placement. This entry records planning only, no UI changes or release.
