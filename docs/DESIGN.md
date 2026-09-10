@@ -1,3 +1,17 @@
+## Latest roadworks decision (September 10, 2026)
+
+Upgrade areas initially block all vehicles, including emergency responders. The user expects short downtime and requests a pause-menu Arcade/Realistic simulation preference. Actual Grok reviewed the shared-engine mode contract: [roadworks modes](roadworks/MODES.md). Proposed first distinction is shorter upgrade/restoration time in Arcade, with shared physical safety and clear access information. Neither mode silently permits responders through active works. Exact timing and any additional rescue protection are not yet selected. Installed Claude is assigned the sprite generation; rendering must remain independent of logical road geometry.
+
+## Whole-game service through change (September 10, 2026)
+
+Flow/service objectives are the game's continuing core, not a single lesson. The user wants road and destination single-point-of-failure challenges, real widening and timed road upgrades that require traffic detours while emergency access remains meaningful. Fun-first direction and player-owned cities remain. See [roadworks/resilience discussion](roadworks/PLAN.md) for terminology, sequencing, timer/recovery proposals, actual Grok review and the unresolved work-zone emergency-passage policy. Upgrade timers are now selected in principle; this does not add timers to ordinary construction. No runtime changes in this discussion.
+
+## Latest direction: fun-first flow puzzles (September 10, 2026)
+
+The user wants transportation-engineering-inspired problems to emerge in their own growing towns after the tutorial. Fun takes precedence over technical accuracy; exaggeration is welcome when causes and the payoff remain understandable. Civic goals should ask for useful service/growth, allowing road layout, controls and destination placement as alternatives. They selected existing tools for the first puzzle, with actual four-lane widening afterward. The A–F LOS metaphor is inspiration rather than a requirement for professional calculations or a mandatory widen-to-win lesson.
+
+See [the Grok-informed flow-puzzle plan](flow-puzzles/PLAN.md) for the first untimed service puzzle, prototype gates and widening sequence. Busy destinations mean customers served and able to return, not permanently full parking. Existing cities/tutorials and saved receipts remain. No new runtime implementation or publication in this design discussion.
+
 # City building and traffic optimization
 
 ## Modular missions, views and automatic city link (2026-09-09)

@@ -1,0 +1,642 @@
+[
+  {
+    "name": "narrow",
+    "label": "tutorial",
+    "map": {
+      "x": 8,
+      "y": 242.6875,
+      "width": 374,
+      "height": 139.96875,
+      "bottom": 382.65625
+    },
+    "card": {
+      "x": 12,
+      "y": 511.65625,
+      "width": 366,
+      "height": 186.34375,
+      "bottom": 698
+    },
+    "actions": {
+      "x": 22,
+      "y": 644,
+      "width": 346,
+      "height": 44,
+      "bottom": 688
+    },
+    "build": {
+      "x": 8,
+      "y": 710,
+      "width": 374,
+      "height": 126,
+      "bottom": 836
+    }
+  },
+  {
+    "name": "narrow",
+    "label": "details",
+    "map": {
+      "x": 8,
+      "y": 242.6875,
+      "width": 374,
+      "height": 127.3125,
+      "bottom": 370
+    },
+    "card": {
+      "x": 12,
+      "y": 435,
+      "width": 366,
+      "height": 263,
+      "bottom": 698
+    },
+    "actions": {
+      "x": 22,
+      "y": 567.34375,
+      "width": 346,
+      "height": 44,
+      "bottom": 611.34375
+    },
+    "build": {
+      "x": 8,
+      "y": 710,
+      "width": 374,
+      "height": 126,
+      "bottom": 836
+    }
+  },
+  {
+    "name": "narrow",
+    "label": "lesson-3",
+    "map": {
+      "x": 8,
+      "y": 242.6875,
+      "width": 374,
+      "height": 139.96875,
+      "bottom": 382.65625
+    },
+    "card": {
+      "x": 12,
+      "y": 511.65625,
+      "width": 366,
+      "height": 186.34375,
+      "bottom": 698
+    },
+    "actions": {
+      "x": 22,
+      "y": 644,
+      "width": 346,
+      "height": 44,
+      "bottom": 688
+    },
+    "build": {
+      "x": 8,
+      "y": 710,
+      "width": 374,
+      "height": 126,
+      "bottom": 836
+    }
+  },
+  {
+    "name": "narrow",
+    "label": "lesson-5",
+    "map": {
+      "x": 8,
+      "y": 242.6875,
+      "width": 374,
+      "height": 139.953125,
+      "bottom": 382.640625
+    },
+    "card": {
+      "x": 12,
+      "y": 511.640625,
+      "width": 366,
+      "height": 186.359375,
+      "bottom": 698
+    },
+    "actions": {
+      "x": 22,
+      "y": 644,
+      "width": 346,
+      "height": 44,
+      "bottom": 688
+    },
+    "build": {
+      "x": 8,
+      "y": 710,
+      "width": 374,
+      "height": 126,
+      "bottom": 836
+    }
+  },
+  {
+    "name": "narrow",
+    "label": "lesson-7",
+    "map": {
+      "x": 8,
+      "y": 242.6875,
+      "width": 374,
+      "height": 139.96875,
+      "bottom": 382.65625
+    },
+    "card": {
+      "x": 12,
+      "y": 511.65625,
+      "width": 366,
+      "height": 186.34375,
+      "bottom": 698
+    },
+    "actions": {
+      "x": 22,
+      "y": 644,
+      "width": 346,
+      "height": 44,
+      "bottom": 688
+    },
+    "build": {
+      "x": 8,
+      "y": 710,
+      "width": 374,
+      "height": 126,
+      "bottom": 836
+    }
+  },
+  {
+    "name": "narrow",
+    "label": "lesson-8",
+    "map": {
+      "x": 8,
+      "y": 242.6875,
+      "width": 374,
+      "height": 139.953125,
+      "bottom": 382.640625
+    },
+    "card": {
+      "x": 12,
+      "y": 511.640625,
+      "width": 366,
+      "height": 186.359375,
+      "bottom": 698
+    },
+    "actions": {
+      "x": 22,
+      "y": 644,
+      "width": 346,
+      "height": 44,
+      "bottom": 688
+    },
+    "build": {
+      "x": 8,
+      "y": 710,
+      "width": 374,
+      "height": 126,
+      "bottom": 836
+    }
+  },
+  {
+    "name": "narrow",
+    "label": "lesson-9",
+    "map": {
+      "x": 8,
+      "y": 242.6875,
+      "width": 374,
+      "height": 199.28125,
+      "bottom": 441.96875
+    },
+    "card": {
+      "x": 12,
+      "y": 506.96875,
+      "width": 366,
+      "height": 191.03125,
+      "bottom": 698
+    },
+    "actions": {
+      "x": 22,
+      "y": 639.3125,
+      "width": 346,
+      "height": 48.6875,
+      "bottom": 688
+    },
+    "build": {
+      "x": 8,
+      "y": 710,
+      "width": 374,
+      "height": 126,
+      "bottom": 836
+    }
+  },
+  {
+    "name": "narrow",
+    "label": "lesson-10",
+    "map": {
+      "x": 8,
+      "y": 242.6875,
+      "width": 374,
+      "height": 199.265625,
+      "bottom": 441.953125
+    },
+    "card": {
+      "x": 12,
+      "y": 506.953125,
+      "width": 366,
+      "height": 191.046875,
+      "bottom": 698
+    },
+    "actions": {
+      "x": 22,
+      "y": 639.3125,
+      "width": 346,
+      "height": 48.6875,
+      "bottom": 688
+    },
+    "build": {
+      "x": 8,
+      "y": 710,
+      "width": 374,
+      "height": 126,
+      "bottom": 836
+    }
+  },
+  {
+    "name": "narrow",
+    "label": "reward",
+    "map": {
+      "x": 8,
+      "y": 242.6875,
+      "width": 374,
+      "height": 199.28125,
+      "bottom": 441.96875
+    },
+    "card": {
+      "x": 12,
+      "y": 506.96875,
+      "width": 366,
+      "height": 191.03125,
+      "bottom": 698
+    },
+    "actions": {
+      "x": 22,
+      "y": 639.3125,
+      "width": 346,
+      "height": 48.6875,
+      "bottom": 688
+    },
+    "build": {
+      "x": 8,
+      "y": 710,
+      "width": 374,
+      "height": 126,
+      "bottom": 836
+    }
+  },
+  {
+    "name": "narrow",
+    "label": "next-job",
+    "map": {
+      "x": 8,
+      "y": 242.6875,
+      "width": 374,
+      "height": 173.375,
+      "bottom": 416.0625
+    },
+    "card": {
+      "x": 12,
+      "y": 481.0625,
+      "width": 366,
+      "height": 191.03125,
+      "bottom": 672.09375
+    },
+    "actions": {
+      "x": 22,
+      "y": 613.40625,
+      "width": 346,
+      "height": 48.6875,
+      "bottom": 662.09375
+    },
+    "build": {
+      "x": 8,
+      "y": 684.09375,
+      "width": 374,
+      "height": 151.90625,
+      "bottom": 836
+    }
+  },
+  {
+    "name": "desktop",
+    "label": "tutorial",
+    "map": {
+      "x": 8,
+      "y": 117.984375,
+      "width": 1424,
+      "height": 454.671875,
+      "bottom": 572.65625
+    },
+    "card": {
+      "x": 16,
+      "y": 701.65625,
+      "width": 461.328125,
+      "height": 186.34375,
+      "bottom": 888
+    },
+    "actions": {
+      "x": 26,
+      "y": 834,
+      "width": 441.328125,
+      "height": 44,
+      "bottom": 878
+    },
+    "build": {
+      "x": 489.328125,
+      "y": 633.65625,
+      "width": 938.671875,
+      "height": 258.34375,
+      "bottom": 892
+    }
+  },
+  {
+    "name": "desktop",
+    "label": "details",
+    "map": {
+      "x": 8,
+      "y": 117.984375,
+      "width": 1424,
+      "height": 406.015625,
+      "bottom": 524
+    },
+    "card": {
+      "x": 16,
+      "y": 589,
+      "width": 461.328125,
+      "height": 299,
+      "bottom": 888
+    },
+    "actions": {
+      "x": 26,
+      "y": 721.34375,
+      "width": 441.328125,
+      "height": 44,
+      "bottom": 765.34375
+    },
+    "build": {
+      "x": 489.328125,
+      "y": 585,
+      "width": 938.671875,
+      "height": 307,
+      "bottom": 892
+    }
+  },
+  {
+    "name": "desktop",
+    "label": "lesson-3",
+    "map": {
+      "x": 8,
+      "y": 117.984375,
+      "width": 1424,
+      "height": 454.671875,
+      "bottom": 572.65625
+    },
+    "card": {
+      "x": 16,
+      "y": 701.65625,
+      "width": 461.328125,
+      "height": 186.34375,
+      "bottom": 888
+    },
+    "actions": {
+      "x": 26,
+      "y": 834,
+      "width": 441.328125,
+      "height": 44,
+      "bottom": 878
+    },
+    "build": {
+      "x": 489.328125,
+      "y": 633.65625,
+      "width": 938.671875,
+      "height": 258.34375,
+      "bottom": 892
+    }
+  },
+  {
+    "name": "desktop",
+    "label": "lesson-5",
+    "map": {
+      "x": 8,
+      "y": 117.984375,
+      "width": 1424,
+      "height": 454.671875,
+      "bottom": 572.65625
+    },
+    "card": {
+      "x": 16,
+      "y": 701.65625,
+      "width": 461.328125,
+      "height": 186.34375,
+      "bottom": 888
+    },
+    "actions": {
+      "x": 26,
+      "y": 834,
+      "width": 441.328125,
+      "height": 44,
+      "bottom": 878
+    },
+    "build": {
+      "x": 489.328125,
+      "y": 633.65625,
+      "width": 938.671875,
+      "height": 258.34375,
+      "bottom": 892
+    }
+  },
+  {
+    "name": "desktop",
+    "label": "lesson-7",
+    "map": {
+      "x": 8,
+      "y": 117.984375,
+      "width": 1424,
+      "height": 454.671875,
+      "bottom": 572.65625
+    },
+    "card": {
+      "x": 16,
+      "y": 701.65625,
+      "width": 461.328125,
+      "height": 186.34375,
+      "bottom": 888
+    },
+    "actions": {
+      "x": 26,
+      "y": 834,
+      "width": 441.328125,
+      "height": 44,
+      "bottom": 878
+    },
+    "build": {
+      "x": 489.328125,
+      "y": 633.65625,
+      "width": 938.671875,
+      "height": 258.34375,
+      "bottom": 892
+    }
+  },
+  {
+    "name": "desktop",
+    "label": "lesson-8",
+    "map": {
+      "x": 8,
+      "y": 117.984375,
+      "width": 1424,
+      "height": 454.671875,
+      "bottom": 572.65625
+    },
+    "card": {
+      "x": 16,
+      "y": 701.65625,
+      "width": 461.328125,
+      "height": 186.34375,
+      "bottom": 888
+    },
+    "actions": {
+      "x": 26,
+      "y": 834,
+      "width": 441.328125,
+      "height": 44,
+      "bottom": 878
+    },
+    "build": {
+      "x": 489.328125,
+      "y": 633.65625,
+      "width": 938.671875,
+      "height": 258.34375,
+      "bottom": 892
+    }
+  },
+  {
+    "name": "desktop",
+    "label": "lesson-9",
+    "map": {
+      "x": 8,
+      "y": 117.984375,
+      "width": 1424,
+      "height": 518.671875,
+      "bottom": 636.65625
+    },
+    "card": {
+      "x": 16,
+      "y": 701.65625,
+      "width": 461.328125,
+      "height": 186.34375,
+      "bottom": 888
+    },
+    "actions": {
+      "x": 26,
+      "y": 834,
+      "width": 441.328125,
+      "height": 44,
+      "bottom": 878
+    },
+    "build": {
+      "x": 489.328125,
+      "y": 697.65625,
+      "width": 938.671875,
+      "height": 194.34375,
+      "bottom": 892
+    }
+  },
+  {
+    "name": "desktop",
+    "label": "lesson-10",
+    "map": {
+      "x": 8,
+      "y": 117.984375,
+      "width": 1424,
+      "height": 513.984375,
+      "bottom": 631.96875
+    },
+    "card": {
+      "x": 16,
+      "y": 696.96875,
+      "width": 461.328125,
+      "height": 191.03125,
+      "bottom": 888
+    },
+    "actions": {
+      "x": 26,
+      "y": 829.3125,
+      "width": 441.328125,
+      "height": 48.6875,
+      "bottom": 878
+    },
+    "build": {
+      "x": 489.328125,
+      "y": 692.96875,
+      "width": 938.671875,
+      "height": 199.03125,
+      "bottom": 892
+    }
+  },
+  {
+    "name": "desktop",
+    "label": "reward",
+    "map": {
+      "x": 8,
+      "y": 117.984375,
+      "width": 1424,
+      "height": 518.671875,
+      "bottom": 636.65625
+    },
+    "card": {
+      "x": 16,
+      "y": 701.65625,
+      "width": 461.328125,
+      "height": 186.34375,
+      "bottom": 888
+    },
+    "actions": {
+      "x": 26,
+      "y": 834,
+      "width": 441.328125,
+      "height": 44,
+      "bottom": 878
+    },
+    "build": {
+      "x": 489.328125,
+      "y": 697.65625,
+      "width": 938.671875,
+      "height": 194.34375,
+      "bottom": 892
+    }
+  },
+  {
+    "name": "desktop",
+    "label": "next-job",
+    "map": {
+      "x": 8,
+      "y": 117.984375,
+      "width": 1424,
+      "height": 518.671875,
+      "bottom": 636.65625
+    },
+    "card": {
+      "x": 16,
+      "y": 701.65625,
+      "width": 461.328125,
+      "height": 186.34375,
+      "bottom": 888
+    },
+    "actions": {
+      "x": 26,
+      "y": 834,
+      "width": 441.328125,
+      "height": 44,
+      "bottom": 878
+    },
+    "build": {
+      "x": 489.328125,
+      "y": 697.65625,
+      "width": 938.671875,
+      "height": 194.34375,
+      "bottom": 892
+    }
+  }
+]

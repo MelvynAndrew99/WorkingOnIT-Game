@@ -1,0 +1,302 @@
+[
+  {
+    "name": "desktop",
+    "label": "horizontal",
+    "map": {
+      "x": 8,
+      "y": 117.984375,
+      "width": 1424,
+      "height": 486.796875,
+      "bottom": 604.78125
+    },
+    "mission": {
+      "x": 16,
+      "y": 681.78125,
+      "width": 461.328125,
+      "height": 206.21875,
+      "bottom": 888
+    },
+    "build": {
+      "x": 489.328125,
+      "y": 677.78125,
+      "width": 938.671875,
+      "height": 214.21875,
+      "bottom": 892
+    }
+  },
+  {
+    "name": "desktop",
+    "label": "vertical",
+    "map": {
+      "x": 8,
+      "y": 117.984375,
+      "width": 1424,
+      "height": 486.796875,
+      "bottom": 604.78125
+    },
+    "mission": {
+      "x": 16,
+      "y": 681.78125,
+      "width": 461.328125,
+      "height": 206.21875,
+      "bottom": 888
+    },
+    "build": {
+      "x": 489.328125,
+      "y": 677.78125,
+      "width": 938.671875,
+      "height": 214.21875,
+      "bottom": 892
+    }
+  },
+  {
+    "name": "desktop",
+    "label": "corner",
+    "map": {
+      "x": 8,
+      "y": 117.984375,
+      "width": 1424,
+      "height": 486.796875,
+      "bottom": 604.78125
+    },
+    "mission": {
+      "x": 16,
+      "y": 681.78125,
+      "width": 461.328125,
+      "height": 206.21875,
+      "bottom": 888
+    },
+    "build": {
+      "x": 489.328125,
+      "y": 677.78125,
+      "width": 938.671875,
+      "height": 214.21875,
+      "bottom": 892
+    }
+  },
+  {
+    "name": "desktop",
+    "label": "junction",
+    "map": {
+      "x": 8,
+      "y": 117.984375,
+      "width": 1424,
+      "height": 486.796875,
+      "bottom": 604.78125
+    },
+    "mission": {
+      "x": 16,
+      "y": 681.78125,
+      "width": 461.328125,
+      "height": 206.21875,
+      "bottom": 888
+    },
+    "build": {
+      "x": 489.328125,
+      "y": 677.78125,
+      "width": 938.671875,
+      "height": 214.21875,
+      "bottom": 892
+    }
+  },
+  {
+    "name": "desktop",
+    "label": "dashboard-closed",
+    "map": {
+      "x": 8,
+      "y": 117.984375,
+      "width": 1424,
+      "height": 486.796875,
+      "bottom": 604.78125
+    },
+    "mission": {
+      "x": 16,
+      "y": 681.78125,
+      "width": 461.328125,
+      "height": 206.21875,
+      "bottom": 888
+    },
+    "build": {
+      "x": 489.328125,
+      "y": 677.78125,
+      "width": 938.671875,
+      "height": 214.21875,
+      "bottom": 892
+    }
+  },
+  {
+    "name": "desktop",
+    "label": "reload",
+    "map": {
+      "x": 8,
+      "y": 117.984375,
+      "width": 1424,
+      "height": 486.796875,
+      "bottom": 604.78125
+    },
+    "mission": {
+      "x": 16,
+      "y": 681.78125,
+      "width": 461.328125,
+      "height": 206.21875,
+      "bottom": 888
+    },
+    "build": {
+      "x": 489.328125,
+      "y": 677.78125,
+      "width": 938.671875,
+      "height": 214.21875,
+      "bottom": 892
+    }
+  },
+  {
+    "name": "narrow",
+    "label": "horizontal",
+    "map": {
+      "x": 8,
+      "y": 218.9375,
+      "width": 374,
+      "height": 214.796875,
+      "bottom": 433.734375
+    },
+    "mission": {
+      "x": 12,
+      "y": 510.734375,
+      "width": 366,
+      "height": 185.265625,
+      "bottom": 696
+    },
+    "build": {
+      "x": 8,
+      "y": 708,
+      "width": 374,
+      "height": 128,
+      "bottom": 836
+    }
+  },
+  {
+    "name": "narrow",
+    "label": "vertical",
+    "map": {
+      "x": 8,
+      "y": 218.9375,
+      "width": 374,
+      "height": 214.796875,
+      "bottom": 433.734375
+    },
+    "mission": {
+      "x": 12,
+      "y": 510.734375,
+      "width": 366,
+      "height": 185.265625,
+      "bottom": 696
+    },
+    "build": {
+      "x": 8,
+      "y": 708,
+      "width": 374,
+      "height": 128,
+      "bottom": 836
+    }
+  },
+  {
+    "name": "narrow",
+    "label": "corner",
+    "map": {
+      "x": 8,
+      "y": 218.9375,
+      "width": 374,
+      "height": 214.796875,
+      "bottom": 433.734375
+    },
+    "mission": {
+      "x": 12,
+      "y": 510.734375,
+      "width": 366,
+      "height": 185.265625,
+      "bottom": 696
+    },
+    "build": {
+      "x": 8,
+      "y": 708,
+      "width": 374,
+      "height": 128,
+      "bottom": 836
+    }
+  },
+  {
+    "name": "narrow",
+    "label": "junction",
+    "map": {
+      "x": 8,
+      "y": 218.9375,
+      "width": 374,
+      "height": 214.796875,
+      "bottom": 433.734375
+    },
+    "mission": {
+      "x": 12,
+      "y": 510.734375,
+      "width": 366,
+      "height": 185.265625,
+      "bottom": 696
+    },
+    "build": {
+      "x": 8,
+      "y": 708,
+      "width": 374,
+      "height": 128,
+      "bottom": 836
+    }
+  },
+  {
+    "name": "narrow",
+    "label": "dashboard-closed",
+    "map": {
+      "x": 8,
+      "y": 218.9375,
+      "width": 374,
+      "height": 214.796875,
+      "bottom": 433.734375
+    },
+    "mission": {
+      "x": 12,
+      "y": 510.734375,
+      "width": 366,
+      "height": 185.265625,
+      "bottom": 696
+    },
+    "build": {
+      "x": 8,
+      "y": 708,
+      "width": 374,
+      "height": 128,
+      "bottom": 836
+    }
+  },
+  {
+    "name": "narrow",
+    "label": "reload",
+    "map": {
+      "x": 8,
+      "y": 218.9375,
+      "width": 374,
+      "height": 214.796875,
+      "bottom": 433.734375
+    },
+    "mission": {
+      "x": 12,
+      "y": 510.734375,
+      "width": 366,
+      "height": 185.265625,
+      "bottom": 696
+    },
+    "build": {
+      "x": 8,
+      "y": 708,
+      "width": 374,
+      "height": 128,
+      "bottom": 836
+    }
+  }
+]

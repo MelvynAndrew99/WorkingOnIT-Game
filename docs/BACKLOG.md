@@ -1,5 +1,37 @@
 # Working ON IT! backlog
 
+## Saved police / EMS junction jam corrected locally (2026-09-10)
+
+User-save reproduction and recovery fix delivered: blocked responders no longer hold yielding traffic indefinitely, and emergency congestion rerouting preserves alternate approaches with passable queues. Actual police passing/clearance and reload regression, 234 tests and build pass. [Evidence and scope](emergency-recovery/police-junction-jam/README.md). No publication or edits to the active browser save.
+
+## Follow-on roadworks and resilience (2026-09-10)
+
+Latest resolution: user selected hard upgrade-area closure for responders too, plus a requested pause-menu Arcade/Realistic preference. Actual Grok review and concrete first-mode proposal: [MODES.md](roadworks/MODES.md). Sprite work is delivered locally by Codex using Kenney assets after Claude timed out, including the corrected side-view barrier; see [artwork delivery](artwork/roadworks/README.md). No new mechanics shipped with that artwork. Ship mode controls with functional upgrades, preserve shared physics and existing tutorial/receipts, and keep exact timings and additional Arcade rescue protection unselected.
+
+
+User promotes flow/service goals to the whole-game core and wants single-point-of-failure challenges for roads and destinations. Confirmed future addition: real road widening with timed upgrades and detours, preserving physical emergency access decisions. [Roadworks plan and Grok review](roadworks/PLAN.md) distinguish Divert restrictions, alternative detour routes, destination redundancy and capacity. User resolved upgrade worksites as hard closures for responders too; existing Divert remains a civilian restriction with responder passage. Existing-tool flow prototype precedes the widening/roadworks delivery; prepare disruption semantics before shipping. No ordinary-building timers or random failure system selected. Discussion recorded, implementation pending.
+
+### Remaining work available for assignment
+
+All rows below are queued, not implemented or newly assigned by this status update. Follow the linked plans for acceptance criteria and unresolved balance choices.
+
+| Sequence | Work package | Scope / dependency |
+| --- | --- | --- |
+| 1 | Whole-game flow and service goals | [FLOW-01–04](flow-puzzles/PLAN.md): existing-tool bottleneck puzzle, actual successful service/returns, growth and creative solutions |
+| 2 | Timed worksites and safe reopening | [Roadworks](roadworks/PLAN.md): persisted construction progress, hard closure for all vehicles, pause/reload and recoverable cancellation |
+| 3 | Detour planning and access feedback | Player-built alternate routes around worksites; explain affected households, destinations and responder access; retain distinct Divert behavior |
+| 4 | Real road widening | Functional added lane capacity and routing/occupancy geometry, delivered through timed upgrades; art does not define geometry |
+| 5 | Arcade/Realistic pause-menu setting | [Modes](roadworks/MODES.md): saved preference shipped with working upgrades; tune duration/recovery while retaining physical access rules |
+| 6 | Single-point-of-failure challenges | Road and store/park resilience in growing towns; spare route/service capacity matters; preserve successful foresight |
+
+Exact construction timings and any additional Arcade rescue protection remain unselected. Implementation owners can be assigned per package; no specialist is currently launched for these rows.
+
+## Next gameplay puzzle: flow in a growing town (2026-09-10)
+
+User requests transportation-engineering-inspired, Factorio-like flow problems in existing towns after the tutorial. Fun outweighs textbook accuracy, including exaggeration. Confirmed scope: existing tools first; real four-lane widening next. Actual Grok discussion and lead implementation plan: [FLOW-01–04](flow-puzzles/PLAN.md). This makes the outstanding MECH-01/02 sustained-flow puzzle concrete rather than opening a separate mission architecture.
+
+First prototype must produce a legible road bottleneck at bounded demand, distinguish full destinations, demonstrate two working approaches and recognize foresight. Use useful neighborhood service and actual returns rather than mandatory construction or parking occupancy. Untimed evaluation; no reset, erased demand, revoked receipts or success-triggered escalation. New numeric targets/event systems are not selected. Design recorded; runtime implementation and observed playtest remain next. UI cleanup is complete; unrelated routing polish follows this gameplay slice, with blocking correctness still first.
+
 ## Completed UI cleanup: UI-06 — remove Jobs & city link clutter (2026-09-10)
 
 **Status: implemented and verified locally on desktop and narrow; no publication.** User wants the persistent “Jobs & city link” entry and its Jobs / City link & guide screens removed. Completed jobs/levels, the finished tutorial list and gateway-coordinate reference are clutter, not useful ongoing tasks. This is a new cleanup request after the completed UI-01–05 scope and supersedes its requirement to retain that full board. This focused cleanup is complete before J4; the rest of the overhaul remains closed.

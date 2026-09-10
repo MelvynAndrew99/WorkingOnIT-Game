@@ -1,0 +1,8 @@
+warning: Git tree '/home/phil/Code/jams/AI-Overlord' is dirty
+Context Collapse environment ready: node, npm, rundot
+phone-small passed
+phone passed
+tablet passed
+desktop passed
+landscape passed
+portrait passed

@@ -1,0 +1,3 @@
+warning: Git tree '/home/phil/Code/jams/AI-Overlord' is dirty
+Context Collapse environment ready: node, npm, rundot
+Touch placement, touch road drawing, drag cancellation, reduced motion, pause blocking, and UI-selected portrait persistence passed.

@@ -46,6 +46,30 @@ export const FRAMES = {
         w: 16,
         h: 16
     },
+    barrierOrange: {
+        x: 177,
+        y: 171,
+        w: 16,
+        h: 16
+    },
+    barrierWarning: {
+        x: 194,
+        y: 171,
+        w: 16,
+        h: 16
+    },
+    barrierWarningVertical: {
+        x: 211,
+        y: 171,
+        w: 16,
+        h: 16
+    },
+    barrierYellow: {
+        x: 228,
+        y: 171,
+        w: 16,
+        h: 16
+    },
     building_fireStation_E: {
         x: 1,
         y: 1,
@@ -119,8 +143,8 @@ export const FRAMES = {
         h: 48
     },
     bush: {
-        x: 177,
-        y: 171,
+        x: 1,
+        y: 196,
         w: 16,
         h: 16
     },
@@ -269,403 +293,427 @@ export const FRAMES = {
         h: 24
     },
     cone: {
-        x: 194,
-        y: 171,
+        x: 18,
+        y: 196,
         w: 16,
         h: 16
     },
     crateFruit: {
-        x: 211,
-        y: 171,
+        x: 35,
+        y: 196,
         w: 16,
         h: 16
     },
     crateVeg: {
-        x: 228,
-        y: 171,
+        x: 52,
+        y: 196,
+        w: 16,
+        h: 16
+    },
+    detourE: {
+        x: 69,
+        y: 196,
+        w: 16,
+        h: 16
+    },
+    detourN: {
+        x: 86,
+        y: 196,
+        w: 16,
+        h: 16
+    },
+    detourS: {
+        x: 103,
+        y: 196,
+        w: 16,
+        h: 16
+    },
+    detourW: {
+        x: 120,
+        y: 196,
         w: 16,
         h: 16
     },
     dirt: {
-        x: 1,
+        x: 137,
         y: 196,
         w: 16,
         h: 16
     },
     doorHome: {
-        x: 18,
+        x: 154,
         y: 196,
         w: 16,
         h: 16
     },
     doorStore: {
-        x: 35,
+        x: 171,
         y: 196,
         w: 16,
         h: 16
     },
     grassA: {
-        x: 52,
+        x: 188,
         y: 196,
         w: 16,
         h: 16
     },
     grassB: {
-        x: 69,
+        x: 205,
         y: 196,
         w: 16,
         h: 16
     },
     plot: {
-        x: 86,
+        x: 222,
         y: 196,
         w: 16,
         h: 16
     },
     plotWorn: {
-        x: 103,
+        x: 239,
         y: 196,
         w: 16,
         h: 16
     },
     road0: {
-        x: 120,
-        y: 196,
+        x: 1,
+        y: 213,
         w: 16,
         h: 16
     },
     road1: {
-        x: 137,
-        y: 196,
+        x: 18,
+        y: 213,
         w: 16,
         h: 16
     },
     road10: {
-        x: 154,
-        y: 196,
+        x: 35,
+        y: 213,
         w: 16,
         h: 16
     },
     road11: {
-        x: 171,
-        y: 196,
+        x: 52,
+        y: 213,
         w: 16,
         h: 16
     },
     road12: {
-        x: 188,
-        y: 196,
+        x: 69,
+        y: 213,
         w: 16,
         h: 16
     },
     road13: {
-        x: 205,
-        y: 196,
+        x: 86,
+        y: 213,
         w: 16,
         h: 16
     },
     road14: {
-        x: 222,
-        y: 196,
+        x: 103,
+        y: 213,
         w: 16,
         h: 16
     },
     road15: {
-        x: 239,
-        y: 196,
+        x: 120,
+        y: 213,
         w: 16,
         h: 16
     },
     road2: {
-        x: 1,
+        x: 137,
         y: 213,
         w: 16,
         h: 16
     },
     road3: {
-        x: 18,
+        x: 154,
         y: 213,
         w: 16,
         h: 16
     },
     road4: {
-        x: 35,
+        x: 171,
         y: 213,
         w: 16,
         h: 16
     },
     road5: {
-        x: 52,
+        x: 188,
         y: 213,
         w: 16,
         h: 16
     },
     road6: {
-        x: 69,
+        x: 205,
         y: 213,
         w: 16,
         h: 16
     },
     road7: {
-        x: 86,
+        x: 222,
         y: 213,
         w: 16,
         h: 16
     },
     road8: {
-        x: 103,
+        x: 239,
         y: 213,
         w: 16,
         h: 16
     },
     road9: {
-        x: 120,
-        y: 213,
+        x: 1,
+        y: 230,
         w: 16,
         h: 16
     },
     roof_grey_b: {
-        x: 137,
-        y: 213,
+        x: 18,
+        y: 230,
         w: 16,
         h: 16
     },
     roof_grey_bl: {
-        x: 154,
-        y: 213,
+        x: 35,
+        y: 230,
         w: 16,
         h: 16
     },
     roof_grey_br: {
-        x: 171,
-        y: 213,
+        x: 52,
+        y: 230,
         w: 16,
         h: 16
     },
     roof_grey_l: {
-        x: 188,
-        y: 213,
+        x: 69,
+        y: 230,
         w: 16,
         h: 16
     },
     roof_grey_mid: {
-        x: 205,
-        y: 213,
+        x: 86,
+        y: 230,
         w: 16,
         h: 16
     },
     roof_grey_r: {
-        x: 222,
-        y: 213,
+        x: 103,
+        y: 230,
         w: 16,
         h: 16
     },
     roof_grey_t: {
-        x: 239,
-        y: 213,
+        x: 120,
+        y: 230,
         w: 16,
         h: 16
     },
     roof_grey_tl: {
-        x: 1,
+        x: 137,
         y: 230,
         w: 16,
         h: 16
     },
     roof_grey_tr: {
-        x: 18,
+        x: 154,
         y: 230,
         w: 16,
         h: 16
     },
     roof_pale_b: {
-        x: 35,
+        x: 171,
         y: 230,
         w: 16,
         h: 16
     },
     roof_pale_bl: {
-        x: 52,
+        x: 188,
         y: 230,
         w: 16,
         h: 16
     },
     roof_pale_br: {
-        x: 69,
+        x: 205,
         y: 230,
         w: 16,
         h: 16
     },
     roof_pale_l: {
-        x: 86,
+        x: 222,
         y: 230,
         w: 16,
         h: 16
     },
     roof_pale_mid: {
-        x: 103,
+        x: 239,
         y: 230,
         w: 16,
         h: 16
     },
     roof_pale_r: {
-        x: 120,
-        y: 230,
-        w: 16,
-        h: 16
-    },
-    roof_pale_t: {
-        x: 137,
-        y: 230,
-        w: 16,
-        h: 16
-    },
-    roof_pale_tl: {
-        x: 154,
-        y: 230,
-        w: 16,
-        h: 16
-    },
-    roof_pale_tr: {
-        x: 171,
-        y: 230,
-        w: 16,
-        h: 16
-    },
-    roof_red_b: {
-        x: 188,
-        y: 230,
-        w: 16,
-        h: 16
-    },
-    roof_red_bl: {
-        x: 205,
-        y: 230,
-        w: 16,
-        h: 16
-    },
-    roof_red_br: {
-        x: 222,
-        y: 230,
-        w: 16,
-        h: 16
-    },
-    roof_red_l: {
-        x: 239,
-        y: 230,
-        w: 16,
-        h: 16
-    },
-    roof_red_mid: {
         x: 1,
         y: 247,
         w: 16,
         h: 16
     },
-    roof_red_r: {
+    roof_pale_t: {
         x: 18,
         y: 247,
         w: 16,
         h: 16
     },
-    roof_red_t: {
+    roof_pale_tl: {
         x: 35,
         y: 247,
         w: 16,
         h: 16
     },
-    roof_red_tl: {
+    roof_pale_tr: {
         x: 52,
         y: 247,
         w: 16,
         h: 16
     },
-    roof_red_tr: {
+    roof_red_b: {
         x: 69,
         y: 247,
         w: 16,
         h: 16
     },
-    roof_tan_b: {
+    roof_red_bl: {
         x: 86,
         y: 247,
         w: 16,
         h: 16
     },
-    roof_tan_bl: {
+    roof_red_br: {
         x: 103,
         y: 247,
         w: 16,
         h: 16
     },
-    roof_tan_br: {
+    roof_red_l: {
         x: 120,
         y: 247,
         w: 16,
         h: 16
     },
-    roof_tan_l: {
+    roof_red_mid: {
         x: 137,
         y: 247,
         w: 16,
         h: 16
     },
-    roof_tan_mid: {
+    roof_red_r: {
         x: 154,
         y: 247,
         w: 16,
         h: 16
     },
-    roof_tan_r: {
+    roof_red_t: {
         x: 171,
         y: 247,
         w: 16,
         h: 16
     },
-    roof_tan_t: {
+    roof_red_tl: {
         x: 188,
         y: 247,
         w: 16,
         h: 16
     },
-    roof_tan_tl: {
+    roof_red_tr: {
         x: 205,
         y: 247,
         w: 16,
         h: 16
     },
-    roof_tan_tr: {
+    roof_tan_b: {
         x: 222,
         y: 247,
         w: 16,
         h: 16
     },
-    shopGlass: {
+    roof_tan_bl: {
         x: 239,
         y: 247,
         w: 16,
         h: 16
     },
-    shopGlassL: {
+    roof_tan_br: {
         x: 1,
         y: 264,
         w: 16,
         h: 16
     },
-    shopGlassR: {
+    roof_tan_l: {
         x: 18,
         y: 264,
         w: 16,
         h: 16
     },
-    signBar: {
+    roof_tan_mid: {
         x: 35,
         y: 264,
         w: 16,
         h: 16
     },
-    signDots: {
+    roof_tan_r: {
         x: 52,
+        y: 264,
+        w: 16,
+        h: 16
+    },
+    roof_tan_t: {
+        x: 69,
+        y: 264,
+        w: 16,
+        h: 16
+    },
+    roof_tan_tl: {
+        x: 86,
+        y: 264,
+        w: 16,
+        h: 16
+    },
+    roof_tan_tr: {
+        x: 103,
+        y: 264,
+        w: 16,
+        h: 16
+    },
+    shopGlass: {
+        x: 120,
+        y: 264,
+        w: 16,
+        h: 16
+    },
+    shopGlassL: {
+        x: 137,
+        y: 264,
+        w: 16,
+        h: 16
+    },
+    shopGlassR: {
+        x: 154,
+        y: 264,
+        w: 16,
+        h: 16
+    },
+    signBar: {
+        x: 171,
+        y: 264,
+        w: 16,
+        h: 16
+    },
+    signDots: {
+        x: 188,
         y: 264,
         w: 16,
         h: 16
@@ -689,85 +737,91 @@ export const FRAMES = {
         h: 32
     },
     wall_brick_l: {
-        x: 69,
-        y: 264,
-        w: 16,
-        h: 16
-    },
-    wall_brick_m: {
-        x: 86,
-        y: 264,
-        w: 16,
-        h: 16
-    },
-    wall_brick_one: {
-        x: 103,
-        y: 264,
-        w: 16,
-        h: 16
-    },
-    wall_brick_r: {
-        x: 120,
-        y: 264,
-        w: 16,
-        h: 16
-    },
-    wall_sand_l: {
-        x: 137,
-        y: 264,
-        w: 16,
-        h: 16
-    },
-    wall_sand_m: {
-        x: 154,
-        y: 264,
-        w: 16,
-        h: 16
-    },
-    wall_sand_one: {
-        x: 171,
-        y: 264,
-        w: 16,
-        h: 16
-    },
-    wall_sand_r: {
-        x: 188,
-        y: 264,
-        w: 16,
-        h: 16
-    },
-    wall_stone_l: {
         x: 205,
         y: 264,
         w: 16,
         h: 16
     },
-    wall_stone_m: {
+    wall_brick_m: {
         x: 222,
         y: 264,
         w: 16,
         h: 16
     },
-    wall_stone_one: {
+    wall_brick_one: {
         x: 239,
         y: 264,
         w: 16,
         h: 16
     },
-    wall_stone_r: {
+    wall_brick_r: {
         x: 1,
         y: 281,
         w: 16,
         h: 16
     },
-    windowFlat: {
+    wall_sand_l: {
         x: 18,
         y: 281,
         w: 16,
         h: 16
     },
-    windowHome: {
+    wall_sand_m: {
         x: 35,
+        y: 281,
+        w: 16,
+        h: 16
+    },
+    wall_sand_one: {
+        x: 52,
+        y: 281,
+        w: 16,
+        h: 16
+    },
+    wall_sand_r: {
+        x: 69,
+        y: 281,
+        w: 16,
+        h: 16
+    },
+    wall_stone_l: {
+        x: 86,
+        y: 281,
+        w: 16,
+        h: 16
+    },
+    wall_stone_m: {
+        x: 103,
+        y: 281,
+        w: 16,
+        h: 16
+    },
+    wall_stone_one: {
+        x: 120,
+        y: 281,
+        w: 16,
+        h: 16
+    },
+    wall_stone_r: {
+        x: 137,
+        y: 281,
+        w: 16,
+        h: 16
+    },
+    windowFlat: {
+        x: 154,
+        y: 281,
+        w: 16,
+        h: 16
+    },
+    windowHome: {
+        x: 171,
+        y: 281,
+        w: 16,
+        h: 16
+    },
+    workSurface: {
+        x: 188,
         y: 281,
         w: 16,
         h: 16

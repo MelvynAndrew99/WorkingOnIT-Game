@@ -290,3 +290,9 @@ Implemented shared weighted response route selection for police/EMS/fire dispatc
 232 model tests and production build pass. Chromium390/1440 verified simultaneous real dispatch, exact assignment/position reload continuity, rescue and all scene work, every original crew returned and civilian roundtrips completed. See docs/traffic-world/routing-implementation.md. No mockups or variations.
 
 Authorized Patch/public upload succeeded for the existing RUN identity as1.7.6; final tags show private/review1.7.6 and public1.7.5. New release awaits platform review; no hosted1.7.6 gameplay verification is claimed.
+
+### 2026-09-10 — UI enhancements submitted as RUN 1.7.7
+
+User explicitly requested publication after UI-06, superseding that implementation task's no-publication boundary, and reported 35 unique players. Compared all current runtime source/assets with the desktop/narrow-verified UI-06 snapshot: no changes. Fresh production build passed; prior 232 model tests and desktop/narrow browser checks remain applicable. Deployed the production dist with Patch bump and public release requested to existing game l7mD5BHH8LslWkr5mC7d.
+
+Upload succeeded as RUN 1.7.7, visibility review. Read-only tags confirmed private/review 1.7.7 and public 1.7.6; the UI update awaits platform review and is not yet confirmed live. No duplicate upload or hosted 1.7.7 gameplay verification. Notes: docs/releases/v0.2.7-changelog.md. Sanitized upload receipt and artifact hashes: docs/releases/run-1.7.7-receipt.json. Existing cities/save namespaces and game identity retained.

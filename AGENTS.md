@@ -1,5 +1,28 @@
 # Project instructions: city building and traffic optimization
 
+## Saved-city troubleshooting workflow (2026-09-10)
+
+User explicitly requests reusing the successful full-town debugging process for future issues. Follow [the saved-city troubleshooting brief](docs/SAVED-CITY-DEBUGGING.md): collect diagnostics plus the complete city save, preserve the original, reproduce with the real simulation in isolation, trace actual blockers, and retain regression coverage including reload and preservation checks. Diagnostics alone are not a full save. Explain that browser `copy()` returning `undefined` is normal. Never reset or modify the player’s active town to obtain a reproduction; distinguish verified model recovery from active-browser recovery and publication.
+
+
+## Roadworks artwork source correction (2026-09-10)
+
+User points back to the included Kenney sprite packs. Inspect and reuse those before commissioning custom art. Lead confirmed Modern City already contains cones, orange/white and yellow/black barriers, direction arrows, dirt and worn paving; cone/arrows/dirt/worn paving are already in the runtime atlas. See docs/artwork/roadworks/README.md for verified coordinates and preview. The earlier broad Claude custom-art request was premature; only genuinely missing variants should be authored after trying existing compositions. Source packs remain untouched.
+
+## Roadworks simulation preferences and sprite assignment (2026-09-10)
+
+User resolved the construction-access debate: initially **upgrade areas block responders too**, with short downtime. They requested Arcade versus Realistic preference in the pause menu and actual Grok collaboration, and assigned roadworks sprites to installed Claude. See docs/roadworks/MODES.md for the Grok-reviewed first mode contract and implementation boundaries. Both modes retain physical closures; shorter work/restoration in Arcade is a proposal, not authorization to remove rescue deadlines or resurrect casualties. A question about extra Arcade rescue protection remains open; preserve current deadlines by default. Avoid a mode selector with no functional effect; ship it with actual roadworks. Existing tools first, real widening next remains the progression order. No publication of this new mechanic is authorized by the prior UI-only release. Actual Grok review is recorded. Claude sprite generation was attempted twice but timed out without files; docs/artwork/roadworks/README.md records the blocked art delivery. No runtime roadworks/mode selector was implemented in this design/art-assignment pass.
+
+## Whole-game resilience and timed road upgrades (2026-09-10)
+
+User confirms useful service/growth goals form the whole-game core, with future transportation-engineering-inspired challenges. Single points of failure include neighborhood access roads, stores and parks. Road widening is wanted, and road upgrades should take time while traffic detours around them; emergency access matters. User asks about distinct Detour/Divert purposes. See docs/roadworks/PLAN.md and actual installed Grok review for proposals and the unresolved emergency-pass-through versus full-closure choice. Existing-tool flow prototype first remains selected, with widening next. Upgrade timers supersede earlier no-construction-timer proposals only for road upgrades; do not infer timers for every build, offline progress, random facility failures or paid skips. This turn is discussion/planning, no runtime implementation or publication.
+
+## First post-tutorial flow puzzle (2026-09-10)
+
+Latest user direction: transportation-engineering-inspired puzzles should arise in the player's own growing city after the tutorial, with civic service/growth outcomes rather than mandatory road-fix instructions. **Fun is greater than accuracy; exaggeration is welcome.** Preserve intuitive cause/effect and visible improvement. The initial LOS A–F / two-to-four-lane example is inspiration; user explicitly chose **existing tools first, widening next**. Do not require a prescribed solution, force a well-planned city to fail, or silently increase demand after success. Busy shops/parks should represent useful completed service, not trapped parked cars.
+
+Actual installed Grok consulted using a text-only design brief. Lead synthesis and staged implementation: docs/flow-puzzles/PLAN.md. Untimed first flow prototype, real trips/returns, two solutions and good initial layouts; four-lane road mechanics follow. Grok's timed Saturday event and numeric pass target were not adopted. Design/planning only in this discussion; no new runtime puzzle or publication yet. This refines the unfinished MECH-01/02 sustained-flow work after UI cleanup; blocking correctness remains first.
+
 ## UI verification scope (2026-09-10, latest user decision)
 
 Require only two representative layouts for future UI work: desktop and narrow. Conserve token usage by checking those two by default. Add other sizes or display-mode combinations only when a specific issue or task warrants them, and explain that need briefly. This supersedes earlier mandatory six-layout matrices, including UI-05; historical verification evidence remains valid. Preserve responsive behavior and saved display preferences.

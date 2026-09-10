@@ -156,3 +156,7 @@ The atlas also includes twelve user-approved service frames, `building_{hospital
 ## Approved emergency vehicles (2026-09-09)
 
 `car_{police,ems,fire}_{N,E,S,W}` frames come from the [editable service-vehicle source](artwork/service-vehicles/README.md). The user approved the code-drawn patrol car, box ambulance and ladder-equipped engine. Frames retain native 36×24 side and 22×29 front/rear canvases. `vehicleView` selects by service/facing; the scene consumes persisted lane shift and only flashes lights during response/scene work. Simulation footprints remain independent of sprite dimensions.
+
+## Kenney diversion and prepared roadworks props (2026-09-10)
+
+Modern City 16px tiles (17px stride): `barrierOrange` (24,5), `barrierWarning` (24,6), `barrierYellow` (24,7), plus existing `cone` (14,18). `workSurface` composes asphalt (11,19) with dirt (4,24); `detourN/E/S/W` combine barrier palette/legs with the existing directional arrow markings. All source coordinates are zero-based. The warning barrier and cone now render existing Divert tiles; remaining frames are prepared for future mechanics. See [preview and verification](artwork/roadworks/README.md). Previous atlas frame pixels are preserved.

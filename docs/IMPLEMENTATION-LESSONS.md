@@ -1,5 +1,10 @@
 # Shared implementation lessons
 
+## Saved-city troubleshooting workflow (2026-09-10)
+
+User explicitly requests reusing the successful full-town debugging process for future issues. Follow [the saved-city troubleshooting brief](SAVED-CITY-DEBUGGING.md): collect diagnostics plus the complete city save, preserve the original, reproduce with the real simulation in isolation, trace actual blockers, and retain regression coverage including reload and preservation checks. Diagnostics alone are not a full save. Explain that browser `copy()` returning `undefined` is normal. Never reset or modify the player’s active town to obtain a reproduction; distinguish verified model recovery from active-browser recovery and publication.
+
+
 ## UI verification budget (2026-09-10 user decision)
 
 Default to two representative layouts, desktop and narrow. Expand coverage only for a concrete issue or task-specific need, explaining why. Earlier multi-size test records document completed work; they do not mandate repeating those matrices. Continue checking actual interaction and screenshots within the selected layouts.

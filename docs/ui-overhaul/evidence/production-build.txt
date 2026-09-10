@@ -1,0 +1,37 @@
+warning: Git tree '/home/phil/Code/jams/AI-Overlord' is dirty
+Context Collapse environment ready: node, npm, rundot
+
+> working-on-it@1.0.0 build
+> npm run _build
+
+
+> working-on-it@1.0.0 _build
+> tsc --noEmit && vite build
+
+vite v6.4.3 building for production...
+transforming...
+✓ 792 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/rundot-game-libraries.manifest.json      0.90 kB │ gzip:   0.37 kB
+dist/index.html                               1.92 kB │ gzip:   0.98 kB
+dist/assets/_rundot_bootstrap.639f73d6.js     4.31 kB
+dist/assets/index-B_5cOaPk.css               55.41 kB │ gzip:  11.68 kB
+dist/assets/Filter-SM0bxjO0.js                0.90 kB │ gzip:   0.48 kB
+dist/assets/core-7QSNRRMV-W2DTfCWt.js         1.26 kB │ gzip:   0.57 kB
+dist/assets/BufferResource-D8HlNLfk.js       10.61 kB │ gzip:   2.79 kB
+dist/assets/BitmapFont-DiHVBhho.js           12.81 kB │ gzip:   4.67 kB
+dist/assets/webworkerAll-Xj_QjNej.js         15.42 kB │ gzip:   4.89 kB
+dist/assets/CanvasRenderer-DoXWzkYc.js       17.50 kB │ gzip:   5.86 kB
+dist/assets/WebGPURenderer-CBNET5TP.js       38.93 kB │ gzip:  10.87 kB
+dist/assets/browserAll-CHm8mqKJ.js           43.05 kB │ gzip:  11.31 kB
+dist/assets/RenderTargetSystem-TqS4Yfxz.js   46.37 kB │ gzip:  12.73 kB
+dist/assets/dist-AQIWY6KR-6PLyDLI8.js        47.41 kB │ gzip:  20.43 kB
+dist/assets/WebGLRenderer-Diu9IOM7.js        68.74 kB │ gzip:  18.84 kB
+dist/assets/index-DE7DGyl3.js               803.65 kB │ gzip: 260.60 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 4.52s

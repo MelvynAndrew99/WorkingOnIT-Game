@@ -1,0 +1,1 @@
+Touch placement, touch road drawing, drag cancellation, reduced motion, pause blocking, and UI-selected portrait persistence passed.

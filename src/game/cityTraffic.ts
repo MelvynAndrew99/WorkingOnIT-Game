@@ -307,6 +307,13 @@ export function isYielding(city: City, trip: Trip, preparedIndex?: RoadIndex): b
     if (area===undefined) continue;
     if (pass && passSlots(index,responder).some(s=>s.junction && index.areas.get(s.tile)===area)) return true;
     const rk=bodyTile(responder);
+    // A stranded exit queue can stop a responder before the junction. Holding
+    // the opposing lane as well traps traffic that could clear its way or make
+    // an alternate approach usable. Existing admission checks still apply to
+    // that traffic; active passing reservations retain priority above.
+    if (responder.hold >= REPLAN_PATIENCE && rk + 1 < responder.path.length
+      && !index.junctions.has(tileKey(responder.path[rk]))
+      && !allowed(city,index,grid(city,index).grid,responder,rk)) continue;
     // Yielding must not freeze the vehicle whose occupied space the responder needs.
     // The ordinary movement gate still checks lanes, controls and a clear junction exit.
     if(rk+1<responder.path.length){
@@ -517,9 +524,13 @@ function replan(city: City, index: RoadIndex): Set<number> {
       }
       if (stalled && trip.service && (isEmergencyResponse(trip)||trip.hold>=CITY_RULES.routing.civilianReplanSeconds)) {
         // Retry the same destination around stationary traffic, including newly built roads.
+        const remaining = new Set(trip.path.slice(k+1).map(tileKey));
         const avoid = new Set(city.trips.filter(t => t.id!==trip.id && onRoad(t)
           && (t.hold>=REPLAN_PATIENCE || blocksWholeTile(t)))
-          .map(t => tileKey(t.path[bodyTile(t)])));
+          .map(t => tileKey(t.path[bodyTile(t)]))
+          // Another approach's straight queue may be safely passable. Avoid
+          // this blocked route, rather than forbidding every queue in town.
+          .filter(tile => !isEmergencyResponse(trip) || remaining.has(tile)));
         avoid.delete(tileKey(trip.path[k]));
         if (trip.path.slice(k+1).some(p=>avoid.has(tileKey(p)))) {
           const candidate={...trip};

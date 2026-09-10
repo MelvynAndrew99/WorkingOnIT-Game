@@ -1,0 +1,1397 @@
+[
+  {
+    "name": "narrow",
+    "label": "locked",
+    "boxes": {
+      ".city-map-viewport": {
+        "x": 8,
+        "y": 218.9375,
+        "width": 374,
+        "height": 222.953125
+      },
+      ".city-header": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 166.9375
+      },
+      ".city-mission-region": {
+        "x": 8,
+        "y": 514.890625,
+        "width": 374,
+        "height": 185.109375
+      },
+      ".city-build-region": {
+        "x": 8,
+        "y": 708,
+        "width": 374,
+        "height": 128
+      },
+      ".map-rail": {
+        "x": 8,
+        "y": 170.9375,
+        "width": 374,
+        "height": 44
+      }
+    },
+    "buttons": [
+      {
+        "tool": "policeStation",
+        "x": 12,
+        "y": 764,
+        "width": 88.5,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "fireStation",
+        "x": 104.5,
+        "y": 764,
+        "width": 88.5,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "hospital",
+        "x": 197,
+        "y": 764,
+        "width": 88.5,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      }
+    ],
+    "actions": [
+      {
+        "x": 22,
+        "y": 642,
+        "width": 193.59375,
+        "height": 44
+      }
+    ],
+    "scroll": false
+  },
+  {
+    "name": "narrow",
+    "label": "waived",
+    "boxes": {
+      ".city-map-viewport": {
+        "x": 8,
+        "y": 218.9375,
+        "width": 374,
+        "height": 169.265625
+      },
+      ".city-header": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 166.9375
+      },
+      ".city-mission-region": {
+        "x": 8,
+        "y": 461.203125,
+        "width": 374,
+        "height": 238.796875
+      },
+      ".city-build-region": {
+        "x": 8,
+        "y": 708,
+        "width": 374,
+        "height": 128
+      },
+      ".map-rail": {
+        "x": 8,
+        "y": 170.9375,
+        "width": 374,
+        "height": 44
+      }
+    },
+    "buttons": [
+      {
+        "tool": "home",
+        "x": 12,
+        "y": 764,
+        "width": 88.5,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "store",
+        "x": 104.5,
+        "y": 764,
+        "width": 88.5,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "park",
+        "x": 197,
+        "y": 764,
+        "width": 88.5,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "bulldoze",
+        "x": 289.5,
+        "y": 764,
+        "width": 88.5,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      }
+    ],
+    "actions": [
+      {
+        "x": 22,
+        "y": 642,
+        "width": 193.59375,
+        "height": 44
+      }
+    ],
+    "scroll": false
+  },
+  {
+    "name": "narrow",
+    "label": "tutorial-selected",
+    "boxes": {
+      ".city-map-viewport": {
+        "x": 8,
+        "y": 218.9375,
+        "width": 374,
+        "height": 169.265625
+      },
+      ".city-header": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 166.9375
+      },
+      ".city-mission-region": {
+        "x": 8,
+        "y": 461.203125,
+        "width": 374,
+        "height": 190.796875
+      },
+      ".city-build-region": {
+        "x": 8,
+        "y": 660,
+        "width": 374,
+        "height": 176
+      },
+      ".map-rail": {
+        "x": 8,
+        "y": 170.9375,
+        "width": 374,
+        "height": 44
+      }
+    },
+    "buttons": [
+      {
+        "tool": "home",
+        "x": 12,
+        "y": 716,
+        "width": 88.5,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "store",
+        "x": 104.5,
+        "y": 716,
+        "width": 88.5,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "park",
+        "x": 197,
+        "y": 716,
+        "width": 88.5,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "bulldoze",
+        "x": 289.5,
+        "y": 716,
+        "width": 88.5,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      }
+    ],
+    "actions": [
+      {
+        "x": 22,
+        "y": 594,
+        "width": 193.59375,
+        "height": 44
+      }
+    ],
+    "scroll": false
+  },
+  {
+    "name": "narrow",
+    "label": "unaffordable",
+    "boxes": {
+      ".city-map-viewport": {
+        "x": 8,
+        "y": 218.9375,
+        "width": 374,
+        "height": 176.03125
+      },
+      ".city-header": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 166.9375
+      },
+      ".city-mission-region": {
+        "x": 8,
+        "y": 467.96875,
+        "width": 374,
+        "height": 184.03125
+      },
+      ".city-build-region": {
+        "x": 8,
+        "y": 660,
+        "width": 374,
+        "height": 176
+      },
+      ".map-rail": {
+        "x": 8,
+        "y": 170.9375,
+        "width": 374,
+        "height": 44
+      }
+    },
+    "buttons": [
+      {
+        "tool": "policeStation",
+        "x": 12,
+        "y": 716,
+        "width": 88.5,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "fireStation",
+        "x": 104.5,
+        "y": 716,
+        "width": 88.5,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "hospital",
+        "x": 197,
+        "y": 716,
+        "width": 88.5,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      }
+    ],
+    "actions": [
+      {
+        "x": 22,
+        "y": 569.96875,
+        "width": 116.1875,
+        "height": 68.03125
+      },
+      {
+        "x": 142.1875,
+        "y": 569.96875,
+        "width": 84.5,
+        "height": 68.03125
+      }
+    ],
+    "scroll": false
+  },
+  {
+    "name": "narrow",
+    "label": "rotated-placement",
+    "boxes": {
+      ".city-map-viewport": {
+        "x": 8,
+        "y": 218.9375,
+        "width": 188.40625,
+        "height": 188.03125
+      },
+      ".city-header": {
+        "x": 0,
+        "y": 0,
+        "width": 382,
+        "height": 166.9375
+      },
+      ".city-mission-region": {
+        "x": 8,
+        "y": 479.96875,
+        "width": 366,
+        "height": 184.03125
+      },
+      ".city-build-region": {
+        "x": 8,
+        "y": 672,
+        "width": 366,
+        "height": 176
+      },
+      ".city-dashboard": {
+        "x": 204.40625,
+        "y": 218.9375,
+        "width": 169.59375,
+        "height": 188.03125
+      },
+      ".map-rail": {
+        "x": 8,
+        "y": 170.9375,
+        "width": 366,
+        "height": 44
+      }
+    },
+    "buttons": [
+      {
+        "tool": "home",
+        "x": 12,
+        "y": 728,
+        "width": 86.5,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "store",
+        "x": 102.5,
+        "y": 728,
+        "width": 86.5,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "park",
+        "x": 193,
+        "y": 728,
+        "width": 86.5,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "bulldoze",
+        "x": 283.5,
+        "y": 728,
+        "width": 86.5,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      }
+    ],
+    "actions": [
+      {
+        "x": 22,
+        "y": 581.96875,
+        "width": 113.4375,
+        "height": 68.03125
+      },
+      {
+        "x": 139.4375,
+        "y": 581.96875,
+        "width": 82.5,
+        "height": 68.03125
+      }
+    ],
+    "scroll": false
+  },
+  {
+    "name": "narrow",
+    "label": "expanded",
+    "boxes": {
+      ".city-map-viewport": {
+        "x": 8,
+        "y": 218.9375,
+        "width": 366,
+        "height": 236.03125
+      },
+      ".city-header": {
+        "x": 0,
+        "y": 0,
+        "width": 382,
+        "height": 166.9375
+      },
+      ".city-mission-region": {
+        "x": 8,
+        "y": 527.96875,
+        "width": 366,
+        "height": 184.03125
+      },
+      ".city-build-region": {
+        "x": 8,
+        "y": 720,
+        "width": 366,
+        "height": 128
+      },
+      ".map-rail": {
+        "x": 8,
+        "y": 170.9375,
+        "width": 366,
+        "height": 44
+      }
+    },
+    "buttons": [
+      {
+        "tool": "policeStation",
+        "x": 12,
+        "y": 776,
+        "width": 86.5,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "fireStation",
+        "x": 102.5,
+        "y": 776,
+        "width": 86.5,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "hospital",
+        "x": 193,
+        "y": 776,
+        "width": 86.5,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      }
+    ],
+    "actions": [
+      {
+        "x": 22,
+        "y": 629.96875,
+        "width": 113.4375,
+        "height": 68.03125
+      },
+      {
+        "x": 139.4375,
+        "y": 629.96875,
+        "width": 82.5,
+        "height": 68.03125
+      }
+    ],
+    "scroll": false
+  },
+  {
+    "name": "desktop",
+    "label": "locked",
+    "boxes": {
+      ".city-map-viewport": {
+        "x": 8,
+        "y": 117.984375,
+        "width": 1424,
+        "height": 486.796875
+      },
+      ".city-header": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 65.984375
+      },
+      ".city-mission-region": {
+        "x": 12,
+        "y": 677.78125,
+        "width": 469.328125,
+        "height": 214.21875
+      },
+      ".city-build-region": {
+        "x": 489.328125,
+        "y": 677.78125,
+        "width": 938.671875,
+        "height": 214.21875
+      },
+      ".map-rail": {
+        "x": 8,
+        "y": 69.984375,
+        "width": 1424,
+        "height": 44
+      }
+    },
+    "buttons": [
+      {
+        "tool": "road",
+        "x": 493.328125,
+        "y": 714.890625,
+        "width": 112.328125,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "stop",
+        "x": 609.65625,
+        "y": 714.890625,
+        "width": 112.328125,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "signal",
+        "x": 725.984375,
+        "y": 714.890625,
+        "width": 112.328125,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "closure",
+        "x": 842.3125,
+        "y": 714.890625,
+        "width": 112.34375,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "home",
+        "x": 962.65625,
+        "y": 714.890625,
+        "width": 112.328125,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "store",
+        "x": 1078.984375,
+        "y": 714.890625,
+        "width": 112.34375,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "park",
+        "x": 1195.328125,
+        "y": 714.890625,
+        "width": 112.328125,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "bulldoze",
+        "x": 1311.65625,
+        "y": 714.890625,
+        "width": 112.34375,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "policeStation",
+        "x": 493.328125,
+        "y": 820,
+        "width": 112.328125,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "fireStation",
+        "x": 609.65625,
+        "y": 820,
+        "width": 112.328125,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "hospital",
+        "x": 725.984375,
+        "y": 820,
+        "width": 112.328125,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      }
+    ],
+    "actions": [
+      {
+        "x": 26,
+        "y": 834,
+        "width": 441.328125,
+        "height": 44
+      }
+    ],
+    "scroll": false
+  },
+  {
+    "name": "desktop",
+    "label": "waived",
+    "boxes": {
+      ".city-map-viewport": {
+        "x": 8,
+        "y": 117.984375,
+        "width": 1424,
+        "height": 461.453125
+      },
+      ".city-header": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 65.984375
+      },
+      ".city-mission-region": {
+        "x": 12,
+        "y": 652.4375,
+        "width": 469.328125,
+        "height": 239.5625
+      },
+      ".city-build-region": {
+        "x": 489.328125,
+        "y": 652.4375,
+        "width": 938.671875,
+        "height": 239.5625
+      },
+      ".map-rail": {
+        "x": 8,
+        "y": 69.984375,
+        "width": 1424,
+        "height": 44
+      }
+    },
+    "buttons": [
+      {
+        "tool": "road",
+        "x": 493.328125,
+        "y": 689.546875,
+        "width": 112.328125,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "stop",
+        "x": 609.65625,
+        "y": 689.546875,
+        "width": 112.328125,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "signal",
+        "x": 725.984375,
+        "y": 689.546875,
+        "width": 112.328125,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "closure",
+        "x": 842.3125,
+        "y": 689.546875,
+        "width": 112.34375,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "home",
+        "x": 962.65625,
+        "y": 689.546875,
+        "width": 112.328125,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "store",
+        "x": 1078.984375,
+        "y": 689.546875,
+        "width": 112.34375,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "park",
+        "x": 1195.328125,
+        "y": 689.546875,
+        "width": 112.328125,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "bulldoze",
+        "x": 1311.65625,
+        "y": 689.546875,
+        "width": 112.34375,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "policeStation",
+        "x": 493.328125,
+        "y": 794.65625,
+        "width": 112.328125,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "fireStation",
+        "x": 609.65625,
+        "y": 794.65625,
+        "width": 112.328125,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "hospital",
+        "x": 725.984375,
+        "y": 794.65625,
+        "width": 112.328125,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      }
+    ],
+    "actions": [
+      {
+        "x": 26,
+        "y": 834,
+        "width": 441.328125,
+        "height": 44
+      }
+    ],
+    "scroll": false
+  },
+  {
+    "name": "desktop",
+    "label": "tutorial-selected",
+    "boxes": {
+      ".city-map-viewport": {
+        "x": 8,
+        "y": 117.984375,
+        "width": 1424,
+        "height": 434.796875
+      },
+      ".city-header": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 65.984375
+      },
+      ".city-mission-region": {
+        "x": 12,
+        "y": 625.78125,
+        "width": 469.328125,
+        "height": 266.21875
+      },
+      ".city-build-region": {
+        "x": 489.328125,
+        "y": 625.78125,
+        "width": 938.671875,
+        "height": 266.21875
+      },
+      ".map-rail": {
+        "x": 8,
+        "y": 69.984375,
+        "width": 1424,
+        "height": 44
+      }
+    },
+    "buttons": [
+      {
+        "tool": "road",
+        "x": 493.328125,
+        "y": 662.890625,
+        "width": 112.328125,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "stop",
+        "x": 609.65625,
+        "y": 662.890625,
+        "width": 112.328125,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "signal",
+        "x": 725.984375,
+        "y": 662.890625,
+        "width": 112.328125,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "closure",
+        "x": 842.3125,
+        "y": 662.890625,
+        "width": 112.34375,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "home",
+        "x": 962.65625,
+        "y": 662.890625,
+        "width": 112.328125,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "store",
+        "x": 1078.984375,
+        "y": 662.890625,
+        "width": 112.34375,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "park",
+        "x": 1195.328125,
+        "y": 662.890625,
+        "width": 112.328125,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "bulldoze",
+        "x": 1311.65625,
+        "y": 662.890625,
+        "width": 112.34375,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "policeStation",
+        "x": 493.328125,
+        "y": 768,
+        "width": 112.328125,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "fireStation",
+        "x": 609.65625,
+        "y": 768,
+        "width": 112.328125,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "hospital",
+        "x": 725.984375,
+        "y": 768,
+        "width": 112.328125,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      }
+    ],
+    "actions": [
+      {
+        "x": 26,
+        "y": 834,
+        "width": 441.328125,
+        "height": 44
+      }
+    ],
+    "scroll": false
+  },
+  {
+    "name": "desktop",
+    "label": "unaffordable",
+    "boxes": {
+      ".city-map-viewport": {
+        "x": 8,
+        "y": 117.984375,
+        "width": 1424,
+        "height": 434.796875
+      },
+      ".city-header": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 65.984375
+      },
+      ".city-mission-region": {
+        "x": 12,
+        "y": 625.78125,
+        "width": 469.328125,
+        "height": 266.21875
+      },
+      ".city-build-region": {
+        "x": 489.328125,
+        "y": 625.78125,
+        "width": 938.671875,
+        "height": 266.21875
+      },
+      ".map-rail": {
+        "x": 8,
+        "y": 69.984375,
+        "width": 1424,
+        "height": 44
+      }
+    },
+    "buttons": [
+      {
+        "tool": "road",
+        "x": 493.328125,
+        "y": 662.890625,
+        "width": 112.328125,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "stop",
+        "x": 609.65625,
+        "y": 662.890625,
+        "width": 112.328125,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "signal",
+        "x": 725.984375,
+        "y": 662.890625,
+        "width": 112.328125,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "closure",
+        "x": 842.3125,
+        "y": 662.890625,
+        "width": 112.34375,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "home",
+        "x": 962.65625,
+        "y": 662.890625,
+        "width": 112.328125,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "store",
+        "x": 1078.984375,
+        "y": 662.890625,
+        "width": 112.34375,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "park",
+        "x": 1195.328125,
+        "y": 662.890625,
+        "width": 112.328125,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "bulldoze",
+        "x": 1311.65625,
+        "y": 662.890625,
+        "width": 112.34375,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "policeStation",
+        "x": 493.328125,
+        "y": 768,
+        "width": 112.328125,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "fireStation",
+        "x": 609.65625,
+        "y": 768,
+        "width": 112.328125,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "hospital",
+        "x": 725.984375,
+        "y": 768,
+        "width": 112.328125,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      }
+    ],
+    "actions": [
+      {
+        "x": 26,
+        "y": 809.96875,
+        "width": 148.953125,
+        "height": 68.03125
+      },
+      {
+        "x": 178.953125,
+        "y": 809.96875,
+        "width": 108.328125,
+        "height": 68.03125
+      }
+    ],
+    "scroll": false
+  },
+  {
+    "name": "desktop",
+    "label": "rotated-placement",
+    "boxes": {
+      ".city-map-viewport": {
+        "x": 8,
+        "y": 117.984375,
+        "width": 1008,
+        "height": 446.796875
+      },
+      ".city-header": {
+        "x": 0,
+        "y": 0,
+        "width": 1432,
+        "height": 65.984375
+      },
+      ".city-mission-region": {
+        "x": 12,
+        "y": 637.78125,
+        "width": 466.65625,
+        "height": 266.21875
+      },
+      ".city-build-region": {
+        "x": 486.65625,
+        "y": 637.78125,
+        "width": 933.34375,
+        "height": 266.21875
+      },
+      ".city-dashboard": {
+        "x": 1024,
+        "y": 117.984375,
+        "width": 400,
+        "height": 446.796875
+      },
+      ".map-rail": {
+        "x": 8,
+        "y": 69.984375,
+        "width": 1416,
+        "height": 44
+      }
+    },
+    "buttons": [
+      {
+        "tool": "road",
+        "x": 490.65625,
+        "y": 674.890625,
+        "width": 111.65625,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "stop",
+        "x": 606.3125,
+        "y": 674.890625,
+        "width": 111.671875,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "signal",
+        "x": 721.984375,
+        "y": 674.890625,
+        "width": 111.671875,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "closure",
+        "x": 837.65625,
+        "y": 674.890625,
+        "width": 111.671875,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "home",
+        "x": 957.328125,
+        "y": 674.890625,
+        "width": 111.65625,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "store",
+        "x": 1072.984375,
+        "y": 674.890625,
+        "width": 111.671875,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "park",
+        "x": 1188.65625,
+        "y": 674.890625,
+        "width": 111.671875,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "bulldoze",
+        "x": 1304.328125,
+        "y": 674.890625,
+        "width": 111.671875,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "policeStation",
+        "x": 490.65625,
+        "y": 780,
+        "width": 111.65625,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "fireStation",
+        "x": 606.3125,
+        "y": 780,
+        "width": 111.671875,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "hospital",
+        "x": 721.984375,
+        "y": 780,
+        "width": 111.671875,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      }
+    ],
+    "actions": [
+      {
+        "x": 26,
+        "y": 821.96875,
+        "width": 148.03125,
+        "height": 68.03125
+      },
+      {
+        "x": 178.03125,
+        "y": 821.96875,
+        "width": 107.65625,
+        "height": 68.03125
+      }
+    ],
+    "scroll": false
+  },
+  {
+    "name": "desktop",
+    "label": "expanded",
+    "boxes": {
+      ".city-map-viewport": {
+        "x": 8,
+        "y": 117.984375,
+        "width": 1416,
+        "height": 498.796875
+      },
+      ".city-header": {
+        "x": 0,
+        "y": 0,
+        "width": 1432,
+        "height": 65.984375
+      },
+      ".city-mission-region": {
+        "x": 12,
+        "y": 689.78125,
+        "width": 466.65625,
+        "height": 214.21875
+      },
+      ".city-build-region": {
+        "x": 486.65625,
+        "y": 689.78125,
+        "width": 933.34375,
+        "height": 214.21875
+      },
+      ".map-rail": {
+        "x": 8,
+        "y": 69.984375,
+        "width": 1416,
+        "height": 44
+      }
+    },
+    "buttons": [
+      {
+        "tool": "road",
+        "x": 490.65625,
+        "y": 726.890625,
+        "width": 111.65625,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "stop",
+        "x": 606.3125,
+        "y": 726.890625,
+        "width": 111.671875,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "signal",
+        "x": 721.984375,
+        "y": 726.890625,
+        "width": 111.671875,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "closure",
+        "x": 837.65625,
+        "y": 726.890625,
+        "width": 111.671875,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "home",
+        "x": 957.328125,
+        "y": 726.890625,
+        "width": 111.65625,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "store",
+        "x": 1072.984375,
+        "y": 726.890625,
+        "width": 111.671875,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "park",
+        "x": 1188.65625,
+        "y": 726.890625,
+        "width": 111.671875,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "bulldoze",
+        "x": 1304.328125,
+        "y": 726.890625,
+        "width": 111.671875,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "policeStation",
+        "x": 490.65625,
+        "y": 832,
+        "width": 111.65625,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "fireStation",
+        "x": 606.3125,
+        "y": 832,
+        "width": 111.671875,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      },
+      {
+        "tool": "hospital",
+        "x": 721.984375,
+        "y": 832,
+        "width": 111.671875,
+        "height": 68,
+        "overflow": false,
+        "icon": true
+      }
+    ],
+    "actions": [
+      {
+        "x": 26,
+        "y": 821.96875,
+        "width": 148.03125,
+        "height": 68.03125
+      },
+      {
+        "x": 178.03125,
+        "y": 821.96875,
+        "width": 107.65625,
+        "height": 68.03125
+      }
+    ],
+    "scroll": false
+  }
+]

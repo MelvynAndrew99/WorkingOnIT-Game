@@ -1,0 +1,450 @@
+[
+  {
+    "name": "desktop",
+    "label": "old-complete",
+    "map": {
+      "x": 8,
+      "y": 117.984375,
+      "width": 1424,
+      "height": 486.796875,
+      "bottom": 604.78125
+    },
+    "mission": {
+      "x": 16,
+      "y": 681.78125,
+      "width": 461.328125,
+      "height": 206.21875,
+      "bottom": 888
+    },
+    "actions": {
+      "x": 26,
+      "y": 809.96875,
+      "width": 441.328125,
+      "height": 68.03125,
+      "bottom": 878
+    },
+    "title": {
+      "x": 26,
+      "y": 716,
+      "width": 441.328125,
+      "height": 22.796875,
+      "bottom": 738.796875
+    }
+  },
+  {
+    "name": "desktop",
+    "label": "connected-complete",
+    "map": {
+      "x": 8,
+      "y": 117.984375,
+      "width": 1424,
+      "height": 486.796875,
+      "bottom": 604.78125
+    },
+    "mission": {
+      "x": 16,
+      "y": 681.78125,
+      "width": 461.328125,
+      "height": 206.21875,
+      "bottom": 888
+    },
+    "actions": {
+      "x": 26,
+      "y": 834,
+      "width": 441.328125,
+      "height": 44,
+      "bottom": 878
+    },
+    "title": {
+      "x": 26,
+      "y": 716,
+      "width": 441.328125,
+      "height": 22.796875,
+      "bottom": 738.796875
+    }
+  },
+  {
+    "name": "desktop",
+    "label": "old-skipped",
+    "map": {
+      "x": 8,
+      "y": 117.984375,
+      "width": 1424,
+      "height": 486.796875,
+      "bottom": 604.78125
+    },
+    "mission": {
+      "x": 16,
+      "y": 681.78125,
+      "width": 461.328125,
+      "height": 206.21875,
+      "bottom": 888
+    },
+    "actions": {
+      "x": 26,
+      "y": 809.96875,
+      "width": 441.328125,
+      "height": 68.03125,
+      "bottom": 878
+    },
+    "title": {
+      "x": 26,
+      "y": 716,
+      "width": 441.328125,
+      "height": 22.796875,
+      "bottom": 738.796875
+    }
+  },
+  {
+    "name": "desktop",
+    "label": "connected-skipped",
+    "map": {
+      "x": 8,
+      "y": 117.984375,
+      "width": 1424,
+      "height": 486.796875,
+      "bottom": 604.78125
+    },
+    "mission": {
+      "x": 16,
+      "y": 681.78125,
+      "width": 461.328125,
+      "height": 206.21875,
+      "bottom": 888
+    },
+    "actions": {
+      "x": 26,
+      "y": 834,
+      "width": 441.328125,
+      "height": 44,
+      "bottom": 878
+    },
+    "title": {
+      "x": 26,
+      "y": 716,
+      "width": 441.328125,
+      "height": 22.796875,
+      "bottom": 738.796875
+    }
+  },
+  {
+    "name": "desktop",
+    "label": "pending",
+    "map": {
+      "x": 8,
+      "y": 117.984375,
+      "width": 1424,
+      "height": 413.34375,
+      "bottom": 531.328125
+    },
+    "mission": {
+      "x": 16,
+      "y": 608.328125,
+      "width": 461.328125,
+      "height": 279.671875,
+      "bottom": 888
+    },
+    "actions": {
+      "x": 26,
+      "y": 715.5625,
+      "width": 441.328125,
+      "height": 44,
+      "bottom": 759.5625
+    },
+    "title": {
+      "x": 26,
+      "y": 642.546875,
+      "width": 441.328125,
+      "height": 22.796875,
+      "bottom": 665.34375
+    }
+  },
+  {
+    "name": "desktop",
+    "label": "pending-recovered",
+    "map": {
+      "x": 8,
+      "y": 117.984375,
+      "width": 1424,
+      "height": 486.796875,
+      "bottom": 604.78125
+    },
+    "mission": {
+      "x": 16,
+      "y": 681.78125,
+      "width": 461.328125,
+      "height": 206.21875,
+      "bottom": 888
+    },
+    "actions": {
+      "x": 26,
+      "y": 834,
+      "width": 441.328125,
+      "height": 44,
+      "bottom": 878
+    },
+    "title": {
+      "x": 26,
+      "y": 716,
+      "width": 441.328125,
+      "height": 22.796875,
+      "bottom": 738.796875
+    }
+  },
+  {
+    "name": "desktop",
+    "label": "available-started",
+    "map": {
+      "x": 8,
+      "y": 117.984375,
+      "width": 1424,
+      "height": 486.796875,
+      "bottom": 604.78125
+    },
+    "mission": {
+      "x": 16,
+      "y": 681.78125,
+      "width": 461.328125,
+      "height": 206.21875,
+      "bottom": 888
+    },
+    "actions": {
+      "x": 26,
+      "y": 834,
+      "width": 441.328125,
+      "height": 44,
+      "bottom": 878
+    },
+    "title": {
+      "x": 26,
+      "y": 716,
+      "width": 441.328125,
+      "height": 22.796875,
+      "bottom": 738.796875
+    }
+  },
+  {
+    "name": "narrow",
+    "label": "old-complete",
+    "map": {
+      "x": 8,
+      "y": 218.9375,
+      "width": 374,
+      "height": 214.796875,
+      "bottom": 433.734375
+    },
+    "mission": {
+      "x": 12,
+      "y": 510.734375,
+      "width": 366,
+      "height": 185.265625,
+      "bottom": 696
+    },
+    "actions": {
+      "x": 22,
+      "y": 617.96875,
+      "width": 346,
+      "height": 68.03125,
+      "bottom": 686
+    },
+    "title": {
+      "x": 22,
+      "y": 544.953125,
+      "width": 346,
+      "height": 22.796875,
+      "bottom": 567.75
+    }
+  },
+  {
+    "name": "narrow",
+    "label": "connected-complete",
+    "map": {
+      "x": 8,
+      "y": 218.9375,
+      "width": 374,
+      "height": 213.71875,
+      "bottom": 432.65625
+    },
+    "mission": {
+      "x": 12,
+      "y": 509.65625,
+      "width": 366,
+      "height": 186.34375,
+      "bottom": 696
+    },
+    "actions": {
+      "x": 22,
+      "y": 642,
+      "width": 346,
+      "height": 44,
+      "bottom": 686
+    },
+    "title": {
+      "x": 22,
+      "y": 543.875,
+      "width": 346,
+      "height": 22.796875,
+      "bottom": 566.671875
+    }
+  },
+  {
+    "name": "narrow",
+    "label": "old-skipped",
+    "map": {
+      "x": 8,
+      "y": 218.9375,
+      "width": 374,
+      "height": 214.796875,
+      "bottom": 433.734375
+    },
+    "mission": {
+      "x": 12,
+      "y": 510.734375,
+      "width": 366,
+      "height": 185.265625,
+      "bottom": 696
+    },
+    "actions": {
+      "x": 22,
+      "y": 617.96875,
+      "width": 346,
+      "height": 68.03125,
+      "bottom": 686
+    },
+    "title": {
+      "x": 22,
+      "y": 544.953125,
+      "width": 346,
+      "height": 22.796875,
+      "bottom": 567.75
+    }
+  },
+  {
+    "name": "narrow",
+    "label": "connected-skipped",
+    "map": {
+      "x": 8,
+      "y": 218.9375,
+      "width": 374,
+      "height": 213.71875,
+      "bottom": 432.65625
+    },
+    "mission": {
+      "x": 12,
+      "y": 509.65625,
+      "width": 366,
+      "height": 186.34375,
+      "bottom": 696
+    },
+    "actions": {
+      "x": 22,
+      "y": 642,
+      "width": 346,
+      "height": 44,
+      "bottom": 686
+    },
+    "title": {
+      "x": 22,
+      "y": 543.875,
+      "width": 346,
+      "height": 22.796875,
+      "bottom": 566.671875
+    }
+  },
+  {
+    "name": "narrow",
+    "label": "pending",
+    "map": {
+      "x": 8,
+      "y": 218.9375,
+      "width": 374,
+      "height": 139.0625,
+      "bottom": 358
+    },
+    "mission": {
+      "x": 12,
+      "y": 435,
+      "width": 366,
+      "height": 261,
+      "bottom": 696
+    },
+    "actions": {
+      "x": 22,
+      "y": 559,
+      "width": 346,
+      "height": 44,
+      "bottom": 603
+    },
+    "title": {
+      "x": 22,
+      "y": 469.21875,
+      "width": 346,
+      "height": 22.796875,
+      "bottom": 492.015625
+    }
+  },
+  {
+    "name": "narrow",
+    "label": "pending-recovered",
+    "map": {
+      "x": 8,
+      "y": 218.9375,
+      "width": 374,
+      "height": 213.71875,
+      "bottom": 432.65625
+    },
+    "mission": {
+      "x": 12,
+      "y": 509.65625,
+      "width": 366,
+      "height": 186.34375,
+      "bottom": 696
+    },
+    "actions": {
+      "x": 22,
+      "y": 642,
+      "width": 346,
+      "height": 44,
+      "bottom": 686
+    },
+    "title": {
+      "x": 22,
+      "y": 543.875,
+      "width": 346,
+      "height": 22.796875,
+      "bottom": 566.671875
+    }
+  },
+  {
+    "name": "narrow",
+    "label": "available-started",
+    "map": {
+      "x": 8,
+      "y": 218.9375,
+      "width": 374,
+      "height": 222.953125,
+      "bottom": 441.890625
+    },
+    "mission": {
+      "x": 12,
+      "y": 518.890625,
+      "width": 366,
+      "height": 177.109375,
+      "bottom": 696
+    },
+    "actions": {
+      "x": 22,
+      "y": 642,
+      "width": 346,
+      "height": 44,
+      "bottom": 686
+    },
+    "title": {
+      "x": 22,
+      "y": 553.109375,
+      "width": 346,
+      "height": 22.796875,
+      "bottom": 575.90625
+    }
+  }
+]

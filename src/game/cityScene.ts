@@ -223,6 +223,20 @@ export function createCityScene(app: Application, stage: Stage): Scene {
         // the road, so they are drawn first and never hidden by a facade.
         for (const b of city.buildings) drawAccess(world, b, roads);
         for (const b of [...city.buildings].sort((a, c) => a.y - c.y)) drawBuilding(world, b);
+        if (artReady) for (const p of city.closures) {
+            // Divert is a traffic restriction, not excavation. Keep asphalt
+            // visible and use upright roadside furniture; responding crews
+            // retain their existing physical passage through this tile.
+            const northSouth = roads.has(`${p.x},${p.y - 1}`) || roads.has(`${p.x},${p.y + 1}`);
+            const eastWest = roads.has(`${p.x - 1},${p.y}`) || roads.has(`${p.x + 1},${p.y}`);
+            if (northSouth)
+                put(world, { name: 'barrierWarning', tx: .03, ty: -.12, tw: .7, th: .45 }, p.x, p.y);
+            if (eastWest || !northSouth)
+                put(world, { name: 'barrierWarningVertical', tx: -.18, ty: .02, tw: .7, th: .9 }, p.x, p.y);
+            const corners = northSouth && !eastWest ? [[.04, .61], [.72, .61]] : [[.69, .05], [.69, .69]];
+            for (const [tx, ty] of corners)
+                put(world, { name: 'cone', tx, ty, tw: .28, th: .28 }, p.x, p.y);
+        }
     }
 
     function renderControls() {
@@ -411,6 +425,13 @@ export function createCityScene(app: Application, stage: Stage): Scene {
         }
         const roads = new Set(city.roads.map(p => `${p.x},${p.y}`));
         for(const p of city.closures) {
+            if (artReady) {
+                // Small overview cue supplements the pixel props when zoomed
+                // out. Do not draw a solid barricade over the usable road.
+                activity.rect(px(p.x + .04), py(p.y + .04), tile * .92, tile * .92)
+                    .stroke({ color: 0xffbb55, width: 1.5, alpha: .8 });
+                continue;
+            }
             const eastWest = roads.has(`${p.x-1},${p.y}`) || roads.has(`${p.x+1},${p.y}`);
             const northSouth = roads.has(`${p.x},${p.y-1}`) || roads.has(`${p.x},${p.y+1}`);
             // Barriers span the carriageway. At bends/junctions mark both road axes.

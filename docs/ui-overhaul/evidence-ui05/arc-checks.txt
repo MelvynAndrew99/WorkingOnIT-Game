@@ -1,0 +1,22 @@
+warning: Git tree '/home/phil/Code/jams/AI-Overlord' is dirty
+Context Collapse environment ready: node, npm, rundot
+narrow home-ready stage 0 map 175
+narrow first-customer stage 3 map 175
+narrow crash stage 5 map 169
+narrow bypass stage 7 map 223
+narrow clinic stage 7 map 170
+narrow rescued stage 8 map 169
+narrow control stage 9 map 218
+narrow expanded stage 10 map 208
+narrow connected stage 10 map 218
+narrow full UI-05 tutorial passed
+desktop home-ready stage 0 map 435
+desktop first-customer stage 3 map 435
+desktop crash stage 5 map 435
+desktop bypass stage 7 map 487
+desktop clinic stage 7 map 435
+desktop rescued stage 8 map 435
+desktop control stage 9 map 487
+desktop expanded stage 10 map 487
+desktop connected stage 10 map 487
+desktop full UI-05 tutorial passed

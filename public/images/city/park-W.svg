@@ -1,0 +1,328 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192" shape-rendering="crispEdges">
+  <!-- ============================================================
+       CIVIC PARK TILE — 192x192, pixel grid = 4px, transparent exterior
+       Palette:
+         grass   #7a9660 / light #89a56c / dark #62804d
+         soil    #7d6a51 / #6d5b45 / #59492f
+         hedge   #5b7d49 / #4b6a3c / #3b5530
+         path    #e4d7b9 / #d9c9a6 / #bda887
+         stone   #c9c4b6 / #b8b2a2 / #8f8878
+         water   #7fb0d1 / #5f8fb5 / #4d789b
+         wood    #8a6a48 / #6a4f34 / #5a4029
+         tree    #628f50 / #4f7742 / #3c5c33 , trunk #6d5136 / #543d28
+       ============================================================ -->
+
+  <!-- ground shadow -->
+  <g id="shadow">
+    <rect x="12" y="176" width="168" height="4" fill="#3a3f2e" fill-opacity="0.18"/>
+  </g>
+
+  <!-- elevated front face (gives the tile a little height, like the buildings) -->
+  <g id="soil-face">
+    <rect x="8" y="168" width="176" height="4" fill="#7d6a51"/>
+    <rect x="8" y="172" width="176" height="4" fill="#59492f"/>
+  </g>
+
+  <!-- lawn -->
+  <g id="lawn">
+    <rect x="8" y="20" width="176" height="148" fill="#7a9660"/>
+    <rect x="8" y="20" width="176" height="4" fill="#89a56c"/>
+    <rect x="8" y="164" width="176" height="4" fill="#62804d"/>
+    <rect x="8" y="24" width="4" height="140" fill="#89a56c"/>
+    <rect x="180" y="24" width="4" height="140" fill="#62804d"/>
+  </g>
+
+  <!-- grass tufts -->
+  <g id="lawn-texture" fill="#6b8a55">
+    <rect x="44" y="30" width="4" height="4"/>
+    <rect x="64" y="42" width="4" height="4"/>
+    <rect x="128" y="30" width="4" height="4"/>
+    <rect x="146" y="40" width="4" height="4"/>
+    <rect x="20" y="68" width="4" height="4"/>
+    <rect x="32" y="100" width="4" height="4"/>
+    <rect x="160" y="68" width="4" height="4"/>
+    <rect x="168" y="102" width="4" height="4"/>
+    <rect x="24" y="144" width="4" height="4"/>
+    <rect x="76" y="152" width="4" height="4"/>
+    <rect x="112" y="156" width="4" height="4"/>
+    <rect x="156" y="144" width="4" height="4"/>
+    <rect x="64" y="92" width="4" height="4"/>
+    <rect x="128" y="92" width="4" height="4"/>
+    <rect x="60" y="104" width="4" height="4"/>
+    <rect x="130" y="106" width="4" height="4"/>
+  </g>
+
+  <!-- clipped hedge border, open at the south entrance -->
+  <g id="hedge">
+    <rect x="8" y="20" width="176" height="8" fill="#4b6a3c"/>
+    <rect x="8" y="20" width="176" height="4" fill="#5b7d49"/>
+    <rect x="8" y="28" width="8" height="132" fill="#4b6a3c"/>
+    <rect x="8" y="28" width="4" height="132" fill="#5b7d49"/>
+    <rect x="176" y="28" width="8" height="132" fill="#4b6a3c"/>
+    <rect x="176" y="28" width="4" height="132" fill="#3b5530"/>
+    <rect x="8" y="160" width="76" height="8" fill="#4b6a3c"/>
+    <rect x="8" y="160" width="76" height="4" fill="#5b7d49"/>
+    <rect x="108" y="160" width="76" height="8" fill="#4b6a3c"/>
+    <rect x="108" y="160" width="76" height="4" fill="#5b7d49"/>
+  </g>
+
+  <!-- connected loop path + south entrance -->
+  <g id="paths">
+    <!-- loop ring: outer 40,48..152,144 / inner 52,60..140,132 -->
+    <rect x="40" y="48" width="112" height="12" fill="#d9c9a6"/>
+    <rect x="40" y="132" width="112" height="12" fill="#d9c9a6"/>
+    <rect x="40" y="60" width="12" height="72" fill="#d9c9a6"/>
+    <rect x="140" y="60" width="12" height="72" fill="#d9c9a6"/>
+    <!-- sunlit edges -->
+    <rect x="48" y="48" width="96" height="4" fill="#e4d7b9"/>
+    <rect x="40" y="64" width="4" height="64" fill="#e4d7b9"/>
+    <!-- grounded edges -->
+    <rect x="48" y="140" width="36" height="4" fill="#bda887"/>
+    <rect x="108" y="140" width="36" height="4" fill="#bda887"/>
+    <rect x="60" y="128" width="72" height="4" fill="#bda887"/>
+    <rect x="148" y="64" width="4" height="64" fill="#bda887"/>
+    <!-- chamfered outer corners (grass cut back) -->
+    <rect x="40" y="48" width="8" height="4" fill="#7a9660"/>
+    <rect x="40" y="52" width="4" height="4" fill="#7a9660"/>
+    <rect x="144" y="48" width="8" height="4" fill="#7a9660"/>
+    <rect x="148" y="52" width="4" height="4" fill="#7a9660"/>
+    <rect x="40" y="140" width="8" height="4" fill="#7a9660"/>
+    <rect x="40" y="136" width="4" height="4" fill="#7a9660"/>
+    <rect x="144" y="140" width="8" height="4" fill="#7a9660"/>
+    <rect x="148" y="136" width="4" height="4" fill="#7a9660"/>
+    <!-- chamfered inner corners (paving cut in) -->
+    <rect x="52" y="60" width="8" height="4" fill="#d9c9a6"/>
+    <rect x="52" y="64" width="4" height="4" fill="#d9c9a6"/>
+    <rect x="132" y="60" width="8" height="4" fill="#d9c9a6"/>
+    <rect x="136" y="64" width="4" height="4" fill="#d9c9a6"/>
+    <rect x="52" y="128" width="8" height="4" fill="#d9c9a6"/>
+    <rect x="52" y="124" width="4" height="4" fill="#d9c9a6"/>
+    <rect x="132" y="128" width="8" height="4" fill="#d9c9a6"/>
+    <rect x="136" y="124" width="4" height="4" fill="#d9c9a6"/>
+    <!-- south entrance walk -->
+    <rect x="84" y="144" width="24" height="24" fill="#d9c9a6"/>
+    <rect x="84" y="144" width="4" height="24" fill="#bda887"/>
+    <rect x="104" y="144" width="4" height="24" fill="#bda887"/>
+    <!-- entrance steps down the front face -->
+    <rect x="84" y="168" width="24" height="4" fill="#c2b08d"/>
+    <rect x="84" y="172" width="24" height="4" fill="#a2916f"/>
+    <!-- paving speckle -->
+    <g fill="#cdbb96">
+      <rect x="60" y="52" width="4" height="4"/>
+      <rect x="100" y="52" width="4" height="4"/>
+      <rect x="132" y="52" width="4" height="4"/>
+      <rect x="44" y="80" width="4" height="4"/>
+      <rect x="44" y="112" width="4" height="4"/>
+      <rect x="144" y="72" width="4" height="4"/>
+      <rect x="144" y="116" width="4" height="4"/>
+      <rect x="64" y="136" width="4" height="4"/>
+      <rect x="116" y="136" width="4" height="4"/>
+      <rect x="92" y="152" width="4" height="4"/>
+      <rect x="96" y="162" width="4" height="4"/>
+    </g>
+  </g>
+
+  <!-- fountain focal point, centred on (96,96) -->
+  <g id="fountain">
+    <!-- stone basin -->
+    <g fill="#b8b2a2">
+      <rect x="88" y="76" width="16" height="4"/>
+      <rect x="84" y="80" width="24" height="4"/>
+      <rect x="80" y="84" width="32" height="4"/>
+      <rect x="76" y="88" width="40" height="4"/>
+      <rect x="76" y="92" width="40" height="4"/>
+      <rect x="76" y="96" width="40" height="4"/>
+      <rect x="76" y="100" width="40" height="4"/>
+      <rect x="80" y="104" width="32" height="4"/>
+      <rect x="84" y="108" width="24" height="4"/>
+      <rect x="88" y="112" width="16" height="4"/>
+    </g>
+    <g fill="#c9c4b6">
+      <rect x="88" y="76" width="16" height="4"/>
+      <rect x="84" y="80" width="24" height="4"/>
+      <rect x="76" y="88" width="4" height="8"/>
+    </g>
+    <g fill="#8f8878">
+      <rect x="84" y="108" width="24" height="4"/>
+      <rect x="88" y="112" width="16" height="4"/>
+      <rect x="112" y="96" width="4" height="8"/>
+    </g>
+    <!-- water -->
+    <g fill="#5f8fb5">
+      <rect x="88" y="84" width="16" height="4"/>
+      <rect x="84" y="88" width="24" height="4"/>
+      <rect x="84" y="92" width="24" height="4"/>
+      <rect x="84" y="96" width="24" height="4"/>
+      <rect x="84" y="100" width="24" height="4"/>
+      <rect x="88" y="104" width="16" height="4"/>
+    </g>
+    <rect x="84" y="100" width="24" height="4" fill="#4d789b"/>
+    <rect x="88" y="104" width="16" height="4" fill="#4d789b"/>
+    <rect x="88" y="88" width="12" height="4" fill="#7fb0d1"/>
+    <rect x="84" y="92" width="4" height="4" fill="#7fb0d1"/>
+    <!-- pedestal and jet -->
+    <rect x="92" y="84" width="8" height="12" fill="#c9c4b6"/>
+    <rect x="98" y="84" width="2" height="12" fill="#8f8878"/>
+    <rect x="92" y="76" width="8" height="8" fill="#7fb0d1"/>
+    <rect x="88" y="80" width="4" height="4" fill="#7fb0d1"/>
+    <rect x="100" y="80" width="4" height="4" fill="#7fb0d1"/>
+  </g>
+
+  <!-- benches facing the fountain -->
+  <g id="benches">
+    <g>
+      <rect x="56" y="62" width="20" height="4" fill="#6a4f34"/>
+      <rect x="56" y="66" width="20" height="4" fill="#8a6a48"/>
+      <rect x="58" y="70" width="4" height="4" fill="#5a4029"/>
+      <rect x="70" y="70" width="4" height="4" fill="#5a4029"/>
+    </g>
+    <g>
+      <rect x="116" y="62" width="20" height="4" fill="#6a4f34"/>
+      <rect x="116" y="66" width="20" height="4" fill="#8a6a48"/>
+      <rect x="118" y="70" width="4" height="4" fill="#5a4029"/>
+      <rect x="130" y="70" width="4" height="4" fill="#5a4029"/>
+    </g>
+    <g>
+      <rect x="56" y="118" width="20" height="4" fill="#6a4f34"/>
+      <rect x="56" y="122" width="20" height="4" fill="#8a6a48"/>
+      <rect x="58" y="126" width="4" height="4" fill="#5a4029"/>
+      <rect x="70" y="126" width="4" height="4" fill="#5a4029"/>
+    </g>
+    <g>
+      <rect x="116" y="118" width="20" height="4" fill="#6a4f34"/>
+      <rect x="116" y="122" width="20" height="4" fill="#8a6a48"/>
+      <rect x="118" y="126" width="4" height="4" fill="#5a4029"/>
+      <rect x="130" y="126" width="4" height="4" fill="#5a4029"/>
+    </g>
+  </g>
+
+  <!-- flower beds inside the loop -->
+  <g id="beds">
+    <rect x="82" y="62" width="28" height="10" fill="#6b8a55"/>
+    <rect x="84" y="64" width="4" height="4" fill="#cf6b6b"/>
+    <rect x="92" y="64" width="4" height="4" fill="#e0c56a"/>
+    <rect x="100" y="64" width="4" height="4" fill="#efe9dc"/>
+    <rect x="88" y="68" width="4" height="4" fill="#a888c4"/>
+    <rect x="96" y="68" width="4" height="4" fill="#cf6b6b"/>
+    <rect x="82" y="118" width="28" height="10" fill="#6b8a55"/>
+    <rect x="84" y="120" width="4" height="4" fill="#e0c56a"/>
+    <rect x="92" y="120" width="4" height="4" fill="#a888c4"/>
+    <rect x="100" y="120" width="4" height="4" fill="#cf6b6b"/>
+    <rect x="88" y="124" width="4" height="4" fill="#efe9dc"/>
+    <rect x="96" y="124" width="4" height="4" fill="#e0c56a"/>
+  </g>
+
+  <!-- scattered flowers on the outer lawn -->
+  <g id="flowers">
+    <rect x="60" y="34" width="4" height="4" fill="#cf6b6b"/>
+    <rect x="72" y="32" width="4" height="4" fill="#e0c56a"/>
+    <rect x="88" y="36" width="4" height="4" fill="#efe9dc"/>
+    <rect x="104" y="32" width="4" height="4" fill="#a888c4"/>
+    <rect x="120" y="34" width="4" height="4" fill="#cf6b6b"/>
+    <rect x="132" y="32" width="4" height="4" fill="#e0c56a"/>
+    <rect x="20" y="76" width="4" height="4" fill="#e0c56a"/>
+    <rect x="28" y="84" width="4" height="4" fill="#cf6b6b"/>
+    <rect x="20" y="92" width="4" height="4" fill="#a888c4"/>
+    <rect x="156" y="76" width="4" height="4" fill="#a888c4"/>
+    <rect x="164" y="84" width="4" height="4" fill="#e0c56a"/>
+    <rect x="156" y="92" width="4" height="4" fill="#efe9dc"/>
+    <rect x="24" y="148" width="4" height="4" fill="#cf6b6b"/>
+    <rect x="32" y="152" width="4" height="4" fill="#e0c56a"/>
+    <rect x="40" y="148" width="4" height="4" fill="#efe9dc"/>
+    <rect x="48" y="152" width="4" height="4" fill="#a888c4"/>
+    <rect x="136" y="152" width="4" height="4" fill="#a888c4"/>
+    <rect x="144" y="148" width="4" height="4" fill="#efe9dc"/>
+    <rect x="152" y="152" width="4" height="4" fill="#e0c56a"/>
+    <rect x="160" y="148" width="4" height="4" fill="#cf6b6b"/>
+  </g>
+
+  <!-- shrubs flanking the entrance -->
+  <g id="shrubs">
+    <g>
+      <rect x="62" y="146" width="8" height="4" fill="#628f50"/>
+      <rect x="58" y="150" width="16" height="4" fill="#4f7742"/>
+      <rect x="58" y="154" width="16" height="4" fill="#3c5c33"/>
+    </g>
+    <g>
+      <rect x="122" y="146" width="8" height="4" fill="#628f50"/>
+      <rect x="118" y="150" width="16" height="4" fill="#4f7742"/>
+      <rect x="118" y="154" width="16" height="4" fill="#3c5c33"/>
+    </g>
+  </g>
+
+  <!-- chunky shade trees, one per corner -->
+  <g id="trees">
+    <g>
+      <rect x="18" y="56" width="16" height="2" fill="#62804d"/>
+      <rect x="22" y="52" width="8" height="12" fill="#6d5136"/>
+      <rect x="28" y="52" width="2" height="12" fill="#543d28"/>
+      <rect x="20" y="32" width="12" height="4" fill="#4f7742"/>
+      <rect x="16" y="36" width="20" height="4" fill="#4f7742"/>
+      <rect x="12" y="40" width="28" height="4" fill="#4f7742"/>
+      <rect x="12" y="44" width="28" height="4" fill="#4f7742"/>
+      <rect x="16" y="48" width="20" height="4" fill="#4f7742"/>
+      <rect x="20" y="52" width="12" height="4" fill="#4f7742"/>
+      <rect x="20" y="32" width="8" height="4" fill="#628f50"/>
+      <rect x="16" y="36" width="12" height="4" fill="#628f50"/>
+      <rect x="12" y="40" width="12" height="4" fill="#628f50"/>
+      <rect x="30" y="40" width="10" height="4" fill="#3c5c33"/>
+      <rect x="28" y="44" width="12" height="4" fill="#3c5c33"/>
+      <rect x="26" y="48" width="10" height="4" fill="#3c5c33"/>
+      <rect x="26" y="52" width="6" height="4" fill="#3c5c33"/>
+    </g>
+    <g>
+      <rect x="158" y="56" width="16" height="2" fill="#62804d"/>
+      <rect x="162" y="52" width="8" height="12" fill="#6d5136"/>
+      <rect x="168" y="52" width="2" height="12" fill="#543d28"/>
+      <rect x="160" y="32" width="12" height="4" fill="#4f7742"/>
+      <rect x="156" y="36" width="20" height="4" fill="#4f7742"/>
+      <rect x="152" y="40" width="28" height="4" fill="#4f7742"/>
+      <rect x="152" y="44" width="28" height="4" fill="#4f7742"/>
+      <rect x="156" y="48" width="20" height="4" fill="#4f7742"/>
+      <rect x="160" y="52" width="12" height="4" fill="#4f7742"/>
+      <rect x="160" y="32" width="8" height="4" fill="#628f50"/>
+      <rect x="156" y="36" width="12" height="4" fill="#628f50"/>
+      <rect x="152" y="40" width="12" height="4" fill="#628f50"/>
+      <rect x="170" y="40" width="10" height="4" fill="#3c5c33"/>
+      <rect x="168" y="44" width="12" height="4" fill="#3c5c33"/>
+      <rect x="166" y="48" width="10" height="4" fill="#3c5c33"/>
+      <rect x="166" y="52" width="6" height="4" fill="#3c5c33"/>
+    </g>
+    <g>
+      <rect x="18" y="132" width="16" height="2" fill="#62804d"/>
+      <rect x="22" y="128" width="8" height="12" fill="#6d5136"/>
+      <rect x="28" y="128" width="2" height="12" fill="#543d28"/>
+      <rect x="20" y="108" width="12" height="4" fill="#4f7742"/>
+      <rect x="16" y="112" width="20" height="4" fill="#4f7742"/>
+      <rect x="12" y="116" width="28" height="4" fill="#4f7742"/>
+      <rect x="12" y="120" width="28" height="4" fill="#4f7742"/>
+      <rect x="16" y="124" width="20" height="4" fill="#4f7742"/>
+      <rect x="20" y="128" width="12" height="4" fill="#4f7742"/>
+      <rect x="20" y="108" width="8" height="4" fill="#628f50"/>
+      <rect x="16" y="112" width="12" height="4" fill="#628f50"/>
+      <rect x="12" y="116" width="12" height="4" fill="#628f50"/>
+      <rect x="30" y="116" width="10" height="4" fill="#3c5c33"/>
+      <rect x="28" y="120" width="12" height="4" fill="#3c5c33"/>
+      <rect x="26" y="124" width="10" height="4" fill="#3c5c33"/>
+      <rect x="26" y="128" width="6" height="4" fill="#3c5c33"/>
+    </g>
+    <g>
+      <rect x="158" y="132" width="16" height="2" fill="#62804d"/>
+      <rect x="162" y="128" width="8" height="12" fill="#6d5136"/>
+      <rect x="168" y="128" width="2" height="12" fill="#543d28"/>
+      <rect x="160" y="108" width="12" height="4" fill="#4f7742"/>
+      <rect x="156" y="112" width="20" height="4" fill="#4f7742"/>
+      <rect x="152" y="116" width="28" height="4" fill="#4f7742"/>
+      <rect x="152" y="120" width="28" height="4" fill="#4f7742"/>
+      <rect x="156" y="124" width="20" height="4" fill="#4f7742"/>
+      <rect x="160" y="128" width="12" height="4" fill="#4f7742"/>
+      <rect x="160" y="108" width="8" height="4" fill="#628f50"/>
+      <rect x="156" y="112" width="12" height="4" fill="#628f50"/>
+      <rect x="152" y="116" width="12" height="4" fill="#628f50"/>
+      <rect x="170" y="116" width="10" height="4" fill="#3c5c33"/>
+      <rect x="168" y="120" width="12" height="4" fill="#3c5c33"/>
+      <rect x="166" y="124" width="10" height="4" fill="#3c5c33"/>
+      <rect x="166" y="128" width="6" height="4" fill="#3c5c33"/>
+    </g>
+  </g>
+<g id="logical-entrance"><rect x="84" y="144" width="24" height="16" fill="#7a9660"/><rect x="84" y="160" width="24" height="8" fill="#4b6a3c"/><rect x="84" y="160" width="24" height="4" fill="#5b7d49"/><rect x="84" y="168" width="24" height="4" fill="#7d6a51"/><rect x="84" y="172" width="24" height="4" fill="#59492f"/><rect x="0" y="84" width="44" height="24" fill="#d9c9a6"/></g></svg>

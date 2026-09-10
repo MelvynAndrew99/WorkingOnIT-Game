@@ -1,0 +1,102 @@
+/* UI-02 top-bar statistics group. Scoped to .city-stats-bar only. */
+
+.city-stats-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 20px;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  font-size: 17.6px;
+  line-height: 1.25;
+  color: #f5f7fc;
+}
+
+.city-stats-bar .city-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  min-width: 0;
+  gap: 2px;
+}
+
+.city-stats-bar dt {
+  margin: 0;
+  min-width: 0;
+  font-size: 17.6px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--muted, #afbdd0);
+}
+
+.city-stats-bar dd {
+  margin: 0;
+  min-width: 0;
+  max-width: 100%;
+  font-size: 17.6px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.city-stats-bar .city-stat-funds {
+  font-size: 20px;
+  font-weight: 850;
+  color: var(--yellow, #ffd22e);
+}
+
+.city-stats-bar .city-stat-warn {
+  color: var(--cyan, #42d9e8);
+}
+
+.city-stats-bar .city-stat-muted {
+  color: var(--muted, #afbdd0);
+  font-weight: 600;
+}
+
+/* Exact funds stay available to assistive technology when the display abbreviates. */
+.city-stats-bar .city-stat-exact {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Narrow frames: two columns of inline label/value rows, labels still left-aligned.
+   Three single-line rows replace two rows of stacked pairs, so the same six fields
+   cost less vertical space and leave more height for the map. */
+.dispatch-ui:not([data-layout='wide']) .city-stats-bar {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: baseline;
+  gap: 4px 14px;
+  width: 100%;
+}
+
+.dispatch-ui:not([data-layout='wide']) .city-stats-bar .city-stat {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 8px;
+}
+
+/* Values share a right edge within each column so the numbers stay scannable. */
+.dispatch-ui:not([data-layout='wide']) .city-stats-bar dd {
+  margin-left: auto;
+  text-align: right;
+}
+
+.dispatch-ui:not([data-layout='wide']) .city-stats-bar dt {
+  white-space: nowrap;
+}
+
+.dispatch-ui:not([data-layout='wide']) .city-stats-bar .city-stat-funds {
+  font-size: 19px;
+}

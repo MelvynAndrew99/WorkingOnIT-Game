@@ -1,0 +1,19 @@
+{
+  "baseline": "/tmp/ui06-baseline/workspace.tar",
+  "changedExistingFiles": [
+    "src/ui/Hud.tsx",
+    "src/ui/TutorialCoach.tsx",
+    "src/ui/MissionBoard.tsx",
+    "src/ui/gameInterface.css",
+    "src/ui/ObjectiveBar.tsx",
+    "src/ui/TutorialPanel.tsx",
+    "src/ui/missionBoard.css",
+    "src/game/cityStarterTutorial.ts",
+    "docs/BACKLOG.md",
+    "docs/ui-overhaul/PLAN.md",
+    "docs/ui-overhaul/verify-ui05.mjs",
+    "docs/ui-overhaul/verify-ui03.mjs",
+    "docs/ui-overhaul/UI-06.md"
+  ],
+  "unrelatedOriginalFilesUnchanged": true
+}
