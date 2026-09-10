@@ -1,12 +1,12 @@
 # Working ON IT! backlog
 
-## Next UI cleanup: UI-06 — remove Jobs & city link clutter (2026-09-10)
+## Completed UI cleanup: UI-06 — remove Jobs & city link clutter (2026-09-10)
 
-**Status: requested and recorded only; implement in a fresh context window.** User wants the persistent “Jobs & city link” entry and its Jobs / City link & guide screens removed. Completed jobs/levels, the finished tutorial list and gateway-coordinate reference are clutter, not useful ongoing tasks. This is a new cleanup request after the completed UI-01–05 scope and supersedes its requirement to retain that full board. Schedule this focused cleanup before J4; do not reopen the entire overhaul.
+**Status: implemented and verified locally on desktop and narrow; no publication.** User wants the persistent “Jobs & city link” entry and its Jobs / City link & guide screens removed. Completed jobs/levels, the finished tutorial list and gateway-coordinate reference are clutter, not useful ongoing tasks. This is a new cleanup request after the completed UI-01–05 scope and supersedes its requirement to retain that full board. This focused cleanup is complete before J4; the rest of the overhaul remains closed.
 
 Keep the current mission, live progress/reward and any earned-but-unclaimed reward actionable. “Completed” must not discard an unclaimed payout: preserve its current-card claim flow and exactly-once saved receipt. Preserve underlying mission/level/permit progression, completion history in saves, tutorial gates, explicit Skip and consent to outside traffic. Remove the historical UI, not the player's earned state. Do not replace it with a renamed archive or move the same clutter into another menu.
 
-Implementation handoff: [UI-06 cleanup brief](ui-overhaul/UI-06.md). No runtime edits or removal have been made by this recording pass.
+Delivery, checks and limitations: [UI-06 cleanup](ui-overhaul/UI-06.md). Completed/skipped disconnected saves keep an explicit current-objective invitation; pending consent keeps a truthful explanation and real road-placement recovery. Current claims and saved receipts remain. All 232 model tests, browser regressions and production build pass.
 
 ## UI overhaul completed locally (2026-09-10)
 

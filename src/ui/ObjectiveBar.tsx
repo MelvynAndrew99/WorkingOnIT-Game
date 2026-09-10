@@ -38,7 +38,7 @@ const SERVICE_BUILDINGS = { police: 'policeStation', ems: 'hospital', fire: 'fir
 
 /** `notice` (an unacknowledged crash) is owned by Hud, which needs the same value to
  *  avoid repeating the rescue countdown in its header alert. */
-export default function ObjectiveBar({ wide, notice, openJobs }: { wide: boolean; notice: boolean; openJobs: () => void }) {
+export default function ObjectiveBar({ wide, notice }: { wide: boolean; notice: boolean }) {
     const s = useStore();
     const [open, setOpen] = useState(false);
     const [managerOpen, setManagerOpen] = useState(false);
@@ -66,7 +66,7 @@ export default function ObjectiveBar({ wide, notice, openJobs }: { wide: boolean
             setManagerOpen(true);
         }
     }, [s, managerOpen]);
-    const objective = pickObjective(s, { notice, openJobs });
+    const objective = pickObjective(s, { notice });
     useEffect(() => { setOpen(false); }, [objective?.key]);
     if (!objective) return null;
     const showDetail = !!objective.detail && open;
@@ -90,7 +90,6 @@ export default function ObjectiveBar({ wide, notice, openJobs }: { wide: boolean
                 {objective.detail && <button type="button" className="objective-more"
                     aria-expanded={open} aria-controls="objective-detail"
                     onClick={() => setOpen(!open)}>{open ? 'Less' : 'Details'}</button>}
-                <button type="button" className="objective-more" onClick={openJobs}>Jobs & city link</button>
             </div>
         </div>
         {showDetail && <div id="objective-detail" className="objective-detail" tabIndex={0} aria-label="Objective details">
@@ -104,9 +103,9 @@ export default function ObjectiveBar({ wide, notice, openJobs }: { wide: boolean
 }
 
 /** A crash outranks a reward; a reward outranks the lesson; the lesson outranks the jobs. */
-function pickObjective(s: AppState, ctx: { notice: boolean; openJobs: () => void }): Objective | null {
-    if (s.tutorial?.currentId.startsWith('h-') && (s.tutorial.status === 'active' || (s.tutorial.status === 'complete' && !getSave().city.external?.gateway))) return tutorialObjective(s);
-    const emergency = (ctx.notice || s.paused) && s.incidentInfo.active > 0 ? emergencyObjective(s, ctx.openJobs) : null;
+function pickObjective(s: AppState, ctx: { notice: boolean }): Objective | null {
+    if (s.tutorial?.currentId.startsWith('h-') && s.tutorial.status === 'active') return tutorialObjective(s);
+    const emergency = (ctx.notice || s.paused) && s.incidentInfo.active > 0 ? emergencyObjective(s) : null;
     if (emergency) return emergency;
     const ready = s.missions?.items.find(j => j.done && !j.claimed);
     if (ready) return claimObjective(ready);
@@ -114,7 +113,7 @@ function pickObjective(s: AppState, ctx: { notice: boolean; openJobs: () => void
 }
 
 /** Shown to every player, guided or not: a wreck is the most important thing on the map. */
-function emergencyObjective(s: AppState, openJobs: () => void): Objective | null {
+function emergencyObjective(s: AppState): Objective | null {
     const incident = s.incidentInfo.details.at(0);
     if (!incident) return null;
     const city = getSave().city;
@@ -144,7 +143,6 @@ function emergencyObjective(s: AppState, openJobs: () => void): Objective | null
             <div className="objective-extras">
                 <button onClick={() => store.patch({ paused: !s.paused })}>{s.paused ? 'Run traffic' : 'Pause traffic'}</button>
                 {model && <button onClick={() => cityCommand({ type: 'focus', point: { x: model.x, y: model.y } })}>Show crash</button>}
-                <button onClick={openJobs}>Jobs</button>
             </div>
         </>,
     };

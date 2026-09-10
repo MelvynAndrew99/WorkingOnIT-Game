@@ -9,7 +9,6 @@ import BuildPalette from './BuildPalette.tsx';
 import {TutorialGuidanceProvider,TutorialToast} from './TutorialGuidance.tsx';
 import CityDialogs from './CityDialogs.tsx';
 import MapControls from './MapControls.tsx';
-import MissionBoard from './MissionBoard.tsx';
 import ObjectiveBar from './ObjectiveBar.tsx';
 import { NARROW_FRAME, WIDE_FRAME, useFrameSize } from './useFrameSize.ts';
 import { store, useStore } from '../state/store.ts';
@@ -28,7 +27,6 @@ export default function Hud() {
   const openDashboard = () => { store.patch({vehicleDebugOpen:false}); setPanel('report'); };
   const closeDashboard = () => { setPanel(null); requestAnimationFrame(()=>dashboardButton.current?.focus()); };
   const openDebug = () => { setPanel(null); store.patch({vehicleDebugOpen:true,panning:false,tool:null}); };
-  const [jobsOpen, setJobsOpen] = useState(false);
   const [feedback, setFeedback] = useState('');
   const [notice, setNotice] = useState(false);
   const lastMessage = useRef(s.message);
@@ -48,9 +46,9 @@ export default function Hud() {
   const deadlines = s.incidentInfo.details.filter(i => i.deadlineSeconds !== null).map(i => i.deadlineSeconds!);
   // The objective panel already leads on a crash it is handling; do not repeat its countdown.
   const objectiveHasCrash = s.incidentInfo.details.length > 0 && (notice || s.paused);
-  const objective = <ObjectiveBar wide={wide} notice={notice} openJobs={() => setJobsOpen(true)} />;
+  const objective = <ObjectiveBar wide={wide} notice={notice} />;
 
-  return <TutorialGuidanceProvider wide={wide} blocked={jobsOpen||(notice&&!s.tutorial?.currentId.startsWith('h-'))}><div className="city-ui dispatch-ui" data-layout={layout} data-short={frame.height < 550} style={{'--frame-height': `${frame.height}px`} as React.CSSProperties}>
+  return <TutorialGuidanceProvider wide={wide} blocked={(notice&&!s.tutorial?.currentId.startsWith('h-'))}><div className="city-ui dispatch-ui" data-layout={layout} data-short={frame.height < 550} style={{'--frame-height': `${frame.height}px`} as React.CSSProperties}>
     <header className="city-header city-top-bar" aria-label="City statistics and actions">
       <CityStats funds={s.funds} visitors={s.demand.visits} onRoad={s.activeTrips} fatalities={s.fatalities} elapsedSeconds={s.elapsedSeconds} />
       <nav className="city-global-actions" aria-label="City actions">
@@ -95,6 +93,5 @@ export default function Hud() {
     </footer>
 
     <PauseMenu />
-    <MissionBoard open={jobsOpen} close={() => setJobsOpen(false)} />
   </div></TutorialGuidanceProvider>;
 }

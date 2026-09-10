@@ -34,19 +34,11 @@
 .dispatch-ui[data-layout=narrow] .city-live{gap:2px 10px}
 
 /* Dialogs stay reference material: dense detail, never routine teaching. */
-.dispatch-ui .mission-dialog,.dispatch-ui .city-dialog,.dispatch-ui .expansion-dialog{background:var(--ink);color:#f5f7fc;border:1px solid #536780;border-radius:16px;box-shadow:0 14px 60px #0009;padding:16px;font-size:17.6px;max-height:90dvh;max-width:calc(100% - 20px);margin:auto;touch-action:pan-y}
+.dispatch-ui .city-dialog,.dispatch-ui .expansion-dialog{background:var(--ink);color:#f5f7fc;border:1px solid #536780;border-radius:16px;box-shadow:0 14px 60px #0009;padding:16px;font-size:17.6px;max-height:90dvh;max-width:calc(100% - 20px);margin:auto;touch-action:pan-y}
 .dispatch-ui dialog::backdrop{background:#030914bb}
-.dispatch-ui .mission-dialog header,.dispatch-ui .city-dialog-heading{background:var(--ink);top:-16px;padding:8px 0;gap:10px}
-.dispatch-ui .mission-dialog h2,.dispatch-ui .city-dialog h2{color:#f5f7fc;font-size:23px;line-height:1.15}
+.dispatch-ui .city-dialog-heading{background:var(--ink);top:-16px;padding:8px 0;gap:10px}
+.dispatch-ui .city-dialog h2{color:#f5f7fc;font-size:23px;line-height:1.15}
 .dispatch-ui dialog p{color:#d8e2ef;text-align:left;font-size:17.6px;line-height:1.4}
-.dispatch-ui dialog .mission-budget,.dispatch-ui .mission-list li{background:#17263a;border:1px solid var(--line);border-radius:10px;padding:12px}
-.dispatch-ui dialog .mission-standing,.dispatch-ui .mission-budget dd,.dispatch-ui .mission-item-heading span{color:var(--yellow)}
-.dispatch-ui .mission-list h3{font-size:19px;font-weight:800;margin:0}
-.dispatch-ui .mission-list progress{accent-color:var(--cyan)}
-.dispatch-ui .mission-reward-row{display:flex;align-items:center;justify-content:space-between;gap:8px;color:var(--yellow)}
-.dispatch-ui dialog .mission-links button[aria-pressed=true],.city-ui.dispatch-ui .connection-primary{background:var(--yellow);color:var(--ink);border-color:var(--yellow);font-weight:750}
-.city-ui.dispatch-ui .connection-primary{margin-top:12px}
-.dispatch-ui .mission-dialog select{background:#1b2c42;border-color:#536780;color:#f5f7fc}
 .dispatch-ui .expansion-dialog{z-index:5}
 .dispatch-ui .expansion-preview{background:#091321}
 .city-ui.dispatch-ui .expansion-directions button[aria-pressed=true]{background:var(--cyan);color:var(--ink);border-color:var(--cyan)}

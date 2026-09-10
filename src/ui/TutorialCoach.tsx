@@ -33,10 +33,30 @@ const SHORT: Record<string, { title: string; instruction: string } | undefined> 
 
 export function tutorialObjective(s: AppState): Objective | null {
   const t = s.tutorial;
-  const connectInvitation = t?.currentId === 'h-connect' && t.status === 'complete' && !getSave().city.external?.gateway;
-  if (!t || (t.status !== 'active' && t.status !== 'available' && !connectInvitation)) return null;
+  if (!t) return null;
   const finish = () => { if(window.confirm('End the tutorial and welcome outside traffic? A free access road will be added across vacant land if needed. Your town is preserved.')) cityCommand({type:'finish-tutorial'}); };
   const act = (value: TutorialAction) => value==='skip' ? finish() : cityCommand({ type: 'tutorial', action: value });
+
+  // Historical completed/skipped towns must retain an explicit invitation without
+  // restarting lessons. A saved pending request already contains that consent.
+  if (t.status === 'complete' || t.status === 'skipped') {
+    if (getSave().city.external?.gateway) return null;
+    const pending = !!getSave().city.external?.autoConnectRequested;
+    return {
+      key: pending ? 'connection-pending' : 'connection-invitation',
+      eyebrow: pending ? 'Outside connection pending' : 'Your next step',
+      title: pending ? 'Make room for the connection' : 'Ready for a bigger town',
+      instruction: pending
+        ? 'Outside visitors are waiting for a connection. Build a road with a clear route to the map edge.'
+        : 'Keep your town and welcome outside visitors when you are ready.',
+      primary: pending
+        ? { label: 'Road', run: () => store.patch({ tool: 'road', panning: false, toolSelection: s.toolSelection + 1 }) }
+        : { label: t.currentId === 'h-connect' ? 'Finish tutorial' : 'Welcome outside visitors', run: finish },
+      detail: <p>{pending
+        ? 'You already invited outside traffic. The connection will retry automatically when a safe route is available. Any added access road is free. Run traffic after making room.'
+        : 'Outside visitors use your roads and destination parking. Arrivals grow with your town. Confirming adds a free access road across vacant land if needed and preserves your buildings.'}</p>,
+    };
+  }
 
   if (t.status === 'available') return {
     key: 'guide-offer',
