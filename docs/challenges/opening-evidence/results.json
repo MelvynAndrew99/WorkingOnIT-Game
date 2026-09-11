@@ -1,0 +1,38 @@
+[
+  {
+    "name": "desktop",
+    "gold": [
+      {
+        "background": "linear-gradient(110deg, rgb(255, 222, 117), rgb(255, 209, 91))",
+        "height": 61.265625
+      },
+      {
+        "background": "linear-gradient(110deg, rgb(255, 222, 117), rgb(255, 209, 91))",
+        "height": 61.265625
+      }
+    ],
+    "threeIndependentStars": true,
+    "legacyFlowPreserved": true,
+    "noIncome": true,
+    "directExit": true,
+    "sandboxUnchanged": true
+  },
+  {
+    "name": "narrow",
+    "gold": [
+      {
+        "background": "linear-gradient(110deg, rgb(255, 222, 117), rgb(255, 209, 91))",
+        "height": 52.484375
+      },
+      {
+        "background": "linear-gradient(110deg, rgb(255, 222, 117), rgb(255, 209, 91))",
+        "height": 52.484375
+      }
+    ],
+    "threeIndependentStars": true,
+    "legacyFlowPreserved": true,
+    "noIncome": true,
+    "directExit": true,
+    "sandboxUnchanged": true
+  }
+]

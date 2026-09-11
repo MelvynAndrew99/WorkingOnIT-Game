@@ -1,0 +1,32 @@
+[
+  {
+    "name": "desktop",
+    "challenge": {
+      "text": "Failed-yield risk at 8,6. Busy crossing: add controls or a safer route.",
+      "mapHeight": 412.90625,
+      "bannerHeight": 33.984375
+    },
+    "sandboxWarning": {
+      "text": "Failed-yield risk at 16,16. Conflicting turns: change light timing or separate routes.",
+      "mapHeight": 448.8125,
+      "bannerHeight": 33.984375
+    },
+    "warningResponseWins": true,
+    "sandboxSaveProtected": true
+  },
+  {
+    "name": "narrow",
+    "challenge": {
+      "text": "Failed-yield risk at 8,6. Busy crossing: add controls or a safer route.",
+      "mapHeight": 294.125,
+      "bannerHeight": 55.96875
+    },
+    "sandboxWarning": {
+      "text": "Failed-yield risk at 16,16. Conflicting turns: change light timing or separate routes.",
+      "mapHeight": 127.078125,
+      "bannerHeight": 77.953125
+    },
+    "warningResponseWins": true,
+    "sandboxSaveProtected": true
+  }
+]

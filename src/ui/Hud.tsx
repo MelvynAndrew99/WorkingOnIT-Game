@@ -1,6 +1,7 @@
 import VehicleDebugPanel from './VehicleDebug.tsx';
 import PauseMenu from './PauseMenu.tsx';
 import {DiagnosticLegend} from './DiagnosticViews.tsx';
+import IntersectionWarning from './IntersectionWarning.tsx';
 import CityStats from './CityStats.tsx';
 import {cityCommand} from '../game/cityControls.ts';
 /** React allocates all persistent chrome; Pixi measures only .city-map-viewport. */
@@ -64,6 +65,7 @@ export default function Hud() {
       <div className="city-map-toolbar">
         <MapControls wide={wide} />
         <DiagnosticLegend />
+        <IntersectionWarning />
       </div>
       <div className="city-map-content">
         <div className="city-map-viewport" aria-label="Playable map" />
@@ -77,7 +79,7 @@ export default function Hud() {
         ? <button className="city-alert" onClick={openDashboard}>
             {s.incidentInfo.active} crash{s.incidentInfo.active > 1 ? 'es' : ''} · {deadlines.length ? `${Math.max(0, Math.ceil(Math.min(...deadlines)))}s to rescue` : 'response needed'}
           </button>
-        : !!s.incidentInfo.warning && <p className="city-warning" role="status">Crossing conflict · watch the warning</p>}
+        : null}
         {feedback && <p>{feedback}</p>}
       </div>
     </main>

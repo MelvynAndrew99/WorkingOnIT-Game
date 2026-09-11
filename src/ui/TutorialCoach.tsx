@@ -18,7 +18,7 @@ import {tutorialBuildTarget} from './TutorialGuidance.tsx';
 import {starterDiversionPoint} from '../game/cityStarterTutorial.ts';
 
 export const TOOL_NAMES: Record<Tool, string> = {
-  home: 'Home', store: 'Store', park: 'Park', road: 'Road', hospital: 'Clinic',
+  home: 'Home', store: 'Store', park: 'Park', direction: 'One-way', road: 'Road', hospital: 'Clinic',
   policeStation: 'Police', fireStation: 'Fire', bulldoze: 'Remove', stop: 'Stop', signal: 'Light', closure: 'Detour',
 };
 const SHORT: Record<string, { title: string; instruction: string } | undefined> = {
@@ -108,7 +108,7 @@ export function tutorialObjective(s: AppState): Objective | null {
     {lesson && lesson.instruction !== t.body && <p>{t.body}</p>}
     {!!t.hint && <p className="objective-hint">{t.hint}</p>}
     {t.currentId === 'driver-rules' && <p>Ordinary drivers respect traffic controls. Outbound emergency crews can cross red lights when clear and pass using available opposing lanes. Returning crews follow ordinary road rules.</p>}
-    {t.canAcknowledgeSafety && <p>A stop or light on your crossing prevents these collisions. Keep it in place and read the crew explanation. Acknowledging safe design is not a rescue: a real crash still needs crews with a route to it.</p>}
+    {t.canAcknowledgeSafety && <p>Match controls to the traffic and watch for conflict warnings as your town grows. Busy stops may need lights, and conflicting turns may need a safer route. A real crash still needs crews with a route to it.</p>}
     <div className="objective-extras">
       {!s.paused && <button onClick={() => store.patch({ paused: true })}>Pause traffic</button>}
       {t.focus && !starter && <button onClick={() => cityCommand({ type: 'focus', point: t.focus! })}>Show lesson area</button>}

@@ -1,9 +1,10 @@
+import {allowsRoadStep} from './cityDirections.ts';
 import {civilianRoute} from './cityRouting.ts';
 /** Explicit outside-city arrivals. Gateway geometry is saved independently of map edges/art. */
-import { entrance, footprint, type City, type Point, type Trip, type TripPurpose } from './cityModel.ts';
+import { entrance, footprint, plannedRoadPath, type City, type Point, type Trip, type TripPurpose } from './cityModel.ts';
 import { containsTile, type MapBounds } from './cityMap.ts';
 import { chooseDestinationFrom } from './cityVisits.ts';
-import { emergencyReservedTiles, pruneControls, startBlocked, type RoadIndex } from './cityTraffic.ts';
+import { bodyTile, emergencyReservedTiles, pruneControls, startBlocked, type RoadIndex } from './cityTraffic.ts';
 import { recordRoadPayment } from './cityEconomy.ts';
 import { tutorialAction } from './cityTutorial.ts';
 
@@ -15,6 +16,7 @@ export interface ExternalConnection {
   completed: number;
   /** Explicit tutorial-exit consent. Retained if no safe access corridor exists yet. */
   autoConnectRequested?: boolean;
+  needsRoadConnection?: boolean;
 }
 export const createExternalConnection = (): ExternalConnection => ({ version:1, gateway:null, arrivalClock:0, arrivals:0, completed:0 });
 const same = (a:Point,b:Point) => a.x===b.x && a.y===b.y;
@@ -35,6 +37,36 @@ export function connectExternalCity(city:City,gateway:Point):string {
   return 'Outside city connected. Visitors enter through this gateway when a destination has room.';
 }
 
+/** One-time repair at sandbox load, after validation and host/local selection.
+ * Keep construction and every visitor's physical position; only its exit changes. */
+export function relocateInteriorGateway(city:City):boolean {
+  const e=city.external,g=e?.gateway,m=city.map;
+  if(!e||!g||g.x===m.x||g.y===m.y||g.x===m.x+m.width-1||g.y===m.y+m.height-1)return false;
+  const lots=new Set(city.buildings.flatMap(footprint).map(p=>`${p.x},${p.y}`));
+  const candidates:Point[]=[];
+  for(let y=m.y;y<m.y+m.height;y++)for(let x=m.x;x<m.x+m.width;x++)
+    if((x===m.x||y===m.y||x===m.x+m.width-1||y===m.y+m.height-1)&&!lots.has(`${x},${y}`))candidates.push({x,y});
+  candidates.sort((a,b)=>(Math.abs(a.x-g.x)+Math.abs(a.y-g.y))-(Math.abs(b.x-g.x)+Math.abs(b.y-g.y))||a.y-b.y||a.x-b.x);
+  const next=candidates[0];if(!next)return false;
+  e.gateway={...next};e.needsRoadConnection=true;
+  for(const t of city.trips){
+    if(!t.external)continue;
+    t.external.origin={...next};
+    if(t.phase==='visiting')t.target={...next};
+    if(t.phase==='returning'||t.phase==='waiting'&&t.resume==='returning'){
+      const k=bodyTile(t),start=Math.max(0,k-1);
+      t.path=t.path.slice(start,k+2);t.progress=Math.round((t.progress-start)*1e6)/1e6;
+      t.phase='waiting';t.resume='returning';t.target={...next};
+    }
+  }
+  return true;
+}
+
+export function externalNeedsRoad(city:City):boolean {
+  const e=city.external;
+  return !!(e?.needsRoadConnection&&e.gateway&&!city.buildings.some(b=>(b.kind==='store'||b.kind==='park')&&plannedRoadPath(city,e.gateway!,entrance(b))&&(!city.roadDirections||plannedRoadPath(city,entrance(b),e.gateway!))));
+}
+
 const tileKey = (p:Point) => `${p.x},${p.y}`;
 const neighbors = (p:Point):Point[] => [{x:p.x-1,y:p.y},{x:p.x+1,y:p.y},{x:p.x,y:p.y-1},{x:p.x,y:p.y+1}];
 
@@ -49,7 +81,7 @@ function automaticGatewayPath(city:City):Point[]|null {
   const connected=new Map<string,Point>([[tileKey(seed),seed]]), network=[seed];
   for(let i=0;i<network.length;i++)for(const p of neighbors(network[i])){
     const k=tileKey(p);
-    if(roads.has(k)&&!connected.has(k)){connected.set(k,p);network.push(p);}
+    if(roads.has(k)&&allowsRoadStep(city,network[i],p)&&!connected.has(k)){connected.set(k,p);network.push(p);}
   }
   const blocked=new Set(city.buildings.flatMap(footprint).map(tileKey));
   // New neighboring asphalt can change a committed passing corridor's geometry.
@@ -57,7 +89,7 @@ function automaticGatewayPath(city:City):Point[]|null {
     const [x,y]=k.split(',').map(Number),p={x,y};
     blocked.add(k);for(const q of neighbors(p))blocked.add(tileKey(q));
   }
-  const queue=[...network],previous=new Map<string,Point|null>(queue.map(p=>[tileKey(p),null]));
+  const queue=city.roadDirections?network.filter(p=>plannedRoadPath(city,p,seed)):[...network],previous=new Map<string,Point|null>(queue.map(p=>[tileKey(p),null]));
   const m=city.map;
   for(let i=0;i<queue.length;i++){
     const p=queue[i];
@@ -69,6 +101,7 @@ function automaticGatewayPath(city:City):Point[]|null {
     for(const q of neighbors(p)){
       const k=tileKey(q);
       if(!containsTile(m,q)||previous.has(k)||blocked.has(k))continue;
+      if(roads.has(tileKey(p))&&roads.has(k)&&(!allowsRoadStep(city,p,q)||!allowsRoadStep(city,q,p)))continue;
       previous.set(k,p);queue.push(q);
     }
   }
@@ -107,6 +140,7 @@ export function externalDemand(city:City):{interval:number;limit:number} {
 export function stepExternal(city:City,index:RoadIndex,dt:number):void {
   const e=city.external;
   if(!e?.gateway||!Number.isFinite(dt)||dt<=0)return;
+  if(e.needsRoadConnection&&!externalNeedsRoad(city))delete e.needsRoadConnection;
   const {interval,limit}=externalDemand(city);
   e.arrivalClock=Math.round((e.arrivalClock+dt)*1e6)/1e6;
   if(e.arrivalClock<interval)return;
@@ -132,11 +166,13 @@ export function parseExternalConnection(raw:unknown,map:MapBounds):ExternalConne
   if(!raw||typeof raw!=='object')return null;
   const e=raw as ExternalConnection;
   if(e.autoConnectRequested!==undefined&&typeof e.autoConnectRequested!=='boolean')return null;
+  if(e.needsRoadConnection!==undefined&&typeof e.needsRoadConnection!=='boolean')return null;
   if(e.version!==1||!count(e.arrivals)||!count(e.completed)||e.completed>e.arrivals
     ||typeof e.arrivalClock!=='number'||!Number.isFinite(e.arrivalClock)||e.arrivalClock<0||e.arrivalClock>=12)return null;
   if(e.gateway!==null&&(!point(e.gateway)||!containsTile(map,e.gateway)))return null;
   if(e.gateway===null&&(e.arrivals!==0||e.completed!==0||e.arrivalClock!==0))return null;
   return {version:1,gateway:e.gateway?{...e.gateway}:null,arrivalClock:e.arrivalClock,arrivals:e.arrivals,completed:e.completed,
+    ...(e.needsRoadConnection!==undefined?{needsRoadConnection:e.needsRoadConnection}:{}),
     ...(e.autoConnectRequested!==undefined?{autoConnectRequested:e.autoConnectRequested}:{})};
 }
 /** Called after ordinary trip fields are parsed, before model endpoint/occupancy validation. */

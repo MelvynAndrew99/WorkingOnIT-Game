@@ -18,6 +18,8 @@ export default function DiagnosticViews({onDebug}: {onDebug?: () => void}){
 /** Always visible outside the Dashboard when a diagnostic map is selected. */
 export function DiagnosticLegend() {
  const view=useStore(s=>s.diagnosticView);
+ const road=useStore(s=>s.flow?.selectedRoad);
+ if(view==='traffic'&&road)return <p className="map-view-legend">Approach {road.x},{road.y}: {road.waiting} waiting · longest stop {road.longestStop.toFixed(1)}s</p>;
  if(view==='normal')return null;
  return <p className="map-view-legend">{view==='traffic'?'Traffic view: amber marks stopped vehicles.':view==='access'?'Access: cyan has routes both ways; orange is missing a route.':'Visitors: parked + arriving / slots. Yellow means full.'}</p>;
 }

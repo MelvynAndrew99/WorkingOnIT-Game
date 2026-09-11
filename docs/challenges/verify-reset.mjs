@@ -1,0 +1,53 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+const {chromium}=await import(process.env.PLAYWRIGHT_MODULE);
+const base=process.env.CHALLENGE_URL??'http://127.0.0.1:5195';
+const out='/tmp/challenge-reset-evidence';await fs.mkdir(out,{recursive:true});
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH,args:['--no-sandbox']});
+try {for(const [name,width,height] of [['desktop',1440,900],['narrow',390,844]]) {
+ const context=await browser.newContext({viewport:{width,height}}),page=await context.newPage(),errors=[];
+ page.on('pageerror',e=>errors.push(e.message));
+ await context.route('**/*',r=>new URL(r.request().url()).origin===base?r.continue():r.abort());
+ await context.route(`${base}/reset-harness`,r=>r.fulfill({contentType:'text/html',body:'<iframe sandbox="allow-scripts allow-same-origin" src="/" style="position:fixed;inset:0;width:100%;height:100%;border:0"></iframe>'}));
+ await page.goto(`${base}/reset-harness`);
+ const game=page.frameLocator('iframe');
+ await game.getByRole('button',{name:'Challenges',exact:true}).click();
+ const frame=page.frames().find(f=>f.parentFrame());
+ assert.equal(await frame.evaluate(()=>confirm('Blocked host popup')),false,'host frame blocks browser confirmation');
+ await game.getByRole('button',{name:'Level 1, playable',exact:true}).click();
+ await game.getByRole('button',{name:'Play level',exact:false}).click();await game.locator('canvas').waitFor();
+ await frame.evaluate(async()=>{
+  window.cs=await import('/src/state/challenges.ts');window.state=await import('/src/state/store.ts');window.model=await import('/src/game/cityChallenges.ts');
+  const save=await import('/src/state/save.ts');save.flushSave();
+ });
+ const sandbox=await frame.evaluate(()=>localStorage.getItem('city-workshop:city:v1'));
+ await frame.evaluate(()=>{const run=cs.getChallengeRun();model.challengePlace(run.city,'road',4,6,0,run.id);cs.flushChallenges();});
+ await game.getByRole('button',{name:'Run traffic',exact:true}).click();
+ await game.getByRole('button',{name:'Reset',exact:false}).click();
+ const elapsed=await frame.evaluate(()=>cs.getChallengeRun().city.elapsed);
+ await page.waitForTimeout(300);assert.equal(await frame.evaluate(()=>cs.getChallengeRun().city.elapsed),elapsed);
+ await page.screenshot({path:`${out}/${name}-dialog.png`});
+ const box=await game.getByRole('dialog').boundingBox();assert.ok(box.x>=0&&box.y>=0&&box.x+box.width<=width&&box.y+box.height<=height);
+ await game.getByRole('button',{name:'Keep playing',exact:true}).click();
+ assert.equal(await frame.evaluate(()=>state.store.get().paused),false);
+ assert.equal(await frame.evaluate(()=>cs.getChallengeRun().city.roads.length),3);
+ await game.getByRole('button',{name:'Pause traffic',exact:true}).click();
+ await game.getByRole('button',{name:'Reset',exact:false}).click();await page.keyboard.press('Escape');
+ assert.equal(await frame.evaluate(()=>state.store.get().paused),true);
+ await frame.evaluate(()=>{cs.getChallengeRun().earned=true;cs.flushChallenges();delete cs.getChallengeRun().earned;cs.selectChallenge('shopping-flow').city.funds=777;cs.selectChallenge('first-road');});
+ await game.getByRole('button',{name:'Pan',exact:true}).click();await game.getByRole('button',{name:'Rotate',exact:true}).click();
+ await game.getByRole('button',{name:'Reset',exact:false}).click();await game.getByRole('button',{name:'Reset level',exact:true}).click();
+ await page.waitForTimeout(500);
+ assert.deepEqual(await frame.evaluate(()=>{const r=cs.getChallengeRun(),s=state.store.get();return [r.city.roads.length,r.city.funds,r.city.elapsed,!!r.earned,!!r.failed,s.paused,s.panning,s.rotation,s.tool,cs.challengeHasStar()];}),[2,140,0,false,false,true,false,0,'road',true]);
+ assert.equal(await game.locator('canvas').count(),1);
+ // Build through the remounted scene to catch a stale scene/session after reset.
+ await frame.evaluate(async()=>{const c=await import('/src/game/cityControls.ts');c.cityCommand({type:'focus',point:{x:4,y:6}});});
+ const map=await game.locator('.city-map-viewport').boundingBox();await page.mouse.click(map.x+map.width/2,map.y+map.height/2);
+ assert.equal(await frame.evaluate(()=>cs.getChallengeRun().city.roads.length),3);
+ await game.getByRole('button',{name:'Reset',exact:false}).click();await game.getByRole('button',{name:'Reset level',exact:true}).click();await page.waitForTimeout(300);
+ await page.reload();await game.getByRole('button',{name:'Challenges',exact:true}).waitFor();
+ const saved=await page.frames().find(f=>f.parentFrame()).evaluate(()=>({sandbox:localStorage.getItem('city-workshop:city:v1'),challenge:JSON.parse(localStorage.getItem('working-on-it:challenges:v1'))}));
+ assert.equal(saved.sandbox,sandbox);assert.equal(saved.challenge.runs['first-road'].city.roads.length,2);assert.equal(saved.challenge.stars['first-road'],true);assert.equal(saved.challenge.runs['shopping-flow'].city.funds,777);
+ assert.deepEqual(errors,[]);console.log(`${name}: embedded reset, cancel/resume, Escape, rebuilt scene, repeated reset, reload, stars and other saves passed`);
+ await context.close();
+}}finally{await browser.close();}

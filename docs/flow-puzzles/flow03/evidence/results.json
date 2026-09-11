@@ -1,0 +1,28 @@
+[
+  {
+    "name": "desktop",
+    "map": {
+      "x": 8,
+      "y": 165.984375,
+      "width": 1424,
+      "height": 438.796875
+    },
+    "initialElapsed": 120.63330000000015,
+    "independentTrials": true,
+    "normalSaveUntouched": true,
+    "noExternalRequests": true
+  },
+  {
+    "name": "narrow",
+    "map": {
+      "x": 8,
+      "y": 266.9375,
+      "width": 374,
+      "height": 158.03125
+    },
+    "initialElapsed": 120.33330000000004,
+    "independentTrials": true,
+    "normalSaveUntouched": true,
+    "noExternalRequests": true
+  }
+]

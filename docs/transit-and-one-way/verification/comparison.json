@@ -1,0 +1,19 @@
+{
+  "baseline": "Recorded post-optimization after-model.json, same immutable supplied save and deterministic 60-second workload",
+  "trials": 3,
+  "checkpointsPerTrial": 60,
+  "allFullCityHashesEqual": true,
+  "baselineMedian": {
+    "ms": 2207.3889179999996,
+    "p50": 0.6286739999995916,
+    "p95": 1.5067739999994956,
+    "p99": 2.3951160000005984
+  },
+  "currentMedian": {
+    "ms": 2115.459756,
+    "p50": 0.6130940000002738,
+    "p95": 1.51892399999997,
+    "p99": 2.3615350000000035
+  },
+  "limitation": "Historical comparison, not simultaneous source A/B. Model timing does not establish browser or target-device smoothness."
+}

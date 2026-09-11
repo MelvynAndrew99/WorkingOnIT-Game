@@ -1,0 +1,23 @@
+{
+  "success": true,
+  "gameId": "l7mD5BHH8LslWkr5mC7d",
+  "version": "1.7.10",
+  "visibility": "review",
+  "recordedAt": "2026-09-11T16:55:30.913291+00:00",
+  "publicationRequested": true,
+  "publicUrl": "https://w.run/melvynandrew99/working-on-it",
+  "artifactManifest": "run-1.7.10/artifact.json",
+  "verifiedTags": {
+    "Private": "1.7.10",
+    "Review (Approved)": "1.7.10",
+    "Public": "1.7.10"
+  },
+  "publicVersionAtVerification": "1.7.10",
+  "publicationStatus": "public",
+  "verifiedAt": "2026-09-11T16:56:23.864945+00:00",
+  "validation": [
+    "Model suite passed (32 test files)",
+    "Production TypeScript/Vite build passed",
+    "Frozen production artifact desktop/narrow: graphics, traffic, zoom and saved-town reload passed"
+  ]
+}

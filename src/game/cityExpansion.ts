@@ -1,5 +1,19 @@
 /** Saved land permits: two introductory strips, then completed growth missions. */
 import {entrance,findPath,type City} from './cityModel.ts';
+import type {ExpansionDirection} from './cityMap.ts';
+
+/** Keep one outside-facing edge fixed, including corner connections. Legacy
+ * interior gateways retain their geometry until an explicit repair is chosen. */
+export function connectedExpansionEdge(city:City):ExpansionDirection|null {
+ const g=city.external?.gateway,m=city.map;
+ if(!g)return null;
+ if(g.x===m.x)return 'west';
+ if(g.x===m.x+m.width-1)return 'east';
+ if(g.y===m.y)return 'north';
+ if(g.y===m.y+m.height-1)return 'south';
+ return null;
+}
+export const connectedEdgeReason=(edge:ExpansionDirection)=>`The outside city connects on the ${edge} edge. Expand in another direction to keep that connection at the edge.`;
 
 export interface ExpansionProgress {version:1;used:number;levels:number;briefingSeen:boolean;}
 export const createExpansionProgress=():ExpansionProgress=>({version:1,used:0,levels:0,briefingSeen:false});
@@ -21,7 +35,7 @@ export function expansionSnapshot(city:City) {
  const target=expansionTarget(e.levels),current=Math.min(target,expansionHouseholds(city));
  const lockedReason=tutorialLocked?'Land expansion unlocks after the junction-control lesson.'
   :freeRemaining+permits===0?`Mayor funding needed: get ${target} households shopping (${current}/${target}). Finish that mission to level up and earn one expansion.`:'';
- return {freeRemaining,permits,level:e.levels,target,current,used:e.used,briefingSeen:e.briefingSeen,canExpand:!lockedReason,lockedReason};
+ return {freeRemaining,permits,level:e.levels,target,current,used:e.used,briefingSeen:e.briefingSeen,canExpand:!lockedReason,lockedReason,connectedEdge:connectedExpansionEdge(city)};
 }
 export function markExpansionBriefingSeen(city:City):void {(city.expansion??=createExpansionProgress()).briefingSeen=true;}
 export function parseExpansionProgress(raw:unknown):ExpansionProgress {

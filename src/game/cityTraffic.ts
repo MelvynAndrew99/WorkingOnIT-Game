@@ -1,8 +1,9 @@
+import { allowsRoadStep } from './cityDirections.ts';
 import {routingSnapshot, responseRoute, weightedRoute, routeCost, worthwhileRoute, type RoutingSnapshot} from './cityRouting.ts';
 import {CITY_RULES} from './cityRules.ts';
 import {COSTS} from './cityEconomy.ts';
 /** Logical queues, junction arbitration, and player traffic control. No artwork or renderer imports. */
-import { entrance, isBlocked, blockedTiles, findPath, goalOf, retarget, type City, type Point, type Trip } from './cityModel.ts';
+import { entrance, isBlocked, blockedTiles, findPath, goalOf, retarget, type City, type Point, type Trip, type TripPurpose } from './cityModel.ts';
 import { beginVisit } from './cityVisits.ts';
 import { recordConflict, arriveResponse } from './cityIncidents.ts';
 import { junctionAreas } from './junctionAreas.ts';
@@ -28,7 +29,10 @@ export const REPLAN_PATIENCE = 1;
 export type ControlKind = 'stop' | 'signal';
 export type SignalPreset = 'balanced' | 'ns' | 'ew';
 export type JunctionControl = { x: number; y: number; kind: ControlKind; preset: SignalPreset; paid?: number };
-export type TripRecord = { at: number; wait: number };
+export type TripRecord = { at: number; wait: number;
+  /** Only an observed local visit followed by a real return earns attribution. */
+  service?: { homeId: number; purpose: TripPurpose; visitedAt: number; startedAt?: number };
+};
 export type TrafficMetrics = { waiting: number; averageWait: number; throughput: number };
 export type Axis = 'ns' | 'ew';
 
@@ -61,8 +65,25 @@ export const emergencyLaneOffset = (t: Trip) => t.emergencyPass?.shift ?? 0;
 const stepOf = (t: Trip) => TRAFFIC_TICK * (t.service ? (isEmergencyResponse(t) ? EMERGENCY_TILES_PER_SECOND : TRAVEL_TILES_PER_SECOND) : (t.speed ?? TRAVEL_TILES_PER_SECOND));
 
 export type RoadIndex = { roads: Set<string>; junctions: Set<string>; areas: Map<string, string> };
-/** Roads never change inside one simulation call, so this index is built once per step. */
+const simulationIndexes = new WeakMap<City, RoadIndex>();
+/** Share topology through nested routing/incident helpers only while roads cannot change.
+ * Nothing survives the call: edits, reloads and direct model consumers always see fresh roads.
+ */
+export function withRoadIndex<T>(city: City, action: (index: RoadIndex) => T): T {
+  const previous = simulationIndexes.get(city);
+  const index = previous ?? roadIndex(city);
+  simulationIndexes.set(city, index);
+  try { return action(index); }
+  finally {
+    if (previous) simulationIndexes.set(city, previous);
+    else simulationIndexes.delete(city);
+  }
+}
+
+/** Roads never change inside one simulation call, so nested helpers reuse its index. */
 export function roadIndex(city: City): RoadIndex {
+  const prepared = simulationIndexes.get(city);
+  if (prepared) return prepared;
   const roads = new Set(city.roads.map(tileKey));
   const junctions = new Set<string>();
   for (const p of city.roads) {
@@ -99,6 +120,31 @@ function slotAt(index: RoadIndex, path: Point[], i: number): Slot {
   // A vehicle turning back at its destination sweeps the whole tile, so nobody may share it.
   const exclusive = !!prev && !!next && prev.x === next.x && prev.y === next.y;
   return { tile, lane: `${tile}#${exit}`, exclusive, enter, exit, junction: index.junctions.has(tile) };
+}
+
+/** Actual shared contact movement, including opposing turns under the same green. */
+export function conflictingContact(index: RoadIndex, point: Point, a: Trip, b: Trip): boolean {
+  const movement = (trip: Trip) => {
+    const k = bodyTile(trip);
+    const j = [k, k + 1].find(i => trip.path[i] && tileKey(trip.path[i]) === tileKey(point));
+    return j === undefined ? null : slotAt(index, trip.path, j);
+  };
+  const first = movement(a), second = movement(b);
+  if(first&&second&&axisOf(first.enter)===axisOf(second.enter)){
+    const directions=['N','E','S','W'];
+    const left=(s:Slot)=>directions[(directions.indexOf(s.enter)+3)%4]===s.exit;
+    if(!left(first)&&!left(second))return false;
+  }
+  // Same-direction followers cannot collide through the failed-yield mechanism.
+  return !!first && !!second && first.enter !== second.enter && !compatible(first, second);
+}
+
+export function contactAxis(trip: Trip, point: Point): Axis | null {
+  const k = bodyTile(trip);
+  const j = [k, k + 1].find(i => trip.path[i] && tileKey(trip.path[i]) === tileKey(point));
+  if (j === undefined) return null;
+  return axisOf(j > 0 ? heading(trip.path[j - 1], trip.path[j])
+    : trip.path[1] ? heading(trip.path[0], trip.path[1]) : 'N');
 }
 
 /** Entering a junction reserves the whole run of junction tiles plus its first exit tile. */
@@ -170,6 +216,19 @@ export function occupiedTiles(city: City): Set<string> {
     if (t.emergencyPass) for (const slot of passSlots(roadIndex(city),t)) tiles.add(slot.tile);
   }
   return tiles;
+}
+
+/** Direction edits cannot change occupied geometry or a committed junction/pass. */
+export function directionReservedTiles(city: City): Set<string> {
+  const index=roadIndex(city), reserved=new Set(grid(city,index).grid.keys());
+  for(const trip of city.trips) if(onRoad(trip)) {
+    // Rendering interpolates the segment between these centers; protect both ends.
+    for(const i of [Math.floor(trip.progress),Math.ceil(trip.progress)]) {
+      const p=trip.path[i];if(p)reserved.add(tileKey(p));
+    }
+  }
+  for(const incident of city.incidents)if(incident.status==='active')reserved.add(tileKey(incident));
+  return reserved;
 }
 
 export function controlAt(city: City, p: Point): JunctionControl | undefined {
@@ -248,12 +307,14 @@ function unusable(city: City, index: RoadIndex, p: Point, responding = false): b
 }
 function allowed(city: City, index: RoadIndex, grid: Grid, trip: Trip, k: number): boolean {
   const path = trip.path;
-  if (unusable(city, index, path[k + 1], isEmergencyResponse(trip))) return false;
+  if (unusable(city, index, path[k + 1], isEmergencyResponse(trip))
+    || !allowsRoadStep(city,path[k],path[k+1],index.roads)) return false;
   const target = slotAt(index, path, k + 1);
   // Gates apply on entry only; a vehicle already inside a junction run holds it and must clear.
   if (!index.junctions.has(tileKey(path[k])) && target.junction && !gated(city, index, grid, trip, k)) return false;
   const [start, end] = heldRange(index, path, k + 1);
   for (let i = start; i <= end; i++) {
+    if (!allowsRoadStep(city,path[i-1],path[i],index.roads)) return false;
     const slot = slotAt(index, path, i);
     // Starting scene work claims both lanes; reserve that space before arrival.
     if (!vacant(grid, isEmergencyResponse(trip) && i===path.length-1
@@ -351,7 +412,9 @@ function tryPass(city: City,index: RoadIndex,g: Grid,held: Map<number,Slot[]>,tr
   if(!blockers || ![...blockers].some(([id,slots])=>id!==trip.id && slots.some(s=>!compatible(normal,s))))return false;
   for(let end=k+1;end<=last;end++) {
     const p=trip.path[end];
-    if(unusable(city,index,p,true) || heading(trip.path[end-1],p)!==direction)break;
+    if(unusable(city,index,p,true) || heading(trip.path[end-1],p)!==direction
+      || !allowsRoadStep(city,trip.path[end-1],p,index.roads)
+      || !allowsRoadStep(city,p,trip.path[end-1],index.roads))break;
     // The merge must finish before a bend or a reversal.
     if(end<last && heading(p,trip.path[end+1])!==direction)break;
     if(end<k+2 || index.junctions.has(tileKey(p)))continue;
@@ -394,7 +457,9 @@ export function validEmergencyPasses(city: City): boolean {
     if(pass.end<trip.path.length-1 && heading(trip.path[pass.end],trip.path[pass.end+1])!==direction)return false;
     for(let i=pass.start;i<=pass.end;i++) {
       if(unusable(city,index,trip.path[i],true) || ((i===pass.start || i===pass.end) && index.junctions.has(tileKey(trip.path[i]))))return false;
-      if(i>pass.start && heading(trip.path[i-1],trip.path[i])!==direction)return false;
+      if(i>pass.start && (heading(trip.path[i-1],trip.path[i])!==direction
+        || !allowsRoadStep(city,trip.path[i-1],trip.path[i],index.roads)
+        || !allowsRoadStep(city,trip.path[i],trip.path[i-1],index.roads)))return false;
     }
     const {grid:g}=grid(city,index);
     if(passSlots(index,trip).some(slot=>!vacant(g,slot,trip.id)))return false;
@@ -402,9 +467,26 @@ export function validEmergencyPasses(city: City): boolean {
   return true;
 }
 
+/** Saved direction edits may obsolete future routes, never already-committed geometry. */
+export function validRoadDirectionCommitments(city:City):boolean {
+  if(!city.roadDirections)return true;
+  const index=roadIndex(city);
+  for(const trip of city.trips) {
+    if(!onRoad(trip))continue;
+    const low=Math.floor(trip.progress),high=Math.ceil(trip.progress);
+    if(low!==high&&!allowsRoadStep(city,trip.path[low],trip.path[high],index.roads))return false;
+    if(driving(trip)) {
+      const [start,end]=heldRange(index,trip.path,bodyTile(trip));
+      for(let i=start+1;i<=end;i++)if(!allowsRoadStep(city,trip.path[i-1],trip.path[i],index.roads))return false;
+    }
+  }
+  return true;
+}
+
 /** True when a new vehicle cannot be placed on its home entrance without overlapping traffic. */
 export function startBlocked(city: City, index: RoadIndex, path: Point[], responding = false): boolean {
-  if (isBlocked(city, path[0], responding)) return true;
+  if (!path.length || isBlocked(city, path[0], responding)) return true;
+  if(city.roadDirections && path.some((p,i)=>i>0&&!allowsRoadStep(city,path[i-1],p,index.roads)))return true;
   const control=governingControl(city,index,path[0]);
   if(!responding && path.length>1 && control?.kind==='signal' && signalAxis(city,control)!==axisOf(heading(path[0],path[1])))return true;
   const { grid: g } = grid(city, index);
@@ -445,6 +527,10 @@ function tryRetarget(city:City,index:RoadIndex,trip:Trip,from:Point, avoid?: Set
 }
 /** Commit a changed assignment only when its actual lane/junction space is free. */
 export function commitTripRoute(city:City,index:RoadIndex,trip:Trip,candidate:Trip):boolean {
+  if(city.roadDirections && candidate.phase!=='waiting') {
+    for(let i=bodyTile(candidate)+1;i<candidate.path.length;i++)
+      if(!allowsRoadStep(city,candidate.path[i-1],candidate.path[i],index.roads))return false;
+  }
   const {grid:g}=grid(city,index);
   const slots=heldSlots(index,candidate.path,bodyTile(candidate),blocksWholeTile(candidate)).map(slot =>
     isEmergencyResponse(candidate) && slot.tile===tileKey(candidate.path[candidate.path.length-1])
@@ -489,7 +575,8 @@ function replan(city: City, index: RoadIndex): Set<number> {
     let ahead = false;
     for (let i = k + 1; i <= last && !ahead; i++) {
       const tile = tileKey(trip.path[i]);
-      ahead = blocked.has(tile) || !index.roads.has(tile);
+      ahead = blocked.has(tile) || !index.roads.has(tile)
+        || (!!city.roadDirections && !allowsRoadStep(city,trip.path[i-1],trip.path[i],index.roads));
     }
     if (!ahead) {
       // Optional queries never reverse a moving car or rewrite a committed junction.
@@ -563,7 +650,7 @@ function replan(city: City, index: RoadIndex): Set<number> {
   return reversing;
 }
 
-/** The civilian this driver is actually in conflict with at an unsigned junction, if any. */
+/** The civilian reserving an incompatible junction movement, if any. */
 function crossingBlocker(city: City, index: RoadIndex, g: Grid, byId: Map<number, Trip>, trip: Trip, k: number): number | null {
   const target = slotAt(index, trip.path, k + 1);
   const m = g.get(target.tile);
@@ -573,8 +660,7 @@ function crossingBlocker(city: City, index: RoadIndex, g: Grid, byId: Map<number
     if (!other || other.service || phaseOf(other) === 'crashed') continue;
     for (const s of slots) {
       if (s.tile !== target.tile || !s.junction || !target.junction) continue;
-      // Same-axis pairs are following or opposing traffic, never a failed yield.
-      if (axisOf(s.enter) === axisOf(target.enter)) continue;
+      if (s.enter === target.enter) continue;
       if (!compatible(target, s)) return owner;
     }
   }
@@ -584,8 +670,8 @@ function crossingBlocker(city: City, index: RoadIndex, g: Grid, byId: Map<number
 }
 
 /**
- * Report real crossing conflicts at uncontrolled junctions so risk can build where the player
- * can see it. A control on that intersection removes the report entirely. Returns true when the
+ * Report fresh crossing encounters, including overloaded stops and opposing left turns on green.
+ * Normal signal separation and stop dwell still apply. Returns true when the
  * incident module turned sustained conflict into a crash, which invalidates this tick's occupancy.
  */
 function detectConflicts(city: City, index: RoadIndex, g: Grid): boolean {
@@ -603,7 +689,11 @@ function detectConflicts(city: City, index: RoadIndex, g: Grid): boolean {
     if (round6(trip.progress + stepOf(trip)) <= k + 0.5 + 1e-9) continue;
     const target = trip.path[k + 1];
     if (!index.junctions.has(tileKey(target)) || index.junctions.has(tileKey(trip.path[k]))) continue;
-    if (governingControl(city, index, target) || isBlocked(city, target)) continue;
+    if (isBlocked(city, target) || !allowsRoadStep(city,trip.path[k],target,index.roads)) continue;
+    const control = governingControl(city, index, target);
+    // Red means wait, never accumulate danger for obeying it. Stops must finish their halt.
+    if (control?.kind === 'signal' && signalAxis(city, control) !== contactAxis(trip, target)) continue;
+    if (control?.kind === 'stop' && trip.hold < STOP_DWELL - 1e-9) continue;
     const other = crossingBlocker(city, index, g, byId, trip, k);
     if (other === null) continue;
     const area = index.areas.get(tileKey(target)) ?? tileKey(target);
@@ -627,7 +717,13 @@ function finish(city: City, g: Grid, held: Map<number, Slot[]>, done: Trip[]): v
   for (const trip of credited) {
     city.completed++;
     if (trip.external && city.external) city.external.completed++;
-    city.history.push({ at: round6(city.elapsed), wait: trip.wait });
+    const record: TripRecord = { at: round6(city.elapsed), wait: trip.wait };
+    if (!trip.external && trip.purpose && trip.rewarded && trip.visitedAt !== undefined
+      && phaseOf(trip) === 'returning') {
+      record.service = { homeId: trip.homeId, purpose: trip.purpose, visitedAt: trip.visitedAt,
+        ...(trip.startedAt !== undefined ? {startedAt: trip.startedAt} : {}) };
+    }
+    city.history.push(record);
   }
   const ids = new Set(credited.map(t => t.id));
   city.trips = city.trips.filter(t => !ids.has(t.id));
@@ -661,7 +757,8 @@ export function trafficTick(city: City, index: RoadIndex): void {
     if (isYielding(city,trip,index)) next = trip.progress;
     // Stop on this tile's centre, not its far edge, when the way ahead has gone. From there the
     // vehicle can turn onto a new route without giving back any ground.
-    if (k < last && trip.progress <= k + 1e-9 && unusable(city, index, trip.path[k + 1], isEmergencyResponse(trip))) next = Math.min(next, k);
+    if (k < last && trip.progress <= k + 1e-9 && (unusable(city, index, trip.path[k + 1], isEmergencyResponse(trip))
+      || !allowsRoadStep(city,trip.path[k],trip.path[k+1],index.roads))) next = Math.min(next, k);
     else if (next > edge + 1e-9) {
       if (allowed(city, index, g, trip, k)) {
         release(g, held.get(trip.id) ?? [], trip.id);
@@ -784,7 +881,18 @@ export function parseHistory(raw: unknown, elapsed: number): TripRecord[] | null
     const h = value as TripRecord;
     if (!Number.isFinite(h.at) || h.at < 0 || h.at > elapsed + 1e-6) return null;
     if (!Number.isFinite(h.wait) || h.wait < 0 || h.wait > elapsed + 1e-6) return null;
-    if (h.at > round6(elapsed) - METRICS_WINDOW) records.push({ at: h.at, wait: h.wait });
+    const record: TripRecord = {at: h.at, wait: h.wait};
+    const service = h.service;
+    // Ancillary attribution corruption cannot discard an otherwise valid town.
+    if (service && Number.isSafeInteger(service.homeId) && service.homeId > 0
+      && (service.purpose === 'shopping' || service.purpose === 'leisure')
+      && Number.isFinite(service.visitedAt) && service.visitedAt >= 0 && service.visitedAt <= h.at
+      && (service.startedAt === undefined || (Number.isFinite(service.startedAt)
+        && service.startedAt >= 0 && service.startedAt <= service.visitedAt))) {
+      record.service = {homeId: service.homeId, purpose: service.purpose, visitedAt: service.visitedAt,
+        ...(service.startedAt !== undefined ? {startedAt: service.startedAt} : {})};
+    }
+    if (h.at > round6(elapsed) - METRICS_WINDOW) records.push(record);
   }
   return records.sort((a,b)=>a.at-b.at);
 }
@@ -810,6 +918,7 @@ export function vehicleDebug(city:City,trip:Trip,index=roadIndex(city),g=grid(ci
   else if(trip.emergencyPass)reason=`Emergency pass: ${trip.emergencyPass.stage}`;
   else if(trip.phase==='waiting')reason=trip.target&&findPath(city,position,trip.target,isEmergencyResponse(trip))?'Route exists; waiting for safe lane reservation':'No open route to current target';
   else if(!next)reason='At route endpoint';
+  else if(!allowsRoadStep(city,position,next,index.roads))reason='Next road connection runs the other way';
   else if(unusable(city,index,next,isEmergencyResponse(trip)))reason='Next tile is closed, wrecked, or missing';
   else {
     const [start,end]=heldRange(index,trip.path,k+1);

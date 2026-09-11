@@ -1,5 +1,6 @@
+import {allowsRoadStep} from './cityDirections.ts';
 /** Local road patrols: no artwork, money, or incident creation. */
-import {entrance,isBlocked,type City,type Building,type Point,type Trip} from './cityModel.ts';
+import {entrance,isBlocked,findPath,type City,type Building,type Point,type Trip} from './cityModel.ts';
 import {roadIndex,startBlocked,TRAVEL_TILES_PER_SECOND} from './cityTraffic.ts';
 import {CITY_RULES} from './cityRules.ts';
 const key=(p:Point)=>`${p.x},${p.y}`;
@@ -18,18 +19,24 @@ export function patrolRoute(city:City,station:Building):Point[]|null {
  for(let i=0;i<queue.length;i++){
   const p=queue[i];
   for(const q of [{x:p.x+1,y:p.y},{x:p.x,y:p.y+1},{x:p.x-1,y:p.y},{x:p.x,y:p.y-1}]){
-   if(!roads.has(key(q))||previous.has(key(q)))continue;
+   if(!roads.has(key(q))||!allowsRoadStep(city,p,q)||previous.has(key(q)))continue;
    previous.set(key(q),p);queue.push(q);
   }
  }
  if(queue.length<2)return null;
  // Pick among the furthest reachable roads, alternating branches between outings.
  const distance=(p:Point)=>(p.x-start.x)**2+(p.y-start.y)**2;
- const far=queue.slice(1).sort((a,b)=>distance(b)-distance(a));
+ const avoid=city.roadDirections ? new Set(city.roads.filter(p=>!roads.has(key(p))).map(key)) : undefined;
+ const returns=new Map<string,Point[]>();
+ const eligible=city.roadDirections ? queue.slice(1).filter(p=>{
+  const back=findPath(city,p,start,false,avoid);if(!back)return false;returns.set(key(p),back);return true;
+ }) : queue.slice(1);
+ if(!eligible.length)return null;
+ const far=eligible.sort((a,b)=>distance(b)-distance(a));
  const choices=far.filter(p=>distance(p)>=distance(far[0])*.65);
  const end=choices[(city.nextId+station.id)%choices.length];
  const path=[end];let parent=previous.get(key(end));while(parent){path.push(parent);parent=previous.get(key(parent));}
- path.reverse();return [...path,...path.slice(0,-1).reverse()].map(p=>({...p}));
+ path.reverse();return [...path,...(returns.get(key(end))?.slice(1)??path.slice(0,-1).reverse())].map(p=>({...p}));
 }
 export function stepPolicePatrols(city:City):void {
  for(const station of city.buildings.filter(b=>b.kind==='policeStation')){

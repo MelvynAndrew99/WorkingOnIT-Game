@@ -1,5 +1,98 @@
 # Project instructions: city building and traffic optimization
 
+## One-way roads implemented locally (2026-09-11)
+
+User requested starting one-way implementation from the delegated design. Delivered Roads → One-way (shortcut 8), consecutive tile selection/closed rings, preview and saved flow arrows, atomic Apply/Reverse/Two-way/Undo/Cancel. Sparse directed connections govern cached/weighted/custom/planned paths, physical travel, destination returns, patrols and responders. Existing physical lanes remain; occupied/interpolated/committed edits are rejected, old towns remain two-way, stale future paths replan safely, saves preserve direction. Corrupt committed-direction saves are rejected with original-copy recovery protection rather than silently replacing the town.
+
+[Delivery and evidence](docs/transit-and-one-way/IMPLEMENTED.md): 303 model tests, production build, desktop/narrow pointer construction/edit/zoom/reload and invalid-save preservation checks. All 180 unchanged supplied-town model checkpoints match baseline. Actual copied-town ring at (10,4) can be built after natural traffic clearance without deleting demand/vehicles. One-way does not automatically grant roundabout priority: unsigned busy variant has an entry crash; four existing Stops produce 82 completions/no new crashes over 120 seconds versus original intersection 85/no new crashes. Preserve the distinction and do not claim universal safety or target-device smoothness. Bus mechanics, signal offsets and mission authoring remain separate. No publication or active player-save modification.
+
+## Bus infrastructure and one-way roads — design delegation (2026-09-11)
+
+User is authoring the mission structure and requests these mechanics designed and delegated meanwhile: bus station with parking and physical footprint, exactly one-square bus stops, buses that delay road traffic while carrying more travelers with fewer cars, neighborhood walking, and one-way roads enabling player-built rings/dense networks with flow arrows. Coordinated signals across multiple intersections are a follow-on teaching capability. Preserve current missions until their plan arrives.
+
+Three Codex design agents were launched for transit simulation, directed roads and artwork inventory. [Design and work packages](docs/transit-and-one-way/README.md) records their source-grounded handoffs, provisional defaults and integration order: directed movement first while transit/art design proceeds, then real passenger/walking journeys and bus service. Reuse Kenney assets before authoring missing bus art. A one-way ring needs verified junction/entry behavior; arrows alone do not create roundabout priority. Current visitors count household trips and combine parking/service slots, so transit needs explicit journey/capacity work rather than simply removing cars. Benchmark future changes against the supplied town with actual desktop/narrow frame pacing. Design only; no runtime implementation, mission edits, player-save changes or publication in this pass.
+
+## Graphics/performance update published — RUN 1.7.10 (2026-09-11)
+
+User explicitly requested pushing the updated game online. Current verified working-tree build uploaded once to the existing RUN game; public and approved-review tags now both confirm **1.7.10**, superseding prior local-only publication status for these accumulated graphics/performance changes. Model suite/build and frozen production desktop/narrow asset/traffic/zoom/save-reload checks pass. [Release evidence](docs/releases/run-1.7.10/README.md), [receipt](docs/releases/run-1.7.10-receipt.json). Public URL remains https://w.run/melvynandrew99/working-on-it. No Git push or player-save modification. This does not remove the documented need to verify smoothness on the user's actual desktop device.
+
+
+## Smooth frame pacing and supplied benchmark town (2026-09-11)
+
+User makes smooth gameplay the number-one constraint: yesterday's animation was good; today's slowdown makes the game hard to play. Use the supplied 200-road/50-building town as the benchmark for future performance-impacting changes, and measure actual desktop/narrow frame pacing, not CPU time alone. [Delivery and preserved save](docs/performance-review/player-town/README.md). Codex implemented bounded exact BFS reuse with safe read scopes, unchanged-label style guards and static terrain/building texture caching. Full city state matches baseline at 60 checkpoints, including closure edits/reload. Model p99 ~13.6→2.4ms; narrow software-rendered browser ~31→58 FPS, p95 150→16.8ms. Desktop software-rendered capture improves but remains ~15 FPS: do not claim target-device smoothness solved. Existing tests/build and real construction/zoom/pause/reload checks pass. No crash-rule removal, timestep change, save alteration or publication. User suggests reconsidering routes at intersections; preserve physical movement checks and treat route-query scheduling as a separate measured opportunity. Antialiasing-off experiment was not adopted.
+
+
+## Performance review and first optimizations (2026-09-11)
+
+User requested actual Grok/Claude optimization reviews after today's slowdown, including crash logic simplification. Both installed clients delivered source reviews. Codex profiled and implemented per-step road-index reuse plus removal of an unused Flow calculation from visit mission credit. Existing saved-town benchmark uses about 51% less simulation CPU wall time; p99 falls from ~22ms to ~14.5ms, with identical full final city hashes across three fixtures. Tests/build pass. No crash rules, saves, rendering code or publication changed. This is model performance evidence, not device FPS or the user's exact current-town recovery. [Review and next priorities](docs/performance-review/README.md): per-frame home access BFS/text styles, then Flow/HUD reachability, routing allocations and carefully verified responder scans. Flow already samples once per simulated second; Grok's 40Hz claim is corrected in the synthesis.
+
+
+## Fixed outside-city edge and connector repair (2026-09-11)
+
+User chooses to block expansion on the outside-city connection side. For towns already expanded beyond it, they explicitly request deleting the old connector, putting it at the map edge, and highlighting the need to connect town roads to it. Implemented locally: expansion guard/UI, sandbox-load relocation to nearest boundary tile without a building, preserved visitor positions and real new-exit routing, yellow marker and Show city connection prompt. Existing construction/progress remain; no automatic road building. Supplied town moves (23,10) to (39,10), needing six road tiles. [Delivery](docs/land-progression/connected-edge/README.md): 277 tests, build and desktop/narrow checks. No publication. This supersedes preserving interior gateway locations at sandbox load.
+
+Character refinement: manager must not sound conceited. Heart in the right place, motives self-serving; reveal that through choices rather than overt credit-taking boasts. User proposes “Oh, another crash! Here is what I would do, build more roads!” Delayed unsolicited advice remains queued; no new speech trigger in this pass.
+
+
+## Main menu redesign delivered locally (2026-09-11)
+
+Latest user decision: keep the worn paper card; sticky-note proposal canceled. Make “Good as new!” handwritten while preserving the faded CITY MANAGER letterhead. A future framed picture on his wall is intended, not implemented now.
+
+Latest label refinement: fade both CI and AGER in CITY MANAGER, leaving TY MAN prominent, which can suggest “Thank You Man.” Implemented on the title label.
+
+Character clarification: “The Man” comes from MANAGER with AGER faded/rubbed off through wear, not an ego-selected title. He remains kind and knowledgeable but out of touch. Title-screen caption is “Good as new!” beside the obvious patch, with CITY MANAGER’s AGER worn/faded. Save the more-roads joke for gameplay; avoid happy-accident wording on the title because it suggests causing crashes is the goal. This supersedes peeled-off lettering and the earlier title caption.
+
+Latest user refinement: New city and Settings should match the other gold road-sign buttons. Title-screen tagline is now “Fix the commute.” only; reveal the credit-taking theme during gameplay. Implemented and verified locally.
+
+User requests a game-like title screen with distinct desktop/mobile composition and clear themed controls. Codex implemented full-viewport menu framing, a live title, existing illustrated manager scene, gold road-sign Start/Continue and smaller Challenges actions, and a separate Settings/New city utility row. New city remains confirmed and appears only with an existing town; title Skip moves into Settings, in-game Skip remains. Gameplay display preferences and saves remain intact. Actual installed Claude and Grok gave text-only design reviews; Codex selected, implemented and verified the result. Build and isolated desktop/narrow interaction/screenshots pass. See [delivery](docs/title-menu/README.md). Local only; no publication.
+
+## Intersection danger balancing delivered locally (2026-09-11)
+
+User made shared intersection mechanics today's priority: light Level 2 traffic can be safe unsigned, heavy Level 3 traffic should feel dangerous, and wrong controls can remain dangerous. Preserve current maps. Codex implemented distinct local conflict encounters, area-wide exposure/gradual decay, overloaded-stop danger and opposing left-turn danger under shared green, with actionable warnings in both modes. Normal red waiting, stationary pairs and through traffic do not generate accident quotas. Heavy turning fixture's long EW green crashes while a shorter phase serves all households; signals and route separation solve the heavier stop fixture. Saved diagnostics prepare for a later safety heatmap, not implemented now. This supersedes prior blanket Stop/Light crash immunity. [Delivery](docs/traffic-safety-balance/IMPLEMENTED.md): 272 tests, build and desktop/narrow browser verification pass. Existing incidents/rosters/deadlines, maps, stars and towns preserved. Severity cycling and real pile-ups remain follow-up work. No publication.
+
+## Shared intersection balance (2026-09-11)
+
+User requests installed Grok balance uncontrolled intersection danger and accident severity/responders for both missions and sandbox. Latest clarification: preserve the current Level 3; the request is shared mechanics balancing, not level redesign. Quiet traffic should remain safe, busy conflicting approaches should be dangerous without controls, and safe solutions must retain actual service/returns. Fender benders police, injury/serious crashes police+EMS, actual pile-ups all three including fire scene protection. User approved sharing the prepared game-rule brief after initial automatic-review rejection; actual installed Grok review is delivered. Grok recommends local conflicting-arrival exposure with area-wide gradual decay, not density/Flow-rating crash quotas, and replacing global severity cycling. [Assignment and lead synthesis](docs/traffic-safety-balance/README.md) record provisional numbers, corrections needed for stationary waits/actual contact/severity/pile-up reachability, save and responder constraints, and 5/5 unchanged lesson baseline tests. Assignment complete; no runtime rebalance or publication yet.
+
+## First 25 missions: latest direction for the next discussion
+
+The first ten missions will focus on placing roads, connecting homes to stores and reducing commute time across different intersection layouts. This supersedes the planned early crash/control lesson order, but does not change published maps or saved progress yet. [Mission requirements: Levels 1–25](docs/challenges/MISSIONS.md) records the confirmed direction and a proposed sequence expanding into congestion, destination capacity, crashes, emergency access and diversion. Individual maps, targets, budgets, star criteria and later-level ordering await discussion/playtesting. The user reports 46 unique players and hopes short challenges encourage return visits; retention is a hypothesis, not a measured result. Documentation only in this pass; no implementation, publication or agent discussion scheduled automatically.
+
+
+## Challenge route and revised lessons (latest user decision)
+
+Latest direction supersedes the earlier three-level order/return-only opening: numbered road-map selection, victory Retry/Next, Level 1 actual store arrival, Level 2 vertically spaced homes returning within a provisional 45 simulated seconds, Level 3 missing roads/no control with real collision avoidance. Original Room to move is a fourth bonus; old stars and neighborhood layouts are preserved. Fixed budgets, separate sandbox, main-menu exit and future learn/earn/sandbox unlock direction remain.262 model tests, build and desktop/narrow verification pass locally; observed fun remains unverified. See [delivery](docs/challenges/IMPLEMENTED.md). No publication.
+
+
+## Challenge opening order and fixed budgets (latest user decision)
+
+The sandbox remains the main game. Challenge lessons now start with one home/store needing a road, then three homes needing roads to a shared store; Room to move follows third. Challenge budgets never earn simulation income; normal construction/refunds remain, sandbox income unchanged. Main-menu Challenges uses the same gold style as Continue commute; each level has direct Main menu and Levels exits. Independent saved runs/stars preserve old FLOW progress. Delivered locally;259 model tests, build and desktop/narrow checks. See docs/challenges/IMPLEMENTED.md. No publication.
+
+
+## Sandbox and focused challenges (2026-09-10, corrected)
+
+The sandbox remains the main game, including the story and future monetization direction documented by Claude. Develop it alongside small predetermined challenges that teach and test lessons under the same simulation rules, like Chess.com puzzles. This is not a challenges-first pivot or a postponement of sandbox development. Challenges can provide bounded jam content. User requested a main-menu Challenges button and the current FLOW puzzle with an explicit objective, separate retries/progress and no edits to the player’s town. Delivered locally: docs/challenges/IMPLEMENTED.md; shared renderer/engine with an injected challenge session, protected nine-home demand, one permanent star, independent challenge saves.256 model tests, build and desktop/narrow checks. Stars/scoring beyond the first completion remain balance work. Preserve existing work and publication boundaries.
+
+
+## FLOW-02 delivered locally (2026-09-10)
+
+FLOW-02 now integrates a new neighborhood-service objective into the existing mission system, compact Flow feedback, Details/Dashboard metrics and selected-road approach inspection. Installed Claude delivered the UI; Codex integrated and verified it, and installed Grok reviewed the balance proposal. Civic qualification uses one real shopping return per household in60simulated seconds with access/tail checks and4seconds stabilization; FLOW-01's stricter comparison remains. Saved targets/receipts preserve old missions, tutorial/outside consent, cash/land and existing local fixes. 253 model tests, production build and desktop/narrow browser checks pass. No publication. See [FLOW-02](docs/flow-puzzles/flow02/README.md); FLOW-03 observed fun is next.
+
+
+## Challenges mode, The Man and radio unlock (2026-09-10)
+
+User decisions, pending playtest validation. Read the matching section at the top of docs/DESIGN.md and [the challenges plan](docs/challenges/PLAN.md).
+
+- Chess.com-style puzzle section, developed alongside the sandbox (see the corrected section above; not a challenges-first pivot). The first proposed puzzle is getting a car from A to B in this city in under 1 minute with limited supplies. Puzzles grow harder under the same rules; the sandbox stays for experimentation. Puzzles can come from exported, pre-simulated existing maps that the player adds to or updates. Challenge play must never modify the player's city save.
+- Refer to the manager as **The Man** for now. The "AGER" peeled off his MANAGER sign; the title is not ego-driven, and he adopts it cheerfully. His backstory and mayoral ambition are revealed gradually.
+- His advice is good but poorly prioritized and needs prerequisite work (yak shaving). Players choose to act now and fix it later, or queue it. Deaths are a player-facing mechanic, not a portrayal of him.
+- Radio station (Suno songs including kids' songs and What a Jam!) unlocks on beating the game or after a number of hours played. The ending is undefined while mechanics are built.
+- v1 is expected to take months past the jam. Monetization is deferred until playtests; favored directions are the radio and ego-themed vanity items. This does not authorize implementing payments or ads.
+
+## FLOW-01 delivered locally (2026-09-10)
+
+User requested implementation, with no publication. The existing-tool demand/measurement prototype now has a reproducible road bottleneck with spare reachable capacity, retiming and nearby-store solutions at identical demand, and preplanned success. Bounded real visit/return attribution and fixed-target/current-wait diagnostics preserve existing receipts; saved departure tie fairness prevents long leisure trips starving shopping. 244 model tests and production build pass. See [FLOW-01 results](docs/flow-puzzles/FLOW-01.md). FLOW-02 objective/UI integration and FLOW-03 observed fun remain pending; no player-facing Flow indicator, widening, construction timers, modes or separate mission system was added.
+
 ## Saved-city troubleshooting workflow (2026-09-10)
 
 User explicitly requests reusing the successful full-town debugging process for future issues. Follow [the saved-city troubleshooting brief](docs/SAVED-CITY-DEBUGGING.md): collect diagnostics plus the complete city save, preserve the original, reproduce with the real simulation in isolation, trace actual blockers, and retain regression coverage including reload and preservation checks. Diagnostics alone are not a full save. Explain that browser `copy()` returning `undefined` is normal. Never reset or modify the player’s active town to obtain a reproduction; distinguish verified model recovery from active-browser recovery and publication.

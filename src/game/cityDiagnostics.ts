@@ -3,6 +3,7 @@ import {entrance, findPath, type City} from './cityModel.ts';
 import {visitorSlots} from './cityVisits.ts';
 import {bodyTile} from './cityTraffic.ts';
 import {CITY_RULES} from './cityRules.ts';
+import {intersectionSafetySnapshot} from './cityIncidents.ts';
 export type DiagnosticView = 'normal' | 'traffic' | 'access' | 'capacity';
 export function cityDiagnostics(city: City) {
   const destinations = city.buildings.filter(b => b.kind === 'store' || b.kind === 'park')
@@ -25,6 +26,6 @@ export function cityDiagnostics(city: City) {
     else if(!household||!(household.shopping+household.leisure)){status='idle';reason='No trip needed now';}
     return {id:home.id,x:home.x,y:home.y,status,reason,shopping:household?.shopping??0,leisure:household?.leisure??0};
   });
-  return {homes,destinations,traffic};
+  return {homes,destinations,traffic,intersections:intersectionSafetySnapshot(city)};
 }
 export type CityDiagnostics = ReturnType<typeof cityDiagnostics>;

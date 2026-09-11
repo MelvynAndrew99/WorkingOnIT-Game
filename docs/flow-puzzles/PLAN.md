@@ -1,6 +1,19 @@
 # First post-tutorial flow puzzle
 
+## Parallel work update (September 10, 2026)
+
+User assigned concurrent backlog work: Codex owns [FLOW-03's disposable observed playtest](flow03/README.md), now prepared and desktop/narrow verified, awaiting player observations. Installed Grok is implementing a bounded FLOW-04 simulation foundation in an isolated workspace using the already-approved source allowlist. Widening is not yet integrated or playable; full delivery still requires routing, rendering, timed works and verification. Neither item is marked complete by a launch or automated fun claim. No publication.
+
+## FLOW-02 implementation update (September 10, 2026)
+
+FLOW-02 is now delivered locally. [Implementation, specialist work, evidence and remaining balance](flow02/README.md): a new existing-system neighborhood recognition objective, compact UI/Details/Dashboard and selected-road approach observations, preserved legacy receipts,253 tests plus production build and desktop/narrow checks. Civic recognition is deliberately more forgiving than the FLOW-01 comparison and never forces a genuinely served layout to fail. No publication; FLOW-03 is still player-observed playtesting, not completed by automated browser work.
+
+
 Status: design discussion and implementation plan, September 10, 2026. No runtime changes or publication in this discussion. User requested actual Grok consultation, planning and eventual implementation. The [installed Grok response](grok-review.md) and [text-only brief](grok-brief.txt) are preserved; recommendations below are the lead's synthesis, not blanket adoption of that draft.
+
+## FLOW-01 implementation update (September 10, 2026)
+
+FLOW-01 is now implemented and verified locally. See [delivery, reproduction and balance limits](FLOW-01.md): fixed nine-home demand, a road-limited shared approach with reachable spare capacity, retiming and nearby destinations as two demonstrated solutions, preplanned success, bounded attributed visits/returns and fair shopping/leisure departure ties. 244 model tests and production build pass. No UI/objective integration or publication; FLOW-02/03 remain next. The design-discussion status above describes the original plan.
 
 ## Confirmed direction
 

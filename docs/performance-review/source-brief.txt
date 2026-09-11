@@ -1,0 +1,3368 @@
+User requests you, Grok and Claude independently review recent game slowdown. Read-only optimization review; do not use tools or edit files. Review supplied source for CPU/allocation hotspots especially recent intersection crash logic and frame rendering. Rank concrete opportunities with function references, complexity, semantic risks and profiling recommendations. Preserve safe real trips, solvable collisions, rescue deadlines and saves. Distinguish evidence from hypotheses. Concise report, no web needed.
+
+FILE src/game/cityTraffic.ts
+import {routingSnapshot, responseRoute, weightedRoute, routeCost, worthwhileRoute, type RoutingSnapshot} from './cityRouting.ts';
+import {CITY_RULES} from './cityRules.ts';
+import {COSTS} from './cityEconomy.ts';
+/** Logical queues, junction arbitration, and player traffic control. No artwork or renderer imports. */
+import { entrance, isBlocked, blockedTiles, findPath, goalOf, retarget, type City, type Point, type Trip, type TripPurpose } from './cityModel.ts';
+import { beginVisit } from './cityVisits.ts';
+import { recordConflict, arriveResponse } from './cityIncidents.ts';
+import { junctionAreas } from './junctionAreas.ts';
+
+export const TRAFFIC_TICK = 0.025;
+export const TRAVEL_TILES_PER_SECOND = 2;
+/** Responding vehicles are faster, but still cross one tile boundary at a time. */
+export const EMERGENCY_TILES_PER_SECOND = 3;
+/** An all-way stop always costs a full halt, even on an empty junction. */
+export const STOP_DWELL = 0.8;
+/** An uncontrolled junction only costs a look when the driver actually had to stop. */
+export const CAUTION_DWELL = 0.4;
+export const METRICS_WINDOW = 60;
+// Largest map: at most 1024 homes, each departing once per four seconds.
+export const MAX_HISTORY = 16384;
+/** Unsigned intersections give E/W traffic a 1.5-second approach gap. */
+export const PRIORITY_LOOKAHEAD = 3;
+/** A junction is a road tile with three or more cardinal road neighbours. */
+export const JUNCTION_DEGREE = 3;
+/** How long a vehicle stopped past a tile centre waits before backing up to divert. */
+export const REPLAN_PATIENCE = 1;
+
+export type ControlKind = 'stop' | 'signal';
+export type SignalPreset = 'balanced' | 'ns' | 'ew';
+export type JunctionControl = { x: number; y: number; kind: ControlKind; preset: SignalPreset; paid?: number };
+export type TripRecord = { at: number; wait: number;
+  /** Only an observed local visit followed by a real return earns attribution. */
+  service?: { homeId: number; purpose: TripPurpose; visitedAt: number; startedAt?: number };
+};
+export type TrafficMetrics = { waiting: number; averageWait: number; throughput: number };
+export type Axis = 'ns' | 'ew';
+
+const PRESETS: SignalPreset[] = ['balanced', 'ns', 'ew'];
+/** Two fixed phases with an all-red clearance between them. Cycle lengths are provisional. */
+const TIMING: Record<SignalPreset, { ns: number; ew: number; clear: number }> = {
+  balanced: { ns: 10, ew: 10, clear: 1 },
+  ns: { ns: 14, ew: 7, clear: 1 },
+  ew: { ns: 7, ew: 14, clear: 1 },
+};
+export const PRESET_LABEL: Record<SignalPreset, string> = {
+  balanced: 'balanced', ns: 'favour north-south', ew: 'favour east-west',
+};
+
+const round6 = (v: number) => Math.round(v * 1e6) / 1e6;
+const tileKey = (p: Point) => `${p.x},${p.y}`;
+const nearby = (p: Point): Point[] => [{ x: p.x + 1, y: p.y }, { x: p.x, y: p.y + 1 }, { x: p.x - 1, y: p.y }, { x: p.x, y: p.y - 1 }];
+const heading = (a: Point, b: Point): string => (b.x > a.x ? 'E' : b.x < a.x ? 'W' : b.y > a.y ? 'S' : 'N');
+const axisOf = (dir: string): Axis => (dir === 'E' || dir === 'W' ? 'ew' : 'ns');
+const phaseOf = (t: Trip) => t.phase ?? 'legacy';
+/** Parked visitors are off the carriageway; every other phase has a body on a road tile. */
+const onRoad = (t: Trip) => phaseOf(t) !== 'visiting' && !t.sceneParked;
+/** Only these phases are trying to drive somewhere this tick. */
+const driving = (t: Trip) => {
+  const phase = phaseOf(t);
+  return phase === 'legacy' || phase === 'outbound' || phase === 'returning';
+};
+export const isEmergencyResponse = (t: Trip) => !!t.service && (phaseOf(t) === 'outbound' || (phaseOf(t) === 'waiting' && t.resume === 'outbound'));
+export const emergencyLaneOffset = (t: Trip) => t.emergencyPass?.shift ?? 0;
+const stepOf = (t: Trip) => TRAFFIC_TICK * (t.service ? (isEmergencyResponse(t) ? EMERGENCY_TILES_PER_SECOND : TRAVEL_TILES_PER_SECOND) : (t.speed ?? TRAVEL_TILES_PER_SECOND));
+
+export type RoadIndex = { roads: Set<string>; junctions: Set<string>; areas: Map<string, string> };
+/** Roads never change inside one simulation call, so this index is built once per step. */
+export function roadIndex(city: City): RoadIndex {
+  const roads = new Set(city.roads.map(tileKey));
+  const junctions = new Set<string>();
+  for (const p of city.roads) {
+    if (nearby(p).filter(n => roads.has(tileKey(n))).length >= JUNCTION_DEGREE) junctions.add(tileKey(p));
+  }
+  return { roads, junctions, areas: junctionAreas(junctions) };
+}
+
+/**
+ * Adjoining junction tiles are one intersection, so one control governs the whole area.
+ * Without this a light placed on the far tile of a wide junction would be decorative.
+ */
+export function governingControl(city: City, index: RoadIndex, p: Point): JunctionControl | undefined {
+  const area=index.areas.get(tileKey(p));
+  return area===undefined ? undefined : (city.controls??[]).find(c=>index.areas.get(tileKey(c))===area);
+}
+
+/** One vehicle body reserving one tile. Junction slots also carry the movement they perform. */
+type Slot = { tile: string; lane: string; exclusive: boolean; enter: string; exit: string; junction: boolean };
+/** Opposing straight-through movements share a junction; every other pair is a conflict. */
+function compatible(a: Slot, b: Slot): boolean {
+  if (a.exclusive || b.exclusive) return false;
+  if (!a.junction || !b.junction) return a.lane !== b.lane;
+  return a.enter === a.exit && b.enter === b.exit && axisOf(a.enter) === axisOf(b.enter) && a.enter !== b.enter;
+}
+
+function slotAt(index: RoadIndex, path: Point[], i: number): Slot {
+  const p = path[i];
+  const prev = i > 0 ? path[i - 1] : null;
+  const next = i < path.length - 1 ? path[i + 1] : null;
+  const enter = prev ? heading(prev, p) : next ? heading(p, next) : 'N';
+  const exit = next ? heading(p, next) : enter;
+  const tile = tileKey(p);
+  // A vehicle turning back at its destination sweeps the whole tile, so nobody may share it.
+  const exclusive = !!prev && !!next && prev.x === next.x && prev.y === next.y;
+  return { tile, lane: `${tile}#${exit}`, exclusive, enter, exit, junction: index.junctions.has(tile) };
+}
+
+/** Actual shared contact movement, including opposing turns under the same green. */
+export function conflictingContact(index: RoadIndex, point: Point, a: Trip, b: Trip): boolean {
+  const movement = (trip: Trip) => {
+    const k = bodyTile(trip);
+    const j = [k, k + 1].find(i => trip.path[i] && tileKey(trip.path[i]) === tileKey(point));
+    return j === undefined ? null : slotAt(index, trip.path, j);
+  };
+  const first = movement(a), second = movement(b);
+  if(first&&second&&axisOf(first.enter)===axisOf(second.enter)){
+    const directions=['N','E','S','W'];
+    const left=(s:Slot)=>directions[(directions.indexOf(s.enter)+3)%4]===s.exit;
+    if(!left(first)&&!left(second))return false;
+  }
+  // Same-direction followers cannot collide through the failed-yield mechanism.
+  return !!first && !!second && first.enter !== second.enter && !compatible(first, second);
+}
+
+export function contactAxis(trip: Trip, point: Point): Axis | null {
+  const k = bodyTile(trip);
+  const j = [k, k + 1].find(i => trip.path[i] && tileKey(trip.path[i]) === tileKey(point));
+  if (j === undefined) return null;
+  return axisOf(j > 0 ? heading(trip.path[j - 1], trip.path[j])
+    : trip.path[1] ? heading(trip.path[0], trip.path[1]) : 'N');
+}
+
+/** Entering a junction reserves the whole run of junction tiles plus its first exit tile. */
+function heldRange(index: RoadIndex, path: Point[], k: number): [number, number] {
+  const last = path.length - 1;
+  if (!index.junctions.has(tileKey(path[k]))) return [k, k];
+  let j = k;
+  while (j < last && index.junctions.has(tileKey(path[j + 1]))) j++;
+  return [k, Math.min(j + 1, last)];
+}
+function heldSlots(index: RoadIndex, path: Point[], k: number, exclusive = false): Slot[] {
+  const [start, end] = heldRange(index, path, k);
+  const slots: Slot[] = [];
+  for (let i = start; i <= end; i++) {
+    const slot = slotAt(index, path, i);
+    slots.push(exclusive ? { ...slot, exclusive: true } : slot);
+  }
+  return slots;
+}
+/**
+ * A crew working at a scene and a wreck both sit across the carriageway rather than in one lane,
+ * so nothing may share their tile, including the vehicle's own turn for home.
+ * Waiting vehicles retain their known lane. Old one-point waits have no heading and
+ * remain exclusive until a valid route safely recovers their geometry.
+ */
+const blocksWholeTile = (t: Trip) => phaseOf(t) === 'working' || phaseOf(t) === 'crashed'
+  || (phaseOf(t) === 'waiting' && t.path.length === 1);
+
+/** Occupancy: tile -> the slots currently held on it, by vehicle. */
+type Grid = Map<string, Map<number, Slot[]>>;
+function claim(grid: Grid, slots: Slot[], id: number): void {
+  for (const s of slots) {
+    let m = grid.get(s.tile);
+    if (!m) { m = new Map(); grid.set(s.tile, m); }
+    m.set(id, [...(m.get(id) ?? []), s]);
+  }
+}
+function release(grid: Grid, slots: Slot[], id: number): void {
+  for (const s of slots) {
+    const m = grid.get(s.tile);
+    if (m) { m.delete(id); if (m.size === 0) grid.delete(s.tile); }
+  }
+}
+function vacant(grid: Grid, slot: Slot, id: number): boolean {
+  const m = grid.get(slot.tile);
+  if (!m) return true;
+  for (const [owner, slots] of m) {
+    if (owner === id) continue;
+    for (const other of slots) if (!compatible(slot, other)) return false;
+  }
+  return true;
+}
+
+/** Vehicles occupy tile k while progress is in (k - 0.5, k + 0.5]; they halt on the tile edge. */
+export const cellIndex = (progress: number, last: number) => Math.min(last, Math.max(0, Math.ceil(progress - 0.5 - 1e-9)));
+/** Index into the trip's own path of the tile its body currently stands on. */
+export const bodyTile = (trip: Trip) => cellIndex(trip.progress, trip.path.length - 1);
+/** Tiles committed to an active pass, including every member of a crossed junction. */
+export function emergencyReservedTiles(city: City): Set<string> {
+  const tiles=new Set<string>(),index=roadIndex(city);
+  for(const t of city.trips) if(t.emergencyPass) for(const slot of passSlots(index,t)) tiles.add(slot.tile);
+  return tiles;
+}
+/** Road tiles a vehicle body stands on right now, so construction cannot delete it from under one. */
+export function occupiedTiles(city: City): Set<string> {
+  const tiles = new Set<string>();
+  for (const t of city.trips) if (onRoad(t)) {
+    tiles.add(tileKey(t.path[bodyTile(t)]));
+    if (t.emergencyPass) for (const slot of passSlots(roadIndex(city),t)) tiles.add(slot.tile);
+  }
+  return tiles;
+}
+
+export function controlAt(city: City, p: Point): JunctionControl | undefined {
+  if(city.controls.length===0)return undefined;
+  return governingControl(city,roadIndex(city),p);
+}
+
+/** Renderer-facing phase. Stop signs report 'red' because they have no green axis. */
+export function signalAxis(city: City, control: JunctionControl): Axis | 'red' {
+  if (!control || control.kind !== 'signal') return 'red';
+  const t = TIMING[control.preset] ?? TIMING.balanced;
+  const cycle = t.ns + t.ew + 2 * t.clear;
+  // Quantise to the tick grid so phase edges cannot drift with frame chunking.
+  const now = Math.round(Math.max(0, city.elapsed) / TRAFFIC_TICK) * TRAFFIC_TICK;
+  const phase = now % cycle;
+  if (phase < t.ns) return 'ns';
+  if (phase < t.ns + t.clear) return 'red';
+  if (phase < t.ns + t.clear + t.ew) return 'ew';
+  return 'red';
+}
+
+/**
+ * The east-west vehicle a north-south driver is yielding to, or null when the gap is acceptable.
+ * The same pair is what an uncontrolled junction accumulates collision risk from.
+ */
+function priorityBlocker(city: City, index: RoadIndex, trip: Trip, k: number): number | null {
+  const area = index.areas.get(tileKey(trip.path[k + 1]));
+  for (const other of city.trips) {
+    if (other.id === trip.id || isEmergencyResponse(other) || !driving(other)) continue;
+    const first = Math.max(1, Math.floor(other.progress));
+    const end = Math.min(other.path.length - 1, Math.ceil(other.progress + PRIORITY_LOOKAHEAD + 1));
+    for (let j = first; j <= end; j++) {
+      const gap = j - .5 - other.progress;
+      if (gap < 0 || gap > PRIORITY_LOOKAHEAD) continue;
+      if (index.areas.get(tileKey(other.path[j])) !== area || index.junctions.has(tileKey(other.path[j - 1]))) continue;
+      if (axisOf(heading(other.path[j - 1], other.path[j])) === 'ew') return other.id;
+    }
+  }
+  return null;
+}
+
+/** No other vehicle anywhere in the junction run. A siren buys space, never a shared tile. */
+function junctionClear(index: RoadIndex, g: Grid, trip: Trip, k: number): boolean {
+  const [start, end] = heldRange(index, trip.path, k + 1);
+  for (let i = start; i <= end; i++) {
+    if(!index.junctions.has(tileKey(trip.path[i])))continue;
+    const m = g.get(tileKey(trip.path[i]));
+    if (!m) continue;
+    for (const owner of m.keys()) if (owner !== trip.id) return false;
+  }
+  return true;
+}
+
+function gated(city: City, index: RoadIndex, g: Grid, trip: Trip, k: number): boolean {
+  const control = governingControl(city, index, trip.path[k + 1]);
+  const approach = axisOf(heading(trip.path[k], trip.path[k + 1]));
+  // Provisional emergency rule: a responder may claim a red junction only once it is empty.
+  const responding = !!trip.service && phaseOf(trip) === 'outbound';
+  if (control?.kind === 'signal') {
+    if (signalAxis(city, control) === approach) return true;
+    return responding && junctionClear(index, g, trip, k);
+  }
+  if (control?.kind === 'stop') {
+    if (responding) return junctionClear(index, g, trip, k);
+    return trip.hold >= STOP_DWELL - 1e-9;
+  }
+  // A visible, consistent default priority creates a reason to control a busy crossing.
+  // Minor-axis drivers accept a gap; stops and signals replace this priority rule.
+  if (!responding && approach === 'ns' && priorityBlocker(city, index, trip, k) !== null) return false;
+  return responding || trip.hold === 0 || trip.hold >= CAUTION_DWELL - 1e-9;
+}
+
+/** A wreck, a closure or a demolished road all stop entry, however committed the route was. */
+function unusable(city: City, index: RoadIndex, p: Point, responding = false): boolean {
+  return !index.roads.has(tileKey(p)) || isBlocked(city, p, responding);
+}
+function allowed(city: City, index: RoadIndex, grid: Grid, trip: Trip, k: number): boolean {
+  const path = trip.path;
+  if (unusable(city, index, path[k + 1], isEmergencyResponse(trip))) return false;
+  const target = slotAt(index, path, k + 1);
+  // Gates apply on entry only; a vehicle already inside a junction run holds it and must clear.
+  if (!index.junctions.has(tileKey(path[k])) && target.junction && !gated(city, index, grid, trip, k)) return false;
+  const [start, end] = heldRange(index, path, k + 1);
+  for (let i = start; i <= end; i++) {
+    const slot = slotAt(index, path, i);
+    // Starting scene work claims both lanes; reserve that space before arrival.
+    if (!vacant(grid, isEmergencyResponse(trip) && i===path.length-1
+      ? {...slot, exclusive:true} : slot, trip.id)) return false;
+  }
+  return true;
+}
+
+function grid(city: City, index: RoadIndex): { grid: Grid; held: Map<number, Slot[]> } {
+  const g: Grid = new Map();
+  const held = new Map<number, Slot[]>();
+  for (const t of city.trips) {
+    if (!onRoad(t)) continue;
+    const slots = t.emergencyPass ? passSlots(index,t) : heldSlots(index, t.path, cellIndex(t.progress, t.path.length - 1), blocksWholeTile(t));
+    if (isEmergencyResponse(t) && !t.emergencyPass) {
+      const goal=tileKey(t.path[t.path.length-1]);
+      for (const slot of slots) if(slot.tile===goal)slot.exclusive=true;
+    }
+    held.set(t.id, slots);
+    claim(g, slots, t.id);
+  }
+  return { grid: g, held };
+}
+
+/** Reserve the opposing carriageway and both lane-change tiles for the whole maneuver. */
+function passSlots(index: RoadIndex, trip: Trip): Slot[] {
+  const pass = trip.emergencyPass!;
+  const opposite: Record<string,string> = {N:'S',S:'N',E:'W',W:'E'};
+  const slots: Slot[] = [];
+  for (let i=pass.start;i<=pass.end;i++) {
+    const slot=slotAt(index,trip.path,i);
+    slots.push({...slot,lane:`${slot.tile}#${opposite[slot.exit]}`,exclusive:i===pass.start || i===pass.end || slot.junction});
+  }
+  const areas=new Set(slots.filter(s=>s.junction).map(s=>index.areas.get(s.tile)));
+  for(const [tile,area] of index.areas) if(areas.has(area) && !slots.some(s=>s.tile===tile))
+    slots.push({tile,lane:tile+'#N',exclusive:true,enter:'N',exit:'N',junction:true});
+  return slots;
+}
+
+/** Yield where there is space: passed cars hold their lane; cars inside junctions keep clearing. */
+export function isYielding(city: City, trip: Trip, preparedIndex?: RoadIndex): boolean {
+  if (isEmergencyResponse(trip) || !driving(trip) || !city.trips.some(isEmergencyResponse)) return false;
+  const k=bodyTile(trip), here=trip.path[k], next=trip.path[k+1];
+  const index=preparedIndex ?? roadIndex(city);
+  for (const responder of city.trips) {
+    if (phaseOf(responder)!=='outbound' || !responder.service || responder.id===trip.id) continue;
+    const pass=responder.emergencyPass;
+    if (pass && responder.path.slice(pass.start+1,pass.end).some(p=>tileKey(p)===tileKey(here))) return true;
+    if (!next || index.junctions.has(tileKey(here))) continue;
+    const area=index.areas.get(tileKey(next));
+    if (area===undefined) continue;
+    if (pass && passSlots(index,responder).some(s=>s.junction && index.areas.get(s.tile)===area)) return true;
+    const rk=bodyTile(responder);
+    // A stranded exit queue can stop a responder before the junction. Holding
+    // the opposing lane as well traps traffic that could clear its way or make
+    // an alternate approach usable. Existing admission checks still apply to
+    // that traffic; active passing reservations retain priority above.
+    if (responder.hold >= REPLAN_PATIENCE && rk + 1 < responder.path.length
+      && !index.junctions.has(tileKey(responder.path[rk]))
+      && !allowed(city,index,grid(city,index).grid,responder,rk)) continue;
+    // Yielding must not freeze the vehicle whose occupied space the responder needs.
+    // The ordinary movement gate still checks lanes, controls and a clear junction exit.
+    if(rk+1<responder.path.length){
+      const occupied=heldSlots(index,trip.path,k,blocksWholeTile(trip));
+      const [start,end]=heldRange(index,responder.path,rk+1);
+      let mustClear=false;
+      for(let i=start;i<=end&&!mustClear;i++){
+        const base=slotAt(index,responder.path,i);
+        const required=i===responder.path.length-1?{...base,exclusive:true}:base;
+        mustClear=occupied.some(slot=>slot.tile===required.tile&&!compatible(required,slot));
+      }
+      if(mustClear)continue;
+    }
+    for (let j=rk;j<=Math.min(responder.path.length-1,rk+2);j++) {
+      if(index.areas.get(tileKey(responder.path[j]))!==area) continue;
+      const from=j>0 ? responder.path[j-1] : responder.path[j];
+      const to=j>0 ? responder.path[j] : responder.path[j+1];
+      // A lead vehicle can make space by continuing through; never trap it in front of the siren.
+      if(to && heading(here,next)===heading(from,to)) continue;
+      return true;
+    }
+  }
+  return false;
+}
+
+function tryPass(city: City,index: RoadIndex,g: Grid,held: Map<number,Slot[]>,trip: Trip): boolean {
+  if (!isEmergencyResponse(trip) || phaseOf(trip)!=='outbound' || trip.hold<TRAFFIC_TICK) return false;
+  const k=bodyTile(trip), last=trip.path.length-1;
+  if(k+2>last || index.junctions.has(tileKey(trip.path[k])))return false;
+  const direction=heading(trip.path[k],trip.path[k+1]);
+  if(k>0 && heading(trip.path[k-1],trip.path[k])!==direction)return false;
+  // A response may cross a civilian diversion, but never wrecks or working crews.
+  const normal=slotAt(index,trip.path,k+1);
+  const blockers=g.get(normal.tile);
+  if(!blockers || ![...blockers].some(([id,slots])=>id!==trip.id && slots.some(s=>!compatible(normal,s))))return false;
+  for(let end=k+1;end<=last;end++) {
+    const p=trip.path[end];
+    if(unusable(city,index,p,true) || heading(trip.path[end-1],p)!==direction)break;
+    // The merge must finish before a bend or a reversal.
+    if(end<last && heading(p,trip.path[end+1])!==direction)break;
+    if(end<k+2 || index.junctions.has(tileKey(p)))continue;
+    const candidate={...trip,emergencyPass:{start:k,end,stage:'out' as const,shift:0}};
+    const slots=passSlots(index,candidate);
+    if(slots.some(slot=>!vacant(g,slot,trip.id)))continue;
+    trip.emergencyPass=candidate.emergencyPass;
+    release(g,held.get(trip.id)??[],trip.id);
+    held.set(trip.id,slots);claim(g,slots,trip.id);
+    return true;
+  }
+  return false;
+}
+
+function advancePass(trip: Trip): void {
+  const pass=trip.emergencyPass!;
+  // A 0.4s lateral transition sweeps only the exclusively held start/merge tile.
+  if(pass.stage==='out') {
+    pass.shift=round6(Math.min(1,pass.shift+TRAFFIC_TICK/0.4));
+    if(pass.shift===1)pass.stage='passing';
+  } else if(pass.stage==='passing') {
+    trip.progress=round6(Math.min(pass.end,trip.progress+stepOf(trip)));
+    if(trip.progress===pass.end)pass.stage='in';
+  } else {
+    pass.shift=round6(Math.max(0,pass.shift-TRAFFIC_TICK/0.4));
+    if(pass.shift===0)delete trip.emergencyPass;
+  }
+  trip.hold=0;
+}
+
+/** Reject corrupt corridor geometry/reservations rather than dropping a vehicle's lane on load. */
+export function validEmergencyPasses(city: City): boolean {
+  const index=roadIndex(city);
+  for(const trip of city.trips) {
+    const pass=trip.emergencyPass;
+    if(!pass)continue;
+    if(pass.stage==='out' && bodyTile(trip)!==pass.start)return false;
+    const direction=heading(trip.path[pass.start],trip.path[pass.start+1]);
+    if(pass.start>0 && heading(trip.path[pass.start-1],trip.path[pass.start])!==direction)return false;
+    if(pass.end<trip.path.length-1 && heading(trip.path[pass.end],trip.path[pass.end+1])!==direction)return false;
+    for(let i=pass.start;i<=pass.end;i++) {
+      if(unusable(city,index,trip.path[i],true) || ((i===pass.start || i===pass.end) && index.junctions.has(tileKey(trip.path[i]))))return false;
+      if(i>pass.start && heading(trip.path[i-1],trip.path[i])!==direction)return false;
+    }
+    const {grid:g}=grid(city,index);
+    if(passSlots(index,trip).some(slot=>!vacant(g,slot,trip.id)))return false;
+  }
+  return true;
+}
+
+/** True when a new vehicle cannot be placed on its home entrance without overlapping traffic. */
+export function startBlocked(city: City, index: RoadIndex, path: Point[], responding = false): boolean {
+  if (isBlocked(city, path[0], responding)) return true;
+  const control=governingControl(city,index,path[0]);
+  if(!responding && path.length>1 && control?.kind==='signal' && signalAxis(city,control)!==axisOf(heading(path[0],path[1])))return true;
+  const { grid: g } = grid(city, index);
+  const [start, end] = heldRange(index, path, 0);
+  for (let i = start; i <= end; i++) if (!vacant(g, {...slotAt(index, path, i), ...(responding && (control || i===path.length-1) ? {exclusive:true} : {})}, -1)) return true;
+  return false;
+}
+
+/** Old saves allowed intersecting trips. Defer conflicting departures without awarding completions. */
+export function migrateLegacyTraffic(city: City): void {
+  const index=roadIndex(city), occupied:Grid=new Map();
+  city.trips=city.trips.filter(trip=>{
+    if(!onRoad(trip))return true;
+    const slots=heldSlots(index,trip.path,cellIndex(trip.progress,trip.path.length-1),blocksWholeTile(trip));
+    if(slots.some(slot=>!vacant(occupied,slot,trip.id)))return false;
+    claim(occupied,slots,trip.id);return true;
+  });
+}
+
+/** A wreck clears with its incident; the household keeps the unmet need, not a completion. */
+function clearWrecks(city: City): void {
+  if (!city.trips.some(t => phaseOf(t) === 'crashed')) return;
+  city.trips = city.trips.filter(t => phaseOf(t) !== 'crashed'
+    || city.incidents.some(i => i.status === 'active' && i.x === t.path[0].x && i.y === t.path[0].y));
+}
+
+/**
+ * Route around a new closure or wreck before anything moves, and let a parked-out vehicle
+ * rejoin as soon as a road exists again. Keep the approach segment and exact position; a car
+ * blocked just beyond a tile centre reverses within its owned tile before changing direction.
+ */
+function tryRetarget(city:City,index:RoadIndex,trip:Trip,from:Point, avoid?: Set<string>):void {
+  const candidate={...trip};
+  if(!retarget(city,candidate,from,avoid))return;
+  // A congestion detour is optional; retain the current route if no alternate exists.
+  if(avoid && candidate.phase==='waiting')return;
+  commitTripRoute(city,index,trip,candidate);
+}
+/** Commit a changed assignment only when its actual lane/junction space is free. */
+export function commitTripRoute(city:City,index:RoadIndex,trip:Trip,candidate:Trip):boolean {
+  const {grid:g}=grid(city,index);
+  const slots=heldSlots(index,candidate.path,bodyTile(candidate),blocksWholeTile(candidate)).map(slot =>
+    isEmergencyResponse(candidate) && slot.tile===tileKey(candidate.path[candidate.path.length-1])
+      ? {...slot,exclusive:true} : slot);
+  // Changing the route can change the occupied lane or turn. Wait for that space before doing so.
+  if(slots.some(slot=>!vacant(g,slot,trip.id)))return false;
+  Object.assign(trip,candidate);return true;
+}
+function replan(city: City, index: RoadIndex): Set<number> {
+  const reversing=new Set<number>();
+  let snapshot:RoutingSnapshot|undefined, responseSnapshot:RoutingSnapshot|undefined, queries=0, responseQueries=0;
+  // Response work runs first; a separate ordinary quota cannot be consumed by it.
+  const ordered=[...city.trips].sort((a,b)=>Number(isEmergencyResponse(b))-Number(isEmergencyResponse(a))
+    || (a.nextRouteQueryAt??0)-(b.nextRouteQueryAt??0) || a.id-b.id);
+  for (const trip of ordered) {
+    const phase = phaseOf(trip);
+    const blocked = blockedTiles(city, isEmergencyResponse(trip));
+    if (trip.emergencyPass) continue;
+    const scene=trip.service&&city.incidents.find(i=>i.id===trip.incidentId&&i.completedServices.includes(trip.service!));
+    const sceneK=bodyTile(trip),here=trip.path[sceneK];
+    if(scene&&trip.hold>=CITY_RULES.routing.sceneReturnRecoverySeconds&&(phase==='returning'||phase==='waiting'&&trip.resume==='returning')&&
+      here&&Math.abs(scene.x-here.x)+Math.abs(scene.y-here.y)===1&&trip.progress>sceneK+1e-9){
+      trip.progress=round6(Math.max(sceneK,trip.progress-stepOf(trip)));reversing.add(trip.id);continue;
+    }
+    if (phase === 'waiting') {
+      if (trip.target){
+        const k=bodyTile(trip);
+        if(trip.progress>k+1e-9){
+          trip.progress=round6(Math.max(k,trip.progress-stepOf(trip)));
+          reversing.add(trip.id);
+        }else tryRetarget(city,index,trip,trip.path[k]);
+      }
+      continue;
+    }
+    if (phase === 'visiting' || phase === 'crashed' || phase === 'working') continue;
+    const last = trip.path.length - 1;
+    if (trip.progress >= last - 1e-9) continue;
+    const k = cellIndex(trip.progress, last);
+    const safe = trip.progress <= k + 1e-9;
+    const stalled = trip.hold >= REPLAN_PATIENCE - 1e-9;
+    if (!safe && !stalled) continue;
+    let ahead = false;
+    for (let i = k + 1; i <= last && !ahead; i++) {
+      const tile = tileKey(trip.path[i]);
+      ahead = blocked.has(tile) || !index.roads.has(tile);
+    }
+    if (!ahead) {
+      // Optional queries never reverse a moving car or rewrite a committed junction.
+      // Rotating due times and a per-tick budget keep old routes usable while queries wait.
+      if(!trip.patrol && phase!=='legacy') {
+        const response=isEmergencyResponse(trip);
+        trip.nextRouteQueryAt ??= city.elapsed + (trip.id % CITY_RULES.routing.queryCooldownSeconds)*TRAFFIC_TICK;
+        if((safe || trip.hold>=CITY_RULES.routing.civilianReplanSeconds) && (!index.junctions.has(tileKey(trip.path[k])) || trip.hold>=CITY_RULES.routing.civilianReplanSeconds)
+          && (response?responseQueries<CITY_RULES.routing.responseQueriesPerTick:queries<CITY_RULES.routing.queriesPerTick) && city.elapsed+1e-9>=trip.nextRouteQueryAt) {
+          trip.nextRouteQueryAt=round6(city.elapsed+CITY_RULES.routing.queryCooldownSeconds);
+          const goal=goalOf(city,trip);
+          if(goal) {
+            let view:RoutingSnapshot;
+            if(response){responseQueries++;view=responseSnapshot??=routingSnapshot(city,index,true);}
+            else {queries++;view=snapshot??=routingSnapshot(city,index);}
+            const scene=response?city.incidents.find(i=>i.id===trip.incidentId&&i.status==='active'):undefined;
+            const speed=response?EMERGENCY_TILES_PER_SECOND:trip.service?TRAVEL_TILES_PER_SECOND:trip.speed;
+            const result=scene?responseRoute(view,trip.path[k],scene,trip.id):weightedRoute(view,trip.path[k],goal,speed,trip.id);
+            const old=routeCost(view,trip.path.slice(k),speed,trip.id);
+            if(result && worthwhileRoute(old.total,result.cost.total)) {
+              if(!safe) {
+                // Back up only inside space already owned. Recheck costs/admission at the centre.
+                trip.progress=round6(Math.max(k,trip.progress-stepOf(trip)));
+                trip.nextRouteQueryAt=city.elapsed;
+                reversing.add(trip.id);continue;
+              }
+              const candidate={...trip};
+              if(retarget(city,candidate,trip.path[k],undefined,result.path)&&commitTripRoute(city,index,trip,candidate))continue;
+            }
+          }
+        }
+      }
+      if (stalled && trip.service && (isEmergencyResponse(trip)||trip.hold>=CITY_RULES.routing.civilianReplanSeconds)) {
+        // Retry the same destination around stationary traffic, including newly built roads.
+        const remaining = new Set(trip.path.slice(k+1).map(tileKey));
+        const avoid = new Set(city.trips.filter(t => t.id!==trip.id && onRoad(t)
+          && (t.hold>=REPLAN_PATIENCE || blocksWholeTile(t)))
+          .map(t => tileKey(t.path[bodyTile(t)]))
+          // Another approach's straight queue may be safely passable. Avoid
+          // this blocked route, rather than forbidding every queue in town.
+          .filter(tile => !isEmergencyResponse(trip) || remaining.has(tile)));
+        avoid.delete(tileKey(trip.path[k]));
+        if (trip.path.slice(k+1).some(p=>avoid.has(tileKey(p)))) {
+          const candidate={...trip};
+          // Do not reverse merely because traffic exists. Without a usable alternative that
+          // creates a back-up/creep loop which prevents the queue ahead from ever clearing.
+          if(retarget(city,candidate,trip.path[k],avoid) && candidate.phase!=='waiting') {
+            if(!safe) {
+              trip.progress=round6(Math.max(k,trip.progress-stepOf(trip)));
+              reversing.add(trip.id);
+            } else commitTripRoute(city,index,trip,candidate);
+          }
+        }
+      }
+      continue;
+    }
+    if(!safe) {
+      const next=trip.path[k+1],after=trip.path[k+2];
+      const sceneAhead=after&&city.incidents.some(i=>i.status==='active'&&i.x===after.x&&i.y===after.y);
+      // A queue facing a distant obstruction must not repeatedly reverse and creep
+      // forward when there is still no alternate route. Keep its actual lane.
+      if(!trip.service&&next&&!unusable(city,index,next,false)&&!sceneAhead&&trip.target&&!findPath(city,trip.path[k],trip.target))continue;
+      // A closure appeared just ahead: back up within the already-owned tile at driving speed.
+      // Re-route on reaching its centre, rather than snapping backwards by half a tile.
+      trip.progress=round6(Math.max(k,trip.progress-stepOf(trip)));
+      reversing.add(trip.id);
+      continue;
+    }
+    tryRetarget(city,index,trip,trip.path[k]);
+  }
+  return reversing;
+}
+
+/** The civilian reserving an incompatible junction movement, if any. */
+function crossingBlocker(city: City, index: RoadIndex, g: Grid, byId: Map<number, Trip>, trip: Trip, k: number): number | null {
+  const target = slotAt(index, trip.path, k + 1);
+  const m = g.get(target.tile);
+  if (m) for (const [owner, slots] of m) {
+    if (owner === trip.id) continue;
+    const other = byId.get(owner);
+    if (!other || other.service || phaseOf(other) === 'crashed') continue;
+    for (const s of slots) {
+      if (s.tile !== target.tile || !s.junction || !target.junction) continue;
+      if (s.enter === target.enter) continue;
+      if (!compatible(target, s)) return owner;
+    }
+  }
+  // The gap-acceptance rule only holds the minor axis, so only that driver can fail to yield.
+  if (axisOf(heading(trip.path[k], trip.path[k + 1])) !== 'ns') return null;
+  return priorityBlocker(city, index, trip, k);
+}
+
+/**
+ * Report fresh crossing encounters, including overloaded stops and opposing left turns on green.
+ * Normal signal separation and stop dwell still apply. Returns true when the
+ * incident module turned sustained conflict into a crash, which invalidates this tick's occupancy.
+ */
+function detectConflicts(city: City, index: RoadIndex, g: Grid): boolean {
+  if (city.trips.length < 2) return false;
+  const byId = new Map(city.trips.map(t => [t.id, t] as const));
+  const seen = new Set<string>();
+  let crashed = false;
+  for (const trip of city.trips) {
+    if (trip.service || !driving(trip) || isYielding(city,trip,index)) continue;
+    const last = trip.path.length - 1;
+    if (trip.progress >= last - 1e-9) continue;
+    const k = cellIndex(trip.progress, last);
+    if (k >= last) continue;
+    // Only an actual claim on the junction this tick counts as a conflicting arrival.
+    if (round6(trip.progress + stepOf(trip)) <= k + 0.5 + 1e-9) continue;
+    const target = trip.path[k + 1];
+    if (!index.junctions.has(tileKey(target)) || index.junctions.has(tileKey(trip.path[k]))) continue;
+    if (isBlocked(city, target)) continue;
+    const control = governingControl(city, index, target);
+    // Red means wait, never accumulate danger for obeying it. Stops must finish their halt.
+    if (control?.kind === 'signal' && signalAxis(city, control) !== contactAxis(trip, target)) continue;
+    if (control?.kind === 'stop' && trip.hold < STOP_DWELL - 1e-9) continue;
+    const other = crossingBlocker(city, index, g, byId, trip, k);
+    if (other === null) continue;
+    const area = index.areas.get(tileKey(target)) ?? tileKey(target);
+    if (seen.has(area)) continue;
+    seen.add(area);
+    if (recordConflict(city, { x: target.x, y: target.y }, trip.id, other, TRAFFIC_TICK)) crashed = true;
+  }
+  return crashed;
+}
+
+/** Arrival is not automatically a completion: responders report to their own module. */
+function finish(city: City, g: Grid, held: Map<number, Slot[]>, done: Trip[]): void {
+  const credited: Trip[] = [];
+  for (const trip of done) {
+    release(g, held.get(trip.id) ?? [], trip.id);
+    if (trip.service) { arriveResponse(city, trip); continue; }
+    if (phaseOf(trip) === 'outbound') { beginVisit(city, trip); continue; }
+    credited.push(trip);
+  }
+  if (credited.length === 0) return;
+  for (const trip of credited) {
+    city.completed++;
+    if (trip.external && city.external) city.external.completed++;
+    const record: TripRecord = { at: round6(city.elapsed), wait: trip.wait };
+    if (!trip.external && trip.purpose && trip.rewarded && trip.visitedAt !== undefined
+      && phaseOf(trip) === 'returning') {
+      record.service = { homeId: trip.homeId, purpose: trip.purpose, visitedAt: trip.visitedAt,
+        ...(trip.startedAt !== undefined ? {startedAt: trip.startedAt} : {}) };
+    }
+    city.history.push(record);
+  }
+  const ids = new Set(credited.map(t => t.id));
+  city.trips = city.trips.filter(t => !ids.has(t.id));
+}
+
+/** One fixed simulation tick. Ordering by waiting time keeps junction service fair. */
+export function trafficTick(city: City, index: RoadIndex): void {
+  clearWrecks(city);
+  const reversing=replan(city, index);
+  const { grid: g, held } = grid(city, index);
+  // A crash rewrites who is standing where, so this tick's movement is abandoned.
+  if (detectConflicts(city, index, g)) return;
+  const rank = (t: Trip) => (t.service && phaseOf(t) === 'outbound' ? 1 : 0);
+  const order = [...city.trips].sort((a, b) => rank(b) - rank(a) || b.hold - a.hold || a.id - b.id);
+  const done: Trip[] = [];
+  for (const trip of order) {
+    if(reversing.has(trip.id))continue;
+    const phase = phaseOf(trip);
+    if (phase === 'visiting' || phase === 'crashed' || phase === 'working') continue;
+    if (phase === 'waiting') {
+      trip.hold = round6(trip.hold + TRAFFIC_TICK); trip.wait = round6(trip.wait + TRAFFIC_TICK);
+      continue;
+    }
+    if (trip.emergencyPass) { advancePass(trip); continue; }
+    if (tryPass(city,index,g,held,trip)) { advancePass(trip); continue; }
+    const last = trip.path.length - 1;
+    if (trip.progress >= last - 1e-9) { done.push(trip); continue; }
+    const k = cellIndex(trip.progress, last);
+    const edge = k + 0.5;
+    let next = round6(trip.progress + stepOf(trip));
+    if (isYielding(city,trip,index)) next = trip.progress;
+    // Stop on this tile's centre, not its far edge, when the way ahead has gone. From there the
+    // vehicle can turn onto a new route without giving back any ground.
+    if (k < last && trip.progress <= k + 1e-9 && unusable(city, index, trip.path[k + 1], isEmergencyResponse(trip))) next = Math.min(next, k);
+    else if (next > edge + 1e-9) {
+      if (allowed(city, index, g, trip, k)) {
+        release(g, held.get(trip.id) ?? [], trip.id);
+        const slots = heldSlots(index, trip.path, k + 1).map(slot =>
+          isEmergencyResponse(trip) && slot.tile===tileKey(trip.path[last]) ? {...slot,exclusive:true} : slot);
+        held.set(trip.id, slots);
+        claim(g, slots, trip.id);
+      } else next = edge;
+    }
+    // Even a faster responder crosses at most one tile boundary per tick.
+    next = Math.min(next, last, k + 1);
+    if (next > trip.progress) { trip.progress = next; trip.hold = 0; }
+    else { trip.hold = round6(trip.hold + TRAFFIC_TICK); trip.wait = round6(trip.wait + TRAFFIC_TICK); }
+    if (trip.progress >= last - 1e-9) done.push(trip);
+  }
+  finish(city, g, held, done);
+  pruneHistory(city);
+}
+
+/** Records arrive in time order, so an O(1) check keeps the window bounded on quiet ticks too. */
+function pruneHistory(city: City): void {
+  if (city.history.length > 0 && city.history[0].at <= round6(city.elapsed) - METRICS_WINDOW) {
+    city.history = city.history.filter(h => h.at > round6(city.elapsed) - METRICS_WINDOW);
+  }
+  if (city.history.length > MAX_HISTORY) city.history.splice(0, city.history.length - MAX_HISTORY);
+}
+
+/** Waiting is stopped customers now; wait and throughput cover the last 60 simulation seconds. */
+export function trafficMetrics(city: City): TrafficMetrics {
+  const recent = (city.history ?? []).filter(h => h.at > round6(city.elapsed) - METRICS_WINDOW);
+  const waiting = city.trips.filter(t => !t.service && onRoad(t) && t.hold > 1e-9).length;
+  const averageWait = recent.length === 0 ? 0 : Math.round(100 * recent.reduce((s, h) => s + h.wait, 0) / recent.length) / 100;
+  return { waiting, averageWait, throughput: recent.length };
+}
+
+export function isJunctionTile(city: City, p: Point): boolean {
+  return roadIndex(city).junctions.has(tileKey(p));
+}
+
+/** Modest installation prices; timing changes are free and replacement refunds actual payment. */
+export function placeControl(city: City, kind: ControlKind, p: Point): string {
+  const index = roadIndex(city);
+  if (!index.roads.has(tileKey(p))) return 'Place traffic control on a road tile.';
+  if (!index.junctions.has(tileKey(p))) return 'A junction needs at least three connected roads.';
+  // One control governs one intersection, so a stop sign and a light never compete for an approach.
+  const existing = governingControl(city, index, p);
+  const refund=existing?.paid??0;
+  const installation=!(kind==='stop'&&existing?.kind==='stop')&&!(kind==='signal'&&existing?.kind==='signal');
+  if(installation){
+    if(city.funds+refund<COSTS[kind])return `Need $${COSTS[kind]} to install ${kind==='stop'?'Stops':'Lights'}. Replacement refunds what you paid.`;
+    city.funds+=refund-COSTS[kind];
+  }
+  if (kind === 'stop') {
+    if (existing?.kind === 'stop') {
+      removeControl(city, p); return 'Stop sign removed.';
+    }
+    if (existing) { existing.kind = 'stop'; existing.paid=COSTS.stop; existing.preset = 'balanced'; return 'Traffic light replaced by an all-way stop.'; }
+    city.controls.push({ x: p.x, y: p.y, kind: 'stop', preset: 'balanced', paid:COSTS.stop });
+    return 'All-way stop placed. Cars halt, then take turns.';
+  }
+  if (existing?.kind === 'signal') {
+    existing.preset = PRESETS[(PRESETS.indexOf(existing.preset) + 1) % PRESETS.length];
+    return `Traffic light timing: ${PRESET_LABEL[existing.preset]}.`;
+  }
+  if (existing) { existing.kind = 'signal'; existing.paid=COSTS.signal; existing.preset = 'balanced'; return 'Stop sign replaced by a traffic light (balanced).'; }
+  city.controls.push({ x: p.x, y: p.y, kind: 'signal', preset: 'balanced', paid:COSTS.signal });
+  return 'Traffic light placed (balanced timing). Adjoining junction tiles share this control.';
+}
+
+export function removeControl(city: City, p: Point): boolean {
+  const control=governingControl(city,roadIndex(city),p);
+  if(!control)return false;
+  city.funds+=control.paid??0;
+  city.controls=city.controls.filter(c=>c!==control);
+  return true;
+}
+
+/** Keep the first controller if road construction joins intersections; retire orphan controls. */
+export function pruneControls(city: City): void {
+  if(city.controls.length===0)return;
+  const index=roadIndex(city), seen=new Set<string>();
+  city.controls=city.controls.filter(c=>{
+    const area=index.areas.get(tileKey(c));
+    if(area===undefined || seen.has(area)){city.funds+=c.paid??0;return false;}
+    seen.add(area);return true;
+  });
+}
+
+export function parseControls(raw: unknown, index: RoadIndex, limit: number): JunctionControl[] | null {
+  if (raw === undefined) return [];
+  if (!Array.isArray(raw) || raw.length > limit) return null;
+  const seen = new Set<string>();
+  const usedAreas = new Set<string>();
+  const controls: JunctionControl[] = [];
+  for (const value of raw) {
+    if (!value || typeof value !== 'object') return null;
+    const c = value as JunctionControl;
+    if (!Number.isSafeInteger(c.x) || !Number.isSafeInteger(c.y)) return null;
+    if (c.kind !== 'stop' && c.kind !== 'signal') return null;
+    if (!PRESETS.includes(c.preset)) return null;
+    if(c.paid!==undefined&&(!Number.isSafeInteger(c.paid)||c.paid<0||c.paid>COSTS[c.kind]))return null;
+    const at = `${c.x},${c.y}`;
+    if (seen.has(at)) return null;
+    seen.add(at);
+    // Migration: a control whose junction no longer exists is dropped, not treated as corruption.
+    const area=index.areas.get(at);
+    if(area!==undefined && !usedAreas.has(area)) {
+      controls.push({x:c.x,y:c.y,kind:c.kind,preset:c.preset,...(c.paid!==undefined?{paid:c.paid}:{})});usedAreas.add(area);
+    }
+  }
+  return controls;
+}
+
+export function parseHistory(raw: unknown, elapsed: number): TripRecord[] | null {
+  if (raw === undefined) return [];
+  if (!Array.isArray(raw) || raw.length > MAX_HISTORY) return null;
+  const records: TripRecord[] = [];
+  for (const value of raw) {
+    if (!value || typeof value !== 'object') return null;
+    const h = value as TripRecord;
+    if (!Number.isFinite(h.at) || h.at < 0 || h.at > elapsed + 1e-6) return null;
+    if (!Number.isFinite(h.wait) || h.wait < 0 || h.wait > elapsed + 1e-6) return null;
+    const record: TripRecord = {at: h.at, wait: h.wait};
+    const service = h.service;
+    // Ancillary attribution corruption cannot discard an otherwise valid town.
+    if (service && Number.isSafeInteger(service.homeId) && service.homeId > 0
+      && (service.purpose === 'shopping' || service.purpose === 'leisure')
+      && Number.isFinite(service.visitedAt) && service.visitedAt >= 0 && service.visitedAt <= h.at
+      && (service.startedAt === undefined || (Number.isFinite(service.startedAt)
+        && service.startedAt >= 0 && service.startedAt <= service.visitedAt))) {
+      record.service = {homeId: service.homeId, purpose: service.purpose, visitedAt: service.visitedAt,
+        ...(service.startedAt !== undefined ? {startedAt: service.startedAt} : {})};
+    }
+    if (h.at > round6(elapsed) - METRICS_WINDOW) records.push(record);
+  }
+  return records.sort((a,b)=>a.at-b.at);
+}
+
+/** Read-only inspector using the same lane reservations and gates as movement. */
+export function vehicleDebug(city:City,trip:Trip,index=roadIndex(city),g=grid(city,index).grid){
+  const k=bodyTile(trip),position=trip.path[k],next=trip.path[k+1];
+  const blockers=new Set<number>();
+  const control=next?governingControl(city,index,next):null;
+  let reason='Route available; moving or approaching the next tile';
+  if(trip.sceneParked){
+    if(trip.workRemaining)reason='Parked at scene; crew working';
+    else {
+      const station=city.buildings.find(b=>b.id===trip.stationId);
+      const route=station?findPath(city,position,entrance(station)):null;
+      reason=route?'Work complete; waiting for safe merge back onto road':'Work complete; no open road route back to station';
+      if(route){const [start,end]=heldRange(index,route,0);for(let i=start;i<=end;i++)for(const id of g.get(tileKey(route[i]))?.keys()??[])if(id!==trip.id)blockers.add(id);}
+    }
+  }
+  else if(trip.phase==='working')reason='Crew working at scene';
+  else if(trip.phase==='visiting')reason='Parked at destination';
+  else if(trip.phase==='crashed')reason='Vehicle involved in crash';
+  else if(trip.emergencyPass)reason=`Emergency pass: ${trip.emergencyPass.stage}`;
+  else if(trip.phase==='waiting')reason=trip.target&&findPath(city,position,trip.target,isEmergencyResponse(trip))?'Route exists; waiting for safe lane reservation':'No open route to current target';
+  else if(!next)reason='At route endpoint';
+  else if(unusable(city,index,next,isEmergencyResponse(trip)))reason='Next tile is closed, wrecked, or missing';
+  else {
+    const [start,end]=heldRange(index,trip.path,k+1);
+    for(let i=start;i<=end;i++){
+      const base=slotAt(index,trip.path,i);
+      const slot=isEmergencyResponse(trip)&&i===trip.path.length-1?{...base,exclusive:true}:base;
+      for(const [id,slots] of g.get(slot.tile)??[])if(id!==trip.id&&slots.some(other=>!compatible(slot,other)))blockers.add(id);
+    }
+    if(isYielding(city,trip,index))reason='Yielding to an approaching emergency vehicle';
+    else if(blockers.size)reason='Waiting for occupied lane, junction, or scene approach';
+    else if(!index.junctions.has(tileKey(position))&&index.junctions.has(tileKey(next))&&!gated(city,index,g,trip,k))
+      reason=control?`Waiting at ${control.kind}${control.kind==='signal'?` (${signalAxis(city,control)??'all red'})`:''}`:'Waiting for priority traffic at uncontrolled junction';
+  }
+  return {id:trip.id,label:trip.service?.toUpperCase()??'Car',phase:trip.phase??'legacy',intent:trip.resume??trip.phase??'legacy',
+    emergency:isEmergencyResponse(trip),patrol:!!trip.patrol,sceneParked:!!trip.sceneParked,cancelledResponse:!!trip.responseCancelled,
+    stoppedSeconds:trip.hold,totalWaitSeconds:trip.wait,reason,blockerIds:[...blockers],position:{...position},next:next?{...next}:null,
+    progress:trip.progress,target:trip.target?{...trip.target}:trip.path.at(-1)?{...trip.path.at(-1)!}:null,
+    stationId:trip.stationId??null,incidentId:trip.incidentId??null,homeId:trip.homeId,destinationId:trip.storeId,
+    workRemaining:trip.workRemaining??null,control:control?{...control}:null,path:trip.path.map(p=>({...p}))};
+}
+export type VehicleDebug = ReturnType<typeof vehicleDebug>;
+
+export function debugVehicles(city:City):VehicleDebug[]{const index=roadIndex(city),g=grid(city,index).grid;return city.trips.map(t=>vehicleDebug(city,t,index,g));}
+
+
+FILE src/game/cityIncidents.ts
+import {routingSnapshot,weightedRoute,routeCost,civilianRoute} from './cityRouting.ts';
+import {stepPolicePatrols} from './cityPatrols.ts';
+import {CITY_RULES} from './cityRules.ts';
+/** Intersection conflicts, service dispatch, and rescue outcomes. No renderer or HUD imports. */
+import { entrance, findPath, retarget, stations, SERVICE_OF, isBlocked, type City, type Point, type Trip } from './cityModel.ts';
+import { commitTripRoute, startBlocked, roadIndex, bodyTile, governingControl, conflictingContact, contactAxis, signalAxis, EMERGENCY_TILES_PER_SECOND, TRAVEL_TILES_PER_SECOND, TRAFFIC_TICK, type RoadIndex } from './cityTraffic.ts';
+
+export type ServiceKind = 'ems' | 'fire' | 'police';
+export type Incident = {
+  id: number; x: number; y: number;
+  cause?: 'impaired-driving';
+  /** Saved teaching override; retain the original roster for already dispatched crew validation. */
+  tutorialEmsOnly?: boolean;
+  severity: 'minor' | 'serious' | 'fire';
+  status: 'active' | 'cleared';
+  createdAt: number;
+  required: ServiceKind[];
+  completedServices: ServiceKind[];
+  rescueDeadline: number | null;
+  outcome: 'none' | 'pending' | 'rescued' | 'lost';
+};
+export function incidentServices(incident:Incident):ServiceKind[] { return incident.tutorialEmsOnly ? ['ems'] : incident.required; }
+export type JunctionRisk = {
+  x: number; y: number; exposure: number; lastConflictAt: number; firstId: number; secondId: number;
+  /** Distinct real encounters, bounded to a simulated-time window; also feeds future map diagnostics. */
+  encounters?: {firstId: number; secondId: number; at: number}[];
+  control?: 'stop' | 'signal';
+  warnedAt?: number;
+};
+
+/** Encounter exposure at which a fresh failed yield can crash after a visible warning. Provisional. */
+export const RISK_THRESHOLD = CITY_RULES.intersectionSafety.crashExposure;
+/** Simultaneous wrecks. Further conflicts still warn. */
+export const MAX_ACTIVE_INCIDENTS = 3;
+/** Serious/fire rescue clock. A game deadline, not a real medical response time. */
+export const RESCUE_SECONDS = 90;
+export const WORK_SECONDS: Record<ServiceKind, number> = { police: 6, ems: 6, fire: 10 };
+/** Sustained stationary response before an available backup may take over. */
+export const BACKUP_WAIT_SECONDS = CITY_RULES.routing.emergencyBackupSeconds;
+const MAX_CLEARED = 16;
+const SAFETY = CITY_RULES.intersectionSafety;
+const SEVERITIES = ['minor', 'serious', 'fire'] as const;
+const SERVICE_ORDER: ServiceKind[] = ['police', 'ems', 'fire'];
+const NEEDS: Record<(typeof SEVERITIES)[number], ServiceKind[]> = {
+  minor: ['police'], serious: ['police', 'ems'], fire: ['police', 'ems', 'fire'],
+};
+const SERVICE_LABEL: Record<ServiceKind, string> = { ems: 'EMS', fire: 'fire', police: 'police' };
+const STATION_LABEL: Record<ServiceKind, string> = { ems: 'hospital', fire: 'fire station', police: 'police station' };
+const OUTCOMES: Incident['outcome'][] = ['none', 'pending', 'rescued', 'lost'];
+
+const round6 = (v: number) => Math.round(v * 1e6) / 1e6;
+const key = (p: Point) => `${p.x},${p.y}`;
+const at = (p: Point, x: number, y: number) => p.x === x && p.y === y;
+const copy = (p: Point): Point => ({ x: p.x, y: p.y });
+const nearby = (p: Point): Point[] =>
+  [{ x: p.x + 1, y: p.y }, { x: p.x - 1, y: p.y }, { x: p.x, y: p.y + 1 }, { x: p.x, y: p.y - 1 }];
+const phaseOf = (t: Trip) => t.phase ?? 'legacy';
+const drivingCivilian = (t: Trip) => !t.service && (phaseOf(t) === 'legacy' || phaseOf(t) === 'outbound' || phaseOf(t) === 'returning');
+const active = (city: City) => city.incidents.filter(i => i.status === 'active');
+const isInt = (v: unknown): v is number => typeof v === 'number' && Number.isSafeInteger(v);
+const isId = (v: unknown): v is number => isInt(v) && v >= 1;
+const isCount = (v: unknown): v is number => isInt(v) && v >= 0;
+const isTime = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v) && v >= 0;
+const isService = (v: unknown): v is ServiceKind => v === 'ems' || v === 'fire' || v === 'police';
+
+export function isIncidentBlocked(city: City, p: Point): boolean {
+  return city.incidents.some(i => i.status === 'active' && at(p, i.x, i.y));
+}
+
+function areaOf(city: City, p: Point): string | undefined {
+  return roadIndex(city).areas.get(key(p));
+}
+
+function sameIntersection(city: City, a: Point, b: Point): boolean {
+  const area = areaOf(city, a);
+  return area !== undefined && areaOf(city, b) === area;
+}
+
+function inIncidentArea(city: City, p: Point): boolean {
+  for (const i of city.incidents) {
+    if (i.status !== 'active') continue;
+    if (at(p, i.x, i.y) || sameIntersection(city, p, i)) return true;
+  }
+  return false;
+}
+
+function cancelRisks(city: City, p: Point): void {
+  const area = areaOf(city, p);
+  city.risks = city.risks.filter(r => (area === undefined ? !at(r, p.x, p.y) : areaOf(city, r) !== area));
+}
+
+/** Body or the tile it is actually claiming this tick must sit on/beside the contact tile. */
+function nearContact(trip: Trip, point: Point): boolean {
+  if (trip.path.length === 0) return false;
+  const k = bodyTile(trip);
+  const here = trip.path[k];
+  if (here && at(here,point.x,point.y)) return true;
+  const next = trip.path[k + 1];
+  return !!next && at(next, point.x, point.y);
+}
+
+function livePair(city: City, point: Point, firstId: number, secondId: number, index: RoadIndex): [Trip, Trip] | null {
+  if (firstId === secondId) return null;
+  const first = city.trips.find(t => t.id === firstId);
+  const second = city.trips.find(t => t.id === secondId);
+  if (!first || !second || !drivingCivilian(first) || !drivingCivilian(second)) return null;
+  if (!nearContact(first, point) || !nearContact(second, point)) return null;
+  if (!conflictingContact(index, point, first, second)) return null;
+  // A pair sitting still is waiting, not a new failed-yield encounter.
+  if (first.hold > TRAFFIC_TICK && second.hold > TRAFFIC_TICK) return null;
+  return [first, second];
+}
+
+export function recordConflict(city: City, point: Point, firstId: number, secondId: number, dt: number): boolean {
+  const training=city.tutorial?.status==='active'?city.tutorial.hRoad:undefined;
+  // This teaching arc owns one explicitly scripted event; ordinary crashes resume after it.
+  if(training)return false;
+  if (!Number.isFinite(dt) || dt <= 0 || !isId(firstId) || !isId(secondId) || firstId === secondId) return false;
+  const index = roadIndex(city);
+  const control = governingControl(city, index, point);
+  const area=index.areas.get(key(point));
+  let risk = city.risks.find(r => index.areas.get(key(r))===area);
+  if(risk && risk.control!==control?.kind){cancelRisks(city,point);risk=undefined;}
+  if (inIncidentArea(city, point)) { cancelRisks(city, point); return false; }
+  const pair = livePair(city,point,firstId,secondId,index);
+  if(!index.junctions.has(key(point)) || !pair)return false;
+  // Signals protect perpendicular movements. Only incompatible turns sharing green remain exposed.
+  if(control?.kind==='signal' && pair.some(t=>contactAxis(t,point)!==signalAxis(city,control)))return false;
+  if (!risk) {
+    risk = { x: point.x, y: point.y, exposure: 0, lastConflictAt: round6(city.elapsed), firstId, secondId,
+      encounters:[], ...(control?{control:control.kind}:{}) };
+    city.risks.push(risk);
+  }
+  risk.encounters=(risk.encounters??[]).filter(e=>e.at>city.elapsed-SAFETY.encounterWindowSeconds);
+  const first=Math.min(firstId,secondId),second=Math.max(firstId,secondId);
+  if(risk.encounters.some(e=>Math.abs(e.at-city.elapsed)<1e-9))return false;
+  if(risk.encounters.some(e=>e.firstId===first&&e.secondId===second))return false;
+  risk.encounters.push({firstId:first,secondId:second,at:round6(city.elapsed)});
+  risk.firstId=firstId;risk.secondId=secondId;
+  const vehicles=new Set(risk.encounters.flatMap(e=>[e.firstId,e.secondId])).size;
+  if(control && vehicles<SAFETY.controlledConflictVehicles)return false;
+  const weight=control?.kind==='signal'?SAFETY.signalTurnEncounterExposure:control?SAFETY.controlledEncounterExposure:SAFETY.unsignedEncounterExposure;
+  risk.exposure=Math.min(RISK_THRESHOLD,round6(risk.exposure+weight));
+  risk.lastConflictAt=round6(city.elapsed);
+  if(risk.exposure>=SAFETY.warningExposure)risk.warnedAt??=round6(city.elapsed);
+  if (risk.exposure + 1e-9 < RISK_THRESHOLD) return false;
+  if(city.elapsed-(risk.warnedAt??city.elapsed)<SAFETY.warningSeconds-1e-9)return false;
+  if (active(city).length >= MAX_ACTIVE_INCIDENTS) return false;
+  // A contact cannot consume a third civilian or overlap a responder already on the tile.
+  if(city.trips.some(t=>!pair.includes(t)&&!t.sceneParked&&phaseOf(t)!=='visiting'
+    &&t.path[bodyTile(t)]&&at(t.path[bodyTile(t)],point.x,point.y)))return false;
+  const severity = SEVERITIES[city.accidentCount % SEVERITIES.length];
+  createIncident(city,point,pair,severity);
+  return true;
+}
+
+function createIncident(city:City,point:Point,pair:Trip[],severity:Incident['severity'],cause?:Incident['cause']):void {
+  const incident: Incident = {
+    id: city.nextId++, x: point.x, y: point.y, severity, status: 'active', createdAt: round6(city.elapsed),
+    ...(cause?{cause}:{}), required: [...NEEDS[severity]], completedServices: [],
+    rescueDeadline: severity === 'minor' ? null : round6(city.elapsed + RESCUE_SECONDS),
+    outcome: severity === 'minor' ? 'none' : 'pending',
+  };
+  city.incidents.push(incident);
+  city.accidentCount += 1;
+  cancelRisks(city, point);
+  const contact = copy(point);
+  for (const trip of pair) {
+    trip.phase = 'crashed';
+    trip.path = [copy(contact)];
+    trip.progress = 0;
+    trip.hold = 0;
+    trip.incidentId = incident.id;
+  }
+}
+
+/** One explicit tutorial event; use a driver at the scene, not a random remote car. */
+export function stageTutorialIncident(city:City,point:Point):boolean {
+  const h=city.tutorial?.hRoad;
+  if(city.tutorial?.status!=='active'||h?.stage!==4||h.incidentId!==undefined||city.incidents.length)return false;
+  if(!city.roads.some(p=>at(p,point.x,point.y)))return false;
+  const driver=city.trips.find(t=>drivingCivilian(t)&&nearContact(t,point));
+  if(!driver)return false;
+  createIncident(city,point,[driver],'serious','impaired-driving');
+  city.incidents.at(-1)!.tutorialEmsOnly=true;
+  h.incidentId=city.incidents.at(-1)!.id;
+  return true;
+}
+
+function accessTiles(city: City, incident: Incident): Point[] {
+  return nearby(incident)
+    .filter(p => city.roads.some(r => at(r, p.x, p.y)) && !isBlocked(city, p, true))
+    .sort((a, b) => a.y - b.y || a.x - b.x);
+}
+
+function spawnBlocked(city: City, path: Point[]): boolean {
+  if (path.length === 0 || isBlocked(city, path[0], true)) return true;
+  return startBlocked(city,roadIndex(city),path,true);
+}
+
+function bestApproach(city: City, station: ReturnType<typeof stations>[number], incident: Incident, avoid?: Set<string>): Point[] | null {
+  const from = entrance(station);
+  if (isBlocked(city, from, true)) return null;
+  let best: Point[] | null = null;
+  let cost=Infinity;
+  const snapshot=routingSnapshot(city,roadIndex(city),true);
+  const view=avoid?{...snapshot,blocked:new Set([...snapshot.blocked,...avoid])}:snapshot;
+  for (const access of accessTiles(city, incident)) {
+    const result = weightedRoute(view,from,access,EMERGENCY_TILES_PER_SECOND);
+    const path=result?.path;
+    if (!path || path.some((p, i) => i > 0 && at(p, incident.x, incident.y))) continue;
+    if (spawnBlocked(city, path)) continue;
+    if (result!.cost.total < cost) {best = path;cost=result!.cost.total;}
+  }
+  return best;
+}
+
+function stationBusy(city: City, stationId: number): boolean {
+  return city.trips.some(t => t.service && t.stationId === stationId);
+}
+
+
+function sendHome(city: City, trip: Trip): void {
+  if(trip.sceneParked){
+    const station=city.buildings.find(b=>b.id===trip.stationId);
+    const from=trip.path[bodyTile(trip)];
+    if(!station||!from)return;
+    const path=civilianRoute(city,from,entrance(station),trip);
+    // Crews wait in their scene parking space until an actual lane can accept the return.
+    if(!path||startBlocked(city,roadIndex(city),path,true))return;
+    delete trip.resume;delete trip.sceneParked;
+    Object.assign(trip,{path,progress:0,phase:'returning',
+      target:copy(entrance(station)),speed:TRAVEL_TILES_PER_SECOND,hold:0,workRemaining:0});
+    return;
+  }
+  const from = trip.path[bodyTile(trip)] ?? trip.path[trip.path.length - 1];
+  const station = city.buildings.find(b => b.id === trip.stationId);
+  trip.workRemaining = 0;
+  trip.speed = TRAVEL_TILES_PER_SECOND;
+  if (!from || !station) {
+    trip.phase = 'waiting';
+    trip.resume = 'returning';
+    trip.path = from ? [copy(from)] : trip.path;
+    trip.progress = 0;
+    return;
+  }
+  trip.phase = 'returning';
+  trip.target = copy(entrance(station));
+  if (!retarget(city, trip, from)) {
+    trip.phase = 'waiting';
+    trip.resume = 'returning';
+    trip.path = [copy(from)];
+    trip.progress = 0;
+    trip.target = copy(entrance(station));
+  }
+}
+
+function stabilize(city: City, trip: Trip, incident: Incident): void {
+  if (trip.service !== 'ems' || incident.outcome !== 'pending') return;
+  if (incident.rescueDeadline !== null && city.elapsed > incident.rescueDeadline + 1e-9) return;
+  incident.outcome = 'rescued';
+  city.rescuedCount += 1;
+}
+
+function maybeClear(city: City, incident: Incident): void {
+  if (incident.status !== 'active') return;
+  if (incidentServices(incident).some(s => !incident.completedServices.includes(s))) return;
+  incident.status = 'cleared';
+  city.trips = city.trips.filter(t => !(phaseOf(t) === 'crashed' && t.incidentId === incident.id));
+}
+
+function finishWork(city: City, trip: Trip): void {
+  const incident = city.incidents.find(i => i.id === trip.incidentId);
+  if (incident && trip.service && !incident.completedServices.includes(trip.service)) {
+    incident.completedServices = [...incident.completedServices, trip.service];
+  }
+  sendHome(city, trip);
+  if (incident) maybeClear(city, incident);
+}
+
+function dispatch(city: City): void {
+  let responseCosts:ReturnType<typeof routingSnapshot>|undefined;
+  const cost=(path:Point[])=>routeCost(responseCosts??=routingSnapshot(city,roadIndex(city),true),path,EMERGENCY_TILES_PER_SECOND).total;
+  const live = active(city).sort((a, b) => a.createdAt - b.createdAt || a.id - b.id);
+  for (const incident of live) {
+    for (const kind of SERVICE_ORDER) {
+      if (!incidentServices(incident).includes(kind) || incident.completedServices.includes(kind)) continue;
+      const assigned=city.trips.find(t=>t.incidentId===incident.id&&t.service===kind&&!t.responseCancelled);
+      if(assigned){
+        const intent=assigned.phase==='waiting'?assigned.resume:assigned.phase;
+        if(intent!=='outbound'||assigned.emergencyPass||assigned.hold<BACKUP_WAIT_SECONDS)continue;
+        // Only replace with a real, available vehicle whose route avoids stationary bodies.
+        const avoid=new Set(city.trips.filter(t=>t.phase!=='visiting'&&!t.sceneParked&&(t.hold>=BACKUP_WAIT_SECONDS||t.phase==='working'||t.phase==='crashed'))
+          .map(t=>key(t.path[bodyTile(t)])));
+        const backup=stations(city,kind).filter(s=>!stationBusy(city,s.id))
+          .map(station=>({station,path:bestApproach(city,station,incident,avoid)}))
+          .filter((option):option is {station:ReturnType<typeof stations>[number];path:Point[]}=>!!option.path)
+          .sort((a,b)=>cost(a.path)-cost(b.path)||a.station.id-b.station.id)[0];
+        if(!backup)continue;
+        const station=city.buildings.find(b=>b.id===assigned.stationId);
+        if(!station)continue;
+        const candidate:Trip={...assigned,responseCancelled:true,phase:'waiting',resume:'returning',
+          target:copy(entrance(station)),workRemaining:0,speed:TRAVEL_TILES_PER_SECOND};
+        // Preserve the occupied lane and exact position; traffic replans the return safely.
+        const prospective={...city,trips:city.trips.map(t=>t===assigned?candidate:t)};
+        if(spawnBlocked(prospective,backup.path)||!commitTripRoute(city,roadIndex(city),assigned,candidate))continue;
+        const replacement:Trip={id:city.nextId++,homeId:0,storeId:0,path:backup.path,progress:0,hold:0,wait:0,
+          phase:'outbound',service:kind,stationId:backup.station.id,incidentId:incident.id,
+          workRemaining:0,speed:EMERGENCY_TILES_PER_SECOND,target:copy(backup.path[backup.path.length-1])};
+        city.trips.push(replacement);
+        if(replacement.path.length===1)arriveResponse(city,replacement);
+        continue;
+      }
+      // Reassign the real patrol car in place; never spawn a duplicate at its station.
+      let reassigned=false;
+      if(kind==='police')for(const patrol of city.trips.filter(t=>t.patrol)){
+        const from=patrol.path[bodyTile(patrol)];
+        if(!from)continue;
+        const access=accessTiles(city,incident).find(p=>!!findPath(city,from,p,true));
+        if(!access)continue;
+        const candidate:Trip={...patrol,patrol:undefined,phase:'outbound',resume:undefined,incidentId:incident.id,target:copy(access),speed:EMERGENCY_TILES_PER_SECOND};
+        if(retarget(city,candidate,from)&&candidate.phase==='outbound'&&commitTripRoute(city,roadIndex(city),patrol,candidate)){
+          if(patrol.progress>=patrol.path.length-1)arriveResponse(city,patrol);
+          reassigned=true;break;
+        }
+      }
+      if(reassigned)continue;
+      let chosen: { stationId: number; path: Point[] } | null = null;
+      for (const station of stations(city, kind)) {
+        if (stationBusy(city, station.id)) continue;
+        const path = bestApproach(city, station, incident);
+        if (!path) continue;
+        if (!chosen || cost(path) < cost(chosen.path) || (cost(path) === cost(chosen.path) && station.id < chosen.stationId)) {
+          chosen = { stationId: station.id, path };
+        }
+      }
+      if (!chosen) continue;
+      const access = chosen.path[chosen.path.length - 1];
+      const trip: Trip = {
+        id: city.nextId++, homeId: 0, storeId: 0, progress: 0, wait: 0, hold: 0, path: chosen.path,
+        phase: 'outbound', service: kind, stationId: chosen.stationId, incidentId: incident.id,
+        workRemaining: 0, speed: EMERGENCY_TILES_PER_SECOND, target: copy(access),
+      };
+      city.trips.push(trip);
+      if (trip.path.length === 1) arriveResponse(city, trip);
+    }
+  }
+}
+
+function expireRisks(city: City, dt: number): void {
+  const index = roadIndex(city);
+  city.risks = city.risks.filter(risk => {
+    if (!index.junctions.has(key(risk)) || governingControl(city, index, risk)?.kind!==risk.control || inIncidentArea(city, risk)) return false;
+    if(risk.encounters)risk.encounters=risk.encounters.filter(e=>e.at>city.elapsed-SAFETY.encounterWindowSeconds);
+    if(city.elapsed-risk.lastConflictAt>SAFETY.coolingDelaySeconds+1e-9)
+      risk.exposure=Math.max(0,round6(risk.exposure-dt*SAFETY.coolingPerSecond));
+    if(risk.exposure<SAFETY.warningExposure)delete risk.warnedAt;
+    return risk.exposure>1e-9 || !!risk.encounters?.length;
+  });
+  // Road edits can join previously separate areas; legacy saves also stored risk per tile.
+  // Keep the strongest warning, not the sum, and retain distinct encounters only once.
+  const areas=new Map<string,JunctionRisk>();
+  for(const risk of city.risks){
+    const area=index.areas.get(key(risk))!;
+    const existing=areas.get(area);
+    if(!existing){areas.set(area,risk);continue;}
+    existing.exposure=Math.max(existing.exposure,risk.exposure);
+    existing.lastConflictAt=Math.max(existing.lastConflictAt,risk.lastConflictAt);
+    if(risk.warnedAt!==undefined)existing.warnedAt=Math.min(existing.warnedAt??risk.warnedAt,risk.warnedAt);
+    if(existing.encounters||risk.encounters){
+      const encounters=new Map<string,NonNullable<JunctionRisk['encounters']>[number]>();
+      for(const e of [...(existing.encounters??[]),...(risk.encounters??[])].sort((a,b)=>a.at-b.at))encounters.set(`${e.firstId}:${e.secondId}`,e);
+      existing.encounters=[...encounters.values()].sort((a,b)=>a.at-b.at).slice(-Math.ceil(SAFETY.encounterWindowSeconds/TRAFFIC_TICK));
+    }
+  }
+  city.risks=[...areas.values()];
+}
+
+function advanceDeadlines(city: City): void {
+  for (const incident of active(city)) {
+    if (incident.outcome !== 'pending' || incident.rescueDeadline === null) continue;
+    if (city.elapsed + 1e-9 < incident.rescueDeadline) continue;
+    incident.outcome = 'lost';
+    city.fatalities += 1;
+  }
+}
+
+function pruneCleared(city: City): void {
+  const referenced = new Set(city.trips.map(t => t.incidentId).filter((id): id is number => id !== undefined));
+  const extras = city.incidents
+    .filter(i => i.status === 'cleared' && !referenced.has(i.id))
+    .sort((a, b) => b.createdAt - a.createdAt || b.id - a.id)
+    .slice(MAX_CLEARED);
+  if (extras.length === 0) return;
+  const drop = new Set(extras.map(i => i.id));
+  city.incidents = city.incidents.filter(i => !drop.has(i.id));
+}
+
+export function arriveResponse(city: City, trip: Trip): void {
+  if (!trip.service) return;
+  if (trip.phase === 'outbound' && !trip.responseCancelled) {
+    const incident = city.incidents.find(i => i.id === trip.incidentId && i.status === 'active');
+    if (!incident) { sendHome(city, trip); return; }
+    trip.phase = 'working';
+    trip.sceneParked = true;
+    trip.workRemaining = WORK_SECONDS[trip.service];
+    trip.progress = Math.max(0, trip.path.length - 1);
+    stabilize(city, trip, incident);
+    return;
+  }
+  if (trip.phase === 'returning') {
+    const station=city.buildings.find(b=>b.id===trip.stationId);
+    if(station?.kind==='policeStation')station.patrolReadyAt=city.elapsed+CITY_RULES.policePatrol.stationRestSeconds;
+  }
+  if (trip.phase === 'returning') city.trips = city.trips.filter(t => t.id !== trip.id);
+}
+
+export function stepIncidents(city: City, dt: number): void {
+  if (!Number.isFinite(dt) || dt <= 0) return;
+  expireRisks(city, dt);
+  const h=city.tutorial?.status==='active'?city.tutorial.hRoad:undefined;
+  const trainingIncident=h?city.incidents.find(i=>i.id===h.incidentId):undefined;
+  if(trainingIncident?.status==='active'&&trainingIncident.cause==='impaired-driving'){
+    trainingIncident.tutorialEmsOnly=true;
+    maybeClear(city,trainingIncident);
+  }
+  if(h&&!h.rescueClockStarted){
+    const incident=city.incidents.find(i=>i.id===h.incidentId)??city.incidents.find(i=>i.status==='active');
+    const ready=h.stage>=7&&!!incident&&incidentServices(incident).every(k=>stations(city,k).some(b=>city.roads.some(p=>at(p,entrance(b).x,entrance(b).y))));
+    if(incident?.outcome==='pending')incident.rescueDeadline=round6(city.elapsed+RESCUE_SECONDS);
+    if(ready)h.rescueClockStarted=true;
+  }
+  advanceDeadlines(city);
+  for (const trip of [...city.trips]) {
+    if (!trip.service) continue;
+    const scene=city.incidents.find(i=>i.id===trip.incidentId);
+    const k=bodyTile(trip),atScene=trip.path[k];
+    const returning=trip.phase==='returning'||trip.phase==='waiting'&&trip.resume==='returning';
+    // Recover old saves with a completed crew stuck turning around at its scene.
+    if(returning&&trip.hold>=CITY_RULES.routing.sceneReturnRecoverySeconds&&scene?.completedServices.includes(trip.service)&&atScene&&
+      Math.abs(scene.x-atScene.x)+Math.abs(scene.y-atScene.y)===1&&Math.abs(trip.progress-k)<1e-9){
+      trip.path=[copy(atScene)];trip.progress=0;trip.phase='working';trip.sceneParked=true;
+      trip.workRemaining=0;trip.target=copy(atScene);delete trip.resume;delete trip.responseCancelled;
+    }
+    // Traffic owns route retries and exact positions for waiting responders.
+    if (trip.phase === 'waiting') continue;
+    if (trip.phase !== 'working') continue;
+    // Existing on-scene saves adopt the same parking behavior without moving the approach.
+    trip.sceneParked=true;
+    trip.workRemaining = round6(Math.max(0, (trip.workRemaining ?? 0) - dt));
+    if ((trip.workRemaining ?? 0) > 1e-9) continue;
+    finishWork(city, trip);
+  }
+  dispatch(city);
+  stepPolicePatrols(city);
+  pruneCleared(city);
+}
+
+function serviceNeed(city: City, incident: Incident, kind: ServiceKind): string {
+  const label = SERVICE_LABEL[kind];
+  if (incident.completedServices.includes(kind)) return '';
+  const trip = city.trips.find(t => t.incidentId === incident.id && t.service === kind && !t.responseCancelled);
+  if (trip) {
+    const phase = phaseOf(trip);
+    if (phase === 'working') return `${label} (on scene)`;
+    if (phase === 'outbound') return `${label} (en route)`;
+    if (phase === 'waiting') return `${label} (waiting)`;
+    if (phase === 'returning') return `${label} (returning)`;
+  }
+  const list = stations(city, kind);
+  if (list.length === 0) return `${label} (no ${STATION_LABEL[kind]})`;
+  const idle = list.filter(s => !stationBusy(city, s.id));
+  if (idle.length === 0) return `${label} (busy)`;
+  if (idle.every(s => !bestApproach(city, s, incident) && !findPath(city, entrance(s), accessTiles(city, incident)[0] ?? entrance(s), true))) {
+    // Distinguish occupancy deferral (path exists, entrance busy) from a missing road.
+    const reachable = idle.some(s => {
+      const from = entrance(s);
+      return !isBlocked(city, from, true) && accessTiles(city, incident).some(access => !!findPath(city, from, access, true));
+    });
+    return reachable ? label : `${label} (unreachable)`;
+  }
+  if (idle.every(s => !accessTiles(city, incident).some(access => !!findPath(city, entrance(s), access, true)))) {
+    return `${label} (unreachable)`;
+  }
+  return label;
+}
+
+function causeLabel(incident: Incident): string {
+  const cause = incident.cause==='impaired-driving' ? (incident.tutorialEmsOnly?'Impaired-driver injury crash':'Impaired-driver crash and vehicle fire') : incident.severity === 'minor' ? 'Minor failed-yield crash'
+    : incident.severity === 'serious' ? 'Serious collision' : 'Vehicle fire';
+  const suffix = incident.outcome === 'lost' ? ' (help arrived too late)'
+    : incident.outcome === 'rescued' ? ' (victims stable)' : '';
+  return `${cause} at ${incident.x},${incident.y}${suffix}`;
+}
+
+export function incidentSummary(city: City): {
+  active: number; warning: string; details: { id: number; label: string; needs: string; deadlineSeconds: number | null }[];
+} {
+  const live = active(city).sort((a, b) => a.id - b.id);
+  const risk = city.risks.filter(r=>r.exposure>=SAFETY.warningExposure).sort((a, b) => b.exposure - a.exposure || a.y - b.y || a.x - b.x)[0];
+  const warning = risk
+    ? `Failed-yield risk at ${risk.x},${risk.y}. ${risk.control==='stop'?'Busy stop: use lights or split the traffic.':risk.control==='signal'?'Conflicting turns: change light timing or separate routes.':'Busy crossing: add controls or a safer route.'}`
+    : '';
+  return {
+    active: live.length,
+    warning,
+    details: live.map(incident => {
+      const parts = incidentServices(incident).map(k => serviceNeed(city, incident, k)).filter(Boolean);
+      const held=city.tutorial?.status==='active'&&!!city.tutorial.hRoad&&!city.tutorial.hRoad.rescueClockStarted;
+      const remaining = !held && incident.outcome === 'pending' && incident.rescueDeadline !== null
+        ? round6(Math.max(0, incident.rescueDeadline - city.elapsed)) : null;
+      return {
+        id: incident.id,
+        label: causeLabel(incident),
+        needs: (parts.length ? `Needs ${parts.join(', ')}` : 'All services complete')+(held?' · Training rescue clock held':''),
+        deadlineSeconds: remaining,
+      };
+    }),
+  };
+}
+
+/** Read-only area measurements for debugging now and a later safety overlay. Not a Flow grade. */
+export function intersectionSafetySnapshot(city:City){
+  const index=roadIndex(city);
+  return [...new Set(index.areas.values())].map(area=>{
+    const [x,y]=area.split(',').map(Number);
+    const risk=city.risks.find(r=>index.areas.get(key(r))===area);
+    const control=governingControl(city,index,{x,y});
+    const encounters=(risk?.encounters??[]).filter(e=>e.at>city.elapsed-SAFETY.encounterWindowSeconds);
+    const exposure=risk?.exposure??0;
+    return {x,y,control:control?.kind??'unsigned',preset:control?.kind==='signal'?control.preset:null,
+      windowSeconds:SAFETY.encounterWindowSeconds,conflictEncounters:encounters.length,
+      conflictingVehicles:new Set(encounters.flatMap(e=>[e.firstId,e.secondId])).size,
+      exposure,warningThreshold:SAFETY.warningExposure,crashThreshold:RISK_THRESHOLD,
+      state:inIncidentArea(city,{x,y})?'incident':exposure>=SAFETY.warningExposure?'danger':exposure>0?'watch':'quiet'};
+  });
+}
+
+function parseServices(raw: unknown, allowed: ServiceKind[]): ServiceKind[] | null {
+  if (!Array.isArray(raw) || raw.length > SERVICE_ORDER.length) return null;
+  const seen = new Set<ServiceKind>();
+  const list: ServiceKind[] = [];
+  for (const value of raw) {
+    if (!isService(value) || !allowed.includes(value) || seen.has(value)) return null;
+    seen.add(value); list.push(value);
+  }
+  return list;
+}
+
+function parseOneIncident(raw: unknown, city: City, seen: Set<number>): Incident | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  if (!isId(r.id) || r.id >= city.nextId || seen.has(r.id)) return null;
+  if (city.buildings.some(b => b.id === r.id) || city.trips.some(t => t.id === r.id)) return null;
+  if (!isInt(r.x) || !isInt(r.y)) return null;
+  if (r.severity !== 'minor' && r.severity !== 'serious' && r.severity !== 'fire') return null;
+  if (r.status !== 'active' && r.status !== 'cleared') return null;
+  if (!isTime(r.createdAt) || r.createdAt > city.elapsed + 1e-6) return null;
+  if(r.tutorialEmsOnly!==undefined&&(r.tutorialEmsOnly!==true||r.cause!=='impaired-driving'||r.severity==='minor'))return null;
+  const expected = NEEDS[r.severity];
+  const required = parseServices(r.required, expected);
+  if (!required || required.length !== expected.length) return null;
+  const completed = parseServices(r.completedServices, expected);
+  if (!completed) return null;
+  if (r.severity === 'minor') {
+    if (r.rescueDeadline !== null || r.outcome !== 'none') return null;
+  } else {
+    if (r.rescueDeadline !== null && !isTime(r.rescueDeadline)) return null;
+    if (r.rescueDeadline === null || r.rescueDeadline < r.createdAt - 1e-6) return null;
+    if (r.outcome === 'none' || !OUTCOMES.includes(r.outcome as Incident['outcome'])) return null;
+  }
+  if (r.outcome !== 'none' && r.outcome !== 'pending' && r.outcome !== 'rescued' && r.outcome !== 'lost') return null;
+  if (r.status === 'cleared' && (r.outcome === 'pending' || (r.tutorialEmsOnly?!completed.includes('ems'):completed.length!==expected.length))) return null;
+  if (r.status === 'active' && !city.roads.some(p => at(p, r.x as number, r.y as number))) return null;
+  seen.add(r.id);
+  return {
+    id: r.id, x: r.x, y: r.y, severity: r.severity, status: r.status, createdAt: r.createdAt,
+    ...(r.cause==='impaired-driving'?{cause:'impaired-driving' as const}:{}),
+    ...(r.tutorialEmsOnly===true?{tutorialEmsOnly:true}:{}),
+    required: [...expected], completedServices: completed,
+    rescueDeadline: r.rescueDeadline as number | null, outcome: r.outcome as Incident['outcome'],
+  };
+}
+
+function parseOneRisk(raw: unknown, elapsed: number, seen: Set<string>): JunctionRisk | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  if (!isInt(r.x) || !isInt(r.y) || !isId(r.firstId) || !isId(r.secondId) || r.firstId === r.secondId) return null;
+  if (!isTime(r.exposure) || r.exposure > RISK_THRESHOLD + TRAFFIC_TICK) return null;
+  if (!isTime(r.lastConflictAt) || r.lastConflictAt > elapsed + 1e-6) return null;
+  if(r.control!==undefined&&r.control!=='stop'&&r.control!=='signal')return null;
+  if(r.warnedAt!==undefined&&(!isTime(r.warnedAt)||r.warnedAt>elapsed+1e-6))return null;
+  let encounters:JunctionRisk['encounters'];
+  if(r.encounters!==undefined){
+    if(!Array.isArray(r.encounters)||r.encounters.length>Math.ceil(SAFETY.encounterWindowSeconds/TRAFFIC_TICK)+1)return null;
+    encounters=[];const pairs=new Set<string>();
+    for(const value of r.encounters){
+      if(!value||typeof value!=='object')return null;
+      const e=value as Record<string,unknown>;
+      if(!isId(e.firstId)||!isId(e.secondId)||e.firstId>=e.secondId||!isTime(e.at)||e.at>elapsed+1e-6)return null;
+      const pair=`${e.firstId}:${e.secondId}`;
+      if(pairs.has(pair))return null;pairs.add(pair);
+      encounters.push({firstId:e.firstId,secondId:e.secondId,at:e.at});
+    }
+  }
+  const atKey = `${r.x},${r.y}`;
+  if (seen.has(atKey)) return null;
+  seen.add(atKey);
+  return { x: r.x, y: r.y, exposure: r.exposure, lastConflictAt: r.lastConflictAt, firstId: r.firstId, secondId: r.secondId,
+    ...(encounters?{encounters}:{}),...(r.control?{control:r.control}:{}),...(r.warnedAt!==undefined?{warnedAt:r.warnedAt}:{}) };
+}
+
+function tripRefsOk(city: City, incidents: Incident[]): boolean {
+  const stationIds=new Set<number>(), assignments=new Set<string>();
+  for (const trip of city.trips) {
+    const incident=incidents.find(i=>i.id===trip.incidentId);
+    if(trip.incidentId!==undefined && !incident)return false;
+    if(trip.service) {
+      if(trip.homeId!==0 || trip.storeId!==0 || (!incident&&!trip.patrol))return false;
+      const station=city.buildings.find(b=>b.id===trip.stationId);
+      if(!station || SERVICE_OF[station.kind]!==trip.service || stationIds.has(station.id))return false;
+      stationIds.add(station.id);
+      if(trip.patrol){
+        const intent=trip.phase==='waiting'?trip.resume:trip.phase,goal=trip.phase==='waiting'?trip.target:trip.path.at(-1),home=entrance(station);
+        if(trip.service!=='police'||incident||intent!=='returning'||trip.emergencyPass||trip.purpose||trip.rewarded||trip.workRemaining||!goal||!at(goal,home.x,home.y))return false;
+        continue;
+      }
+      if(!incident)return false;
+      if(!incident.required.includes(trip.service))return false;
+      const assignment=`${incident.id}:${trip.service}`;
+      if(!trip.responseCancelled){if(assignments.has(assignment))return false;assignments.add(assignment);}
+      const phase=phaseOf(trip),intent=phase==='waiting'?trip.resume:phase;
+      if(trip.responseCancelled&&(intent!=='returning'||trip.emergencyPass||trip.workRemaining||trip.purpose||trip.rewarded))return false;
+      if(intent!=='outbound' && intent!=='working' && intent!=='returning')return false;
+      const goal=phase==='waiting'?trip.target:trip.path[trip.path.length-1];
+      if(!goal)return false;
+      if(intent==='returning') {
+        const home=entrance(station);
+        if(!at(goal,home.x,home.y) || (!trip.responseCancelled&&!incident.completedServices.includes(trip.service)&&!(incident.tutorialEmsOnly&&trip.service!=='ems')))return false;
+      } else {
+        if(!trip.sceneParked&&((incident.status!=='active'&&!(incident.tutorialEmsOnly&&trip.service!=='ems')) || incident.completedServices.includes(trip.service)))return false;
+        if(trip.sceneParked&&incident.completedServices.includes(trip.service)&&trip.workRemaining!==0)return false;
+        if(Math.abs(goal.x-incident.x)+Math.abs(goal.y-incident.y)!==1)return false;
+        if(intent==='working' && (phase==='waiting' || trip.progress!==trip.path.length-1 || !isTime(trip.workRemaining)))return false;
+      }
+    } else if(phaseOf(trip)==='crashed') {
+      const p=trip.path[0];
+      if(!incident || incident.status!=='active' || !p || !at(p,incident.x,incident.y))return false;
+    } else if(trip.incidentId!==undefined || trip.stationId!==undefined)return false;
+  }
+  return true;
+}
+
+export function parseIncidentState(raw: Record<string, unknown>, city: City): boolean {
+  const missing = raw.incidents === undefined && raw.risks === undefined && raw.accidentCount === undefined
+    && raw.rescuedCount === undefined && raw.fatalities === undefined;
+  if (missing) {
+    city.incidents = []; city.risks = [];
+    city.accidentCount = 0; city.rescuedCount = 0; city.fatalities = 0;
+    return tripRefsOk(city,[]);
+  }
+  if (raw.incidents !== undefined && (!Array.isArray(raw.incidents) || raw.incidents.length > MAX_CLEARED+MAX_ACTIVE_INCIDENTS+city.buildings.length)) return false;
+  if (raw.risks !== undefined && (!Array.isArray(raw.risks) || raw.risks.length > city.roads.length)) return false;
+  const seen = new Set<number>();
+  const incidents: Incident[] = [];
+  for (const value of (raw.incidents ?? []) as unknown[]) {
+    const incident = parseOneIncident(value, city, seen);
+    if (!incident) return false;
+    incidents.push(incident);
+  }
+  const riskAt = new Set<string>();
+  const risks: JunctionRisk[] = [];
+  for (const value of (raw.risks ?? []) as unknown[]) {
+    const risk = parseOneRisk(value, city.elapsed, riskAt);
+    if (!risk) return false;
+    if(risk.firstId>=city.nextId || risk.secondId>=city.nextId || risk.encounters?.some(e=>e.firstId>=city.nextId||e.secondId>=city.nextId))return false;
+    if(!roadIndex(city).junctions.has(key(risk)))continue;
+    risks.push(risk);
+  }
+  const accidentCount = raw.accidentCount === undefined ? incidents.length : raw.accidentCount;
+  const rescuedCount = raw.rescuedCount === undefined ? 0 : raw.rescuedCount;
+  const fatalities = raw.fatalities === undefined ? 0 : raw.fatalities;
+  if (!isCount(accidentCount) || !isCount(rescuedCount) || !isCount(fatalities)) return false;
+  if (rescuedCount < incidents.filter(i => i.outcome === 'rescued').length) return false;
+  if (fatalities < incidents.filter(i => i.outcome === 'lost').length) return false;
+  if (accidentCount < incidents.filter(i => i.status === 'active').length) return false;
+  if(rescuedCount+fatalities>accidentCount || accidentCount<incidents.length)return false;
+  if (!tripRefsOk(city, incidents)) return false;
+  city.incidents = incidents;
+  city.risks = risks;
+  city.accidentCount = accidentCount;
+  city.rescuedCount = rescuedCount;
+  city.fatalities = fatalities;
+  return true;
+}
+
+
+FILE src/game/cityScene.ts
+import {flowReport} from './cityFlow.ts';
+import {CITY_RULES} from './cityRules.ts';
+import {cityDiagnostics} from './cityDiagnostics.ts';
+import {homeRoadIssue} from './cityVisits.ts';
+import {incidentServices} from './cityIncidents.ts';
+import { Container, Graphics, Sprite, Text, Rectangle, type Application, type FederatedPointerEvent } from 'pixi.js';
+import type { Stage } from './stage.ts';
+import { buildingStatus, demandSummary, expandCity, footprint, entrance, place, stepCity, connectedHomes, income, routeForHome, averageTripSeconds, trafficMetrics, signalAxis, type Point, type Building, type Tool, type City } from './cityModel.ts';
+import {
+    ensureCityArt, parkTexture, frame, groundFrame, scenery, buildingPieces, roadFrame, arrowFrame,
+    vehicleView, facingFor, storeStall, ROAD_BIT, SIDE_STEP,
+    VEHICLE_WIDTH, VEHICLE_LANE_OFFSET, COLORS, type Piece, type Side,
+} from './cityArt.ts';
+import { containsTile } from './cityMap.ts';
+import {debugVehicles, roadIndex, emergencyLaneOffset, isEmergencyResponse, type JunctionControl} from './cityTraffic.ts';
+import {setFiretruckResponding,setPoliceResponding} from '../audio/vehicles.ts';
+import {stepTrafficAudio,stopTrafficAudio} from '../audio/traffic.ts';
+import {incidentSummary} from './cityIncidents.ts';
+import {BUILDING_LABELS, isBuildingTool} from '../ui/cityLabels.ts';
+import {areaTiles} from './junctionAreas.ts';
+import { TILE_SIZE, screenToWorld, panCamera, zoomCamera, clampCamera, type Camera, type Viewport } from './cityCamera.ts';
+import { onCityCommand } from './cityControls.ts';
+import { getSave, flushSave as flushSandboxSave } from '../state/save.ts';
+import { tutorialSnapshot, tutorialAction } from './cityTutorial.ts';
+import {starterSnapshot, starterBypassTiles, starterDiversionPoint} from './cityStarterTutorial.ts';
+import { externalNeedsRoad, finishTutorialAndConnect, connectExternalCity } from './cityExternal.ts';
+import { missionSnapshot, refreshMissions } from './cityMissions.ts';
+import { store } from '../state/store.ts';
+export interface Scene { destroy(): void }
+
+/**
+ * Artwork consumes logical footprints; no texture size influences construction
+ * or routing. Tile coordinates come from cityModel, frame names from cityArt,
+ * and this file only turns one into the other.
+ */
+export interface CitySceneSession {
+    city: City;
+    save: () => void;
+    step: (seconds: number) => void;
+    place: typeof place;
+}
+export function createCityScene(app: Application, stage: Stage, session?: CitySceneSession): Scene {
+    const city = session?.city ?? getSave().city;
+    const flushSave = session?.save ?? flushSandboxSave;
+    const placeInCity = session?.place ?? place;
+    // The map is its own clipped compositing layer. Scrolling dock surfaces must
+    // never paint over it; native dialogs retain their top-layer modal behavior.
+    app.canvas.style.position = 'relative';
+    app.canvas.style.transform = 'translateZ(0)';
+    app.canvas.style.zIndex = '1';
+    const root = new Container();
+    const ground = new Container();      // terrain + scenery, rebuilt on resize only
+    const world = new Container();       // roads, markers and buildings
+    const cars = new Container();
+    const carShadows = new Graphics();   // contact shadows keep elevation art on the road
+    const controls = new Graphics(); // operational controls, independent of the artwork atlas
+    const activity = new Graphics();
+    const activityLabels = new Container();
+    const statusLabels = new Map<string, Text>();
+    const responderBadges = new Map<string, {container:Container; text:Text}>();
+    let inspectedId: number | null = null;
+    let inspectedRoad: Point | null = null;
+    const ghost = new Container();
+    const outline = new Graphics();      // placement validity, drawn above the ghost art
+    ghost.addChild(outline);
+    cars.addChild(carShadows);
+    root.addChild(ground, world, cars, controls, activity, activityLabels, ghost);
+    const clip = new Graphics();
+    const input = new Container();
+    stage.root.addChild(root, clip, input);
+    root.mask = clip;
+    root.eventMode = 'none';
+    const tile = TILE_SIZE;
+    const camera: Camera = {x: 8, y: 7, zoom: 1};
+    let viewport: Viewport = {x:14,y:200,width:692,height:600};
+    let groundKey = '';
+    let controlAreas: {control:JunctionControl;tiles:Point[];members:Set<string>}[]=[];
+    let controlRoads = new Set<string>();
+    const pointers = new Map<number, Point>();
+    let gesture = false;
+    let panStart: Point | null = null;
+    let downPoint: Point | null = null;
+    let hover: Point | null = null;
+    let last: Point | null = null;
+    let drawing = false;
+    let artReady = false;
+    let reportClock = 0, saveClock = 0;
+    const carPool = new Map<number, Sprite>();
+    const carFacing = new Map<number, Side>();
+    const same = (a: Point, b: Point) => a.x === b.x && a.y === b.y;
+    const roadSet = () => new Set(city.roads.map(p => `${p.x},${p.y}`));
+    const px = (x: number) => x * tile;
+    const py = (y: number) => y * tile;
+
+    /** Place one visual piece, sized and positioned in tile units. */
+    function put(layer: Container, piece: Piece, tx: number, ty: number): Sprite {
+        const s = new Sprite(frame(piece.name));
+        s.position.set(px(tx + piece.tx), py(ty + piece.ty));
+        s.setSize(piece.tw * tile, piece.th * tile);
+        if (piece.tint !== undefined) s.tint = piece.tint;
+        if (piece.alpha !== undefined) s.alpha = piece.alpha;
+        layer.addChild(s);
+        return s;
+    }
+    const cell = (layer: Container, name: Parameters<typeof frame>[0], x: number, y: number, tint?: number, alpha?: number) =>
+        put(layer, { name, tx: 0, ty: 0, tw: 1, th: 1, tint, alpha }, x, y);
+
+    function report() {
+        refreshMissions(city);
+        store.patch({
+            vehicleDebug:store.get().vehicleDebugOpen?debugVehicles(city):[],
+            flow: flowReport(city, inspectedRoad),
+            diagnostics: cityDiagnostics(city), missions: missionSnapshot(city), tutorial: tutorialSnapshot(city),
+            roadIssues: city.buildings.filter(b=>b.kind==='home').flatMap(b=>{const reason=homeRoadIssue(city,b);return reason?[{homeId:b.id,x:b.x,y:b.y,reason}]:[]}),
+            elapsedSeconds: Math.floor(city.elapsed),
+            map: city.map, funds: city.funds, income: income(city), connected: connectedHomes(city),
+            tripSeconds: averageTripSeconds(city), homes: city.buildings.filter(b => b.kind === 'home').length,
+            completed: city.completed, activeTrips: city.trips.filter(t=>!t.service && t.phase!=='visiting' && t.phase!=='crashed').length,
+            demand: demandSummary(city), incidentInfo: incidentSummary(city), rescued: city.rescuedCount, fatalities: city.fatalities,
+            inspected: (()=>{const b=city.buildings.find(b=>b.id===inspectedId);if(!b)return null;const status=buildingStatus(city,b),visitors=city.trips.filter(t=>!t.service&&t.storeId===b.id&&t.phase==='visiting');const next=visitors.length?Math.ceil(Math.min(...visitors.map(t=>t.visitRemaining??0))):null;return {id:b.id,name:BUILDING_LABELS[b.kind],...status,capacity:b.kind==='store'||b.kind==='park'?status.capacity:0,label:status.label+(next===0?' · Ready to leave; waiting for road access':next!==null?` · Next visit finishes in ${next}s`:'')};})(),
+            ...trafficMetrics(city), longestStop: Math.max(0,...city.trips.filter(t=>t.phase!=='visiting'&&t.phase!=='working'&&t.phase!=='crashed').map(t=>t.hold)),
+        });
+    }
+
+    // -----------------------------------------------------------------------
+    // Building geometry, derived from the model rather than assumed
+    // -----------------------------------------------------------------------
+    /** Footprint box plus the tile and face that actually touch the entrance. */
+    function shape(b: Building) {
+        const cells = footprint(b);
+        const e = entrance(b);
+        const x0 = Math.min(...cells.map(p => p.x)), y0 = Math.min(...cells.map(p => p.y));
+        const w = Math.max(...cells.map(p => p.x)) - x0 + 1, h = Math.max(...cells.map(p => p.y)) - y0 + 1;
+        const anchor = cells.find(p => Math.abs(p.x - e.x) + Math.abs(p.y - e.y) === 1) ?? cells[0];
+        const side: Side = e.y < anchor.y ? 'N' : e.y > anchor.y ? 'S' : e.x > anchor.x ? 'E' : 'W';
+        return { cells, entrance: e, x0, y0, w, h, anchor, side, access: { x: anchor.x - x0, y: anchor.y - y0 } };
+    }
+    /** The way a driver would look at the building from its access tile. */
+    const towardsBuilding = (side: Side): Side => ({ N: 'S', S: 'N', E: 'W', W: 'E' } as const)[side];
+
+    function drawBuilding(layer: Container, b: Building, alpha?: number, tint?: number) {
+        const s = shape(b);
+        if (b.kind === 'park') {
+            const texture=parkTexture(s.side);
+            if(texture){
+                const sprite=new Sprite(texture);sprite.position.set(px(s.x0),py(s.y0));sprite.setSize(px(s.w),py(s.h));
+                sprite.alpha=alpha??1;sprite.tint=tint??0xffffff;layer.addChild(sprite);return;
+            }
+            for (const p of s.cells) cell(layer, 'grassA', p.x, p.y, tint, alpha);
+            const path = new Graphics();
+            path.moveTo(px(s.anchor.x+.5),py(s.anchor.y+.5)).lineTo(px(s.x0+s.w/2),py(s.y0+s.h/2))
+                .stroke({color:0xd4c89b,width:tile*.32,alpha:alpha??1});
+            path.circle(px(s.x0+s.w/2),py(s.y0+s.h/2),tile*.4).fill({color:0xd4c89b,alpha:alpha??1});
+            layer.addChild(path);
+            for(const [tx,ty] of [[.05,.05],[s.w-.9,.1],[.1,s.h-.95]])
+                put(layer,{name:'tree_green',tx,ty,tw:.85,th:.95,tint,alpha},s.x0,s.y0);
+            return;
+        }
+        for (const p of s.cells) cell(layer, 'plot', p.x, p.y, tint, alpha);
+        for (const piece of buildingPieces(b.kind, b.id, s.w, s.h, s.access, s.side))
+            put(layer, { ...piece, tint: tint ?? piece.tint, alpha: alpha ?? piece.alpha }, s.x0, s.y0);
+    }
+
+    /**
+     * The access marker is the whole point of the entrance: it sits on the real
+     * road tile, points at the building, and turns amber when no road is there.
+     */
+    function drawAccess(layer: Container, b: Building, roads: Set<string>) {
+        const s = shape(b);
+        const hasRoad = roads.has(`${s.entrance.x},${s.entrance.y}`);
+        const linked = b.kind === 'home' ? !!routeForHome(city, b) : hasRoad;
+        const colour = linked ? COLORS.connected : COLORS.needsRoad;
+        const g = new Graphics();
+        if (!hasRoad) {
+            // No road yet: show the tile the road has to reach. Never a door —
+            // a door on a tile with no road would promise access that is absent.
+            cell(layer, 'dirt', s.entrance.x, s.entrance.y, colour, .45);
+            g.rect(px(s.entrance.x) + 1, py(s.entrance.y) + 1, tile - 2, tile - 2)
+                .stroke({ color: colour, width: Math.max(1.5, tile * .06), alpha: .9 });
+        }
+        // A dark pad keeps the marker legible on both grass and asphalt.
+        g.roundRect(px(s.entrance.x + .12), py(s.entrance.y + .12), tile * .76, tile * .76, tile * .18)
+            .fill({ color: 0x14201d, alpha: hasRoad ? .42 : .3 });
+        layer.addChild(g);
+        put(layer, { name: arrowFrame(towardsBuilding(s.side)), tx: .1, ty: .1, tw: .8, th: .8, tint: colour },
+            s.entrance.x, s.entrance.y);
+        if (b.kind === 'store' && hasRoad)
+            put(layer, { name: storeStall(b.id), tx: .56, ty: .52, tw: .38, th: .38, alpha: .9 }, s.anchor.x, s.anchor.y);
+    }
+
+    // -----------------------------------------------------------------------
+    // Layers
+    // -----------------------------------------------------------------------
+    function renderGround() {
+        const m = city.map;
+        const a = screenToWorld(camera, viewport, viewport);
+        const b = screenToWorld(camera, viewport, {x:viewport.x+viewport.width,y:viewport.y+viewport.height});
+        const x0 = Math.max(m.x, Math.floor(a.x)-2), y0 = Math.max(m.y, Math.floor(a.y)-2);
+        const x1 = Math.min(m.x+m.width, Math.ceil(b.x)+2), y1 = Math.min(m.y+m.height, Math.ceil(b.y)+2);
+        const key = [m.x,m.y,m.width,m.height,x0,y0,x1,y1].join(',');
+        if (key === groundKey) return;
+        groundKey = key;
+        ground.removeChildren().forEach(c => c.destroy());
+        const bed = new Graphics();
+        bed.roundRect(px(m.x) - 6, py(m.y) - 6, tile * m.width + 12, tile * m.height + 12, 8)
+            .fill(COLORS.mapEdge).stroke({ color: COLORS.grassEdge, width: 3 });
+        ground.addChild(bed);
+        for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) cell(ground, groundFrame(x, y), x, y);
+        // Scenery is added top row first so trees overlap the tile behind them.
+        for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
+            const s = scenery(x, y);
+            if (!s) continue;
+            // Grass and foliage are close in value; a contact shadow separates them.
+            const shadow = new Graphics();
+            shadow.ellipse(px(x + s.tx + s.tw / 2), py(y + s.ty + s.th) - tile * .1, tile * s.tw * .42, tile * .13)
+                .fill({ color: 0x1d3f30, alpha: .35 });
+            ground.addChild(shadow);
+            put(ground, s, x, y);
+        }
+    }
+
+    function renderWorld() {
+        const index=roadIndex(city), areas=index.areas;
+        controlRoads=index.roads;
+        controlAreas=city.controls.map(control=>{const tiles=areaTiles(areas,control);return {control,tiles,members:new Set(tiles.map(p=>`${p.x},${p.y}`))};});
+        world.removeChildren().forEach(c => c.destroy());
+        const roads = roadSet();
+        for (const p of city.roads) {
+            let mask = 0;
+            for (const [side, [dx, dy]] of Object.entries(SIDE_STEP))
+                if (roads.has(`${p.x + dx},${p.y + dy}`)) mask |= ROAD_BIT[side as Side];
+            cell(world, roadFrame(mask), p.x, p.y);
+        }
+        // Buildings paint over any scenery on their plot; access markers sit on
+        // the road, so they are drawn first and never hidden by a facade.
+        for (const b of city.buildings) drawAccess(world, b, roads);
+        for (const b of [...city.buildings].sort((a, c) => a.y - c.y)) drawBuilding(world, b);
+        if (artReady) for (const p of city.closures) {
+            // Divert is a traffic restriction, not excavation. Keep asphalt
+            // visible and use upright roadside furniture; responding crews
+            // retain their existing physical passage through this tile.
+            const northSouth = roads.has(`${p.x},${p.y - 1}`) || roads.has(`${p.x},${p.y + 1}`);
+            const eastWest = roads.has(`${p.x - 1},${p.y}`) || roads.has(`${p.x + 1},${p.y}`);
+            if (northSouth)
+                put(world, { name: 'barrierWarning', tx: .03, ty: -.12, tw: .7, th: .45 }, p.x, p.y);
+            if (eastWest || !northSouth)
+                put(world, { name: 'barrierWarningVertical', tx: -.18, ty: .02, tw: .7, th: .9 }, p.x, p.y);
+            const corners = northSouth && !eastWest ? [[.04, .61], [.72, .61]] : [[.69, .05], [.69, .69]];
+            for (const [tx, ty] of corners)
+                put(world, { name: 'cone', tx, ty, tw: .28, th: .28 }, p.x, p.y);
+        }
+    }
+
+    function renderControls() {
+        controls.clear();
+        for (const {control,tiles,members} of controlAreas) {
+            const axis=signalAxis(city,control);
+            // A connected junction area has one controller, visible on every external approach.
+            for(const p of tiles) for(const [dx,dy] of [[0,-1],[1,0],[0,1],[-1,0]]) {
+                const neighbor=`${p.x+dx},${p.y+dy}`;
+                if(!controlRoads.has(neighbor) || members.has(neighbor))continue;
+                const cx=px(p.x+.5+dx*.37),cy=py(p.y+.5+dy*.37);
+                if(control.kind==='stop') {
+                    controls.moveTo(cx-(dy?tile*.16:0),cy-(dx?tile*.16:0))
+                        .lineTo(cx+(dy?tile*.16:0),cy+(dx?tile*.16:0)).stroke({color:0xffe4cc,width:3});
+                } else {
+                    controls.circle(cx,cy,tile*.105).fill(0x102820).stroke({color:0xf5e4bb,width:1});
+                    controls.circle(cx,cy,tile*.065).fill(axis===(dx?'ew':'ns')?0x8af49c:0xff6658);
+                }
+            }
+            const x=px(control.x),y=py(control.y);
+            if(control.kind==='stop') {
+                const cx=x+tile*.82,cy=y+tile*.16,r=tile*.15;
+                const points=Array.from({length:8},(_,i)=>[cx+Math.cos(Math.PI/8+i*Math.PI/4)*r,cy+Math.sin(Math.PI/8+i*Math.PI/4)*r]).flat();
+                controls.poly(points).fill(0xb43132).stroke({color:0xffeed6,width:1.5});
+                controls.moveTo(cx-r*.55,cy).lineTo(cx+r*.55,cy).stroke({color:0xffffff,width:2});
+            } else if(control.preset!=='balanced') {
+                const ns=control.preset==='ns';
+                controls.moveTo(x+tile*(ns?.5:.3),y+tile*(ns?.3:.5))
+                    .lineTo(x+tile*(ns?.5:.7),y+tile*(ns?.7:.5)).stroke({color:0xffd779,width:3});
+            }
+        }
+    }
+
+    function preview() {
+        ghost.removeChildren().forEach(c => { if (c !== outline) c.destroy(); });
+        ghost.addChild(outline);
+        outline.clear();
+        if (!hover || store.get().panning || gesture) return;
+        const s = store.get();
+        if(s.tool===null||s.vehicleDebugOpen)return;
+        const candidate = structuredClone(city) as City;
+        const before = candidate.funds;
+        placeInCity(candidate, s.tool, hover.x, hover.y, s.rotation);
+        const valid = before !== candidate.funds || candidate.buildings.length !== city.buildings.length || candidate.roads.length !== city.roads.length || JSON.stringify(candidate.controls) !== JSON.stringify(city.controls) || JSON.stringify(candidate.closures)!==JSON.stringify(city.closures);
+        const colour = s.tool === 'bulldoze' ? COLORS.remove : valid ? COLORS.valid : COLORS.invalid;
+        if(s.tool==='stop' || s.tool==='signal') {
+            const areas=roadIndex(city).areas;
+            for(const p of areaTiles(areas,hover)) outline.rect(px(p.x)+1,py(p.y)+1,tile-2,tile-2)
+                .fill({color:colour,alpha:.16}).stroke({color:colour,width:2});
+        }
+        let box = { x: hover.x, y: hover.y, w: 1, h: 1 };
+        if (isBuildingTool(s.tool)) {
+            const b: Building = { id: 0, kind: s.tool, ...hover, rotation: s.rotation };
+            const g = shape(b);
+            if(b.kind==='policeStation')outline.circle(px(g.entrance.x+.5),py(g.entrance.y+.5),CITY_RULES.policePatrol.radiusTiles*tile).fill({color:0x7bdfff,alpha:.06}).stroke({color:0x7bdfff,width:2,alpha:.8});
+            box = { x: g.x0, y: g.y0, w: g.w, h: g.h };
+            drawBuilding(ghost, b, valid ? .68 : .4, valid ? 0xffffff : COLORS.invalid);
+            // The access tile is part of the decision, so preview it as loudly as the footprint.
+            outline.rect(px(g.entrance.x) + 1, py(g.entrance.y) + 1, tile - 2, tile - 2)
+                .fill({ color: colour, alpha: .22 }).stroke({ color: colour, width: Math.max(2, tile * .06), alpha: .9 });
+            put(ghost, { name: arrowFrame(towardsBuilding(g.side)), tx: .12, ty: .12, tw: .76, th: .76, tint: colour },
+                g.entrance.x, g.entrance.y);
+        } else {
+            outline.rect(px(hover.x) + 1, py(hover.y) + 1, tile - 2, tile - 2).fill({ color: colour, alpha: .3 });
+        }
+        // Dark backing keeps the footprint edge readable over both grass and asphalt.
+        const rect = [px(box.x) + 1, py(box.y) + 1, box.w * tile - 2, box.h * tile - 2] as const;
+        outline.rect(...rect).stroke({ color: 0x16241f, width: Math.max(4, tile * .12), alpha: .5 });
+        outline.rect(...rect).stroke({ color: colour, width: Math.max(2, tile * .06), alpha: .95 });
+        if (!valid) {
+            // A cross over the whole footprint beats a colour change alone on a phone.
+            const [x, y, w, h] = rect;
+            outline.moveTo(x + 3, y + 3).lineTo(x + w - 3, y + h - 3)
+                .moveTo(x + w - 3, y + 3).lineTo(x + 3, y + h - 3)
+                .stroke({ color: COLORS.invalid, width: Math.max(3, tile * .09), alpha: .95 });
+        }
+    }
+
+    function renderCars() {
+        carShadows.clear();
+        const live = new Set<number>();
+        for (const trip of city.trips) {
+            if(trip.phase==='visiting' || !trip.path.length)continue;
+            live.add(trip.id);
+            const i = Math.min(Math.floor(trip.progress), trip.path.length - 1);
+            const a = trip.path[i], b = trip.path[Math.min(i + 1, trip.path.length - 1)];
+            const f = trip.progress - i;
+            const dx = b.x - a.x, dy = b.y - a.y;
+            const previous = trip.path[Math.max(0,i-1)];
+            const laneDx = dx || dy ? dx : a.x-previous.x;
+            const laneDy = dx || dy ? dy : a.y-previous.y;
+            const facing = facingFor(laneDx, laneDy, carFacing.get(trip.id) ?? 'S');
+            carFacing.set(trip.id, facing);
+            let sprite = carPool.get(trip.id);
+            if (!sprite) {
+                sprite = new Sprite();
+                sprite.anchor.set(.5);
+                cars.addChild(sprite);
+                carPool.set(trip.id, sprite);
+            }
+            const view = vehicleView(trip.id, facing, trip.service);
+            sprite.texture = frame(view.name);
+            sprite.tint = trip.phase==='crashed'?0x80665a:view.tint ?? 0xffffff;
+            const w = VEHICLE_WIDTH[facing] * tile;
+            sprite.setSize(w, w * sprite.texture.height / sprite.texture.width);
+            // The simulation owns passing and its lateral transition, including across saves.
+            const lane = VEHICLE_LANE_OFFSET * (1 - 2 * emergencyLaneOffset(trip));
+            let x = px(a.x + dx * f + .5) - laneDy * tile * lane;
+            let y = py(a.y + dy * f + .5) + laneDx * tile * lane;
+            if(trip.sceneParked){
+                const scene=city.incidents.find(i=>i.id===trip.incidentId);
+                if(scene){
+                    const slot=trip.service==='police'?-1:trip.service==='ems'?0:1;
+                    const vx=scene.x-a.x,vy=scene.y-a.y;
+                    x=px(a.x+.5+vx*.28-vy*slot*.25);
+                    y=py(a.y+.5+vy*.28+vx*slot*.25);
+                    sprite.setSize(w*.7,w*.7*sprite.texture.height/sprite.texture.width);
+                }
+            }
+            sprite.position.set(x, y);
+            carShadows.ellipse(x, y + sprite.height * .36, sprite.width * .44, tile * .1)
+                .fill({ color: 0x0d1614, alpha: .32 });
+        }
+        for (const [id, sprite] of carPool) if (!live.has(id)) {
+            sprite.destroy(); carPool.delete(id); carFacing.delete(id);
+        }
+    }
+
+    function renderActivity() {
+        activity.clear();
+        const live = new Set<string>();
+        const liveBadges = new Set<string>();
+        function label(key:string,text:string,x:number,y:number,color=0xffeed6) {
+            live.add(key);
+            let t=statusLabels.get(key);
+            if(!t){t=new Text({text,style:{fontFamily:'system-ui',fontSize:12,fontWeight:'bold',fill:color,stroke:{color:0x122d26,width:3}}});t.anchor.set(.5);activityLabels.addChild(t);statusLabels.set(key,t);}
+            t.text=text;t.style.fill=color;t.style.fontSize=17.6/(stage.scale()*camera.zoom);t.style.stroke={color:0x122d26,width:3/(stage.scale()*camera.zoom)};t.position.set(px(x),py(y));
+        }
+        if(inspectedRoad && city.roads.some(p=>same(p,inspectedRoad!)))activity.rect(px(inspectedRoad.x)+1,py(inspectedRoad.y)+1,tile-2,tile-2).stroke({color:0x42d9e8,width:3,alpha:.9});
+        const station=city.buildings.find(b=>b.id===inspectedId&&b.kind==='policeStation');
+        if(station){const e=entrance(station);activity.circle(px(e.x+.5),py(e.y+.5),CITY_RULES.policePatrol.radiusTiles*tile).fill({color:0x7bdfff,alpha:.06}).stroke({color:0x7bdfff,width:2,alpha:.8});}
+        const selected=store.get().vehicleDebugOpen&&city.trips.find(t=>t.id===store.get().selectedVehicleId);
+        if(selected){
+            for(const p of selected.path)activity.rect(px(p.x)+2,py(p.y)+2,tile-4,tile-4).stroke({color:0x42d9e8,width:2,alpha:.75});
+            const sprite=carPool.get(selected.id);if(sprite)activity.circle(sprite.x,sprite.y,tile*.45).stroke({color:0xffd22e,width:3});
+        }
+        const mode=store.get().diagnosticView, diagnostics=store.get().diagnostics;
+        if(diagnostics && mode!=='normal') {
+            if(mode==='traffic') for(const t of diagnostics.traffic){
+                activity.rect(px(t.x)+2,py(t.y)+2,tile-4,tile-4).fill({color:0xffa24b,alpha:.3}).stroke({color:0xffa24b,width:2});
+                label(`wait-${t.id}`,`${t.hold.toFixed(0)}s`,t.x+.5,t.y+.2,0xffd779);
+            }
+            if(mode==='access') for(const h of diagnostics.homes){
+                const color=h.status==='access'?0xff8866:0x42d9e8;
+                activity.rect(px(h.x)+2,py(h.y)+2,tile*2-4,tile*2-4).stroke({color,width:3});
+                label(`access-${h.id}`,h.status==='access'?'NO ROUTE':'ACCESS',h.x+1,h.y+.4,color);
+            }
+            if(mode==='capacity') for(const d of diagnostics.destinations){
+                const full=d.inbound+d.occupied>=d.capacity,color=full?0xffd22e:0x42d9e8;
+                label(`capacity-${d.id}`,`${d.occupied} parked + ${d.inbound} arriving / ${d.capacity}`,d.x+1.5,d.y+.65,color);
+            }
+        }
+        const guide=city.tutorial?.status==='active'?starterSnapshot(city):null;
+        const bypass=starterBypassTiles(city);
+        for(const p of bypass)activity.rect(px(p.x)+2,py(p.y)+2,tile-4,tile-4).fill({color:0xffd22e,alpha:.18}).stroke({color:0xffd22e,width:2});
+        for(const side of [true,false]){const p=bypass.find(p=>side?p.x<10:p.x>10);if(p)label(`tutorial-bypass-${side}`,'LINK',p.x+.5,4.7,0xffd22e);}
+        const divert=store.get().tool==='closure'?starterDiversionPoint(city):null;
+        if(divert){activity.rect(px(divert.x)+1,py(divert.y)+1,tile-2,tile-2).fill({color:0x6ce6ef,alpha:.25}).stroke({color:0x6ce6ef,width:3});label('tutorial-divert','DIVERT HERE · OPTIONAL',divert.x+.5,divert.y-.3,0x6ce6ef);}
+        if(guide?.focus&&guide.tool&&isBuildingTool(guide.tool)) {
+            const candidate={id:0,kind:guide.tool,x:guide.focus.x,y:guide.focus.y,rotation:0} as Building;
+            for(const p of footprint(candidate))activity.rect(px(p.x)+1,py(p.y)+1,tile-2,tile-2).fill({color:0xffd22e,alpha:.16}).stroke({color:0xffd22e,width:2});
+            label('tutorial-lot','PLACE HERE',guide.focus.x+1,guide.focus.y-.35,0xffd22e);
+        } else if(guide?.focus&&(guide.tool==='closure'||guide.tool==='stop')) {
+            activity.rect(px(guide.focus.x)+1,py(guide.focus.y)+1,tile-2,tile-2).fill({color:0xffd22e,alpha:.16}).stroke({color:0xffd22e,width:3});
+            label('tutorial-control',guide.tool==='closure'?'DIVERT HERE':'CONTROL HERE',guide.focus.x+.5,guide.focus.y-.35,0xffd22e);
+        }
+        for(const b of city.buildings) {
+            if(b.kind==='home'){if(homeRoadIssue(city,b)&&city.buildings.some(b=>b.kind==='store')){for(const p of footprint(b))activity.rect(px(p.x)+1,py(p.y)+1,tile-2,tile-2).stroke({color:0xffb75e,width:2});label(`access-${b.id}`,'!',b.x+1,b.y-.25,0xffb75e);}continue;}
+            const s=shape(b), status=buildingStatus(city,b);
+            const name=b.kind==='hospital'?'Clinic':b.kind==='fireStation'?'FIRE':b.kind==='policeStation'?'POLICE':b.kind==='park'?'PARK':'SHOP';
+            const destination = b.kind==='store'||b.kind==='park';
+            // Keep service names above the roof at every zoom, clear of their identity symbols.
+            const labelY = destination ? s.y0+.4 : s.y0-(s.side==='N'?1:0)-12/(tile*stage.scale()*camera.zoom);
+            label(`b${b.id}`,destination?`${stage.scale()*camera.zoom>=.8?`${name} `:''}${status.occupied}/${status.capacity}${status.inbound?` +${status.inbound}`:''}`:name,s.x0+s.w/2,labelY);
+            // Parked visitors stay on the plot, clear of the carriageway.
+            for(let i=0;i<Math.min(b.kind==='store'||b.kind==='park'?status.occupied:0,8);i++)activity.roundRect(px(s.x0+.2+i%4*.38),py(s.y0+s.h-.35-Math.floor(i/4)*.28),tile*.25,tile*.18,2).fill(0xffd779);
+        }
+        const roads = new Set(city.roads.map(p => `${p.x},${p.y}`));
+        for(const p of city.closures) {
+            if (artReady) {
+                // Small overview cue supplements the pixel props when zoomed
+                // out. Do not draw a solid barricade over the usable road.
+                activity.rect(px(p.x + .04), py(p.y + .04), tile * .92, tile * .92)
+                    .stroke({ color: 0xffbb55, width: 1.5, alpha: .8 });
+                continue;
+            }
+            const eastWest = roads.has(`${p.x-1},${p.y}`) || roads.has(`${p.x+1},${p.y}`);
+            const northSouth = roads.has(`${p.x},${p.y-1}`) || roads.has(`${p.x},${p.y+1}`);
+            // Barriers span the carriageway. At bends/junctions mark both road axes.
+            for(const vertical of [false, true]) {
+                if(vertical ? !eastWest : !northSouth && eastWest)continue;
+                const x = (u:number,v:number) => px(p.x+(vertical?v:u));
+                const y = (u:number,v:number) => py(p.y+(vertical?u:v));
+                activity.rect(x(.12,.36),y(.12,.36),tile*(vertical?.28:.76),tile*(vertical?.76:.28))
+                    .fill(0x342d23).stroke({color:0xffd779,width:2});
+                for(let i=0;i<3;i++)activity.moveTo(x(.2+i*.23,.4),y(.2+i*.23,.4))
+                    .lineTo(x(.3+i*.23,.6),y(.3+i*.23,.6)).stroke({color:0xffd779,width:3});
+            }
+        }
+        if(city.external?.gateway) {
+            const p=city.external.gateway;
+            const needsRoad=externalNeedsRoad(city),colour=needsRoad?0xffd22e:0x8edbfa;
+            activity.circle(px(p.x+.5),py(p.y+.5),tile*.42).stroke({color:colour,width:needsRoad?5:3});
+            label('gateway',needsRoad?'CONNECT TO CITY':'CITY',p.x+.5,p.y-.1,colour);
+        }
+        for(const r of city.risks) if(r.exposure>=CITY_RULES.intersectionSafety.warningExposure) {
+            activity.circle(px(r.x+.5),py(r.y+.5),tile*.46).stroke({color:0xffcb61,width:2,alpha:.65+.25*Math.sin(city.elapsed*5)});
+            label(`r${r.x},${r.y}`,'!',r.x+.5,r.y+.1,0xffcb61);
+        }
+        for(const incident of city.incidents)if(incident.status==='active') {
+            activity.rect(px(incident.x+.04),py(incident.y+.04),tile*.92,tile*.92).fill({color:0xb73c2c,alpha:.25}).stroke({color:0xff8860,width:3});
+            label(`i${incident.id}`,incident.severity==='fire'&&!incident.tutorialEmsOnly?'FIRE':'CRASH',incident.x+.5,incident.y+.1,0xffc080);
+            // A fixed screen-size badge explains the actual outstanding crew, without
+            // replacing the wreck or drawing a pretend responder on the road.
+            const needed=incidentServices(incident).filter(kind=>!incident.completedServices.includes(kind));
+            const screenScale=stage.scale()*camera.zoom;
+            for(const [row,kind] of needed.entries()) {
+                const key=`${incident.id}:${kind}`;
+                liveBadges.add(key);
+                let badge=responderBadges.get(key);
+                if(!badge) {
+                    const container=new Container();
+                    const background=new Graphics().roundRect(-98,-16,196,32,7).fill({color:0x102333,alpha:.96}).stroke({color:0xffd22e,width:1.5});
+                    const icon=new Sprite(frame(vehicleView(0,'E',kind).name));
+                    icon.anchor.set(.5);icon.position.set(-75,0);
+                    const iconScale=Math.min(35/icon.texture.width,23/icon.texture.height);
+                    icon.scale.set(iconScale);
+                    const text=new Text({text:'',style:{fontFamily:'system-ui',fontSize:14,fontWeight:'bold',fill:0xffeed6}});
+                    text.anchor.set(0,.5);text.position.set(-50,0);
+                    container.addChild(background,icon,text);activityLabels.addChild(container);
+                    badge={container,text};responderBadges.set(key,badge);
+                }
+                const stationKind=kind==='ems'?'hospital':kind==='fire'?'fireStation':'policeStation';
+                const serviceName=kind==='ems'?'EMS':kind==='fire'?'Fire':'Police';
+                const trip=city.trips.find(t=>t.incidentId===incident.id&&t.service===kind&&!t.responseCancelled);
+                badge.text.text=trip?.phase==='working'?`${serviceName} on scene`
+                    :trip?.phase==='waiting'||(trip&&trip.hold>=3)?`${serviceName} waiting`
+                    :trip?`${serviceName} en route`
+                    :!city.buildings.some(b=>b.kind===stationKind)?`Build ${kind==='ems'?'Clinic':serviceName}`
+                    :`${serviceName} needed`;
+                badge.container.scale.set(1/screenScale);
+                badge.container.position.set(px(incident.x+.5),py(incident.y)-(64+(needed.length-1-row)*35)/screenScale);
+            }
+        }
+        for(const t of city.trips)if(t.service) {
+            const sprite=carPool.get(t.id);if(!sprite)continue;
+            if(isEmergencyResponse(t)||t.phase==='working')
+                activity.circle(sprite.x-4,sprite.y-5,3).fill(Math.floor(city.elapsed*5)%2?0x7bdfff:0xff6a60);
+            if(t.sceneParked)continue; // The scene badges already identify these tightly parked crews.
+            const passing = emergencyLaneOffset(t)>0;
+            const labelY = (sprite.y-sprite.height/2)/tile-12/(tile*stage.scale()*camera.zoom);
+            label(`t${t.id}`,t.patrol?'PATROL':t.service.toUpperCase(),sprite.x/tile,labelY,passing?0xffd779:0xffeed6);
+        }
+        for(const [key,t] of statusLabels)if(!live.has(key)){t.destroy();statusLabels.delete(key);}
+        for(const [key,badge] of responderBadges)if(!liveBadges.has(key)){badge.container.destroy({children:true});responderBadges.delete(key);}
+    }
+
+    function updateCamera() {
+        clampCamera(camera, city.map);
+        root.scale.set(camera.zoom);
+        root.position.set(viewport.x+viewport.width/2-camera.x*tile*camera.zoom, viewport.y+viewport.height/2-camera.y*tile*camera.zoom);
+        renderGround(); preview(); renderActivity(); paint();
+    }
+    function focusTown() {
+        const points = city.buildings.length ? city.buildings.map(b => ({x:b.x+1,y:b.y+1})) : city.roads;
+        camera.x = points.length ? points.reduce((n,p) => n+p.x,0)/points.length : 8;
+        camera.y = points.length ? points.reduce((n,p) => n+p.y,0)/points.length : 7;
+        camera.zoom = city.tutorial?.hRoad && !city.buildings.length ? .5 : 1;
+        hover = null; updateCamera();
+    }
+    function layout() {
+        // React owns one reserved rectangle. Convert its actual CSS bounds through
+        // the canvas into stage units, including letterboxing and display modes.
+        const region = document.querySelector('.city-map-viewport')?.getBoundingClientRect();
+        if (!region) return;
+        const canvas = app.canvas.getBoundingClientRect();
+        const sx = app.screen.width / canvas.width / stage.scale();
+        const sy = app.screen.height / canvas.height / stage.scale();
+        const next = {x:(region.left-canvas.left)*sx, y:(region.top-canvas.top)*sy,
+            width:region.width*sx, height:region.height*sy};
+        if (next.x !== viewport.x || next.y !== viewport.y || next.width !== viewport.width || next.height !== viewport.height) {
+            // A resize during a drag must not connect the old pointer to a new tile.
+            pointers.clear(); gesture=false; drawing=false; last=null; panStart=null; downPoint=null; hover=null;
+        }
+        viewport = next;
+        app.canvas.style.clipPath = `inset(${Math.max(0,region.top-canvas.top)}px ${Math.max(0,canvas.right-region.right)}px ${Math.max(0,canvas.bottom-region.bottom)}px ${Math.max(0,region.left-canvas.left)}px)`;
+        clip.clear().rect(viewport.x,viewport.y,viewport.width,viewport.height).fill(0xffffff);
+        input.hitArea = new Rectangle(viewport.x,viewport.y,viewport.width,viewport.height);
+        updateCamera(); renderWorld();  preview(); renderCars(); renderControls(); renderActivity(); paint();
+    }
+    /**
+     * A paused game stops the ticker, and the ticker is what drives Pixi's
+     * render loop — so anything built while paused needs an explicit repaint.
+     */
+    function paint() { if (!app.ticker.started && !root.destroyed) app.render(); }
+    /** Model changed: everything but the terrain has to be rebuilt. */
+    function refresh() { renderWorld(); preview(); renderCars(); renderControls(); renderActivity(); paint(); }
+
+    function screenPoint(e: FederatedPointerEvent): Point { return stage.root.toLocal(e.global); }
+    function inside(p: Point): boolean { return p.x >= viewport.x && p.y >= viewport.y && p.x < viewport.x+viewport.width && p.y < viewport.y+viewport.height; }
+    function point(e: FederatedPointerEvent): Point | null {
+        const p = screenPoint(e);
+        if (!inside(p)) return null;
+        const worldPoint = screenToWorld(camera,viewport,p);
+        const tilePoint = {x:Math.floor(worldPoint.x),y:Math.floor(worldPoint.y)};
+        return containsTile(city.map,tilePoint) ? tilePoint : null;
+    }
+    function build(p: Point) {
+        const s = store.get();
+        if(s.vehicleDebugOpen){
+            const choices=city.trips.filter(t=>t.path.length).map(t=>({t,p:t.path[Math.min(t.path.length-1,Math.max(0,Math.ceil(t.progress-.5-1e-9)))]}))
+              .filter(c=>Math.hypot(c.p.x-p.x,c.p.y-p.y)<=1.1).sort((a,b)=>Math.hypot(a.p.x-p.x,a.p.y-p.y)-Math.hypot(b.p.x-p.x,b.p.y-p.y));
+            if(choices[0])store.patch({selectedVehicleId:choices[0].t.id});
+            report();return;
+        }
+        if(s.tool === 'road' && city.roads.some(q=>same(p,q))) {
+            inspectedRoad = {...p};
+            store.patch({message:`Road approach (${p.x}, ${p.y}) selected. ${session?'Waiting is shown above the map.':'Flow details are in the Dashboard.'}`});
+            report(); return;
+        }
+        if(s.tool===null){store.patch({message:'Select a building or road tool from the menu first.'});return;}
+        if(isBuildingTool(s.tool)) {
+            const existing=city.buildings.find(b=>footprint(b).some(q=>same(p,q)));
+            if(existing){inspectedId=existing.id;const status=buildingStatus(city,existing);store.patch({message:`${BUILDING_LABELS[existing.kind]}: ${status.label}.${session?'':' Open Dashboard for details.'}`});report();return;}
+        }
+        const message = placeInCity(city, s.tool, p.x, p.y, s.rotation);
+        store.patch({ message }); report(); flushSave(); refresh();
+    }
+    const midpoint = (points: Point[]) => ({x:(points[0].x+points[1].x)/2,y:(points[0].y+points[1].y)/2});
+    const distance = (points: Point[]) => Math.hypot(points[0].x-points[1].x,points[0].y-points[1].y);
+    function move(e: FederatedPointerEvent) {
+        const p = screenPoint(e);
+        if (pointers.has(e.pointerId)) {
+            const before = [...pointers.values()];
+            pointers.set(e.pointerId,p);
+            if (pointers.size >= 2) {
+                const after = [...pointers.values()];
+                const a = midpoint(before), b = midpoint(after);
+                panCamera(camera,viewport,b.x-a.x,b.y-a.y);
+                if (distance(before) > 0) zoomCamera(camera,viewport,camera.zoom*distance(after)/distance(before),b);
+                gesture = true; drawing = false; hover = null; updateCamera(); return;
+            }
+            if (gesture) return;
+            if (panStart) {
+                panCamera(camera,viewport,p.x-panStart.x,p.y-panStart.y);
+                panStart = p; hover = null; updateCamera(); return;
+            }
+        }
+        hover = point(e);
+        if (pointers.has(e.pointerId) && hover && last && store.get().tool === 'road') {
+            if (!drawing && downPoint && Math.hypot(p.x-downPoint.x,p.y-downPoint.y)>8) {drawing=true;build(last);}
+            if (drawing && !same(last,hover)) {
+                const cursor = {...last};
+                while (!same(cursor,hover)) {
+                    if (cursor.x !== hover.x) cursor.x += Math.sign(hover.x-cursor.x);
+                    else cursor.y += Math.sign(hover.y-cursor.y);
+                    build(cursor);
+                }
+                last = hover;
+            }
+        }
+        preview(); paint();
+    }
+    function down(e: FederatedPointerEvent) {
+        const p=screenPoint(e);pointers.set(e.pointerId,p);
+        if(pointers.size>1){gesture=true;drawing=false;hover=null;preview();paint();return;}
+        downPoint=p; hover=point(e);last=hover;
+        panStart=store.get().panning || e.button===1 ? p : null;
+        if(!panStart && hover && e.pointerType!=='touch' && store.get().tool==='road'){drawing=true;build(hover);}
+        preview();paint();
+    }
+    function up(e?: FederatedPointerEvent) {
+        if(e && pointers.has(e.pointerId) && !gesture && !panStart && !drawing) {
+            const p=point(e);if(p && last && same(p,last))build(p);
+        }
+        if(e)pointers.delete(e.pointerId);else pointers.clear();
+        if(!pointers.size){gesture=false;drawing=false;last=null;panStart=null;downPoint=null;}
+        hover=null;preview();paint();
+    }
+    const cancel = () => up();
+    const outsideUp = (e: PointerEvent) => {if(e.target!==app.canvas)cancel();};
+    input.eventMode = 'static';
+    input.on('pointerdown',down).on('globalpointermove',move).on('pointerup',up).on('pointerupoutside',up)
+        .on('pointerleave',()=>{hover=null;preview();paint();});
+    function wheel(e: WheelEvent) {
+        const rect=app.canvas.getBoundingClientRect();
+        const p={x:(e.clientX-rect.left)/stage.scale(),y:(e.clientY-rect.top)/stage.scale()};
+        if(!inside(p))return;
+        e.preventDefault();hover=null;
+        zoomCamera(camera,viewport,camera.zoom*Math.exp(-e.deltaY*.0015),p);updateCamera();
+    }
+    app.canvas.addEventListener('wheel',wheel,{passive:false});
+    const uncommand=onCityCommand(command=>{
+        cancel();
+        if(session && !['zoom','home','focus'].includes(command.type)) return;
+        if(command.type==='zoom'){zoomCamera(camera,viewport,camera.zoom*command.factor);updateCamera();}
+        if(command.type==='home')focusTown();
+        if(command.type==='focus'){camera.x=command.point.x+.5;camera.y=command.point.y+.5;if(city.tutorial?.hRoad)camera.zoom=command.point.x===11&&command.point.y===7?.5:1;updateCamera();}
+        if(command.type==='tutorial'){
+            const noticed=city.tutorial?.noticedIncident;
+            const result=tutorialAction(city,command.action);
+            const notice=city.tutorial?.status==='active'&&!city.tutorial.hRoad&&!noticed&&city.tutorial.noticedIncident;
+            store.patch({message:result.message,...(result.pause!==undefined?{paused:result.pause}:{}),...(notice?{tutorialNotice:true}:{})});
+            if(result.focus){camera.x=result.focus.x+.5;camera.y=result.focus.y+.5;}
+            report();flushSave();renderGround();updateCamera();refresh();
+        }
+        if(command.type==='finish-tutorial'){
+            store.patch({message:finishTutorialAndConnect(city)});report();flushSave();paint();
+        }
+        if(command.type==='connect'){
+            const t=city.tutorial;
+            const allowed=t?.status==='skipped'||t?.status==='complete'||!t?.hRoad&&city.buildings.some(b=>b.kind==='home')&&city.buildings.some(b=>b.kind==='store');
+            const message=allowed?connectExternalCity(city,command.point):'Build a home and store, or skip the tutorial, before connecting.';
+            if(city.external?.gateway&&t?.status!=='complete')tutorialAction(city,'skip');
+            store.patch({message});report();flushSave();refresh();
+        }
+        if(command.type==='expand'){
+            const message=expandCity(city,command.direction);
+            store.patch({message});report();flushSave();
+            renderGround();updateCamera();
+        }
+    });
+
+    function keyboard(e: KeyboardEvent) {
+        if (document.querySelector('dialog[open]')) return;
+        if (e.repeat || e.ctrlKey || e.metaKey || e.altKey || (e.target instanceof HTMLElement && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName))) return;
+        const shortcuts: Record<string, Tool> = { '1': 'home', '2': 'store', '3': 'road', '4': 'bulldoze', '5': 'stop', '6': 'signal', '7': 'closure' };
+        if (shortcuts[e.key]) store.patch({ tool: shortcuts[e.key], panning: false });
+        if (e.key.toLowerCase() === 'r') store.patch({ rotation: (store.get().rotation + 1) % 4 });
+        if (e.code === 'Space' && !(e.target instanceof HTMLButtonElement)) { e.preventDefault(); store.patch({ paused: !store.get().paused }); }
+    }
+
+    const tick = () => {
+        const dt = Math.min(app.ticker.deltaMS / 1000, .1);
+        const noticed=city.tutorial?.noticedIncident;
+        if(session)session.step(dt);else stepCity(city, dt); renderCars(); renderControls(); renderActivity();
+        setFiretruckResponding(city.trips.some(t=>t.service==='fire'&&!t.patrol&&!t.responseCancelled&&isEmergencyResponse(t)));
+        setPoliceResponding(city.trips.some(t=>t.service==='police'&&!t.patrol&&!t.responseCancelled&&isEmergencyResponse(t)));
+        stepTrafficAudio(dt,city.trips.filter(t=>!t.service&&t.path.length&&(!t.phase||t.phase==='legacy'||t.phase==='outbound'||t.phase==='returning')).length);
+        if(city.tutorial?.status==='active'&&!city.tutorial.hRoad&&!noticed&&city.tutorial.noticedIncident){
+            store.patch({tutorialNotice:true,message:'A crash needs attention. Traffic is running; build another route and keep emergency access open.'});
+            report();flushSave();
+        }
+        reportClock += dt; saveClock += dt;
+        if (reportClock >= .5) { reportClock = 0; report(); }
+        if (saveClock >= 2) { saveClock = 0; flushSave(); }
+    };
+    const unsub = store.subscribe(() => { preview(); paint(); });
+    const unresize = stage.onResize(layout);
+    const observer = new ResizeObserver(layout);
+    // Observe the region AND its allocating bands: a band's change can move the
+    // rectangle without resizing it. The region stays mounted across panel changes.
+    for (const el of document.querySelectorAll('.city-map-viewport, .city-header, .city-controls, .city-stage')) observer.observe(el);
+    window.addEventListener('keydown', keyboard);
+    window.addEventListener('blur', cancel);
+    window.addEventListener('pointerup', outsideUp);
+    window.addEventListener('pointercancel', cancel);
+    app.ticker.add(tick);
+    report();
+    // Initialize frames before any camera movement can populate the terrain cache.
+    // Also invalidate it when a late atlas replaces placeholder textures: unchanged
+    // viewport bounds do not mean that the cached sprite textures are current.
+    ensureCityArt(() => {
+        artReady = true;
+        if (!root.destroyed) { groundKey = ''; layout(); }
+    });
+    if (!artReady) layout();
+    focusTown();
+    return {
+        destroy() {
+            setFiretruckResponding(false);
+            setPoliceResponding(false);
+            stopTrafficAudio();
+            flushSave(); observer.disconnect(); unsub(); unresize();
+            window.removeEventListener('keydown', keyboard);
+            window.removeEventListener('blur', cancel);
+            window.removeEventListener('pointerup', outsideUp);
+            window.removeEventListener('pointercancel', cancel);
+            app.canvas.removeEventListener('wheel', wheel);
+            uncommand();
+            app.ticker.remove(tick);
+            carPool.clear(); carFacing.clear();
+            root.destroy({ children: true });
+            clip.destroy(); input.destroy();
+        },
+    };
+}
+
+
+FILE src/game/cityModel.ts
+import {refreshFlowProgress, FLOW_MISSION_ID} from './cityFlow.ts';
+import {routingSnapshot,responseRoute,civilianRoute} from './cityRouting.ts';
+import {patrolAvoid} from './cityPatrols.ts';
+/** Logical tiles and routes never depend on sprite dimensions or rendering units. */
+import { INITIAL_WIDTH, INITIAL_HEIGHT, initialMap, containsTile, expandedMap, parseMap, type MapBounds, type ExpansionDirection } from './cityMap.ts';
+import {
+  TRAFFIC_TICK, TRAVEL_TILES_PER_SECOND, roadIndex, trafficTick, migrateLegacyTraffic,
+  placeControl, controlAt, removeControl, pruneControls, parseControls, parseHistory, occupiedTiles, bodyTile, isEmergencyResponse, validEmergencyPasses, emergencyReservedTiles,
+  type JunctionControl, type TripRecord,
+} from './cityTraffic.ts';
+import {
+  growDemand, spawnTrips, stepVisits, parseHouseholds, capacityRespected, leisureBonus,
+  MAX_VISIT_SECONDS, type Household,
+} from './cityVisits.ts';
+import { parseIncidentState, stepIncidents, type Incident, type JunctionRisk, type ServiceKind } from './cityIncidents.ts';
+import { createExternalConnection, parseExternalConnection, retryAutomaticConnection, stepExternal, validExternalTrip, type ExternalConnection } from './cityExternal.ts';
+import { createTutorialProgress, parseTutorialProgress, refreshTutorial, noteTutorialConstruction, type TutorialProgress } from './cityTutorial.ts';
+import { createMissionProgress, parseMissionProgress, type MissionProgress } from './cityMissions.ts';
+import {initializeStarter, starterPlacementError} from './cityStarterTutorial.ts';
+import {connectedExpansionEdge,connectedEdgeReason,createExpansionProgress,expansionSnapshot,refreshExpansionProgress,parseExpansionProgress,type ExpansionProgress} from './cityExpansion.ts';
+import {
+  COSTS, STARTING_FUNDS, constructionPriceForCity, paidForBuilding, clearRoadPayment,
+  recordBuildingPayment, recordRoadPayment, consumeGrant, parseRoadPaid, parseEconomyProgress,
+  createEconomyProgress, type EconomyProgress,
+} from './cityEconomy.ts';
+export {
+  trafficMetrics, signalAxis, isJunctionTile, controlAt, TRAFFIC_TICK, STOP_DWELL, CAUTION_DWELL,
+  METRICS_WINDOW, MAX_HISTORY, JUNCTION_DEGREE, PRESET_LABEL, EMERGENCY_TILES_PER_SECOND,
+} from './cityTraffic.ts';
+export type { JunctionControl, ControlKind, SignalPreset, TripRecord, TrafficMetrics, Axis } from './cityTraffic.ts';
+export {
+  buildingStatus, demandSummary, VISIT_SECONDS, VISITOR_CAPACITY, SHOP_INCOME,
+  LEISURE_BONUS, LEISURE_BENEFIT_SECONDS, SHOP_INTERVAL, SHOP_CAP, LEISURE_INTERVAL, LEISURE_CAP,
+} from './cityVisits.ts';
+export type { Household, VisitorSlots } from './cityVisits.ts';
+export type { Incident, JunctionRisk, ServiceKind } from './cityIncidents.ts';
+export {
+  COSTS, STARTING_FUNDS, STALL_SECONDS, WAIVER_BUDGET, constructionPrice, constructionPriceForCity,
+  toolPrices, paidForBuilding, paidForRoad, constructionChanged, createEconomyProgress,
+} from './cityEconomy.ts';
+export type { EconomyProgress, PricedTool } from './cityEconomy.ts';
+// Compatibility for the current renderer. New rendering/camera code must use city.map.
+export const WIDTH = INITIAL_WIDTH;
+export const HEIGHT = INITIAL_HEIGHT;
+export const TILE_METERS = 10;
+export type BuildingKind = 'home' | 'store' | 'park' | 'hospital' | 'fireStation' | 'policeStation';
+export type Tool = BuildingKind | 'road' | 'bulldoze' | 'stop' | 'signal' | 'closure';
+export type Point = { x: number; y: number };
+export type Building = { id: number; kind: BuildingKind; x: number; y: number; rotation: number; paid?: number; patrolReadyAt?: number };
+/**
+ * Journey stage. Missing phase is a pre-visit save: one immediate roundtrip, credited on return.
+ * outbound/returning drive, visiting is parked off the carriageway, waiting holds a road tile
+ * with its intent intact, crashed is an immobile civilian wreck, working is a responder on scene.
+ */
+export type TripPhase = 'legacy' | 'outbound' | 'visiting' | 'returning' | 'waiting' | 'crashed' | 'working';
+export type TripPurpose = 'shopping' | 'leisure';
+/** progress and path stay the only source of vehicle position; wait/hold are queue metadata. */
+export type Trip = {
+  /** Optional query schedule survives reload; derived costs do not. */
+  nextRouteQueryAt?: number;
+  /** Local service observation only; absent in older saves. */
+  startedAt?: number; visitedAt?: number;
+  patrol?: true;
+  /** This real crew was replaced and must return without doing scene work. */
+  responseCancelled?: true;
+  sceneParked?: true;
+  external?: { origin: Point };
+  id: number; path: Point[]; progress: number; homeId: number; storeId: number; wait: number; hold: number;
+  /** Every field below is optional so pre-visit saves and their fixtures still load. */
+  phase?: TripPhase; purpose?: TripPurpose; visitRemaining?: number; rewarded?: boolean;
+  service?: ServiceKind; stationId?: number; incidentId?: number; workRemaining?: number; speed?: number;
+  /** Where this vehicle is still heading, kept across a closure or a rebuilt road. */
+  target?: Point; resume?: TripPhase;
+  /** Reserved straight overtaking corridor; shift is a continuous 0..1 lateral position. */
+  emergencyPass?: { start: number; end: number; stage: 'out' | 'passing' | 'in'; shift: number };
+};
+export type City = {
+  expansion?:ExpansionProgress;
+  tutorial?: TutorialProgress;
+  external?: ExternalConnection;
+  missions?: MissionProgress;
+  economy?: EconomyProgress;
+  version: 2; map: MapBounds; roads: Point[]; buildings: Building[]; trips: Trip[];
+  controls: JunctionControl[]; history: TripRecord[]; households: Household[];
+  incidents: Incident[]; risks: JunctionRisk[]; closures: Point[];
+  roadPaid?: Record<string, number>;
+  funds: number; elapsed: number; completed: number; nextId: number;
+  accidentCount: number; rescuedCount: number; fatalities: number;
+  incomeClock: number; spawnClock: number; tickClock: number;
+};
+/** Footprints before rotation. The entrance sits one tile beyond the bottom row. */
+export const SIZES: Record<BuildingKind, { w: number; h: number }> = {
+  home: { w: 2, h: 2 }, store: { w: 3, h: 2 }, park: { w: 3, h: 3 },
+  hospital: { w: 3, h: 2 }, fireStation: { w: 3, h: 2 }, policeStation: { w: 3, h: 2 },
+};
+export const LABELS: Record<BuildingKind, string> = {
+  home: 'Home', store: 'Store', park: 'Park', hospital: 'Hospital', fireStation: 'Fire station', policeStation: 'Police station',
+};
+/** Which emergency service each station dispatches. Incident dispatch reads this, never artwork. */
+export const SERVICE_OF: Record<BuildingKind, ServiceKind | null> = {
+  home: null, store: null, park: null, hospital: 'ems', fireStation: 'fire', policeStation: 'police',
+};
+export const INCOME_INTERVAL = 10;
+/**
+ * Baseline support is deliberately small: completed visits, not connectivity, fund the town.
+ * It only exists so a stalled economy can still afford a road. Provisional value.
+ */
+export const BASE_SUPPORT = 20;
+const SPAWN_INTERVAL = 4;
+const round6 = (v: number) => Math.round(v * 1e6) / 1e6;
+const key = (p: Point) => `${p.x},${p.y}`;
+const equal = (a: Point, b: Point) => a.x === b.x && a.y === b.y;
+const integer = (v: unknown): v is number => typeof v === 'number' && Number.isSafeInteger(v) && v >= 0;
+const inBounds = (city: City, p: Point) => containsTile(city.map, p);
+const finite = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v) && v >= 0;
+const point = (v: unknown): v is Point => !!v && typeof v === 'object'
+  && Number.isSafeInteger((v as Point).x) && Number.isSafeInteger((v as Point).y);
+
+export function createCity(guidedStarter=false): City {
+  const city:City = { version: 2, expansion:createExpansionProgress(), tutorial: createTutorialProgress(true), external: createExternalConnection(), missions: createMissionProgress(),
+    economy: {...createEconomyProgress(), stallLesson:'first-visit', stallAt:0, stallMark:0}, map: initialMap(), roads: [], buildings: [], trips: [], controls: [], history: [],
+    households: [], incidents: [], risks: [], closures: [],
+    funds: STARTING_FUNDS, elapsed: 0, completed: 0, nextId: 1,
+    accidentCount: 0, rescuedCount: 0, fatalities: 0, incomeClock: 0, spawnClock: 0, tickClock: 0 };
+  if(guidedStarter)initializeStarter(city);
+  return city;
+}
+/** Consume a free strip or an earned permit only after a successful map change. */
+export function expandCity(city: City, direction: ExpansionDirection): string {
+  if(connectedExpansionEdge(city)===direction)return connectedEdgeReason(direction);
+  const map = expandedMap(city.map, direction);
+  if (!map) return 'The map cannot expand further in that direction.';
+  refreshExpansionProgress(city);
+  const funding=expansionSnapshot(city);
+  if(!funding.canExpand)return funding.lockedReason;
+  city.map = map;
+  city.expansion!.used++;
+  refreshTutorial(city);
+  return `Expanded ${direction}. Your town is now ${map.width} × ${map.height} tiles. ${city.expansion!.used===2?'The mayor now funds land through completed growth missions.':funding.freeRemaining?'Free introductory expansion.':'One earned land permit used.'}`;
+}
+function transform(b: Building, p: Point): Point {
+  let { x, y } = p;
+  let { w, h } = SIZES[b.kind] ?? SIZES.home;
+  for (let r = 0; r < b.rotation; r++) {
+    [x, y] = [h - 1 - y, x];
+    [w, h] = [h, w];
+  }
+  return { x: b.x + x, y: b.y + y };
+}
+export function footprint(b: Building): Point[] {
+  const { w, h } = SIZES[b.kind] ?? SIZES.home;
+  const points: Point[] = [];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) points.push(transform(b, { x, y }));
+  return points;
+}
+export function entrance(b: Building): Point {
+  const { h } = SIZES[b.kind] ?? SIZES.home;
+  return transform(b, { x: b.kind === 'home' ? 0 : 1, y: h });
+}
+export const isStation = (b: Building): boolean => SERVICE_OF[b.kind] !== null;
+export const isDestination = (b: Building): boolean => b.kind === 'store' || b.kind === 'park';
+/** Stations of one service, in stable id order, for deterministic dispatch choices. */
+export function stations(city: City, service: ServiceKind): Building[] {
+  return city.buildings.filter(b => SERVICE_OF[b.kind] === service).sort((a, b) => a.id - b.id);
+}
+/** Civilian diversions admit responding services; active wrecks always block entry. */
+export function isBlocked(city: City, p: Point, responding = false): boolean {
+  return (!responding && city.closures.some(c => equal(c, p)))
+    || city.incidents.some(i => i.status === 'active' && i.x === p.x && i.y === p.y);
+}
+/** Every tile new traffic may not enter. Empty in a town with no closures and no incidents. */
+export function blockedTiles(city: City, responding = false): Set<string> {
+  const set = new Set<string>();
+  if (!responding) for (const c of city.closures) set.add(key(c));
+  for (const i of city.incidents) if (i.status === 'active') set.add(`${i.x},${i.y}`);
+  return set;
+}
+/** The start tile is always allowed so a vehicle caught inside a closure can still drive out. */
+export function findPath(city: City, start: Point, end: Point, responding = false, avoid: Set<string> = new Set()): Point[] | null {
+  const roads = new Set(city.roads.map(key));
+  if (!roads.has(key(start)) || !roads.has(key(end))) return null;
+  const blocked = blockedTiles(city, responding);
+  for (const tile of avoid) if (tile !== key(start)) blocked.add(tile);
+  if (blocked.has(key(end))) return null;
+  const queue = [start];
+  const previous = new Map<string, Point | null>([[key(start), null]]);
+  for (let i = 0; i < queue.length; i++) {
+    const p = queue[i];
+    if (equal(p, end)) {
+      const result: Point[] = [];
+      let cursor: Point | null = p;
+      while (cursor) { result.push({ ...cursor }); cursor = previous.get(key(cursor)) ?? null; }
+      return result.reverse();
+    }
+    for (const n of [{ x: p.x + 1, y: p.y }, { x: p.x, y: p.y + 1 }, { x: p.x - 1, y: p.y }, { x: p.x, y: p.y - 1 }]) {
+      if (roads.has(key(n)) && !blocked.has(key(n)) && !previous.has(key(n))) { previous.set(key(n), p); queue.push(n); }
+    }
+  }
+  return null;
+}
+/** Planning may retain a journey through a temporary obstruction; movement still obeys it. */
+export function plannedRoadPath(city:City,start:Point,end:Point):Point[]|null {
+  return findPath({...city,incidents:[],closures:[]},start,end);
+}
+/** Nearest reachable store. Connectivity and the route readout ignore capacity on purpose. */
+function nearestStore(city: City, home: Building): { store: Building; path: Point[] } | null {
+  let best: { store: Building; path: Point[] } | null = null;
+  for (const store of city.buildings.filter(b => b.kind === 'store')) {
+    const path = findPath(city, entrance(home), entrance(store));
+    if (path && (!best || path.length < best.path.length)) best = { store, path };
+  }
+  return best;
+}
+export function connectedHomes(city: City): number {
+  return city.buildings.filter(b => b.kind === 'home' && nearestStore(city, b)).length;
+}
+/** Current shortest outbound route, independent of any journey already in progress. */
+export function routeForHome(city: City, home: Building): Point[] | null {
+  if (home.kind !== 'home') return null;
+  return nearestStore(city, home)?.path ?? null;
+}
+/** Planned driving time out and back; excludes waiting for the next departure and the visit itself. */
+export function averageTripSeconds(city: City): number | null {
+  const routes = city.buildings.filter(b => b.kind === 'home').map(b => routeForHome(city, b)).filter(p => p !== null);
+  if (routes.length === 0) return null;
+  return routes.reduce((sum, path) => sum + 2 * (path.length - 1) / TRAVEL_TILES_PER_SECOND, 0) / routes.length;
+}
+/** Small unconditional support, plus the tax benefit of households with a recent park visit. */
+export function income(city: City): number { return BASE_SUPPORT + leisureBonus(city); }
+export const homeOf = (city: City, trip: Trip): Building | undefined =>
+  city.buildings.find(b => b.id === trip.homeId && b.kind === 'home');
+export const destinationOf = (city: City, trip: Trip): Building | undefined =>
+  city.buildings.find(b => b.id === trip.storeId && isDestination(b));
+/** Where a vehicle is still heading, so a detour or a rebuilt road can resume the same journey. */
+export function goalOf(city: City, trip: Trip): Point | null {
+  const phase = trip.phase ?? 'legacy';
+  if (phase === 'waiting') return trip.target ?? null;
+  if (trip.service) return trip.target ?? trip.path[trip.path.length - 1] ?? null;
+  if (phase === 'outbound') {
+    const destination = destinationOf(city, trip);
+    if (destination) return entrance(destination);
+  }
+  if (trip.external) return trip.external.origin;
+  const home = homeOf(city, trip);
+  return home ? entrance(home) : null;
+}
+/**
+ * A vehicle keeps its exact world position while it is still approaching the centre of the tile
+ * it stands on, because the tile it came from stays the first step of the new route. Only a
+ * vehicle already stopped past that centre by a blockage has to give back up to half a tile.
+ */
+const beforeCentre = (trip: Trip, k: number) => k >= 1 && trip.progress > k - 0.5 && trip.progress <= k + 1e-9;
+/**
+ * Re-plan one vehicle from a tile it is standing on. Passing the tile its body currently
+ * occupies keeps the vehicle exactly where it is; passing any other tile places it there.
+ * Returns false only when the trip has nowhere left to belong.
+ */
+export function retarget(city: City, trip: Trip, from: Point, avoid?: Set<string>, selectedRoute?: Point[]): boolean {
+  if (trip.emergencyPass) return false;
+  let goal = goalOf(city, trip);
+  if (!goal) return false;
+  if (!from) return false;
+  const body = bodyTile(trip);
+  const k = trip.path[body] && equal(trip.path[body], from) ? body : -1;
+  const phase = trip.phase ?? 'legacy';
+  const active: TripPhase = phase === 'waiting' ? (trip.resume ?? 'returning')
+    : phase === 'legacy' ? 'returning' : phase;
+  const smooth = beforeCentre(trip, k);
+  const lead = smooth ? [{ ...trip.path[k - 1] }] : [];
+  const offset = smooth ? round6(trip.progress - (k - 1)) : 0;
+  const responding = isEmergencyResponse(trip);
+  if(trip.patrol)avoid=new Set([...patrolAvoid(city,trip),...(avoid??[])]);
+  let route = selectedRoute ?? (trip.service && !responding && !trip.patrol && !avoid
+    ? civilianRoute(city,from,goal,trip) : findPath(city, from, goal, responding, avoid));
+  if(!route&&!trip.service&&!avoid){
+    const planned=plannedRoadPath(city,from,goal);
+    // Advance along existing clear roads, stopping before the first blocked tile.
+    const leavesSceneAccess=planned?.[2]&&city.incidents.some(i=>i.status==='active'&&i.x===planned[2].x&&i.y===planned[2].y);
+    if(planned&&planned.length>1&&!isBlocked(city,planned[1])&&!leavesSceneAccess)route=planned;
+  }
+  if (responding) {
+    const incident = city.incidents.find(i => i.id === trip.incidentId && i.status === 'active');
+    if (incident) {
+      // Selected optional paths already compared all scene approaches on one snapshot.
+      route = selectedRoute ?? responseRoute(routingSnapshot(city,roadIndex(city),true),from,incident,trip.id,avoid)?.path ?? null;
+      if(route)goal=route[route.length-1];
+    }
+  }
+  trip.target = { ...goal };
+  if (route) {
+    trip.path = [...lead, ...route];
+    trip.progress = offset;
+    trip.phase = active;
+    return true;
+  }
+  // Keep the local approach and departure geometry while no route exists. It records
+  // the lane actually occupied, including corners, without reserving an entire old route.
+  if (k >= 0) {
+    const start = Math.max(0, k - 1);
+    trip.path = trip.path.slice(start, k + 2).map(p => ({...p}));
+    trip.progress = round6(trip.progress - start);
+  } else {
+    trip.path = [{...from}];
+    trip.progress = 0;
+  }
+  trip.phase = 'waiting';
+  trip.resume = active;
+  return true;
+}
+function contiguous(city: City, path: Point[]): boolean {
+  return path.length > 0 && path.every((p, i) => point(p) && inBounds(city, p)
+    && (i === 0 || Math.abs(p.x - path[i - 1].x) + Math.abs(p.y - path[i - 1].y) === 1));
+}
+/** Geometry only. Incident ownership of service ids and deadlines is validated by cityIncidents. */
+function validTrip(city: City, trip: Trip): boolean {
+  const roads = new Set(city.roads.map(key));
+  if (!contiguous(city, trip.path)) return false;
+  // The vehicle must stand on a road. Road ahead may already be demolished: it re-plans there.
+  const here = trip.path[bodyTile(trip)];
+  if (!here || !roads.has(key(here))) return false;
+  const last = trip.path.length - 1;
+  if (!(trip.progress <= last + 1e-9)) return false;
+  const phase = trip.phase ?? 'legacy';
+  if (trip.service) return phase === 'outbound' || phase === 'returning' || phase === 'working' || phase === 'waiting';
+  const home = homeOf(city, trip);
+  if (trip.external ? !validExternalTrip(city, trip) : !home) return false;
+  if (phase === 'legacy') {
+    const store = city.buildings.find(b => b.id === trip.storeId && b.kind === 'store');
+    return !!store && equal(trip.path[0], entrance(home!)) && equal(trip.path[last], trip.external?.origin ?? entrance(home!))
+      && trip.path.some(p => equal(p, entrance(store)));
+  }
+  if (phase === 'crashed') return trip.path.length === 1 && trip.progress === 0;
+  // A held vehicle stands on its own tile, optionally still showing the tile it arrived from.
+  if (phase === 'waiting') return trip.path.length <= 3 && point(trip.target);
+  const destination = destinationOf(city, trip);
+  if (phase === 'returning') return equal(trip.path[last], trip.external?.origin ?? entrance(home!));
+  if (!destination) return false;
+  if (phase === 'visiting') return equal(trip.path[last], entrance(destination)) && trip.progress === last;
+  return phase === 'outbound' && equal(trip.path[last], entrance(destination));
+}
+/**
+ * Construction never rewrites a route. A vehicle whose road ahead was removed keeps driving
+ * and re-plans at the next safe tile centre; only a vehicle whose own tile is gone is dropped.
+ */
+function revalidateTrips(city: City): void {
+  const roads = new Set(city.roads.map(key));
+  city.trips = city.trips.filter(trip => {
+    if (!trip.service && !trip.external && !homeOf(city, trip)) return false;
+    if ((trip.phase ?? 'legacy') === 'visiting') return !!destinationOf(city, trip);
+    const here = trip.path[bodyTile(trip)];
+    return !!here && roads.has(key(here));
+  });
+}
+/**
+ * Occupied construction is protected rather than deleted. Removing a home would erase its
+ * journey, and with it a crash victim and any rescue deadline attached to that vehicle.
+ */
+function removalGuard(city: City, b: Building): string | null {
+  if (isStation(b) && city.trips.some(t => t.service && t.stationId === b.id))
+    return b.kind==='policeStation' ? 'A police vehicle is out on patrol or a call. Remove the station when it returns.' : `A ${LABELS[b.kind].toLowerCase()} vehicle is still out on a call.`;
+  if (b.kind === 'home' && city.trips.some(t => !t.service && t.homeId === b.id))
+    return 'This home has a car out. Wait for it to get back.';
+  if (isDestination(b) && city.trips.some(t => !t.service && t.storeId === b.id))
+    return 'Journeys are booked here. Wait for the visitors to leave.';
+  return null;
+}
+function charge(city: City, tool: Tool): number | string {
+  const price = constructionPriceForCity(city, tool);
+  if (city.funds < price) return 'Wait for the next income payment or remove something for a full refund.';
+  city.funds -= price;
+  if (price === 0 && tool in COSTS) consumeGrant(city, tool);
+  return price;
+}
+export function place(city: City, tool: Tool, x: number, y: number, rotation = 0): string {
+  const tutorialError=starterPlacementError(city,tool,x,y,rotation);if(tutorialError)return tutorialError;
+  const p = { x, y };
+  if (!inBounds(city, p)) return 'Choose a tile inside the map.';
+  const building = city.buildings.find(b => footprint(b).some(tile => equal(tile, p)));
+  const tileIndex = city.roads.findIndex(tile => equal(tile, p));
+  if (tool === 'stop' || tool === 'signal') {
+    const before = JSON.stringify(city.controls);
+    const message = placeControl(city, tool, p);
+    if (JSON.stringify(city.controls) !== before) noteTutorialConstruction(city, tool);
+    return message;
+  }
+  if (tool === 'closure') {
+    if (tileIndex < 0) return 'Close a road tile.';
+    const closed = city.closures.findIndex(c => equal(c, p));
+    if (closed >= 0) { city.closures.splice(closed, 1); return 'Road reopened.'; }
+    if (emergencyReservedTiles(city).has(key(p))) return 'An emergency vehicle is passing here. Wait for it to merge.';
+    city.closures.push({ x, y });
+    return 'Road closed. Traffic already on it drives out, new traffic reroutes.';
+  }
+  if (tool === 'bulldoze') {
+    const control = controlAt(city, p);
+    if (control) {
+      removeControl(city, p);
+      return `${control.kind === 'stop' ? 'Stop sign' : 'Traffic light'} removed. Bulldoze again to remove the road.`;
+    }
+    if (isBlocked(city, p) && city.incidents.some(i => i.status === 'active' && i.x === x && i.y === y))
+      return 'An incident is blocking this tile. Clear it before rebuilding.';
+    if (building) {
+      const guard = removalGuard(city, building);
+      if (guard) return guard;
+      const refund = paidForBuilding(building);
+      city.buildings = city.buildings.filter(b => b.id !== building.id);
+      city.funds += refund;
+      if (building.kind === 'home') city.households = city.households.filter(h => h.homeId !== building.id);
+      pruneControls(city);
+      revalidateTrips(city);
+      return `Removed. Full $${refund} refund.`;
+    } else if (tileIndex >= 0) {
+      if (occupiedTiles(city).has(key(p))) return 'A vehicle is on that road. Wait for it to pass.';
+      const refund = clearRoadPayment(city, p);
+      city.roads.splice(tileIndex, 1);
+      city.closures = city.closures.filter(c => !equal(c, p));
+      city.funds += refund;
+      pruneControls(city);
+      revalidateTrips(city);
+      return `Removed. Full $${refund} refund.`;
+    } else return 'Nothing to remove here.';
+  }
+  if (!(tool in COSTS)) return 'Choose a construction tool.';
+  if (building || tileIndex >= 0) return 'That tile is occupied.';
+  if (tool === 'road') {
+    if ([...emergencyReservedTiles(city)].some(k => { const [qx,qy]=k.split(',').map(Number); return Math.abs(qx-x)+Math.abs(qy-y)<=1; })) return 'An emergency vehicle is passing nearby. Wait for it to merge.';
+    const priced = charge(city, tool);
+    if (typeof priced === 'string') return priced;
+    city.roads.push(p);
+    recordRoadPayment(city, p, priced);
+    noteTutorialConstruction(city, tool);
+    const count=city.controls.length; if(count>0)pruneControls(city);
+    return city.controls.length<count ? 'Road built. Joined intersections now share their first control; extra controls removed.' : 'Road built. Unsigned junctions give E/W traffic priority.';
+  }
+  if (!integer(rotation) || rotation > 3) return 'Choose a valid rotation.';
+  const candidate: Building = { id: city.nextId, kind: tool, x, y, rotation };
+  const tiles = footprint(candidate);
+  const access = entrance(candidate);
+  if (![...tiles, access].every(tile => inBounds(city, tile))) return 'The building and its entrance must fit inside the map.';
+  const occupied = new Set([...city.roads, ...city.buildings.flatMap(footprint)].map(key));
+  if (tiles.some(tile => occupied.has(key(tile)))) return 'The building footprint overlaps construction.';
+  if (city.buildings.some(b => footprint(b).some(tile => equal(tile, access)) || tiles.some(tile => equal(tile, entrance(b))))) return 'Leave road access at each entrance arrow.';
+  const priced = charge(city, tool);
+  if (typeof priced === 'string') return priced;
+  recordBuildingPayment(candidate, priced);
+  city.buildings.push(candidate); city.nextId++;
+  if (tool === 'home' && city.missions?.flow && !city.missions.completed.includes(FLOW_MISSION_ID))
+    city.missions.flow.targetHomes = Math.max(city.missions.flow.targetHomes, city.buildings.filter(b=>b.kind==='home').length);
+  noteTutorialConstruction(city, tool);
+  return `${LABELS[tool]} built. ${city.roads.some(p=>equal(p,access))?'Its entrance is connected.':'Place a road on its entrance arrow.'}`;
+}
+export function stepCity(city: City, dt: number): void {
+  if (!finite(dt) || dt === 0) return;
+  retryAutomaticConnection(city);
+  const index = roadIndex(city);
+  // Advance exactly across tick/payment/departure boundaries so frame rate cannot change outcomes.
+  while (dt > 1e-9) {
+    const slice = Math.min(dt, INCOME_INTERVAL - city.incomeClock, SPAWN_INTERVAL - city.spawnClock, TRAFFIC_TICK - city.tickClock);
+    city.elapsed += slice; city.incomeClock += slice; city.spawnClock += slice; city.tickClock += slice; dt -= slice;
+    if (city.tickClock >= TRAFFIC_TICK - 1e-9) {
+      city.tickClock = 0;
+      trafficTick(city, index);
+      stepVisits(city, index, TRAFFIC_TICK);
+      // Exactly one incident step per traffic tick, with or without vehicles on the road.
+      stepIncidents(city, TRAFFIC_TICK);
+      stepExternal(city, index, TRAFFIC_TICK);
+      refreshTutorial(city);
+      refreshFlowProgress(city);
+    }
+    if (city.incomeClock >= INCOME_INTERVAL - 1e-9) { city.incomeClock = 0; city.funds += income(city); }
+    if (city.spawnClock >= SPAWN_INTERVAL - 1e-9) {
+      city.spawnClock = 0;
+      growDemand(city, SPAWN_INTERVAL);
+      spawnTrips(city, index);
+    }
+  }
+}
+function parsePoints(raw: unknown, roads: Set<string>, limit: number): Point[] | null {
+  if (raw === undefined) return [];
+  if (!Array.isArray(raw) || raw.length > limit) return null;
+  const seen = new Set<string>();
+  const points: Point[] = [];
+  for (const value of raw) {
+    if (!point(value)) return null;
+    const at = key(value);
+    if (seen.has(at)) return null;
+    seen.add(at);
+    // A closure whose road is gone is dropped on load rather than treated as corruption.
+    if (roads.has(at)) points.push({ x: value.x, y: value.y });
+  }
+  return points;
+}
+const PHASES: TripPhase[] = ['legacy', 'outbound', 'visiting', 'returning', 'waiting', 'crashed', 'working'];
+const SERVICES: ServiceKind[] = ['ems', 'fire', 'police'];
+/** Copy only the optional fields the save actually carries, so a reload equals the live trip. */
+function parseTrip(city: City, raw: Trip, nextId: number): Trip | null {
+  const wait = raw.wait === undefined ? 0 : raw.wait;
+  const hold = raw.hold === undefined ? 0 : raw.hold;
+  if (!integer(raw.id) || raw.id < 1 || raw.id >= nextId || !integer(raw.homeId) || !integer(raw.storeId)
+    || !finite(raw.progress) || !finite(wait) || !finite(hold) || hold > wait + 1e-6) return null;
+  // Path entries are validated before they are read, so a null or malformed tile rejects the save.
+  if (!raw.path.every(p => point(p) && containsTile(city.map, p))) return null;
+  const trip: Trip = { id: raw.id, homeId: raw.homeId, storeId: raw.storeId, progress: raw.progress, wait, hold,
+    path: raw.path.map(p => ({ x: p.x, y: p.y })) };
+  for (const field of ['startedAt', 'visitedAt'] as const) {
+    const value = raw[field];
+    if (value !== undefined && finite(value) && value <= city.elapsed + 1e-6
+      && !raw.service && !raw.external && (field !== 'visitedAt' || raw.rewarded === true)) trip[field] = value;
+  }
+  if (trip.startedAt !== undefined && trip.visitedAt !== undefined && trip.startedAt > trip.visitedAt) {
+    delete trip.startedAt; delete trip.visitedAt;
+  }
+  if(raw.nextRouteQueryAt!==undefined){if(!finite(raw.nextRouteQueryAt))return null;trip.nextRouteQueryAt=raw.nextRouteQueryAt;}
+  if(raw.patrol!==undefined){if(raw.patrol!==true||raw.service!=='police'||raw.incidentId!==undefined)return null;trip.patrol=true;}
+  if(raw.sceneParked!==undefined){if(raw.sceneParked!==true||!raw.service||raw.phase!=='working'||raw.responseCancelled||raw.patrol)return null;trip.sceneParked=true;}
+  if(raw.responseCancelled!==undefined){if(raw.responseCancelled!==true||!raw.service||raw.patrol||raw.incidentId===undefined)return null;trip.responseCancelled=true;}
+  if (raw.phase !== undefined) { if (!PHASES.includes(raw.phase)) return null; trip.phase = raw.phase; }
+  if (raw.purpose !== undefined) {
+    if (raw.purpose !== 'shopping' && raw.purpose !== 'leisure') return null;
+    trip.purpose = raw.purpose;
+  }
+  if (raw.visitRemaining !== undefined) {
+    if (!finite(raw.visitRemaining) || raw.visitRemaining > MAX_VISIT_SECONDS) return null;
+    trip.visitRemaining = raw.visitRemaining;
+  }
+  if (raw.rewarded !== undefined) { if (typeof raw.rewarded !== 'boolean') return null; trip.rewarded = raw.rewarded; }
+  if (raw.service !== undefined) { if (!SERVICES.includes(raw.service)) return null; trip.service = raw.service; }
+  if (raw.stationId !== undefined) {
+    if (!integer(raw.stationId) || raw.stationId >= nextId) return null;
+    trip.stationId = raw.stationId;
+  }
+  if (raw.incidentId !== undefined) {
+    if (!integer(raw.incidentId) || raw.incidentId >= nextId) return null;
+    trip.incidentId = raw.incidentId;
+  }
+  if (raw.workRemaining !== undefined) {
+    if (!finite(raw.workRemaining) || raw.workRemaining > 120) return null;
+    trip.workRemaining = raw.workRemaining;
+  }
+  if (raw.speed !== undefined) {
+    if (!finite(raw.speed) || raw.speed <= 0 || raw.speed > 8) return null;
+    trip.speed = raw.speed;
+  }
+  if (raw.target !== undefined) {
+    if (!point(raw.target) || !containsTile(city.map, raw.target)) return null;
+    trip.target = { x: raw.target.x, y: raw.target.y };
+  }
+  if (raw.resume !== undefined) { if (!PHASES.includes(raw.resume)) return null; trip.resume = raw.resume; }
+  if (raw.emergencyPass !== undefined) {
+    const p = raw.emergencyPass;
+    if (!p || !trip.service || trip.phase !== 'outbound' || !integer(p.start) || !integer(p.end)
+      || p.end < p.start + 2 || p.end >= trip.path.length || !finite(p.shift) || p.shift > 1
+      || !['out', 'passing', 'in'].includes(p.stage) || trip.progress < p.start || trip.progress > p.end
+      || (p.stage === 'passing' && p.shift !== 1) || (p.stage === 'in' && trip.progress !== p.end)) return null;
+    trip.emergencyPass = { start:p.start, end:p.end, stage:p.stage, shift:p.shift };
+  }
+  if (raw.external !== undefined) {
+    if (!raw.external || typeof raw.external !== 'object' || !point(raw.external.origin)) return null;
+    trip.external = { origin: { ...raw.external.origin } };
+    if (!validExternalTrip(city, trip)) return null;
+  }
+  return trip;
+}
+function parsePaidAmount(raw: unknown, cap: number): number | undefined | null {
+  if (raw === undefined) return undefined;
+  if (!integer(raw) || raw > cap) return null;
+  return raw;
+}
+/** Validate and reconstruct rather than trusting imported objects or retaining references. */
+export function parseCity(raw: unknown): City | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  const map = parseMap(r.map);
+  if (!map) return null;
+  const area = map.width * map.height;
+  if ((r.version !== 1 && r.version !== 2) || !Array.isArray(r.roads) || !Array.isArray(r.buildings) || !Array.isArray(r.trips)
+    || r.roads.length > area || r.buildings.length > area / 4 || r.trips.length > area / 2
+    || !finite(r.funds) || !finite(r.elapsed) || !integer(r.completed) || !integer(r.nextId) || r.nextId < 1
+    || !finite(r.incomeClock) || r.incomeClock >= INCOME_INTERVAL || !finite(r.spawnClock) || r.spawnClock >= SPAWN_INTERVAL) return null;
+  // Legacy saves predate queues, controls, visits and incidents; missing fields migrate to defaults.
+  const tickClock = r.tickClock === undefined ? 0 : r.tickClock;
+  if (!finite(tickClock) || tickClock >= TRAFFIC_TICK) return null;
+  const history = parseHistory(r.history, r.elapsed);
+  if (!history) return null;
+  const city = createCity();
+  city.map = map;
+  city.funds = Number.MAX_SAFE_INTEGER;
+  const ids = new Set<number>();
+  const savedPaid: (number | undefined)[] = [];
+  for (const value of r.buildings) {
+    if (!value || typeof value !== 'object') return null;
+    const b = value as Building;
+    // Object.hasOwn, not `in`: a save must not name a prototype member as a building kind.
+    if (!integer(b.id) || b.id < 1 || ids.has(b.id) || b.id >= r.nextId
+      || typeof b.kind !== 'string' || !Object.hasOwn(SIZES, b.kind)
+      || !Number.isSafeInteger(b.x) || !Number.isSafeInteger(b.y)
+      || !integer(b.rotation) || b.rotation > 3) return null;
+    const paid = parsePaidAmount(b.paid, COSTS[b.kind]);
+    if (paid === null) return null;
+    const count = city.buildings.length;
+    place(city, b.kind, b.x, b.y, b.rotation);
+    if (city.buildings.length !== count + 1) return null;
+    city.buildings[count].id = b.id; ids.add(b.id);
+    if(b.patrolReadyAt!==undefined){
+      if(b.kind!=='policeStation'||!finite(b.patrolReadyAt))return null;city.buildings[count].patrolReadyAt=b.patrolReadyAt;
+    }
+    savedPaid.push(paid);
+  }
+  for (const value of r.roads) {
+    if (!value || typeof value !== 'object') return null;
+    const p = value as Point;
+    const count = city.roads.length;
+    place(city, 'road', p.x, p.y);
+    if (city.roads.length !== count + 1) return null;
+  }
+  for (let i = 0; i < city.buildings.length; i++) {
+    const paid = savedPaid[i];
+    if (paid === undefined) delete city.buildings[i].paid;
+    else city.buildings[i].paid = paid;
+  }
+  const restoredRoads = parseRoadPaid(r.roadPaid, city.roads, area);
+  if (restoredRoads === null) return null;
+  if (restoredRoads === undefined) delete city.roadPaid;
+  else city.roadPaid = Object.keys(restoredRoads).length ? restoredRoads : undefined;
+  const roads = new Set(city.roads.map(key));
+  const closures = parsePoints(r.closures, roads, area);
+  if (!closures) return null;
+  city.closures = closures;
+  const external = parseExternalConnection(r.external, city.map);
+  if (!external) return null;
+  city.external = external;
+  city.elapsed = r.elapsed; // Restore observation timestamps before validating trips.
+  for (const value of r.trips) {
+    if (!value || typeof value !== 'object') return null;
+    const t = value as Trip;
+    if (!Array.isArray(t.path) || t.path.length < 1 || t.path.length > area * 2) return null;
+    const trip = parseTrip(city, t, r.nextId);
+    if (!trip || ids.has(trip.id) || trip.wait > r.elapsed + 1e-6
+      || (!trip.service && !trip.external && city.trips.some(other => !other.service && !other.external && other.homeId === trip.homeId))
+      || !validTrip(city, trip)) return null;
+    city.trips.push(trip); ids.add(trip.id);
+  }
+  if (city.external.completed + city.trips.filter(t=>t.external).length > city.external.arrivals
+    || city.trips.filter(t=>t.external).length > 16) return null;
+  if (r.trips.some(t => t.wait === undefined || t.hold === undefined)) migrateLegacyTraffic(city);
+  const controls = parseControls(r.controls, roadIndex(city), area);
+  if (!controls) return null;
+  city.elapsed = r.elapsed; // Validate time-based household benefits against the restored clock.
+  const households = parseHouseholds(r.households, city);
+  if (!households || !capacityRespected(city)) return null;
+  city.households = households;
+  city.controls = controls;
+  city.history = history;
+  city.funds = r.funds; city.elapsed = r.elapsed; city.completed = r.completed;
+  city.nextId = r.nextId; city.incomeClock = r.incomeClock; city.spawnClock = r.spawnClock; city.tickClock = tickClock;
+  // Incidents own their own validation and reconstruct their counters onto this detached city.
+  if (!parseIncidentState(r, city) || !validEmergencyPasses(city)) return null;
+  const economy = parseEconomyProgress(r.economy, city.elapsed);
+  if (!economy) return null;
+  city.economy = economy;
+  city.missions = parseMissionProgress(r.missions, city.nextId, city.elapsed);
+  city.tutorial = parseTutorialProgress(r.tutorial, city);
+  city.expansion = parseExpansionProgress(r.expansion);
+  return city;
+}
+
+
+FILE src/game/cityFlow.ts
+/** FLOW-01 measurement foundation. Read-only, with no rewards, timers or demand changes. */
+import {entrance, findPath, goalOf, type City, type TripPurpose} from './cityModel.ts';
+import {bodyTile, METRICS_WINDOW} from './cityTraffic.ts';
+import {visitorSlots} from './cityVisits.ts';
+import {CITY_RULES} from './cityRules.ts';
+
+/** Prototype parameters, not selected mission balance or professional LOS thresholds. */
+export const FLOW_PROTOTYPE = {returnsPerHome: 2, maximumStoppedSeconds: 20, maximumJourneySeconds: 60} as const;
+
+/**
+ * The caller retains the original household count throughout a comparison. Growth raises the
+ * requirement; demolition cannot lower it. Replacement homes can qualify through new journeys.
+ * Counts refer to the last 60 simulated seconds. No wall-clock timer or failure receipt exists.
+ */
+export function flowSnapshot(city: City, targetHomes: number, purpose: TripPurpose = 'shopping',
+  rules: {returnsPerHome:number;maximumStoppedSeconds:number;maximumJourneySeconds:number} = FLOW_PROTOTYPE) {
+  if (!Number.isSafeInteger(targetHomes) || targetHomes < 1) throw new Error('Flow needs a fixed positive household target');
+  const now = Math.round(city.elapsed * 1e6) / 1e6, since = now - METRICS_WINDOW;
+  const kind = purpose === 'shopping' ? 'store' : 'park';
+  const destinations = city.buildings.filter(b => b.kind === kind).map(b => ({...b, ...visitorSlots(city, b)}));
+  const records = city.history.filter(h => h.at > since && h.at <= now && h.service?.purpose === purpose);
+  const homes = city.buildings.filter(b => b.kind === 'home').map(home => {
+    const household = city.households.find(h => h.homeId === home.id);
+    const trip = city.trips.find(t => t.homeId === home.id && !t.service && !t.external);
+    const returns = records.filter(h => h.service!.homeId === home.id);
+    const liveVisit = trip?.purpose === purpose && trip.rewarded && trip.visitedAt !== undefined
+      && trip.visitedAt > since ? 1 : 0;
+    const visits = returns.filter(h => h.service!.visitedAt > since).length + liveVisit;
+    const reachable = destinations.filter(d => findPath(city, entrance(home), entrance(d))
+      && findPath(city, entrance(d), entrance(home)));
+    const goal = trip?.phase === 'visiting' ? entrance(home) : trip ? goalOf(city, trip) : null;
+    const committedAccess = !!trip && !!goal && !findPath(city, trip.path[bodyTile(trip)], goal);
+    const access = reachable.length === 0 || committedAccess;
+    const pending = household?.[purpose] ?? 0;
+    // A completed parked stay awaiting its return merge must remain visible too.
+    const parkedWait = trip?.phase === 'visiting' && trip.rewarded && trip.visitedAt !== undefined
+      ? Math.max(0, now - trip.visitedAt) : 0;
+    const stoppedSeconds = Math.max(trip?.hold ?? 0, parkedWait);
+    const traffic = !!trip && !committedAccess && stoppedSeconds >= CITY_RULES.diagnostics.stoppedSeconds;
+    const capacity = !trip && pending > 0 && reachable.length > 0
+      && reachable.every(d => d.occupied + d.inbound >= d.capacity);
+    const journeySeconds = trip?.startedAt !== undefined ? Math.max(0, now - trip.startedAt) : null;
+    const qualified = returns.length >= rules.returnsPerHome && !access && !capacity
+      && stoppedSeconds <= rules.maximumStoppedSeconds
+      && (journeySeconds === null || journeySeconds <= rules.maximumJourneySeconds);
+    return {homeId: home.id, visits, returns: returns.length, pending, access, capacity, traffic,
+      stoppedSeconds, journeySeconds, qualified,
+      carOut: !!trip, purpose: trip?.purpose ?? null,
+      returning: trip?.phase === 'returning' || (trip?.phase === 'waiting' && trip.resume === 'returning'),
+      parkedAwaitingReturn: trip?.phase === 'visiting' && !!trip.rewarded,
+      unknownJourneyAge: !!trip && trip.startedAt === undefined};
+  });
+  const requiredHomes = Math.max(targetHomes, homes.length);
+  const attributed = records.filter(h => homes.some(home => home.homeId === h.service!.homeId));
+  const durations = attributed.filter(h => h.service!.startedAt !== undefined)
+    .map(h => h.at - h.service!.startedAt!);
+  const qualifiedHomes = homes.filter(h => h.qualified).length;
+  const ready = qualifiedHomes >= requiredHomes;
+  return {observedAt: now, windowSeconds: METRICS_WINDOW, targetHomes, requiredHomes, qualifiedHomes, ready,
+    state: ready ? 'serving' as const : homes.some(h => h.access || h.capacity || h.traffic)
+      ? 'restricted' as const : 'measuring' as const,
+    visits: homes.reduce((sum, h) => sum + h.visits, 0), returns: attributed.length,
+    pendingNeeds: homes.reduce((sum, h) => sum + h.pending, 0),
+    homesWithoutReturn: homes.filter(h => h.returns === 0).length,
+    missingHomes: Math.max(0, targetHomes - homes.length),
+    waitingVehicles: homes.filter(h => h.stoppedSeconds >= CITY_RULES.diagnostics.stoppedSeconds).length,
+    longestStop: Math.max(0, ...homes.map(h => h.stoppedSeconds)),
+    averageCompletedJourneySeconds: durations.length ? durations.reduce((a,b) => a+b, 0) / durations.length : null,
+    accessLimitedHomes: homes.filter(h => h.access).length,
+    capacityLimitedHomes: homes.filter(h => h.capacity).length,
+    trafficLimitedHomes: homes.filter(h => h.traffic).length,
+    spareDestinationSlots: destinations.reduce((sum,d) => sum + d.capacity - d.occupied - d.inbound, 0),
+    homes};
+}
+export type FlowSnapshot = ReturnType<typeof flowSnapshot>;
+
+/** Saved observation state lives inside existing mission progress, not a new mission system. */
+export type FlowProgress = {
+  targetHomes: number; checkedAt: number; readySince?: number;
+  label: string; candidate: string; candidateSince: number;
+};
+export const FLOW_MISSION_ID = 'neighborhood-flow';
+const FLOW_MINIMUM_HOMES = 6;
+// Civic service accepts one real shopping return per household. The stricter two-return
+// FLOW-01 comparison stays available; mixed leisure trips must not invalidate useful service.
+export const FLOW_OBJECTIVE_RULES = {returnsPerHome:1, maximumStoppedSeconds:20, maximumJourneySeconds:60};
+const FLOW_SETTLE_SECONDS = 4;
+const LABEL_SETTLE_SECONDS = 4;
+const LABELS = ['Measuring', 'Smooth', 'Busy', 'Crawling', 'Jammed', 'Routes missing', 'Destinations full'];
+
+export function parseFlowProgress(raw: unknown, elapsed: number): FlowProgress | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const p = raw as FlowProgress;
+  const time = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= elapsed + 1e-6;
+  if (!Number.isSafeInteger(p.targetHomes) || p.targetHomes < FLOW_MINIMUM_HOMES || p.targetHomes > 1024
+    || !time(p.checkedAt) || !time(p.candidateSince) || p.candidateSince > p.checkedAt
+    || !LABELS.includes(p.label) || !LABELS.includes(p.candidate)
+    || (p.readySince !== undefined && (!time(p.readySince) || p.readySince > p.checkedAt))) return undefined;
+  return {targetHomes:p.targetHomes, checkedAt:p.checkedAt, label:p.label, candidate:p.candidate,
+    candidateSince:p.candidateSince, ...(p.readySince !== undefined ? {readySince:p.readySince} : {})};
+}
+function labelFor(snapshot: FlowSnapshot): string {
+  if (snapshot.accessLimitedHomes) return 'Routes missing';
+  if (snapshot.capacityLimitedHomes) return 'Destinations full';
+  if (snapshot.longestStop > 20 || snapshot.homes.some(h => (h.journeySeconds ?? 0) > 60)) return 'Jammed';
+  if (snapshot.longestStop >= 10) return 'Crawling';
+  if (!snapshot.returns) return 'Measuring';
+  return snapshot.ready ? 'Smooth' : 'Busy';
+}
+/** Simulation-time sampling freezes on pause, keeps receipts forever and never alters demand. */
+export function refreshFlowProgress(city: City): void {
+  const missions = city.missions;
+  if (!missions || !['complete','skipped'].includes(city.tutorial?.status ?? '')
+    || !missions.completed.includes('word-on-the-street')) return;
+  const now = Math.round(city.elapsed * 1e6) / 1e6;
+  const homes = city.buildings.filter(b => b.kind === 'home').length;
+  const p = missions.flow ??= {targetHomes: Math.max(FLOW_MINIMUM_HOMES, homes), checkedAt:0,
+    label:'Measuring', candidate:'Measuring', candidateSince:0};
+  if (!missions.completed.includes(FLOW_MISSION_ID)) p.targetHomes = Math.max(p.targetHomes, homes);
+  if (now < p.checkedAt + 1 - 1e-6) return;
+  p.checkedAt = now;
+  const snapshot = flowSnapshot(city, p.targetHomes, 'shopping', FLOW_OBJECTIVE_RULES), candidate = labelFor(snapshot);
+  if (p.candidate !== candidate) { p.candidate = candidate; p.candidateSince = now; }
+  if (now - p.candidateSince >= LABEL_SETTLE_SECONDS) p.label = candidate;
+  if (!missions.completed.includes(FLOW_MISSION_ID)) {
+    if (!snapshot.ready) delete p.readySince;
+    else {
+      p.readySince ??= now;
+      if (now - p.readySince >= FLOW_SETTLE_SECONDS) missions.completed.push(FLOW_MISSION_ID);
+    }
+  }
+}
+
+/** Current approach counts: intentionally no invented throughput on an empty road. */
+export function roadFlowSnapshot(city: City, point: {x:number;y:number}) {
+  if (!city.roads.some(p => p.x === point.x && p.y === point.y)) return null;
+  const roads = new Set(city.roads.map(p=>`${p.x},${p.y}`)), nearby = new Set([`${point.x},${point.y}`]);
+  let frontier = [point];
+  for(let distance=0;distance<2;distance++){
+    const next: {x:number;y:number}[] = [];
+    for(const p of frontier)for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+      const q={x:p.x+dx,y:p.y+dy},key=`${q.x},${q.y}`;
+      if(roads.has(key)&&!nearby.has(key)){nearby.add(key);next.push(q);}
+    }
+    frontier=next;
+  }
+  const trips = city.trips.filter(t => !t.service && !['visiting','working'].includes(t.phase ?? '')
+    && nearby.has(`${t.path[bodyTile(t)].x},${t.path[bodyTile(t)].y}`));
+  const waiting = trips.filter(t => t.phase==='crashed' || t.hold >= CITY_RULES.diagnostics.stoppedSeconds).length;
+  const longestStop = Math.max(0, ...trips.map(t => t.hold));
+  return {...point, vehicles:trips.length, waiting, longestStop,
+    label: city.closures.some(p=>p.x===point.x&&p.y===point.y) ? 'Diverted' : trips.some(t=>t.phase==='crashed') ? 'Jammed' : !trips.length ? 'Quiet' : longestStop > 20 ? 'Jammed' : longestStop >= 10 ? 'Crawling' : waiting ? 'Busy' : 'Moving'};
+}
+export function flowReport(city: City, selectedRoad: {x:number;y:number} | null = null) {
+  const snapshot = flowSnapshot(city, city.missions?.flow?.targetHomes ?? Math.max(FLOW_MINIMUM_HOMES, city.buildings.filter(b=>b.kind==='home').length), 'shopping', FLOW_OBJECTIVE_RULES);
+  const reason = snapshot.missingHomes ? `${snapshot.missingHomes} more homes needed for this neighborhood.`
+    : snapshot.accessLimitedHomes ? `${snapshot.accessLimitedHomes} homes need a shopping or return route.`
+    : snapshot.capacityLimitedHomes ? `${snapshot.capacityLimitedHomes} homes await space reserved by visitors or arriving cars.`
+    : snapshot.waitingVehicles ? `${snapshot.waitingVehicles} cars waiting on roads or at shop exits.`
+    : snapshot.homesWithoutReturn ? `${snapshot.homesWithoutReturn} homes still need a recent shopping return.`
+    : snapshot.ready ? 'Every household is shopping and getting home. Keep this service going.'
+    : 'Keep shopping trips going to measure service.';
+  return {label:city.missions?.flow?.label ?? labelFor(snapshot), reason,
+    visits:snapshot.visits, returns:snapshot.returns, pendingNeeds:snapshot.pendingNeeds,
+    waitingVehicles:snapshot.waitingVehicles, accessLimitedHomes:snapshot.accessLimitedHomes,
+    capacityLimitedHomes:snapshot.capacityLimitedHomes, homesWithoutReturn:snapshot.homesWithoutReturn,
+    qualifiedHomes:snapshot.qualifiedHomes, targetHomes:snapshot.requiredHomes,
+    earned:city.missions?.completed.includes(FLOW_MISSION_ID) ?? false,
+    selectedRoad:selectedRoad ? roadFlowSnapshot(city, selectedRoad) : null};
+}
+export type FlowReport = ReturnType<typeof flowReport>;
+
+
+FILE src/state/store.ts
+import type {FlowReport} from '../game/cityFlow.ts';
+import type {VehicleDebug} from '../game/cityTraffic.ts';
+import type {DiagnosticView,CityDiagnostics} from '../game/cityDiagnostics.ts';
+import { useSyncExternalStore } from 'react';
+import { STARTING_FUNDS } from '../game/cityEconomy.ts';
+import { initialMap, type MapBounds } from '../game/cityMap.ts';
+import type { Tool } from '../game/cityModel.ts';
+import type { MissionSnapshot } from '../game/cityMissions.ts';
+import type { TutorialSnapshot } from '../game/cityTutorial.ts';
+export type DisplayMode = 'auto' | 'wide' | 'portrait';
+export interface AppState {
+    flow: FlowReport | null;
+    vehicleDebugOpen: boolean;
+    selectedVehicleId: number | null;
+    vehicleDebug: VehicleDebug[];
+    diagnosticView: DiagnosticView;
+    diagnostics: CityDiagnostics | null;
+    displayMode: DisplayMode;
+    tutorial: TutorialSnapshot | null;
+    tutorialNotice: boolean;
+    missions: MissionSnapshot | null;
+    phase: 'loading' | 'menu' | 'playing' | 'challenges' | 'challenge';
+    loadProgress: number;
+    paused: boolean;
+    showTips: boolean;
+    panning: boolean;
+    map: MapBounds;
+    tool: Tool | null;
+    toolSelection: number;
+    rotation: number;
+    /** Saved simulation time, sampled by the scene HUD report. */
+    elapsedSeconds: number;
+    funds: number;
+    income: number;
+    connected: number;
+    roadIssues: {homeId:number;x:number;y:number;reason:string}[];
+    homes: number;
+    completed: number;
+    activeTrips: number;
+    tripSeconds: number | null;
+    longestStop: number;
+    waiting: number;
+    averageWait: number;
+    throughput: number;
+    demand: {shopping:number;leisure:number;visits:number};
+    incidentInfo: {active:number;warning:string;details:{id:number;label:string;needs:string;deadlineSeconds:number|null}[]};
+    rescued: number;
+    fatalities: number;
+    inspected: {id:number;name:string;occupied:number;capacity:number;inbound:number;label:string}|null;
+    message: string;
+}
+let showTips = true;
+try { showTips = localStorage.getItem('working-on-it:show-tips') !== 'false'; } catch { /* default if storage unavailable */ }
+let displayMode: DisplayMode = 'auto';
+try { const saved=localStorage.getItem('working-on-it:display-mode'); if(saved==='auto'||saved==='wide'||saved==='portrait')displayMode=saved; } catch { /* default if storage unavailable */ }
+const listeners = new Set<() => void>();
+let state: AppState = {
+    flow: null,
+    vehicleDebugOpen: false, selectedVehicleId: null, vehicleDebug: [],
+    diagnosticView: 'normal', diagnostics: null,
+    displayMode,
+    tutorial: null, tutorialNotice: false,
+    missions: null,
+    phase: 'loading', loadProgress: 0, paused: false, showTips, panning: false, map: initialMap(), tool: null, toolSelection: 0, rotation: 0,
+    elapsedSeconds: 0, funds: STARTING_FUNDS, income: 20, connected: 0, roadIssues: [], homes: 0, completed: 0, activeTrips: 0, tripSeconds: null,
+    longestStop: 0, waiting: 0, averageWait: 0, throughput: 0,
+    demand:{shopping:0,leisure:0,visits:0}, incidentInfo:{active:0,warning:'',details:[]}, rescued:0,fatalities:0,inspected:null,
+    message: 'Place homes and stores. Link the entrance arrows with roads.',
+};
+export const store = {
+    get: (): AppState => state,
+    patch(partial: Partial<AppState>): void {
+        state = { ...state, ...partial };
+        for (const l of listeners) l();
+    },
+    subscribe(l: () => void): () => void { listeners.add(l); return () => listeners.delete(l); },
+};
+export function useStore<T = AppState>(selector: (s: AppState) => T = (s) => s as unknown as T): T {
+    return useSyncExternalStore(store.subscribe, () => selector(state));
+}
+
+
+FILE src/game/cityRouting.ts
+/** Estimated route costs. Movement remains the authority for admission. */
+import {blockedTiles, type City, type Point, type Trip} from './cityModel.ts';
+import {bodyTile, roadIndex, governingControl, TRAVEL_TILES_PER_SECOND, EMERGENCY_TILES_PER_SECOND, STOP_DWELL, type RoadIndex} from './cityTraffic.ts';
+import {CITY_RULES} from './cityRules.ts';
+const key = (p: Point) => `${p.x},${p.y}`;
+const edge = (a: Point, b: Point) => `${key(a)}>${key(b)}`;
+const neighbours = (p: Point) => [{x:p.x+1,y:p.y},{x:p.x,y:p.y+1},{x:p.x-1,y:p.y},{x:p.x,y:p.y-1}];
+export type RoutingSnapshot = {
+  at: number; revision: string; roads: ReadonlySet<string>; blocked: ReadonlySet<string>;
+  areas: ReadonlyMap<string,string>; controls: ReadonlyMap<string,number>;
+  queues: ReadonlyMap<string,ReadonlyArray<{id:number; seconds:number}>>;
+};
+/** Snapshot samples sustained current holds, not a forecast or completed-trip history.
+ * Directional observations avoid penalizing an independent opposing lane. */
+export function routingSnapshot(city: City, index: RoadIndex = roadIndex(city), response = false): RoutingSnapshot {
+  const queues = new Map<string,Array<{id:number;seconds:number}>>();
+  for (const t of city.trips) {
+    if ((!response && t.service) || t.sceneParked || !['outbound','returning','waiting'].includes(t.phase ?? '')
+      || t.hold < CITY_RULES.routing.minimumHoldSeconds) continue;
+    const k = bodyTile(t), a=t.path[k], b=t.path[k+1];
+    if(a && !b && t.phase==='waiting') {
+      for(const from of neighbours(a)) {
+        const e=edge(from,a), observations=queues.get(e)??[];
+        observations.push({id:t.id,seconds:Math.min(CITY_RULES.routing.queueCapSeconds,t.hold)});
+        queues.set(e,observations);
+      }
+    }
+    if (!a || !b) continue;
+    const e=edge(a,b), observations=queues.get(e) ?? [];
+    observations.push({id:t.id,seconds:Math.min(CITY_RULES.routing.queueCapSeconds,t.hold)});
+    queues.set(e,observations);
+  }
+  const controls=new Map<string,number>();
+  for (const p of city.roads) {
+    const c=governingControl(city,index,p), area=index.areas.get(key(p));
+    if(!response&&c&&area) controls.set(area,c.kind==='stop'?STOP_DWELL:CITY_RULES.routing.signalEstimateSeconds);
+  }
+  const blocked=blockedTiles(city,response);
+  return {at:city.elapsed, revision:(response?'response|':'ordinary|')+[...index.roads].sort().join(';')+'|'+[...blocked].sort().join(';')+'|'+JSON.stringify(city.controls),
+    roads:new Set(index.roads),blocked,areas:new Map(index.areas),controls,queues};
+}
+export type RouteCost = {travel:number; queue:number; control:number; total:number};
+function edgeCost(s:RoutingSnapshot,a:Point,b:Point,speed:number,excludeId?:number):RouteCost {
+  const area=s.areas.get(key(b));
+  const control=area!==undefined&&s.areas.get(key(a))!==area ? s.controls.get(area)??0 : 0;
+  const measured=Math.max(0,...(s.queues.get(edge(a,b))??[]).filter(o=>o.id!==excludeId).map(o=>o.seconds));
+  // A measured hold already includes control waiting. Charge only the excess.
+  const queue=Math.max(0,measured-control), travel=1/speed;
+  return {travel,queue,control,total:travel+queue+control};
+}
+export function routeCost(s:RoutingSnapshot,path:Point[],speed=TRAVEL_TILES_PER_SECOND,excludeId?:number):RouteCost {
+  const sum:RouteCost={travel:0,queue:0,control:0,total:0};
+  for(let i=1;i<path.length;i++) {
+    if(!s.roads.has(key(path[i]))||s.blocked.has(key(path[i]))) return {...sum,total:Infinity};
+    const c=edgeCost(s,path[i-1],path[i],speed,excludeId);
+    sum.travel+=c.travel;sum.queue+=c.queue;sum.control+=c.control;sum.total+=c.total;
+  }
+  return sum;
+}
+/** Stable binary-heap Dijkstra; equal costs retain cardinal discovery order. */
+export function weightedRoute(s:RoutingSnapshot,start:Point,goal:Point,speed=TRAVEL_TILES_PER_SECOND,excludeId?:number):{path:Point[];cost:RouteCost}|null {
+  if(!s.roads.has(key(start))||!s.roads.has(key(goal))||s.blocked.has(key(goal))||!Number.isFinite(speed)||speed<=0)return null;
+  type Entry={p:Point;cost:number;order:number};
+  const heap:Entry[]=[],dist=new Map([[key(start),0]]),previous=new Map<string,Point>();let order=0;
+  const less=(a:Entry,b:Entry)=>a.cost<b.cost || a.cost===b.cost&&a.order<b.order;
+  function push(e:Entry){heap.push(e);let i=heap.length-1;while(i>0){const p=(i-1)>>1;if(!less(heap[i],heap[p]))break;[heap[i],heap[p]]=[heap[p],heap[i]];i=p;}}
+  function pop():Entry{const first=heap[0],last=heap.pop()!;if(heap.length){heap[0]=last;let i=0;for(;;){let c=i*2+1;if(c>=heap.length)break;if(c+1<heap.length&&less(heap[c+1],heap[c]))c++;if(!less(heap[c],heap[i]))break;[heap[i],heap[c]]=[heap[c],heap[i]];i=c;}}return first;}
+  push({p:start,cost:0,order:order++});
+  while(heap.length){
+    const current=pop(),p=current.p;
+    if(current.cost!==dist.get(key(p)))continue;
+    if(key(p)===key(goal)){
+      const path=[{...p}];let cursor=p;
+      while(previous.has(key(cursor))){cursor=previous.get(key(cursor))!;path.push({...cursor});}
+      path.reverse();return {path,cost:routeCost(s,path,speed,excludeId)};
+    }
+    for(const n of neighbours(p)){
+      if(!s.roads.has(key(n))||s.blocked.has(key(n)))continue;
+      const cost=current.cost+edgeCost(s,p,n,speed,excludeId).total;
+      if(cost>=(dist.get(key(n))??Infinity)-1e-9)continue;
+      dist.set(key(n),cost);previous.set(key(n),p);push({p:n,cost,order:order++});
+    }
+  }
+  return null;
+}
+/** Meaningful savings, compared on the very same snapshot and remaining segment. */
+export function worthwhileRoute(oldCost:number,newCost:number):boolean {
+  return oldCost-newCost>=Math.max(CITY_RULES.routing.minimumSavingSeconds,oldCost*CITY_RULES.routing.minimumSavingFraction);
+}
+export function civilianRoute(city:City,start:Point,goal:Point,trip?:Trip):Point[]|null {
+  return weightedRoute(routingSnapshot(city),start,goal,trip?.service?TRAVEL_TILES_PER_SECOND:trip?.speed,trip?.id)?.path??null;
+}
+
+/** Same graph, with active-response diversion/control exceptions. Occupancy is
+ * observed as delay, never permission to enter a lane or pass a queue. */
+export function responseRoute(s:RoutingSnapshot,start:Point,scene:Point,excludeId?:number,avoid?:Set<string>) {
+  const view=avoid ? {...s,blocked:new Set([...s.blocked,...avoid])} : s;
+  let best:ReturnType<typeof weightedRoute>=null;
+  for(const goal of neighbours(scene).sort((a,b)=>a.y-b.y||a.x-b.x)) {
+    const candidate=weightedRoute(view,start,goal,EMERGENCY_TILES_PER_SECOND,excludeId);
+    if(candidate && (!best || candidate.cost.total<best.cost.total-1e-9))best=candidate;
+  }
+  return best;
+}
+

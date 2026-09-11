@@ -1,3 +1,4 @@
+import {allowsRoadStep, directionSignature, type RoadDirections} from './cityDirections.ts';
 /** Estimated route costs. Movement remains the authority for admission. */
 import {blockedTiles, type City, type Point, type Trip} from './cityModel.ts';
 import {bodyTile, roadIndex, governingControl, TRAVEL_TILES_PER_SECOND, EMERGENCY_TILES_PER_SECOND, STOP_DWELL, type RoadIndex} from './cityTraffic.ts';
@@ -6,6 +7,7 @@ const key = (p: Point) => `${p.x},${p.y}`;
 const edge = (a: Point, b: Point) => `${key(a)}>${key(b)}`;
 const neighbours = (p: Point) => [{x:p.x+1,y:p.y},{x:p.x,y:p.y+1},{x:p.x-1,y:p.y},{x:p.x,y:p.y-1}];
 export type RoutingSnapshot = {
+  roadDirections?: RoadDirections;
   at: number; revision: string; roads: ReadonlySet<string>; blocked: ReadonlySet<string>;
   areas: ReadonlyMap<string,string>; controls: ReadonlyMap<string,number>;
   queues: ReadonlyMap<string,ReadonlyArray<{id:number; seconds:number}>>;
@@ -36,7 +38,8 @@ export function routingSnapshot(city: City, index: RoadIndex = roadIndex(city), 
     if(!response&&c&&area) controls.set(area,c.kind==='stop'?STOP_DWELL:CITY_RULES.routing.signalEstimateSeconds);
   }
   const blocked=blockedTiles(city,response);
-  return {at:city.elapsed, revision:(response?'response|':'ordinary|')+[...index.roads].sort().join(';')+'|'+[...blocked].sort().join(';')+'|'+JSON.stringify(city.controls),
+  return {at:city.elapsed, revision:(response?'response|':'ordinary|')+[...index.roads].sort().join(';')+'|'+[...blocked].sort().join(';')+'|'+JSON.stringify(city.controls)+'|'+directionSignature(city),
+    ...(city.roadDirections?{roadDirections:{...city.roadDirections}}:{}),
     roads:new Set(index.roads),blocked,areas:new Map(index.areas),controls,queues};
 }
 export type RouteCost = {travel:number; queue:number; control:number; total:number};
@@ -51,7 +54,7 @@ function edgeCost(s:RoutingSnapshot,a:Point,b:Point,speed:number,excludeId?:numb
 export function routeCost(s:RoutingSnapshot,path:Point[],speed=TRAVEL_TILES_PER_SECOND,excludeId?:number):RouteCost {
   const sum:RouteCost={travel:0,queue:0,control:0,total:0};
   for(let i=1;i<path.length;i++) {
-    if(!s.roads.has(key(path[i]))||s.blocked.has(key(path[i]))) return {...sum,total:Infinity};
+    if(!allowsRoadStep(s,path[i-1],path[i],s.roads)||s.blocked.has(key(path[i]))) return {...sum,total:Infinity};
     const c=edgeCost(s,path[i-1],path[i],speed,excludeId);
     sum.travel+=c.travel;sum.queue+=c.queue;sum.control+=c.control;sum.total+=c.total;
   }
@@ -75,7 +78,7 @@ export function weightedRoute(s:RoutingSnapshot,start:Point,goal:Point,speed=TRA
       path.reverse();return {path,cost:routeCost(s,path,speed,excludeId)};
     }
     for(const n of neighbours(p)){
-      if(!s.roads.has(key(n))||s.blocked.has(key(n)))continue;
+      if(!s.roads.has(key(n))||!allowsRoadStep(s,p,n)||s.blocked.has(key(n)))continue;
       const cost=current.cost+edgeCost(s,p,n,speed,excludeId).total;
       if(cost>=(dist.get(key(n))??Infinity)-1e-9)continue;
       dist.set(key(n),cost);previous.set(key(n),p);push({p:n,cost,order:order++});

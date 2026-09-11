@@ -1,35 +1,67 @@
-.title-screen{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#10443e;color:#fff1cf}
-.title-composition{position:relative;width:min(100%,calc(100dvh * 941 / 1671));aspect-ratio:941/1671;max-height:100%;container-type:inline-size}
-/* Preserve the supplied composition above its baked-in menu. Real controls replace that menu. */
-.title-art{position:absolute;inset:0 0 24.5%;overflow:hidden}
-.title-art img{display:block;width:100%;height:auto}
-.title-fallback{padding:8% 6%;background:radial-gradient(ellipse at bottom,#367566,#10443e);height:100%}
-.title-fallback strong{font-size:clamp(40px,15cqw,90px);font-weight:900;line-height:1}.title-fallback p{font-size:clamp(17.6px,4cqw,26px);margin-top:20px}
-.title-navigation{position:absolute;inset:75.5% 0 0;background:linear-gradient(#10443e,#104943);padding:0 6.6%;display:flex;flex-direction:column;justify-content:space-around;gap:4px}
+@font-face{font-family:"Kalam Note";src:url("/fonts/kalam/Kalam-Regular.ttf") format("truetype");font-style:normal;font-weight:400;font-display:swap}
 .commute-button{display:flex;align-items:center;justify-content:center;gap:5%;width:100%;min-height:44px;padding:9px 12px;border:1px solid #ffe4a0;border-bottom:4px solid #ce954e;border-radius:14px;background:linear-gradient(110deg,#ffde75,#ffd15b);color:#064947;font-size:clamp(17.6px,5.4cqw,32px);font-weight:900;line-height:1.2;cursor:pointer}
 .commute-button span{font-size:1.4em;line-height:1}
-.title-links{display:flex;align-items:center;justify-content:space-around}.title-links button{min-height:44px;font-size:clamp(17.6px,4.6cqw,26px);font-weight:700;padding:3px 9px}.title-links>span{height:28px;width:1px;background:#64958a}
-.title-navigation>p{text-align:center;color:#a2c7b9;font-size:1.1rem;line-height:1.25;margin:0 0 4px}
 .title-dialog{margin:auto;max-width:min(420px,calc(100% - 28px));max-height:85dvh;overflow-y:auto;touch-action:pan-y;border:1px solid #83afa0;border-radius:16px;padding:24px;background:#164d43;color:#fff1cf;font-size:1.1rem;line-height:1.5}
 .title-dialog::backdrop{background:#071e1bd9}.title-dialog h2{font-size:1.6rem;font-weight:800;margin-bottom:14px}.title-dialog p{margin:14px 0}.title-dialog label{display:flex;align-items:center;gap:12px;min-height:44px}.title-dialog input{width:22px;height:22px;accent-color:#ffd46b}.title-dialog .commute-button{font-size:1.1rem}.title-dialog-close{width:100%;min-height:44px;margin-top:12px;border:1px solid #83afa0;border-radius:8px;padding:8px}
 .hide-gameplay-tips .city-controls>p{visibility:hidden}
 
-/* Pointer hover is optional; press and keyboard feedback work on every device. */
-.title-screen button{transition:transform 140ms ease,background-color 140ms ease,color 140ms ease,box-shadow 140ms ease,filter 140ms ease}
-.title-screen .commute-button span{transition:transform 140ms ease}
-.title-links button{border-radius:8px}
-@media(hover:hover) and (pointer:fine){
-    .title-screen .commute-button:hover{transform:translateY(-2px);filter:brightness(1.08);box-shadow:0 5px 16px #051f2440}
-    .title-screen .commute-button:hover span{transform:translateX(4px)}
-    .title-links button:hover,.title-dialog-close:hover{background-color:#ffffff14;color:#ffe08a;transform:translateY(-2px)}
-}
-.title-screen button:focus-visible{outline:3px solid #ffe6a2;outline-offset:4px;box-shadow:0 0 0 6px #123f39}
-.title-screen button:active{transform:translateY(1px) scale(.98);filter:brightness(.95)}
-.title-screen .commute-button:active{box-shadow:none}
-.title-screen .commute-button:active span{transform:translateX(2px)}
-.title-links button:active,.title-dialog-close:active{background-color:#ffffff20;color:#ffe08a}
-@media(prefers-reduced-motion:reduce){
-    .title-screen button,.title-screen .commute-button span{transition:none!important;transform:none!important}
-}
 
-.title-navigation .tutorial-skip{min-height:44px;font-size:17.6px;padding:8px 16px;text-decoration:underline;color:#fff1d2}
+/* Real lettering and controls, composed independently of the poster artwork. */
+.title-screen{position:absolute;inset:0;overflow:auto;touch-action:pan-y;background:#103d39;color:#fff1cf;isolation:isolate}
+.title-composition{position:relative;display:grid;grid-template-columns:minmax(370px,.95fr) minmax(0,1.1fr);grid-template-rows:1fr auto 1fr;min-height:100%;max-width:1600px;margin:auto;padding:clamp(32px,5vw,80px);column-gap:6%;overflow:hidden;background:radial-gradient(ellipse at 20% 30%,#25645780,transparent 65%)}
+.title-brand{grid-column:1;grid-row:1;align-self:end;z-index:2;padding-bottom:32px}
+.title-kicker{display:flex;align-items:center;gap:9px;color:#bdd2bc;font-size:12px;font-weight:800;letter-spacing:.18em;margin-bottom:26px}
+.title-kicker>span{width:9px;height:9px;border-radius:50%;background:#ffd163;box-shadow:0 0 15px #ffd16350}
+.title-brand h1{font-size:clamp(56px,6.4vw,100px);font-weight:950;line-height:.92;letter-spacing:-.055em;transform:rotate(-3deg);transform-origin:left bottom;text-shadow:0 5px 0 #082d2c,0 8px 0 #082d2c55;margin:0 0 22px}
+.title-brand h1>span{display:block;color:#ffcf5b;font-size:1.22em}.title-bang{display:inline-block;transform:rotate(9deg);margin-left:5px}
+.title-brand>p{font-size:clamp(17px,1.5vw,23px);line-height:1.5;color:#e7e6cc}
+.title-art{position:absolute;right:0;top:0;bottom:0;width:54%;overflow:hidden;background:radial-gradient(ellipse at 60% 40%,#59836a,#133f3a)}
+/* The useful scene is between 23% and 75% of the supplied poster. Never expose its painted UI. */
+.title-art img{position:absolute;height:192%;width:100%;object-fit:cover;object-position:50% 50%;top:-44%;max-width:none}
+.title-art::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#103d39,transparent 24%),linear-gradient(0deg,#103d39 0%,transparent 22%,transparent 88%,#103d3970)}
+.title-scene-caption{position:absolute;z-index:1;bottom:12%;right:9%;padding:15px 21px;color:#254b41;transform:rotate(-4deg);max-width:80%;background:radial-gradient(ellipse at 0 80%,#95733850,transparent 43%),radial-gradient(ellipse at 96% 6%,#9b783943,transparent 45%),radial-gradient(ellipse at 70% 100%,#a48a4930,transparent 32%),linear-gradient(174deg,#e8d8ae,#fff0cc 45%,#e0cfa5);border:1px solid #b9a270;box-shadow:inset 0 0 9px #98733d60;clip-path:polygon(0 5px,4% 2px,17% 3px,18% 0,39% 2px,61% 0,83% 2px,96% 0,100% 5px,calc(100% - 2px) 24%,100% 28%,calc(100% - 1px) 60%,calc(100% - 4px) 64%,100% 69%,calc(100% - 2px) 94%,96% 100%,78% calc(100% - 2px),76% 100%,51% calc(100% - 1px),28% 100%,25% calc(100% - 3px),4% calc(100% - 1px),0 93%,2px 70%,0 65%,2px 32%,0 28%)}
+/* Wear belongs to the whole paper; the quote keeps its printed contrast. */
+.title-scene-caption::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(173deg,transparent 36%,#99805118 37%,#fff9e84d 38%,transparent 40%),linear-gradient(89deg,transparent 79%,#92764715 80%,#fff8db50 81%,transparent 82%),radial-gradient(ellipse at 4% 13%,#79643f60 0 1px,transparent 2px),radial-gradient(ellipse at 93% 85%,#79643f50 0 1px,transparent 2px),radial-gradient(ellipse at 78% 8%,#79643f45 0 .6px,transparent 1.6px),radial-gradient(ellipse at 9% 92%,#79643f45 0 .8px,transparent 1.8px)}
+.title-scene-caption>.title-manager-label{position:relative;display:table;padding:6px 9px 5px;margin:0 0 8px -2px;font-size:12px;line-height:1.25;letter-spacing:.12em;font-weight:900;color:#496052;transform:rotate(1.4deg)}
+.title-scene-caption>p{position:relative}
+.title-manager-worn{color:transparent;background:linear-gradient(103deg,#52624d99 3%,#52624dcc 23%,#52624d88 36%,#52624dbb 53%,#52624d80 67%,#52624dbb 91%);background-clip:text;mask-image:url('/images/title/label-wear.svg');mask-size:100% 100%}
+.title-manager-worn:first-child{color:#78836b;background:none;mask:none;text-shadow:.3px .2px #f0e1bb}
+.title-manager-worn:last-child{background-image:linear-gradient(169deg,#52624d80 0%,#52624d20 29%,#52624d55 44%,#52624d14 59%,#52624d70 85%,#52624d30);mask-position:right bottom;mask-size:140% 115%}.title-scene-caption p{font-family:"Kalam Note",cursive;font-size:clamp(22px,2vw,29px);font-weight:400;line-height:1.2;margin:4px 0 0;transform:rotate(-1deg)}
+.title-navigation{grid-column:1;grid-row:2;z-index:2;display:flex;flex-direction:column;gap:16px;max-width:490px}
+.title-route-label{font-size:11px;letter-spacing:.2em;font-weight:800;color:#bdd2bc;margin:0 0 -4px}
+.title-road-button{position:relative;display:flex;align-items:center;gap:16px;min-height:92px;width:100%;text-align:left;border:2px solid #fff0ae;border-bottom:6px solid #b88735;border-radius:8px;padding:16px 20px;background:linear-gradient(120deg,#ffe08b,#f7bd42);color:#193e38;box-shadow:0 6px 0 #072f2c,0 10px 22px #082e2a55;transition:transform 140ms ease,filter 140ms ease,box-shadow 140ms ease}
+.title-road-button::before,.title-road-button::after{content:"";position:absolute;width:4px;height:4px;border-radius:50%;background:#946f37;box-shadow:0 1px #fff3bd;left:6px;top:6px}.title-road-button::after{left:auto;top:auto;right:6px;bottom:6px}
+.title-button-copy{flex:1;min-width:0}.title-button-copy strong{display:block;font-size:clamp(21px,2vw,29px);font-weight:900;letter-spacing:-.03em;line-height:1.15}.title-button-copy small{display:block;font-size:14px;line-height:1.4;margin-top:5px;font-weight:600}
+.title-route-icon{display:grid;place-items:center;width:42px;height:46px;flex-shrink:0;border:2px solid #355346;border-radius:6px}.title-route-icon svg{width:28px;height:30px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.title-arrow{font-size:32px;line-height:1}.title-challenges{background:linear-gradient(120deg,#ffe7a5,#e6c575);border-color:#ffedb0;border-bottom-color:#9f8042}
+.title-utilities{display:flex;gap:12px;margin-top:4px}.title-utilities .title-road-button{flex:1;min-width:0;min-height:62px;gap:9px;justify-content:center;padding:10px 12px;font-size:18px;font-weight:850;background:linear-gradient(120deg,#ffe7a5,#e6c575);border-color:#ffedb0;border-bottom-color:#9f8042}.title-utility-icon{display:grid;place-items:center;width:29px;height:29px;flex-shrink:0;border:2px solid #355346;border-radius:5px;font-size:21px;line-height:1}
+.title-footer{grid-column:1/-1;grid-row:3;z-index:2;align-self:end;display:flex;align-items:center;gap:14px;color:#bad0bd;font-size:12px;letter-spacing:.03em;padding-top:30px}.title-stripes{width:60px;height:9px;background:repeating-linear-gradient(120deg,#e5ba58 0 7px,transparent 7px 13px)}
+.title-screen button:focus-visible{outline:3px solid #fff4ca;outline-offset:4px}.title-screen button:active{transform:translateY(3px)}
+.title-screen .tutorial-skip{width:100%;min-height:44px;padding:10px;border:1px solid #83afa0;border-radius:8px;margin-top:14px}
+@media(hover:hover) and (pointer:fine){.title-road-button:hover{transform:translateY(-3px);filter:brightness(1.07);box-shadow:0 9px 0 #072f2c,0 14px 25px #082e2a55}.title-dialog-close:hover,.title-screen .tutorial-skip:hover{background:#306456}}
+@media(max-width:760px){
+ .title-composition{display:flex;flex-direction:column;padding:25px 24px 18px;min-height:100%;gap:0}
+ .title-brand{align-self:stretch;padding:0;z-index:2;flex-shrink:0}.title-kicker{font-size:9px;letter-spacing:.14em;margin-bottom:18px}.title-brand h1{font-size:clamp(42px,12.7vw,76px);margin-bottom:14px}.title-brand h1>span{display:inline;font-size:1em;margin-left:.2em}.title-brand>p{font-size:15px}
+ .title-art{position:relative;top:auto;right:auto;bottom:auto;width:calc(100% + 48px);margin:0 -24px;height:clamp(190px,32dvh,360px);flex:1 0 190px;min-height:190px}
+ .title-art img{height:auto;width:100%;top:-47vw;object-fit:initial}.title-art::after{background:linear-gradient(0deg,#103d39,transparent 22%,transparent 75%,#103d39)}
+ .title-scene-caption{right:7%;top:16%;bottom:auto;padding:10px 13px;max-width:58%}.title-scene-caption>.title-manager-label{font-size:10px;padding:5px 7px 4px;margin-bottom:6px}.title-scene-caption p{font-size:20px}
+ .title-navigation{width:100%;max-width:520px;align-self:center;gap:12px;margin-top:-3px}.title-route-label{font-size:10px;margin-bottom:0}
+ .title-road-button{min-height:78px;padding:12px 15px;gap:12px}.title-button-copy strong{font-size:22px}.title-button-copy small{font-size:12px}.title-route-icon{width:35px;height:39px}.title-arrow{font-size:26px}
+ .title-utilities{margin-top:3px;justify-content:center}.title-utilities .title-road-button{font-size:16px}
+ .title-footer{justify-content:center;padding-top:20px;font-size:10px}.title-stripes{width:33px;height:7px}
+}
+@media(max-width:360px){.title-composition{padding-left:16px;padding-right:16px}.title-art{width:calc(100% + 32px);margin-left:-16px;margin-right:-16px}.title-button-copy strong{font-size:20px}.title-road-button{gap:9px;padding:12px}.title-brand>p{font-size:14px}}
+@media(prefers-reduced-motion:reduce){.title-screen button{transition:none!important}}
+/* The primary route leads; challenge signage stays in the same gold family. */
+.title-composition{grid-template-rows:auto auto minmax(50px,1fr)}
+.title-brand{align-self:start}
+.title-challenges{min-height:78px;padding-top:11px;padding-bottom:11px;margin-left:14px;width:calc(100% - 14px)}
+.title-challenges .title-button-copy strong{font-size:24px}
+@media(max-width:760px){
+ .title-composition{justify-content:space-between}
+ .title-brand h1{font-size:clamp(46px,13.5vw,78px);line-height:.94}
+ .title-brand h1>span{display:block;font-size:1.12em;margin-left:0}
+ .title-art{height:clamp(270px,36dvh,310px);flex:0 0 auto}
+ .title-challenges{min-height:70px;margin-left:10px;width:calc(100% - 10px)}
+ .title-challenges .title-button-copy strong{font-size:21px}
+}

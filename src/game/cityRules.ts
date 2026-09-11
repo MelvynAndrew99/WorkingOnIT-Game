@@ -6,6 +6,11 @@
  * Other simulation prices/timing are not yet centralized in this first slice.
  */
 export const CITY_RULES = {
+  intersectionSafety: {
+    encounterWindowSeconds: 12, coolingDelaySeconds: 1, coolingPerSecond: 0.35,
+    warningExposure: 2.4, warningSeconds: 3, crashExposure: 6, unsignedEncounterExposure: 1.5,
+    controlledEncounterExposure: 1, signalTurnEncounterExposure: 1.5, controlledConflictVehicles: 8,
+  },
   missions: {
     firstShoppers: 1,
     neighbourhoodShoppers: 3,

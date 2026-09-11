@@ -11,10 +11,10 @@ import { useEffect, useRef } from 'react';
 import type { Application } from 'pixi.js';
 import { createPixiApp } from './pixiApp.ts';
 import { createStage, type Stage } from './stage.ts';
-import { createCityScene, type Scene } from './cityScene.ts';
+import { createCityScene, type Scene, type CitySceneSession } from './cityScene.ts';
 import { store, useStore } from '../state/store.ts';
 
-export default function GameCanvas() {
+export default function GameCanvas({session}: {session?:CitySceneSession}) {
     const hostRef = useRef<HTMLDivElement | null>(null);
     const appRef = useRef<Application | null>(null);
     const paused = useStore((s) => s.paused);
@@ -42,7 +42,7 @@ export default function GameCanvas() {
             // pixels, so layout is proportional on every device (stage.ts).
             stage = createStage(app);
             // ADAPT: replace the demo scene with the real game scene.
-            scene = createCityScene(app, stage);
+            scene = createCityScene(app, stage, session);
             // Respect a pause that landed while the canvas was initializing.
             if (store.get().paused) app.ticker.stop();
         })();
@@ -56,7 +56,7 @@ export default function GameCanvas() {
                 appRef.current = null;
             }
         };
-    }, []);
+    }, [session]);
 
     // Host lifecycle pause/resume → freeze/unfreeze the whole ticker.
     useEffect(() => {

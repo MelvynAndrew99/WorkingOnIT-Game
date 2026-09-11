@@ -1,7 +1,36 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createCity, place, stepCity, parseCity, expandCity, TRAFFIC_TICK, type City } from './cityModel.ts';
-import { connectExternalCity, externalDemand, boundaryGatewayCandidates, finishTutorialAndConnect } from './cityExternal.ts';
+import { connectExternalCity, externalDemand, boundaryGatewayCandidates, finishTutorialAndConnect, relocateInteriorGateway, externalNeedsRoad } from './cityExternal.ts';
+import {bodyTile} from './cityTraffic.ts';
+import {readFileSync} from 'node:fs';
+
+test('interior connector relocation preserves captured town and physical visitors through reload',()=>{
+ const c=parseCity(JSON.parse(readFileSync(new URL('../../docs/emergency-recovery/bottom-right-jam/original-save.json',import.meta.url),'utf8')).city)!;
+ assert.ok(c);const before=structuredClone(c);
+ const positions=c.trips.map(t=>({id:t.id,point:t.path[bodyTile(t)],offset:Math.round((t.progress-bodyTile(t))*1e6)}));
+ assert.ok(relocateInteriorGateway(c));assert.deepEqual(c.external!.gateway,{x:39,y:10});assert.ok(externalNeedsRoad(c));
+ assert.deepEqual(c.trips.map(t=>({id:t.id,point:t.path[bodyTile(t)],offset:Math.round((t.progress-bodyTile(t))*1e6)})),positions);
+ for(const key of ['roads','buildings','map','expansion','missions','incidents','funds','completed','roadPaid'] as const)assert.deepEqual(c[key],before[key]);
+ const saved=reload(c);assert.deepEqual(saved.external,c.external);assert.equal(relocateInteriorGateway(saved),false);
+ assert.match(expandCity(saved,'east'),/outside city connects/);
+ for(let x=34;x<=39;x++)assert.match(place(saved,'road',x,10),/Road built/);
+ assert.equal(externalNeedsRoad(saved),false);assert.ok(reload(saved));
+});
+
+test('relocated visitors wait for a player-built exit and physically return after reconnecting',()=>{
+ let c=town();connectExternalCity(c,{x:0,y:6});
+ until(c,()=>c.trips.some(t=>t.external&&t.phase==='returning'));
+ const id=c.trips.find(t=>t.external&&t.phase==='returning')!.id;
+ c.map={...c.map,x:-8,width:c.map.width+8};
+ assert.ok(relocateInteriorGateway(c));assert.deepEqual(c.external!.gateway,{x:0,y:0});
+ const completed=c.external!.completed,arrivals=c.external!.arrivals;
+ c=reload(c);run(c,10);assert.ok(c.trips.some(t=>t.id===id));assert.equal(c.external!.completed,completed);assert.equal(c.external!.arrivals,arrivals);
+ for(let y=0;y<6;y++)place(c,'road',0,y);
+ assert.equal(externalNeedsRoad(c),false);c=reload(c);
+ until(c,()=>!c.trips.some(t=>t.id===id));assert.ok(c.external!.completed>completed);
+ assert.equal(c.external!.needsRoadConnection,undefined);assert.ok(reload(c));
+});
 import { visitorSlots } from './cityVisits.ts';
 import { recordConflict, RISK_THRESHOLD } from './cityIncidents.ts';
 
@@ -125,11 +154,13 @@ test('outside mid-visit saves preserve payment and continuation exactly',()=>{
   const paid=reload(c);run(c,20);run(paid,20);assert.deepEqual(paid,c);
 });
 
-test('gateway expansion preserves origin and closing access never teleports a visitor home',()=>{
+test('connected edge rejects expansion and closing access never teleports a visitor home',()=>{
   const c=town();connectExternalCity(c,{x:0,y:6});
   until(c,()=>c.trips.some(t=>t.phase==='visiting'));
   const trip=c.trips.find(t=>t.phase==='visiting')!,id=trip.id;
-  expandCity(c,'west');assert.deepEqual(c.external!.gateway,{x:0,y:6});
+  const before=structuredClone(c);
+  assert.match(expandCity(c,'west'),/outside city connects on the west edge/);
+  assert.deepEqual(c,before,'rejection preserves active visitors and allowances');
   place(c,'closure',0,6);
   run(c,40);
   const held=c.trips.find(t=>t.id===id);assert.ok(held,'blocked return retains visitor');
@@ -219,10 +250,13 @@ test('outside visitors participate in the same collision and police-clearance li
   local.path=Array.from({length:11},(_,i)=>({x:5,y:i+2}));local.progress=2.5;
   local.storeId=c.buildings.find(b=>b.kind==='store'&&b.x===4)!.id;
   local.target={x:5,y:12};local.phase='outbound';local.purpose='shopping';local.rewarded=false;
-  for(let i=0;i<RISK_THRESHOLD/TRAFFIC_TICK;i++){
-    c.elapsed=Math.round((c.elapsed+TRAFFIC_TICK)*1e6)/1e6;
-    recordConflict(c,{x:5,y:5},outside.id,local.id,TRAFFIC_TICK);
-  }
+  // Response-only fixture: a fresh real contact finishes existing exposure. Repeated stationary
+  // claims from the same two drivers no longer fabricate an increasingly busy intersection.
+  c.elapsed+=3;
+  c.risks=[{x:5,y:5,exposure:RISK_THRESHOLD-1.5,lastConflictAt:c.elapsed,warnedAt:c.elapsed-3,firstId:outside.id,secondId:local.id}];
+  outside.hold=0;local.hold=0;
+  c.elapsed=Math.round((c.elapsed+TRAFFIC_TICK)*1e6)/1e6;
+  recordConflict(c,{x:5,y:5},outside.id,local.id,TRAFFIC_TICK);
   assert.equal(outside.phase,'crashed');assert.equal(local.phase,'crashed');
   assert.equal(c.accidentCount,1);assert.deepEqual(reload(c),c);
   const completed=c.external!.completed;

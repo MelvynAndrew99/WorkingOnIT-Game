@@ -1,3 +1,4 @@
+import { cityCommand } from '../game/cityControls.ts';
 import { useEffect } from 'react';
 import { LABELS, toolPrices, type PricedTool, type Tool } from '../game/cityModel.ts';
 import { starterToolAllowed } from '../game/cityStarterTutorial.ts';
@@ -12,6 +13,7 @@ type Entry = { tool: Tool; label: string; name?: string; note: string; key?: str
 const GROUPS: { id: Category; label: string; entries: Entry[] }[] = [
     { id: 'roads', label: 'Roads', entries: [
         { tool: 'road', label: 'Road', key: '3', note: 'Drag to draw. Link every entrance arrow.' },
+        { tool: 'direction', label: 'One-way', key: '8', note: 'Tap neighboring road squares in order, then apply. Tap the first square again to close a ring.' },
         { tool: 'stop', label: 'Stops', name: 'All-way stop', key: '5', note: 'Tap a junction. Cars halt, then take turns.' },
         { tool: 'signal', label: 'Lights', name: 'Traffic lights', key: '6', note: 'Tap a junction to cycle balanced, N/S, E/W.' },
         { tool: 'closure', label: 'Divert', name: 'Road closure', key: '7', note: 'Tap a road to close or reopen it. Cars detour.' },
@@ -31,6 +33,7 @@ const GROUPS: { id: Category; label: string; entries: Entry[] }[] = [
 /** Small code-native symbols stay legible independently of building artwork. */
 function ToolIcon({tool,locked}:{tool:Tool;locked:boolean}) {
     const paths:Partial<Record<Tool,React.ReactNode>> = {
+        direction:<><path d="M3 12h18m-7-7 7 7-7 7" /></>,
         road:<><path d="M5 2v20M19 2v20M12 2v4m0 4v4m0 4v4" /></>,
         home:<><path d="m3 11 9-8 9 8M5 10v11h14V10M10 21v-7h4v7" /></>,
         store:<><path d="M3 9h18l-2-6H5L3 9Zm2 0v12h14V9M9 21v-7h6v7M3 9v3h18V9" /></>,
@@ -101,6 +104,16 @@ export default function BuildPalette() {
                 const rotation = (s.rotation + 1) % 4;
                 store.patch({ rotation, message: `Entrance faces ${FACING[rotation]}. The footprint and entrance rotate; artwork stays upright.` });
             }}><strong><span aria-hidden="true">↻ </span>Rotate <kbd>R</kbd></strong><em>Entrance: {FACING[s.rotation]}</em></button>}
+        {s.tool==='direction' && <div className="direction-editor" role="group" aria-label="Road direction editor">
+            <p>{s.directionSelection < 2 ? 'Tap neighboring road squares in travel order.' : `${s.directionSelection-1} connections selected. Arrows show travel order.`} Tap the first square again to close a ring.</p>
+            <div className="direction-actions">
+                <button disabled={s.directionSelection<2} onClick={()=>cityCommand({type:'road-direction',mode:'forward'})}>Apply one-way</button>
+                <button disabled={s.directionSelection<2} onClick={()=>cityCommand({type:'road-direction',mode:'reverse'})}>Reverse</button>
+                <button disabled={s.directionSelection<2} onClick={()=>cityCommand({type:'road-direction',mode:'two-way'})}>Two-way</button>
+                <button disabled={!s.directionSelection} onClick={()=>cityCommand({type:'road-direction',mode:'undo'})}>Undo tile</button>
+                <button onClick={()=>cityCommand({type:'road-direction',mode:'cancel'})}>Cancel</button>
+            </div>
+        </div>}
         <div className="build-groups">
             {GROUPS.map(g => <section key={g.id} className="build-group" data-active={category === g.id}>
                 <h3 className="build-group-label">{g.label}</h3>
@@ -109,7 +122,7 @@ export default function BuildPalette() {
                     {g.entries.map(e => {
                         const cost = priceOf(prices, e.tool);
                         const locked = !starterToolAllowed(city, e.tool);
-                        const unlock = e.tool === 'road' ? 'Unlocks at the bypass lesson' : e.tool === 'closure' ? 'Unlocks at the diversion lesson' : ['hospital','fireStation','policeStation'].includes(e.tool) ? 'Unlocks at the rescue lesson' : ['stop','signal'].includes(e.tool) ? 'Unlocks at the prevention lesson' : 'Unlocks as the tutorial progresses';
+                        const unlock = (e.tool === 'road'||e.tool === 'direction') ? 'Unlocks at the bypass lesson' : e.tool === 'closure' ? 'Unlocks at the diversion lesson' : ['hospital','fireStation','policeStation'].includes(e.tool) ? 'Unlocks at the rescue lesson' : ['stop','signal'].includes(e.tool) ? 'Unlocks at the prevention lesson' : 'Unlocks as the tutorial progresses';
                         return <button key={e.tool} type="button" className="build-tool" data-tool={e.tool} data-locked={locked} disabled={locked}
                             data-tutorial-target={guide.tool===e.tool&&!guide.categoryTarget}
                             aria-describedby={guide.tool===e.tool&&!guide.categoryTarget?'tutorial-locator-instruction':undefined}

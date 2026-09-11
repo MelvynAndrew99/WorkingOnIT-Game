@@ -14,9 +14,11 @@ import { claimMissionReward, missionSnapshot, type MissionItem } from '../game/c
 import { flushSave, getSave } from '../state/save.ts';
 import { store, useStore, type AppState } from '../state/store.ts';
 import { TOOL_NAMES, tutorialObjective } from './TutorialCoach.tsx';
+import FlowFeedback, { FLOW_MISSION_ID, FlowSummaryLine, readFlow } from './FlowFeedback.tsx';
 import './objectiveBar.css';
 import ManagerPopup from './ManagerPopup.tsx';
 import { starterManagerReady } from '../game/cityStarterTutorial.ts';
+import { externalNeedsRoad } from '../game/cityExternal.ts';
 
 export interface Objective {
     key: string;
@@ -25,8 +27,9 @@ export interface Objective {
     progress?: { current: number; target: number; label: string };
     reward?: string;
     instruction: string;
-    /** A short highlighted line under the instruction, e.g. the mayor's cost waiver. */
-    note?: string;
+    /** A short highlighted line under the instruction, e.g. the mayor's cost waiver.
+     *  The flow job passes an element so its reading stays one line in the same slot. */
+    note?: ReactNode;
     urgent?: boolean;
     primary?: { label: string; run: () => void; pressed?: boolean };
     secondary?: { label: string; run: () => void };
@@ -66,7 +69,14 @@ export default function ObjectiveBar({ wide, notice }: { wide: boolean; notice: 
             setManagerOpen(true);
         }
     }, [s, managerOpen]);
-    const objective = pickObjective(s, { notice });
+    const reconnect = s.phase==='playing' && externalNeedsRoad(getSave().city);
+    const showConnection = () => {planRoad();cityCommand({type:'focus',point:getSave().city.external!.gateway!});};
+    const currentObjective = pickObjective(s, { notice });
+    const objective:Objective|null = reconnect && !currentObjective?.urgent ? {
+        key:'reconnect-city',eyebrow:'Outside city connection',title:'Reconnect your town',
+        instruction:'Build a road to the CITY marker at the edge.',
+        primary:{label:'Show city connection',run:showConnection},
+    } : currentObjective;
     useEffect(() => { setOpen(false); }, [objective?.key]);
     if (!objective) return null;
     const showDetail = !!objective.detail && open;
@@ -87,6 +97,7 @@ export default function ObjectiveBar({ wide, notice }: { wide: boolean; notice: 
             <div className="objective-buttons">
                 {objective.primary && !(objective.key.startsWith('lesson-') && objective.primary.pressed !== undefined) && <button type="button" className="objective-primary"
                     aria-pressed={objective.primary.pressed} onClick={objective.primary.run}>{objective.primary.label}</button>}
+                {reconnect && objective.urgent && <button title="Build roads to the CITY marker at the edge" onClick={showConnection}>Show city connection</button>}
                 {objective.detail && <button type="button" className="objective-more"
                     aria-expanded={open} aria-controls="objective-detail"
                     onClick={() => setOpen(!open)}>{open ? 'Less' : 'Details'}</button>}
@@ -187,20 +198,31 @@ function jobObjective(s: AppState): Objective | null {
 
         </>,
     };
+    // The flow job is judged on how the neighborhood is served, so it reads the traffic
+    // instead of prescribing the next building. Every other job keeps its tool action,
+    // its note slot empty and therefore its current height.
+    const flow = job.id === FLOW_MISSION_ID ? readFlow(s) : null;
     return {
         key: `job-${job.id}`,
         eyebrow: `Job ${index + 1} of ${jobs.items.length}`,
         progress: {current:job.current,target:job.target,label:`${job.title} progress`},
-        reward: job.landReward ? `Reward: ${job.landReward} land expansion` : job.reward ? `Reward $${job.reward}` : 'Pattern learned',
+        reward: job.id === FLOW_MISSION_ID ? 'Recognition' : job.landReward ? `Reward: ${job.landReward} land expansion` : job.reward ? `Reward $${job.reward}` : 'Pattern learned',
         title: job.title,
         instruction: job.task,
-        primary: {
+        note: flow ? <FlowSummaryLine flow={flow} /> : undefined,
+        primary: flow ? {
+            label: 'Inspect traffic',
+            run: () => store.patch({ diagnosticView: 'traffic', tool: 'road', panning: false, toolSelection: s.toolSelection + 1 }),
+            pressed: s.diagnosticView === 'traffic' && s.tool === 'road' && !s.panning,
+        } : {
             label: TOOL_NAMES[job.tool],
             run: () => store.patch({ tool: job.tool, panning: false, toolSelection: s.toolSelection + 1 }),
             pressed: s.tool === job.tool && !s.panning,
         },
         detail: <>
-            <button onClick={()=>store.patch({diagnosticView:job.diagnosticView})}>Show {job.diagnosticView==='capacity'?'visitor':job.diagnosticView} view</button>
+            {flow
+                ? <FlowFeedback flow={flow} place="objective" />
+                : <button onClick={()=>store.patch({diagnosticView:job.diagnosticView})}>Show {job.diagnosticView==='capacity'?'visitor':job.diagnosticView} view</button>}
             <p>“{job.manager}”</p>
             <p className="objective-hint"><strong>Crew:</strong> {job.crew}</p>
             <p>{job.landReward ? 'Earn one expansion permit and a land level when this mission is complete.' : job.reward ? `Reward $${job.reward}, paid once you collect it.` : 'A learned pattern to carry into your next neighborhood.'}</p>

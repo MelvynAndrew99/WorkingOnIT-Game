@@ -1,0 +1,103 @@
+## Read of the profile first
+
+The three buckets are **inclusive and overlapping**, so they don't sum to 90% of anything. From the excerpts the nesting is almost certainly `flowSnapshot → findPath` and `stepIncidents → roadIndex`. That means the actionable number isn't the percentage, it's the **call count per tick** — and both hot functions are being called a multiple of the number of times they need to be. I'd re-profile for self time plus a per-tick call histogram for `roadIndex` and `findPath` before and after; percentages on three synthetic fixtures will move around, call counts won't. Also confirm the fixtures bracket real road/building counts, since both hot paths scale with those and a small fixture will understate the win.
+
+## Ranked optimizations
+
+### 1. Thread the existing index into `stepIncidents` (highest value, lowest effort)
+
+`cityModel.ts:452` builds the index once and passes it to `trafficTick`, `stepVisits`, `stepExternal` — and then calls `stepIncidents(city, TRAFFIC_TICK)` **without it**. Downstream, `areaOf` (`cityIncidents.ts:70`) calls `roadIndex(city)` on *every invocation*, and `inIncidentArea` calls `sameIntersection` (2 `areaOf` calls) per active incident, and `expireRisks` (`:350`) calls `inIncidentArea` per surviving risk. Full rebuild cost is O(roads) with several array allocations per road tile, so the per-tick cost is roughly `risks × incidents × 2 × O(roads)`, plus the one legitimate build at `:350`.
+
+This is where the 25% lives. Passing `index` down through `stepIncidents → expireRisks → inIncidentArea → sameIntersection → areaOf` reduces it to one build per tick that you're already paying for. Do this first; it's mechanical and it's the only change here that is close to free.
+
+### 2. De-quadratic `flowSnapshot`, and split it into topology vs. counting
+
+`cityFlow.ts:15` is doing two separate expensive things per call:
+
+- **Per-home linear scans:** `households.find`, `trips.find`, `records.filter` inside a `.map` over homes → O(H × (households + trips + records)). Prebuild `Map<homeId, …>` once per call. Preserve `.find` semantics exactly by inserting **first-wins** (skip if key present), not last-wins — if duplicate `homeId`s can exist, last-wins silently changes which trip is read.
+- **Reachability:** `2 × homes × destinations` `findPath` calls for `reachable`, at 40Hz. This is the bulk of the 37%. Reachability only changes when roads, buildings, or blockages change, so memoize it behind a topology revision and recompute only the counting half each tick.
+
+The one genuinely per-tick search is `committedAccess`, because `trip.path[bodyTile(trip)]` moves. Key a small cache on `(tripId, bodyTileKey, goalKey, topologyRevision)` — a vehicle only crosses a tile boundary occasionally, so this fires far less than once per trip per tick.
+
+Also: `city.history.filter(h => h.at > since …)` rescans the whole history each call. If history is append-ordered by `at`, binary-search the window start. **Verify sortedness first** — merged return records or external trips may append out of order, in which case skip this one.
+
+### 3. Allocation-free `roadIndex` internals
+
+`cityTraffic.ts:67` allocates an intermediate array in `city.roads.map(tileKey)`, then per road tile allocates a `nearby()` array *and* a `filter()` result just to compare `.length` against `JUNCTION_DEGREE`. Replace with a counting loop that early-exits at `JUNCTION_DEGREE`, and build the roads `Set` with a plain loop. Pure win, no semantic surface.
+
+Packing tile keys as integers instead of strings is a further win but couples `tileKey` (traffic) to `key` (incidents) and to the `areas` map's key type across modules. Medium value, medium blast radius — defer until 1–3 are measured.
+
+### 4. Replace pairwise `findPath` reachability with connected components
+
+The largest available win on the 37% bucket: label road-graph components once per index build, then `reachable` becomes a component-ID comparison, collapsing `2 × H × D` searches into one O(roads) pass.
+
+**This is the highest-risk item on the list** and I'd gate it behind a differential test rather than reasoning. It is only equivalent if `findPath` returns null *exactly* when no path exists — not when a cost/length budget is exceeded, and not with blockage rules (incident tiles, closures, controls) that a plain undirected labeling wouldn't reproduce. Any directional road semantics also break the symmetry. Note the current code calls `findPath` in both directions, which suggests the author did not treat reachability as symmetric; find out whether that's real asymmetry or defensive coding before you delete half the calls. Validate by running both implementations in parallel over the fixtures and asserting equality every tick for a full run.
+
+### 5. `renderActivity` style churn (60Hz, render-only)
+
+`cityScene.ts:380` rewrites `t.text`, `t.style.fill`, `t.style.fontSize`, and allocates a **new stroke object** every frame for every label. In Pixi v8 each style write invalidates the text and forces re-measure/re-render — this is texture regeneration at 60Hz for labels whose content usually didn't change. Two fixes:
+
+- Guard every assignment with an equality check.
+- The size/stroke divisions exist only to cancel `stage.scale() * camera.zoom`. Cache `lastZoom` and restyle only when zoom actually changes. (I'd avoid the alternative of styling once and scaling the `Text` object — scaling a 12px texture up will visibly soften the glyphs, and the 17.6 target is the 1.1rem readability floor from the copy rules, so don't trade crispness there.)
+
+Also `city.roads.some(p => same(p, inspectedRoad))` is a linear scan per frame; use the index's roads `Set`.
+
+This doesn't touch the sim at all, which makes it the safest item to land alongside #1.
+
+### 6. `stepCity` catch-up policy — flag, don't silently fix
+
+`while (dt > 1e-9)` will grind through thousands of slices if a large `dt` ever arrives (resume after sleep, tab throttle). Clamping is the obvious guard but it changes `city.elapsed` progression, which is persisted. Raise it as a decision for the owner rather than shipping it inside a perf pass.
+
+## Semantic risks, ranked
+
+**R1 — The "roads never change inside one simulation call" invariant is unverified, and incidents currently depend on it *not* holding.** `retryAutomaticConnection` runs before the index build (fine), but `refreshTutorial(city)` runs *inside* the tick loop, and the tutorial module owns practice placement and free assistance. If it can place a road, then `trafficTick`/`stepVisits`/`stepExternal` are already running on a stale index today — a latent bug — while `areaOf`'s fresh rebuild has been masking it for incidents. Optimization #1 makes incidents match the others, which is either a correct unification or a behavior change, depending entirely on this answer. **Resolve R1 before landing #1 or #2.** A dev-only assertion comparing `city.roads.length` (and a cheap checksum) at loop entry and exit is a cheap permanent guard.
+
+**R2 — Cache placement vs. saves.** Any memo stored as a field on `City` risks being serialized, or breaking a structured clone in `save.ts`, and `Map`/`Set` won't survive JSON. Keep caches in a module-level `WeakMap` keyed by the city object. Invalidation must not key on `city.roads` array identity or length alone — one removal plus one addition in the same frame keeps both. Use an explicit revision counter bumped at every roads/buildings mutation site, and treat "unknown" as invalid so freshly-loaded legacy saves recompute.
+
+**R3 — `findPath` → components is not provably equivalent.** Covered in #4. The failure mode is quiet: `reachable`/`access` flips, an objective silently completes or stops completing, and nothing throws.
+
+**R4 — Throttling anything that writes elapsed-stamped state is save-visible.** `history.at`, `warnedAt`, `lastConflictAt`, `exposure` are persisted and compared against `city.elapsed` with epsilon boundaries. Memoize only pure derived values. If you do throttle `refreshFlowProgress`, drive it off a tick counter, never wall clock, or you break the frame-rate-independence the slice loop was explicitly built to guarantee — and a new counter field needs a default in `parse()`.
+
+**R5 — Float ordering in `expireRisks`.** The area-merge uses `Math.max`/`Math.min`, which is order-independent — safe to reorder. But `round6`, the `1e-9` guards, and `exposure - dt*coolingPerSecond` are boundary-sensitive; if you replace any `filter`/`find` with Map iteration, preserve the original traversal order so accumulation sequences don't shift. The `encounters` merge already sorts by `at` and slices the tail, so its dedup is stable, but note the `Map` keyed on `firstId:secondId` means a later duplicate overwrites an earlier one — preserve that direction if you touch it.
+
+**R6 — The `index.areas.get(key(risk))!` non-null assertion at `:350`.** The preceding `filter` guarantees `junctions.has(key(risk))`, so this holds only while `junctions` and `areas` are constructed consistently inside `roadIndex`. Since this runs on the legacy-save path (the comment says legacy saves stored risk per tile), a mismatch throws during load rather than degrading. Given you're about to restructure `roadIndex`, convert it to a defensive skip.
+
+## Suggested sequence
+
+Land **#1 + #3 + #5** together (low risk, no cross-module semantics), re-profile with call counts. Then **#2** with the memo behind a revision counter. Then evaluate **#4** on evidence, gated by a differential test. Resolve **R1** before any of it.
+in of every road key
+**Evidence.** `revision` sorts all road keys, joins them, joins all blocked keys, and `JSON.stringify`s the controls, on every snapshot construction. I see no consumer of `.revision` in any supplied file.
+**Fix.** Make it a lazy getter, or delete it if nothing outside these files reads it.
+**Complexity.** O(R log R) plus a large string allocation per snapshot, removed entirely.
+**Semantic risk.** Very low. Confirm no test or cache elsewhere reads it.
+
+### 8. String-key and object churn in the slot/grid hot path
+**Evidence.** `tileKey` allocates `` `${x},${y}` `` and `slotAt` allocates both a `lane` template string and a fresh `Slot` object on every call. `allowed`, `heldSlots`, `vacant`, `passSlots`, `vehicleDebug` all re-derive the same slots repeatedly for the same path index. `claim` does `m.set(id, [...(m.get(id) ?? []), s])`, copying the array per slot.
+**Fix.** Encode tiles as packed integers (`x * STRIDE + y`) for Map/Set keys and lanes as `tile * 4 + dirIndex`; keep the string form only for saves and debug output. Push into the existing array in `claim` instead of rebuilding it.
+**Complexity.** Same asymptotics, but this is the dominant GC pressure in the tick and likely the source of any sawtooth in the memory timeline.
+**Semantic risk.** Low if confined to in-memory keys, but `parseControls`/`parseHistory`/save formats use `"x,y"` strings. Do not let the packed form leak into persisted data. Requires a coordinate range assertion so packing cannot collide after map expansion.
+
+### 9. Linear trip scans in the intersection logic
+**Evidence.** `priorityBlocker` scans all trips with a lookahead loop and is called from both `gated` (per admission attempt at an uncontrolled junction) and `crossingBlocker`. `livePair` does two `city.trips.find`. `replan` calls `blockedTiles(city, ...)` per trip, allocating a Set each time, and `city.incidents.find` per trip.
+**Fix.** Build one per-tick `Map<areaId, Trip[]>` of trips approaching each junction area, plus a `Map<number, Trip>` by id, and hoist the two `blockedTiles` sets (responding / not) to the top of `replan`.
+**Complexity.** O(T²) → roughly O(T) per tick.
+**Semantic risk.** Low, but `priorityBlocker`'s gap acceptance is load-bearing for **solvable collisions**. The index must reproduce its exact filter (`gap` in `[0, PRIORITY_LOOKAHEAD]`, `ew` heading, non-junction predecessor), and the existing traffic tests should be run unchanged as the acceptance gate.
+
+### 10. Micro items worth batching into one pass
+`governingControl` does an O(controls) `find` and is called **per road tile** inside `routingSnapshot`'s control loop, making that loop O(R × controls); invert it by iterating controls once and mapping area → wait. `trafficTick` sorts a copy of `city.trips` and `replan` sorts another, twice per tick. `conflictingContact` allocates a `directions` array and does `indexOf` per call. `occupiedTiles` calls `roadIndex` inside its trip loop. `validEmergencyPasses` rebuilds `grid` inside its per-trip loop (load path only, so low priority).
+
+---
+
+## Profiling plan (in order, cheapest first)
+
+1. **Call counters, not a profiler.** Add module-level counters incremented in `roadIndex`, `grid`, `findPath`, `routingSnapshot`, `structuredClone` (in `preview`), and dump per-second rates to the existing vehicle-debug panel. This alone confirms or refutes items 1 through 4 and 6 in one play session, and it tells you which of them dominates on *your* city size. Do this before any code change.
+2. **Split sim from render.** Run `stepCity` in a Node harness over a saved large city (the existing `cityTraffic.integration.test.ts` fixtures are the obvious seed) under `node --cpu-prof`. A flame graph with no Pixi in it settles whether the slowdown is simulation or rendering.
+3. **Render side.** Chrome DevTools Performance, 10s capture, and look specifically for `Text`/`CanvasTextMetrics` re-measure frames and `GraphicsContext` rebuilds. Then A/B by commenting out the `t.style.*` assignments in `label()` for one capture.
+4. **Allocation.** DevTools Memory, allocation sampling, two 10s captures: one hovering the map with the road tool selected (tests item 6), one with an active serious incident plus a responder (tests items 2 and 8).
+5. **Localize by toggling.** Compare frame time with and without an active incident, with and without the vehicle debug panel open, and at zoomed-out versus zoomed-in camera. If the cost only appears with an incident on the map, items 1, 2 and 4 are your answer.
+
+## Suggested order of work
+
+Items **1, 3, 7** and the memo half of **6** are mostly mechanical, have low semantic risk, and plausibly account for the bulk of the regression. Item **5** is the render-side equivalent and is independent, so it can land in parallel. Items **2, 8, 9** touch admission, yielding and crash detection directly and should land one at a time behind the existing traffic and incident test suites, with no change to the gate conditions themselves.
+
+I did not verify the cost of `junctionAreas`, `areaTiles`, `buildingStatus`, `homeRoadIssue`, `starterSnapshot`, `starterBypassTiles` or `stepPolicePatrols`, since those modules were not supplied. `homeRoadIssue` is the one I would check first: it is called per home per frame in `renderActivity`, and if it routes, it belongs at the top of this list rather than inside item 5.

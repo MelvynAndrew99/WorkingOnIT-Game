@@ -1,3 +1,8 @@
+import {roadEdgePoints} from './cityDirections.ts';
+import {applyRoadDirections} from './cityDirectionEdits.ts';
+import {starterToolAllowed} from './cityStarterTutorial.ts';
+import {flowReport} from './cityFlow.ts';
+import {withRoadPathRead} from './cityPathfinding.ts';
 import {CITY_RULES} from './cityRules.ts';
 import {cityDiagnostics} from './cityDiagnostics.ts';
 import {homeRoadIssue} from './cityVisits.ts';
@@ -13,15 +18,16 @@ import {
 import { containsTile } from './cityMap.ts';
 import {debugVehicles, roadIndex, emergencyLaneOffset, isEmergencyResponse, type JunctionControl} from './cityTraffic.ts';
 import {setFiretruckResponding,setPoliceResponding} from '../audio/vehicles.ts';
+import {stepTrafficAudio,stopTrafficAudio} from '../audio/traffic.ts';
 import {incidentSummary} from './cityIncidents.ts';
 import {BUILDING_LABELS, isBuildingTool} from '../ui/cityLabels.ts';
 import {areaTiles} from './junctionAreas.ts';
 import { TILE_SIZE, screenToWorld, panCamera, zoomCamera, clampCamera, type Camera, type Viewport } from './cityCamera.ts';
 import { onCityCommand } from './cityControls.ts';
-import { getSave, flushSave } from '../state/save.ts';
+import { getSave, flushSave as flushSandboxSave } from '../state/save.ts';
 import { tutorialSnapshot, tutorialAction } from './cityTutorial.ts';
 import {starterSnapshot, starterBypassTiles, starterDiversionPoint} from './cityStarterTutorial.ts';
-import { finishTutorialAndConnect, connectExternalCity } from './cityExternal.ts';
+import { externalNeedsRoad, finishTutorialAndConnect, connectExternalCity } from './cityExternal.ts';
 import { missionSnapshot, refreshMissions } from './cityMissions.ts';
 import { store } from '../state/store.ts';
 export interface Scene { destroy(): void }
@@ -31,8 +37,16 @@ export interface Scene { destroy(): void }
  * or routing. Tile coordinates come from cityModel, frame names from cityArt,
  * and this file only turns one into the other.
  */
-export function createCityScene(app: Application, stage: Stage): Scene {
-    const city = getSave().city;
+export interface CitySceneSession {
+    city: City;
+    save: () => void;
+    step: (seconds: number) => void;
+    place: typeof place;
+}
+export function createCityScene(app: Application, stage: Stage, session?: CitySceneSession): Scene {
+    const city = session?.city ?? getSave().city;
+    const flushSave = session?.save ?? flushSandboxSave;
+    const placeInCity = session?.place ?? place;
     // The map is its own clipped compositing layer. Scrolling dock surfaces must
     // never paint over it; native dialogs retain their top-layer modal behavior.
     app.canvas.style.position = 'relative';
@@ -41,6 +55,11 @@ export function createCityScene(app: Application, stage: Stage): Scene {
     const root = new Container();
     const ground = new Container();      // terrain + scenery, rebuilt on resize only
     const world = new Container();       // roads, markers and buildings
+    // These layers change only through renderGround/renderWorld. Reuse their pixels between
+    // edits instead of submitting every tree shadow, road and building piece each frame.
+    // Native 48px tiles keep pixel art crisp and bound each texture below 4096px at max map size.
+    ground.cacheAsTexture({resolution:1, antialias:false});
+    world.cacheAsTexture({resolution:1, antialias:false});
     const cars = new Container();
     const carShadows = new Graphics();   // contact shadows keep elevation art on the road
     const controls = new Graphics(); // operational controls, independent of the artwork atlas
@@ -48,7 +67,10 @@ export function createCityScene(app: Application, stage: Stage): Scene {
     const activityLabels = new Container();
     const statusLabels = new Map<string, Text>();
     const responderBadges = new Map<string, {container:Container; text:Text}>();
+    let directionPoints: Point[] = [];
+    store.patch({directionSelection:0});
     let inspectedId: number | null = null;
+    let inspectedRoad: Point | null = null;
     const ghost = new Container();
     const outline = new Graphics();      // placement validity, drawn above the ghost art
     ghost.addChild(outline);
@@ -95,9 +117,13 @@ export function createCityScene(app: Application, stage: Stage): Scene {
         put(layer, { name, tx: 0, ty: 0, tw: 1, th: 1, tint, alpha }, x, y);
 
     function report() {
+        withRoadPathRead(city, reportSnapshot);
+    }
+    function reportSnapshot() {
         refreshMissions(city);
         store.patch({
             vehicleDebug:store.get().vehicleDebugOpen?debugVehicles(city):[],
+            flow: flowReport(city, inspectedRoad),
             diagnostics: cityDiagnostics(city), missions: missionSnapshot(city), tutorial: tutorialSnapshot(city),
             roadIssues: city.buildings.filter(b=>b.kind==='home').flatMap(b=>{const reason=homeRoadIssue(city,b);return reason?[{homeId:b.id,x:b.x,y:b.y,reason}]:[]}),
             elapsedSeconds: Math.floor(city.elapsed),
@@ -205,8 +231,21 @@ export function createCityScene(app: Application, stage: Stage): Scene {
             ground.addChild(shadow);
             put(ground, s, x, y);
         }
+        ground.updateCacheTexture();
     }
 
+    // Arrows straddle the controlled connection, so corners and branches are unambiguous.
+    // Static arrows belong to the cached world; only edit previews are redrawn.
+    function directionArrow(g:Graphics,a:Point,b:Point,color:number) {
+        const dx=b.x-a.x,dy=b.y-a.y;
+        const cx=px((a.x+b.x)/2+.5),cy=py((a.y+b.y)/2+.5);
+        const length=tile*.22,wing=tile*.10;
+        g.moveTo(cx-dx*length,cy-dy*length).lineTo(cx+dx*length,cy+dy*length)
+          .moveTo(cx+dx*length-dx*wing-dy*wing,cy+dy*length-dy*wing+dx*wing)
+          .lineTo(cx+dx*length,cy+dy*length)
+          .lineTo(cx+dx*length-dx*wing+dy*wing,cy+dy*length-dy*wing-dx*wing)
+          .stroke({color,width:tile*.075,cap:'round',join:'round'});
+    }
     function renderWorld() {
         const index=roadIndex(city), areas=index.areas;
         controlRoads=index.roads;
@@ -237,6 +276,14 @@ export function createCityScene(app: Application, stage: Stage): Scene {
             for (const [tx, ty] of corners)
                 put(world, { name: 'cone', tx, ty, tw: .28, th: .28 }, p.x, p.y);
         }
+        const arrows = new Graphics();
+        for(const [key,direction] of Object.entries(city.roadDirections??{})) {
+            const pair=roadEdgePoints(key);if(!pair)continue;
+            const [a,b]=pair;
+            directionArrow(arrows,direction==='forward'?a:b,direction==='forward'?b:a,0xffe179);
+        }
+        world.addChild(arrows);
+        world.updateCacheTexture();
     }
 
     function renderControls() {
@@ -274,12 +321,18 @@ export function createCityScene(app: Application, stage: Stage): Scene {
         ghost.removeChildren().forEach(c => { if (c !== outline) c.destroy(); });
         ghost.addChild(outline);
         outline.clear();
+        if(store.get().tool==='direction') {
+            for(const p of directionPoints)outline.rect(px(p.x)+2,py(p.y)+2,tile-4,tile-4).fill({color:0x60e8ff,alpha:.18}).stroke({color:0x60e8ff,width:2});
+            for(let i=1;i<directionPoints.length;i++)directionArrow(outline,directionPoints[i-1],directionPoints[i],0x60e8ff);
+            if(hover&&!store.get().panning&&!gesture)outline.rect(px(hover.x)+2,py(hover.y)+2,tile-4,tile-4).stroke({color:0xffffff,width:2});
+            return;
+        }
         if (!hover || store.get().panning || gesture) return;
         const s = store.get();
         if(s.tool===null||s.vehicleDebugOpen)return;
         const candidate = structuredClone(city) as City;
         const before = candidate.funds;
-        place(candidate, s.tool, hover.x, hover.y, s.rotation);
+        placeInCity(candidate, s.tool, hover.x, hover.y, s.rotation);
         const valid = before !== candidate.funds || candidate.buildings.length !== city.buildings.length || candidate.roads.length !== city.roads.length || JSON.stringify(candidate.controls) !== JSON.stringify(city.controls) || JSON.stringify(candidate.closures)!==JSON.stringify(city.closures);
         const colour = s.tool === 'bulldoze' ? COLORS.remove : valid ? COLORS.valid : COLORS.invalid;
         if(s.tool==='stop' || s.tool==='signal') {
@@ -366,6 +419,9 @@ export function createCityScene(app: Application, stage: Stage): Scene {
     }
 
     function renderActivity() {
+        withRoadPathRead(city, renderActivitySnapshot);
+    }
+    function renderActivitySnapshot() {
         activity.clear();
         const live = new Set<string>();
         const liveBadges = new Set<string>();
@@ -373,8 +429,16 @@ export function createCityScene(app: Application, stage: Stage): Scene {
             live.add(key);
             let t=statusLabels.get(key);
             if(!t){t=new Text({text,style:{fontFamily:'system-ui',fontSize:12,fontWeight:'bold',fill:color,stroke:{color:0x122d26,width:3}}});t.anchor.set(.5);activityLabels.addChild(t);statusLabels.set(key,t);}
-            t.text=text;t.style.fill=color;t.style.fontSize=17.6/(stage.scale()*camera.zoom);t.style.stroke={color:0x122d26,width:3/(stage.scale()*camera.zoom)};t.position.set(px(x),py(y));
+            const fontSize=17.6/(stage.scale()*camera.zoom);
+            if(t.text!==text)t.text=text;
+            if(t.style.fill!==color)t.style.fill=color;
+            if(t.style.fontSize!==fontSize){
+                t.style.fontSize=fontSize;
+                t.style.stroke={color:0x122d26,width:3/(stage.scale()*camera.zoom)};
+            }
+            t.position.set(px(x),py(y));
         }
+        if(inspectedRoad && city.roads.some(p=>same(p,inspectedRoad!)))activity.rect(px(inspectedRoad.x)+1,py(inspectedRoad.y)+1,tile-2,tile-2).stroke({color:0x42d9e8,width:3,alpha:.9});
         const station=city.buildings.find(b=>b.id===inspectedId&&b.kind==='policeStation');
         if(station){const e=entrance(station);activity.circle(px(e.x+.5),py(e.y+.5),CITY_RULES.policePatrol.radiusTiles*tile).fill({color:0x7bdfff,alpha:.06}).stroke({color:0x7bdfff,width:2,alpha:.8});}
         const selected=store.get().vehicleDebugOpen&&city.trips.find(t=>t.id===store.get().selectedVehicleId);
@@ -447,10 +511,11 @@ export function createCityScene(app: Application, stage: Stage): Scene {
         }
         if(city.external?.gateway) {
             const p=city.external.gateway;
-            activity.circle(px(p.x+.5),py(p.y+.5),tile*.42).stroke({color:0x8edbfa,width:3});
-            label('gateway','CITY',p.x+.5,p.y-.1,0x8edbfa);
+            const needsRoad=externalNeedsRoad(city),colour=needsRoad?0xffd22e:0x8edbfa;
+            activity.circle(px(p.x+.5),py(p.y+.5),tile*.42).stroke({color:colour,width:needsRoad?5:3});
+            label('gateway',needsRoad?'CONNECT TO CITY':'CITY',p.x+.5,p.y-.1,colour);
         }
-        for(const r of city.risks) {
+        for(const r of city.risks) if(r.exposure>=CITY_RULES.intersectionSafety.warningExposure) {
             activity.circle(px(r.x+.5),py(r.y+.5),tile*.46).stroke({color:0xffcb61,width:2,alpha:.65+.25*Math.sin(city.elapsed*5)});
             label(`r${r.x},${r.y}`,'!',r.x+.5,r.y+.1,0xffcb61);
         }
@@ -560,12 +625,29 @@ export function createCityScene(app: Application, stage: Stage): Scene {
             if(choices[0])store.patch({selectedVehicleId:choices[0].t.id});
             report();return;
         }
+        if(s.tool==='direction') {
+            if(session || !starterToolAllowed(city,'direction')){store.patch({message:'One-way editing is not available in this lesson.'});return;}
+            if(!city.roads.some(q=>same(p,q))){store.patch({message:'Select existing road squares for a one-way route.'});return;}
+            const tail=directionPoints.at(-1);
+            if(tail&&same(tail,p))return;
+            if(tail&&Math.abs(tail.x-p.x)+Math.abs(tail.y-p.y)!==1){store.patch({message:'Tap a road square directly next to the last selected square.'});return;}
+            if(directionPoints.length>2&&same(directionPoints[0],directionPoints.at(-1)!)){store.patch({message:'The ring is closed. Apply its direction, or Undo tile to continue editing.'});return;}
+            if(directionPoints.slice(1).some(q=>same(q,p)) || (directionPoints.length<3&&directionPoints.some(q=>same(q,p)))){store.patch({message:'This square is already selected. Use Undo tile to go back.'});return;}
+            directionPoints.push({...p});
+            store.patch({directionSelection:directionPoints.length,message:`${directionPoints.length} road squares selected. Apply one-way follows the blue arrows; Reverse follows the opposite direction.`});
+            preview();paint();return;
+        }
+        if(s.tool === 'road' && city.roads.some(q=>same(p,q))) {
+            inspectedRoad = {...p};
+            store.patch({message:`Road approach (${p.x}, ${p.y}) selected. ${session?'Waiting is shown above the map.':'Flow details are in the Dashboard.'}`});
+            report(); return;
+        }
         if(s.tool===null){store.patch({message:'Select a building or road tool from the menu first.'});return;}
         if(isBuildingTool(s.tool)) {
             const existing=city.buildings.find(b=>footprint(b).some(q=>same(p,q)));
-            if(existing){inspectedId=existing.id;const status=buildingStatus(city,existing);store.patch({message:`${BUILDING_LABELS[existing.kind]}: ${status.label}. Open Dashboard for details.`});report();return;}
+            if(existing){inspectedId=existing.id;const status=buildingStatus(city,existing);store.patch({message:`${BUILDING_LABELS[existing.kind]}: ${status.label}.${session?'':' Open Dashboard for details.'}`});report();return;}
         }
-        const message = place(city, s.tool, p.x, p.y, s.rotation);
+        const message = placeInCity(city, s.tool, p.x, p.y, s.rotation);
         store.patch({ message }); report(); flushSave(); refresh();
     }
     const midpoint = (points: Point[]) => ({x:(points[0].x+points[1].x)/2,y:(points[0].y+points[1].y)/2});
@@ -634,6 +716,16 @@ export function createCityScene(app: Application, stage: Stage): Scene {
     app.canvas.addEventListener('wheel',wheel,{passive:false});
     const uncommand=onCityCommand(command=>{
         cancel();
+        if(session && !['zoom','home','focus'].includes(command.type)) return;
+        if(command.type==='road-direction') {
+            if(store.get().tool!=='direction')return;
+            if(command.mode==='undo'){directionPoints.pop();store.patch({directionSelection:directionPoints.length});preview();paint();return;}
+            if(command.mode==='cancel'){directionPoints=[];store.patch({directionSelection:0,message:'Direction edit canceled.'});preview();paint();return;}
+            const result=applyRoadDirections(city,directionPoints,command.mode);
+            if(result.ok)directionPoints=[];
+            store.patch({directionSelection:directionPoints.length,message:result.message});
+            report();if(result.ok)flushSave();refresh();return;
+        }
         if(command.type==='zoom'){zoomCamera(camera,viewport,camera.zoom*command.factor);updateCamera();}
         if(command.type==='home')focusTown();
         if(command.type==='focus'){camera.x=command.point.x+.5;camera.y=command.point.y+.5;if(city.tutorial?.hRoad)camera.zoom=command.point.x===11&&command.point.y===7?.5:1;updateCamera();}
@@ -665,8 +757,9 @@ export function createCityScene(app: Application, stage: Stage): Scene {
     function keyboard(e: KeyboardEvent) {
         if (document.querySelector('dialog[open]')) return;
         if (e.repeat || e.ctrlKey || e.metaKey || e.altKey || (e.target instanceof HTMLElement && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName))) return;
-        const shortcuts: Record<string, Tool> = { '1': 'home', '2': 'store', '3': 'road', '4': 'bulldoze', '5': 'stop', '6': 'signal', '7': 'closure' };
-        if (shortcuts[e.key]) store.patch({ tool: shortcuts[e.key], panning: false });
+        const shortcuts: Record<string, Tool> = { '1': 'home', '2': 'store', '3': 'road', '4': 'bulldoze', '5': 'stop', '6': 'signal', '7': 'closure', '8':'direction' };
+        if (shortcuts[e.key] && (!session || shortcuts[e.key]!=='direction') && starterToolAllowed(city,shortcuts[e.key])) store.patch({ tool: shortcuts[e.key], panning: false });
+        if(e.key==='Escape'&&store.get().tool==='direction'){directionPoints=[];store.patch({directionSelection:0,message:'Direction edit canceled.'});}
         if (e.key.toLowerCase() === 'r') store.patch({ rotation: (store.get().rotation + 1) % 4 });
         if (e.code === 'Space' && !(e.target instanceof HTMLButtonElement)) { e.preventDefault(); store.patch({ paused: !store.get().paused }); }
     }
@@ -674,9 +767,10 @@ export function createCityScene(app: Application, stage: Stage): Scene {
     const tick = () => {
         const dt = Math.min(app.ticker.deltaMS / 1000, .1);
         const noticed=city.tutorial?.noticedIncident;
-        stepCity(city, dt); renderCars(); renderControls(); renderActivity();
+        if(session)session.step(dt);else stepCity(city, dt); renderCars(); renderControls(); renderActivity();
         setFiretruckResponding(city.trips.some(t=>t.service==='fire'&&!t.patrol&&!t.responseCancelled&&isEmergencyResponse(t)));
         setPoliceResponding(city.trips.some(t=>t.service==='police'&&!t.patrol&&!t.responseCancelled&&isEmergencyResponse(t)));
+        stepTrafficAudio(dt,city.trips.filter(t=>!t.service&&t.path.length&&(!t.phase||t.phase==='legacy'||t.phase==='outbound'||t.phase==='returning')).length);
         if(city.tutorial?.status==='active'&&!city.tutorial.hRoad&&!noticed&&city.tutorial.noticedIncident){
             store.patch({tutorialNotice:true,message:'A crash needs attention. Traffic is running; build another route and keep emergency access open.'});
             report();flushSave();
@@ -685,7 +779,10 @@ export function createCityScene(app: Application, stage: Stage): Scene {
         if (reportClock >= .5) { reportClock = 0; report(); }
         if (saveClock >= 2) { saveClock = 0; flushSave(); }
     };
-    const unsub = store.subscribe(() => { preview(); paint(); });
+    const unsub = store.subscribe(() => {
+        if(store.get().tool!=='direction' && directionPoints.length){directionPoints=[];store.patch({directionSelection:0});return;}
+        preview(); paint();
+    });
     const unresize = stage.onResize(layout);
     const observer = new ResizeObserver(layout);
     // Observe the region AND its allocating bands: a band's change can move the
@@ -710,6 +807,7 @@ export function createCityScene(app: Application, stage: Stage): Scene {
         destroy() {
             setFiretruckResponding(false);
             setPoliceResponding(false);
+            stopTrafficAudio();
             flushSave(); observer.disconnect(); unsub(); unresize();
             window.removeEventListener('keydown', keyboard);
             window.removeEventListener('blur', cancel);

@@ -296,3 +296,7 @@ Authorized Patch/public upload succeeded for the existing RUN identity as1.7.6; 
 User explicitly requested publication after UI-06, superseding that implementation task's no-publication boundary, and reported 35 unique players. Compared all current runtime source/assets with the desktop/narrow-verified UI-06 snapshot: no changes. Fresh production build passed; prior 232 model tests and desktop/narrow browser checks remain applicable. Deployed the production dist with Patch bump and public release requested to existing game l7mD5BHH8LslWkr5mC7d.
 
 Upload succeeded as RUN 1.7.7, visibility review. Read-only tags confirmed private/review 1.7.7 and public 1.7.6; the UI update awaits platform review and is not yet confirmed live. No duplicate upload or hosted 1.7.7 gameplay verification. Notes: docs/releases/v0.2.7-changelog.md. Sanitized upload receipt and artifact hashes: docs/releases/run-1.7.7-receipt.json. Existing cities/save namespaces and game identity retained.
+
+## 2026-09-11 — RUN 1.7.10 public
+
+User authorized the graphics/performance update. Model tests/build and frozen production desktop/narrow graphics, simulation, zoom and saved-town reload checks pass. Uploaded once; RUN public and approved-review tags confirm 1.7.10. See [release evidence](releases/run-1.7.10/README.md). Existing game identity, player towns and working-tree edits preserved.

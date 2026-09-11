@@ -1,0 +1,62 @@
+[
+  {
+    "label": "baseline",
+    "width": 1440,
+    "frames": 189,
+    "wallMs": 12065.800000000745,
+    "fps": 15.664108471878228,
+    "p50": 66.69999999999891,
+    "p95": 66.80000000000109,
+    "p99": 83.30000000000109,
+    "over33": 189,
+    "simulationAdvanced": true,
+    "geometryPreserved": true,
+    "errors": [],
+    "failed": []
+  },
+  {
+    "label": "oneway",
+    "width": 1440,
+    "frames": 183,
+    "wallMs": 12068.5,
+    "fps": 15.163442018477856,
+    "p50": 66.69999999999891,
+    "p95": 83.19999999999982,
+    "p99": 83.40000000000055,
+    "over33": 183,
+    "simulationAdvanced": true,
+    "geometryPreserved": true,
+    "errors": [],
+    "failed": []
+  },
+  {
+    "label": "baseline",
+    "width": 390,
+    "frames": 711,
+    "wallMs": 12016.300000000745,
+    "fps": 59.16962792206885,
+    "p50": 16.69999999999891,
+    "p95": 16.799999999999272,
+    "p99": 33.29999999999927,
+    "over33": 1,
+    "simulationAdvanced": true,
+    "geometryPreserved": true,
+    "errors": [],
+    "failed": []
+  },
+  {
+    "label": "oneway",
+    "width": 390,
+    "frames": 706,
+    "wallMs": 12023.099999997765,
+    "fps": 58.720296762077275,
+    "p50": 16.699999999999818,
+    "p95": 16.799999999999272,
+    "p99": 33.30000000000018,
+    "over33": 2,
+    "simulationAdvanced": true,
+    "geometryPreserved": true,
+    "errors": [],
+    "failed": []
+  }
+]

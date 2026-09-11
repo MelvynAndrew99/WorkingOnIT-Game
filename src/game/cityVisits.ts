@@ -15,6 +15,8 @@ export type Household = {
   homeId: number; shopping: number; leisure: number; shopClock: number; leisureClock: number;
   /** Elapsed time this household's recent-leisure tax benefit runs out. */
   leisureUntil: number;
+  /** Alternate equally urgent purposes without changing a journey already underway. */
+  lastDeparturePurpose?: TripPurpose;
 };
 export type VisitorSlots = { occupied: number; capacity: number; inbound: number; label: string };
 
@@ -105,6 +107,7 @@ export function chooseDestinationFrom(city: City, origin: Point, purpose: TripPu
     if (slots.occupied + slots.inbound >= slots.capacity) continue;
     const path = allowBlocked?plannedRoadPath(city,origin,entrance(b)):findPath(city, origin, entrance(b));
     if (!path) continue;
+    if (city.roadDirections && !(allowBlocked?plannedRoadPath(city,entrance(b),origin):findPath(city,entrance(b),origin))) continue;
     const cost = (path.length - 1) / TRAVEL_TILES_PER_SECOND + (slots.occupied + slots.inbound) * CROWD_PENALTY;
     if (!best || cost < best.cost - 1e-9 || (Math.abs(cost - best.cost) < 1e-9 && b.id < best.building.id))
       best = { building: b, path, cost };
@@ -113,9 +116,11 @@ export function chooseDestinationFrom(city: City, origin: Point, purpose: TripPu
   }
   return null;
 }
-/** Leisure is taken first once it has built up, so a park never starves behind constant shopping. */
+/** Prefer urgency; alternate ties so neither purpose can monopolize a household car. */
 function purposeFor(h: Household): TripPurpose | null {
-  if (h.leisure > 0 && h.leisure / LEISURE_CAP >= h.shopping / SHOP_CAP) return 'leisure';
+  const leisureUrgency = h.leisure / LEISURE_CAP, shoppingUrgency = h.shopping / SHOP_CAP;
+  if (h.leisure > 0 && (leisureUrgency > shoppingUrgency
+    || (leisureUrgency === shoppingUrgency && h.lastDeparturePurpose !== 'leisure'))) return 'leisure';
   if (h.shopping > 0) return 'shopping';
   return h.leisure > 0 ? 'leisure' : null;
 }
@@ -140,8 +145,9 @@ export function spawnTrips(city: City, index: RoadIndex): void {
       const goal = choice.path[choice.path.length - 1];
       const path=civilianRoute(city, choice.path[0], goal) ?? choice.path;
       if(startBlocked(city,index,path))continue;
+      h.lastDeparturePurpose = purpose;
       city.trips.push({ id: city.nextId++, homeId: home.id, storeId: choice.building.id, progress: 0,
-        wait: 0, hold: 0, path, phase: 'outbound', purpose, visitRemaining: 0, rewarded: false,
+        wait: 0, hold: 0, startedAt: round6(city.elapsed), path, phase: 'outbound', purpose, visitRemaining: 0, rewarded: false,
         target: { ...goal } });
       break;
     }
@@ -180,6 +186,7 @@ export function stepVisits(city: City, index: RoadIndex, dt: number): void {
       } else city.funds += SHOP_INCOME;
       consumeNeed(city, trip);
       recordMissionVisit(city, trip);
+      if (!trip.external && trip.purpose) trip.visitedAt = round6(city.elapsed);
       trip.rewarded = true;
     }
     const goal = trip.external ? trip.external.origin : entrance(home!);
@@ -249,9 +256,11 @@ export function parseHouseholds(raw: unknown, city: City): Household[] | null {
     // A save cannot award itself an unbounded or backdated tax benefit.
     if (!finite(leisureUntil) || leisureUntil > city.elapsed + LEISURE_BENEFIT_SECONDS + 1e-6) return null;
     if (!city.buildings.some(b => b.id === h.homeId && b.kind === 'home')) return null;
+    if (h.lastDeparturePurpose !== undefined && h.lastDeparturePurpose !== 'shopping' && h.lastDeparturePurpose !== 'leisure') return null;
     seen.add(h.homeId);
     households.push({ homeId: h.homeId, shopping: h.shopping, leisure: h.leisure,
-      shopClock: h.shopClock, leisureClock: h.leisureClock, leisureUntil });
+      shopClock: h.shopClock, leisureClock: h.leisureClock, leisureUntil,
+      ...(h.lastDeparturePurpose !== undefined ? {lastDeparturePurpose:h.lastDeparturePurpose} : {}) });
   }
   return households;
 }

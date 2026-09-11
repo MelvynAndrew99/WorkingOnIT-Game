@@ -4,6 +4,34 @@ import {createCity,expandCity,parseCity,place,stepCity,type City} from './cityMo
 import {expansionSnapshot,parseExpansionProgress,markExpansionBriefingSeen} from './cityExpansion.ts';
 import {claimMissionReward,missionSnapshot,refreshMissions} from './cityMissions.ts';
 import {tutorialAction,refreshTutorial} from './cityTutorial.ts';
+import {connectExternalCity} from './cityExternal.ts';
+
+test('each connected edge stays fixed through other expansions and reload',()=>{
+ for(const edge of ['north','east','south','west'] as const){
+  let c=createCity();const m=c.map;
+  const p=edge==='north'?{x:5,y:m.y}:edge==='south'?{x:5,y:m.y+m.height-1}:edge==='west'?{x:m.x,y:5}:{x:m.x+m.width-1,y:5};
+  place(c,'road',p.x,p.y);assert.match(connectExternalCity(c,p),/Outside city connected/);
+  const before=structuredClone(c);assert.match(expandCity(c,edge),/outside city connects/);assert.deepEqual(c,before);
+  const other=edge==='west'?'east':'west';assert.match(expandCity(c,other),/Expanded/);
+  c=reload(c);assert.equal(expansionSnapshot(c).connectedEdge,edge);
+  const loaded=structuredClone(c);assert.match(expandCity(c,edge),/outside city connects/);assert.deepEqual(c,loaded);
+  assert.deepEqual(c.external!.gateway,p);
+ }
+});
+
+test('corner connection retains one fixed edge while the perpendicular side grows',()=>{
+ let c=createCity();place(c,'road',0,0);connectExternalCity(c,{x:0,y:0});
+ assert.equal(expansionSnapshot(c).connectedEdge,'west');
+ assert.match(expandCity(c,'north'),/Expanded/);c=reload(c);
+ assert.equal(expansionSnapshot(c).connectedEdge,'west');assert.match(expandCity(c,'west'),/outside city connects/);
+});
+
+test('legacy interior gateway and existing land survive reload without relocation',()=>{
+ const c=createCity();place(c,'road',0,6);connectExternalCity(c,{x:0,y:6});
+ c.map={...c.map,x:-8,width:c.map.width+8};
+ const loaded=reload(c);assert.deepEqual(loaded.map,c.map);assert.deepEqual(loaded.external,c.external);
+ assert.equal(expansionSnapshot(loaded).connectedEdge,null);
+});
 
 function reload(c:City){const loaded=parseCity(JSON.parse(JSON.stringify(c)));assert.ok(loaded);return loaded;}
 function until(c:City,ready:()=>boolean){for(let i=0;i<1600&&!ready();i++)stepCity(c,.25);assert.ok(ready(),`not reached after ${c.elapsed}s`);}

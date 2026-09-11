@@ -1,10 +1,13 @@
+import {allowsRoadStep, parseRoadDirections, pruneRoadDirections, type RoadDirections} from './cityDirections.ts';
+import {refreshFlowProgress, FLOW_MISSION_ID} from './cityFlow.ts';
+import {cachedRoadPath} from './cityPathfinding.ts';
 import {routingSnapshot,responseRoute,civilianRoute} from './cityRouting.ts';
 import {patrolAvoid} from './cityPatrols.ts';
 /** Logical tiles and routes never depend on sprite dimensions or rendering units. */
 import { INITIAL_WIDTH, INITIAL_HEIGHT, initialMap, containsTile, expandedMap, parseMap, type MapBounds, type ExpansionDirection } from './cityMap.ts';
 import {
-  TRAFFIC_TICK, TRAVEL_TILES_PER_SECOND, roadIndex, trafficTick, migrateLegacyTraffic,
-  placeControl, controlAt, removeControl, pruneControls, parseControls, parseHistory, occupiedTiles, bodyTile, isEmergencyResponse, validEmergencyPasses, emergencyReservedTiles,
+  TRAFFIC_TICK, TRAVEL_TILES_PER_SECOND, roadIndex, withRoadIndex, trafficTick, migrateLegacyTraffic,
+  placeControl, controlAt, removeControl, pruneControls, parseControls, parseHistory, occupiedTiles, bodyTile, isEmergencyResponse, validEmergencyPasses, validRoadDirectionCommitments, emergencyReservedTiles,
   type JunctionControl, type TripRecord,
 } from './cityTraffic.ts';
 import {
@@ -16,7 +19,7 @@ import { createExternalConnection, parseExternalConnection, retryAutomaticConnec
 import { createTutorialProgress, parseTutorialProgress, refreshTutorial, noteTutorialConstruction, type TutorialProgress } from './cityTutorial.ts';
 import { createMissionProgress, parseMissionProgress, type MissionProgress } from './cityMissions.ts';
 import {initializeStarter, starterPlacementError} from './cityStarterTutorial.ts';
-import {createExpansionProgress,expansionSnapshot,refreshExpansionProgress,parseExpansionProgress,type ExpansionProgress} from './cityExpansion.ts';
+import {connectedExpansionEdge,connectedEdgeReason,createExpansionProgress,expansionSnapshot,refreshExpansionProgress,parseExpansionProgress,type ExpansionProgress} from './cityExpansion.ts';
 import {
   COSTS, STARTING_FUNDS, constructionPriceForCity, paidForBuilding, clearRoadPayment,
   recordBuildingPayment, recordRoadPayment, consumeGrant, parseRoadPaid, parseEconomyProgress,
@@ -43,7 +46,7 @@ export const WIDTH = INITIAL_WIDTH;
 export const HEIGHT = INITIAL_HEIGHT;
 export const TILE_METERS = 10;
 export type BuildingKind = 'home' | 'store' | 'park' | 'hospital' | 'fireStation' | 'policeStation';
-export type Tool = BuildingKind | 'road' | 'bulldoze' | 'stop' | 'signal' | 'closure';
+export type Tool = BuildingKind | 'road' | 'bulldoze' | 'stop' | 'signal' | 'closure' | 'direction';
 export type Point = { x: number; y: number };
 export type Building = { id: number; kind: BuildingKind; x: number; y: number; rotation: number; paid?: number; patrolReadyAt?: number };
 /**
@@ -57,6 +60,8 @@ export type TripPurpose = 'shopping' | 'leisure';
 export type Trip = {
   /** Optional query schedule survives reload; derived costs do not. */
   nextRouteQueryAt?: number;
+  /** Local service observation only; absent in older saves. */
+  startedAt?: number; visitedAt?: number;
   patrol?: true;
   /** This real crew was replaced and must return without doing scene work. */
   responseCancelled?: true;
@@ -72,6 +77,7 @@ export type Trip = {
   emergencyPass?: { start: number; end: number; stage: 'out' | 'passing' | 'in'; shift: number };
 };
 export type City = {
+  roadDirections?: RoadDirections;
   expansion?:ExpansionProgress;
   tutorial?: TutorialProgress;
   external?: ExternalConnection;
@@ -124,6 +130,7 @@ export function createCity(guidedStarter=false): City {
 }
 /** Consume a free strip or an earned permit only after a successful map change. */
 export function expandCity(city: City, direction: ExpansionDirection): string {
+  if(connectedExpansionEdge(city)===direction)return connectedEdgeReason(direction);
   const map = expandedMap(city.map, direction);
   if (!map) return 'The map cannot expand further in that direction.';
   refreshExpansionProgress(city);
@@ -173,6 +180,7 @@ export function blockedTiles(city: City, responding = false): Set<string> {
 }
 /** The start tile is always allowed so a vehicle caught inside a closure can still drive out. */
 export function findPath(city: City, start: Point, end: Point, responding = false, avoid: Set<string> = new Set()): Point[] | null {
+  if (avoid.size === 0) return cachedRoadPath(city, start, end, responding);
   const roads = new Set(city.roads.map(key));
   if (!roads.has(key(start)) || !roads.has(key(end))) return null;
   const blocked = blockedTiles(city, responding);
@@ -189,21 +197,21 @@ export function findPath(city: City, start: Point, end: Point, responding = fals
       return result.reverse();
     }
     for (const n of [{ x: p.x + 1, y: p.y }, { x: p.x, y: p.y + 1 }, { x: p.x - 1, y: p.y }, { x: p.x, y: p.y - 1 }]) {
-      if (roads.has(key(n)) && !blocked.has(key(n)) && !previous.has(key(n))) { previous.set(key(n), p); queue.push(n); }
+      if (roads.has(key(n)) && allowsRoadStep(city,p,n) && !blocked.has(key(n)) && !previous.has(key(n))) { previous.set(key(n), p); queue.push(n); }
     }
   }
   return null;
 }
 /** Planning may retain a journey through a temporary obstruction; movement still obeys it. */
 export function plannedRoadPath(city:City,start:Point,end:Point):Point[]|null {
-  return findPath({...city,incidents:[],closures:[]},start,end);
+  return cachedRoadPath(city,start,end,false,true);
 }
 /** Nearest reachable store. Connectivity and the route readout ignore capacity on purpose. */
 function nearestStore(city: City, home: Building): { store: Building; path: Point[] } | null {
   let best: { store: Building; path: Point[] } | null = null;
   for (const store of city.buildings.filter(b => b.kind === 'store')) {
     const path = findPath(city, entrance(home), entrance(store));
-    if (path && (!best || path.length < best.path.length)) best = { store, path };
+    if (path && (!city.roadDirections || findPath(city, entrance(store), entrance(home))) && (!best || path.length < best.path.length)) best = { store, path };
   }
   return best;
 }
@@ -219,7 +227,10 @@ export function routeForHome(city: City, home: Building): Point[] | null {
 export function averageTripSeconds(city: City): number | null {
   const routes = city.buildings.filter(b => b.kind === 'home').map(b => routeForHome(city, b)).filter(p => p !== null);
   if (routes.length === 0) return null;
-  return routes.reduce((sum, path) => sum + 2 * (path.length - 1) / TRAVEL_TILES_PER_SECOND, 0) / routes.length;
+  return routes.reduce((sum, path) => {
+    const back = city.roadDirections ? findPath(city,path[path.length-1],path[0]) : path;
+    return sum + ((path.length - 1) + (back!.length - 1)) / TRAVEL_TILES_PER_SECOND;
+  }, 0) / routes.length;
 }
 /** Small unconditional support, plus the tax benefit of households with a recent park visit. */
 export function income(city: City): number { return BASE_SUPPORT + leisureBonus(city); }
@@ -369,6 +380,7 @@ function charge(city: City, tool: Tool): number | string {
 }
 export function place(city: City, tool: Tool, x: number, y: number, rotation = 0): string {
   const tutorialError=starterPlacementError(city,tool,x,y,rotation);if(tutorialError)return tutorialError;
+  if(tool==='direction')return 'Select consecutive road squares with the One-way tool, then Apply.';
   const p = { x, y };
   if (!inBounds(city, p)) return 'Choose a tile inside the map.';
   const building = city.buildings.find(b => footprint(b).some(tile => equal(tile, p)));
@@ -409,6 +421,7 @@ export function place(city: City, tool: Tool, x: number, y: number, rotation = 0
       if (occupiedTiles(city).has(key(p))) return 'A vehicle is on that road. Wait for it to pass.';
       const refund = clearRoadPayment(city, p);
       city.roads.splice(tileIndex, 1);
+      pruneRoadDirections(city);
       city.closures = city.closures.filter(c => !equal(c, p));
       city.funds += refund;
       pruneControls(city);
@@ -440,13 +453,18 @@ export function place(city: City, tool: Tool, x: number, y: number, rotation = 0
   if (typeof priced === 'string') return priced;
   recordBuildingPayment(candidate, priced);
   city.buildings.push(candidate); city.nextId++;
+  if (tool === 'home' && city.missions?.flow && !city.missions.completed.includes(FLOW_MISSION_ID))
+    city.missions.flow.targetHomes = Math.max(city.missions.flow.targetHomes, city.buildings.filter(b=>b.kind==='home').length);
   noteTutorialConstruction(city, tool);
   return `${LABELS[tool]} built. ${city.roads.some(p=>equal(p,access))?'Its entrance is connected.':'Place a road on its entrance arrow.'}`;
 }
 export function stepCity(city: City, dt: number): void {
   if (!finite(dt) || dt === 0) return;
   retryAutomaticConnection(city);
-  const index = roadIndex(city);
+  withRoadIndex(city, index => advanceCity(city, dt, index));
+}
+
+function advanceCity(city: City, dt: number, index: ReturnType<typeof roadIndex>): void {
   // Advance exactly across tick/payment/departure boundaries so frame rate cannot change outcomes.
   while (dt > 1e-9) {
     const slice = Math.min(dt, INCOME_INTERVAL - city.incomeClock, SPAWN_INTERVAL - city.spawnClock, TRAFFIC_TICK - city.tickClock);
@@ -459,6 +477,7 @@ export function stepCity(city: City, dt: number): void {
       stepIncidents(city, TRAFFIC_TICK);
       stepExternal(city, index, TRAFFIC_TICK);
       refreshTutorial(city);
+      refreshFlowProgress(city);
     }
     if (city.incomeClock >= INCOME_INTERVAL - 1e-9) { city.incomeClock = 0; city.funds += income(city); }
     if (city.spawnClock >= SPAWN_INTERVAL - 1e-9) {
@@ -495,6 +514,14 @@ function parseTrip(city: City, raw: Trip, nextId: number): Trip | null {
   if (!raw.path.every(p => point(p) && containsTile(city.map, p))) return null;
   const trip: Trip = { id: raw.id, homeId: raw.homeId, storeId: raw.storeId, progress: raw.progress, wait, hold,
     path: raw.path.map(p => ({ x: p.x, y: p.y })) };
+  for (const field of ['startedAt', 'visitedAt'] as const) {
+    const value = raw[field];
+    if (value !== undefined && finite(value) && value <= city.elapsed + 1e-6
+      && !raw.service && !raw.external && (field !== 'visitedAt' || raw.rewarded === true)) trip[field] = value;
+  }
+  if (trip.startedAt !== undefined && trip.visitedAt !== undefined && trip.startedAt > trip.visitedAt) {
+    delete trip.startedAt; delete trip.visitedAt;
+  }
   if(raw.nextRouteQueryAt!==undefined){if(!finite(raw.nextRouteQueryAt))return null;trip.nextRouteQueryAt=raw.nextRouteQueryAt;}
   if(raw.patrol!==undefined){if(raw.patrol!==true||raw.service!=='police'||raw.incidentId!==undefined)return null;trip.patrol=true;}
   if(raw.sceneParked!==undefined){if(raw.sceneParked!==true||!raw.service||raw.phase!=='working'||raw.responseCancelled||raw.patrol)return null;trip.sceneParked=true;}
@@ -608,12 +635,16 @@ export function parseCity(raw: unknown): City | null {
   if (restoredRoads === undefined) delete city.roadPaid;
   else city.roadPaid = Object.keys(restoredRoads).length ? restoredRoads : undefined;
   const roads = new Set(city.roads.map(key));
+  const directions = parseRoadDirections(r.roadDirections, roads);
+  if(directions === null)return null;
+  if(directions !== undefined)city.roadDirections = directions;
   const closures = parsePoints(r.closures, roads, area);
   if (!closures) return null;
   city.closures = closures;
   const external = parseExternalConnection(r.external, city.map);
   if (!external) return null;
   city.external = external;
+  city.elapsed = r.elapsed; // Restore observation timestamps before validating trips.
   for (const value of r.trips) {
     if (!value || typeof value !== 'object') return null;
     const t = value as Trip;
@@ -638,11 +669,11 @@ export function parseCity(raw: unknown): City | null {
   city.funds = r.funds; city.elapsed = r.elapsed; city.completed = r.completed;
   city.nextId = r.nextId; city.incomeClock = r.incomeClock; city.spawnClock = r.spawnClock; city.tickClock = tickClock;
   // Incidents own their own validation and reconstruct their counters onto this detached city.
-  if (!parseIncidentState(r, city) || !validEmergencyPasses(city)) return null;
+  if (!parseIncidentState(r, city) || !validEmergencyPasses(city) || !validRoadDirectionCommitments(city)) return null;
   const economy = parseEconomyProgress(r.economy, city.elapsed);
   if (!economy) return null;
   city.economy = economy;
-  city.missions = parseMissionProgress(r.missions, city.nextId);
+  city.missions = parseMissionProgress(r.missions, city.nextId, city.elapsed);
   city.tutorial = parseTutorialProgress(r.tutorial, city);
   city.expansion = parseExpansionProgress(r.expansion);
   return city;

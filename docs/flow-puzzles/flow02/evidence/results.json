@@ -1,0 +1,400 @@
+[
+  {
+    "name": "desktop",
+    "label": "objective",
+    "map": {
+      "x": 8,
+      "y": 117.984375,
+      "width": 1424,
+      "height": 486.796875,
+      "bottom": 604.78125,
+      "right": 1432
+    },
+    "card": {
+      "x": 16,
+      "y": 681.78125,
+      "width": 461.328125,
+      "height": 206.21875,
+      "bottom": 888,
+      "right": 477.328125
+    },
+    "buttons": {
+      "x": 26,
+      "y": 834,
+      "width": 441.328125,
+      "height": 44,
+      "bottom": 878,
+      "right": 467.328125
+    },
+    "dashboard": null,
+    "flow": null
+  },
+  {
+    "name": "desktop",
+    "label": "details",
+    "map": {
+      "x": 8,
+      "y": 117.984375,
+      "width": 1424,
+      "height": 394.015625,
+      "bottom": 512,
+      "right": 1432
+    },
+    "card": {
+      "x": 16,
+      "y": 589,
+      "width": 461.328125,
+      "height": 299,
+      "bottom": 888,
+      "right": 477.328125
+    },
+    "buttons": {
+      "x": 26,
+      "y": 724.34375,
+      "width": 441.328125,
+      "height": 44,
+      "bottom": 768.34375,
+      "right": 467.328125
+    },
+    "dashboard": null,
+    "flow": {
+      "x": 26,
+      "y": 777.34375,
+      "width": 441.328125,
+      "height": 445.546875,
+      "bottom": 1222.890625,
+      "right": 467.328125
+    }
+  },
+  {
+    "name": "desktop",
+    "label": "selected-road",
+    "map": {
+      "x": 8,
+      "y": 165.984375,
+      "width": 1016,
+      "height": 438.796875,
+      "bottom": 604.78125,
+      "right": 1024
+    },
+    "card": {
+      "x": 16,
+      "y": 681.78125,
+      "width": 461.328125,
+      "height": 206.21875,
+      "bottom": 888,
+      "right": 477.328125
+    },
+    "buttons": {
+      "x": 26,
+      "y": 834,
+      "width": 441.328125,
+      "height": 44,
+      "bottom": 878,
+      "right": 467.328125
+    },
+    "dashboard": {
+      "x": 1032,
+      "y": 165.984375,
+      "width": 400,
+      "height": 438.796875,
+      "bottom": 604.78125,
+      "right": 1432
+    },
+    "flow": {
+      "x": 1041,
+      "y": 234.984375,
+      "width": 382,
+      "height": 497.265625,
+      "bottom": 732.25,
+      "right": 1423
+    }
+  },
+  {
+    "name": "desktop",
+    "label": "earned",
+    "map": {
+      "x": 8,
+      "y": 165.984375,
+      "width": 1016,
+      "height": 438.796875,
+      "bottom": 604.78125,
+      "right": 1024
+    },
+    "card": {
+      "x": 16,
+      "y": 681.78125,
+      "width": 461.328125,
+      "height": 206.21875,
+      "bottom": 888,
+      "right": 477.328125
+    },
+    "buttons": {
+      "x": 26,
+      "y": 834,
+      "width": 441.328125,
+      "height": 44,
+      "bottom": 878,
+      "right": 467.328125
+    },
+    "dashboard": {
+      "x": 1032,
+      "y": 165.984375,
+      "width": 400,
+      "height": 438.796875,
+      "bottom": 604.78125,
+      "right": 1432
+    },
+    "flow": {
+      "x": 1041,
+      "y": 234.984375,
+      "width": 382,
+      "height": 548.984375,
+      "bottom": 783.96875,
+      "right": 1423
+    }
+  },
+  {
+    "name": "desktop",
+    "label": "reload",
+    "map": {
+      "x": 8,
+      "y": 117.984375,
+      "width": 1016,
+      "height": 486.796875,
+      "bottom": 604.78125,
+      "right": 1024
+    },
+    "card": {
+      "x": 16,
+      "y": 681.78125,
+      "width": 461.328125,
+      "height": 206.21875,
+      "bottom": 888,
+      "right": 477.328125
+    },
+    "buttons": {
+      "x": 26,
+      "y": 834,
+      "width": 441.328125,
+      "height": 44,
+      "bottom": 878,
+      "right": 467.328125
+    },
+    "dashboard": {
+      "x": 1032,
+      "y": 117.984375,
+      "width": 400,
+      "height": 486.796875,
+      "bottom": 604.78125,
+      "right": 1432
+    },
+    "flow": {
+      "x": 1041,
+      "y": 186.984375,
+      "width": 382,
+      "height": 520.125,
+      "bottom": 707.109375,
+      "right": 1423
+    }
+  },
+  {
+    "name": "narrow",
+    "label": "objective",
+    "map": {
+      "x": 8,
+      "y": 218.9375,
+      "width": 374,
+      "height": 206.03125,
+      "bottom": 424.96875,
+      "right": 382
+    },
+    "card": {
+      "x": 12,
+      "y": 501.96875,
+      "width": 366,
+      "height": 194.03125,
+      "bottom": 696,
+      "right": 378
+    },
+    "buttons": {
+      "x": 22,
+      "y": 637.3125,
+      "width": 346,
+      "height": 48.6875,
+      "bottom": 686,
+      "right": 368
+    },
+    "dashboard": null,
+    "flow": null
+  },
+  {
+    "name": "narrow",
+    "label": "details",
+    "map": {
+      "x": 8,
+      "y": 218.9375,
+      "width": 374,
+      "height": 139.0625,
+      "bottom": 358,
+      "right": 382
+    },
+    "card": {
+      "x": 12,
+      "y": 435,
+      "width": 366,
+      "height": 261,
+      "bottom": 696,
+      "right": 378
+    },
+    "buttons": {
+      "x": 22,
+      "y": 570.34375,
+      "width": 346,
+      "height": 48.6875,
+      "bottom": 619.03125,
+      "right": 368
+    },
+    "dashboard": null,
+    "flow": {
+      "x": 22,
+      "y": 628.03125,
+      "width": 346,
+      "height": 543.234375,
+      "bottom": 1171.265625,
+      "right": 368
+    }
+  },
+  {
+    "name": "narrow",
+    "label": "selected-road",
+    "map": {
+      "x": 8,
+      "y": 266.9375,
+      "width": 192.625,
+      "height": 158.03125,
+      "bottom": 424.96875,
+      "right": 200.625
+    },
+    "card": {
+      "x": 12,
+      "y": 501.96875,
+      "width": 366,
+      "height": 194.03125,
+      "bottom": 696,
+      "right": 378
+    },
+    "buttons": {
+      "x": 22,
+      "y": 637.3125,
+      "width": 346,
+      "height": 48.6875,
+      "bottom": 686,
+      "right": 368
+    },
+    "dashboard": {
+      "x": 208.625,
+      "y": 266.9375,
+      "width": 173.359375,
+      "height": 158.03125,
+      "bottom": 424.96875,
+      "right": 381.984375
+    },
+    "flow": {
+      "x": 217.625,
+      "y": -296.0625,
+      "width": 155.359375,
+      "height": 1109.28125,
+      "bottom": 813.21875,
+      "right": 372.984375
+    }
+  },
+  {
+    "name": "narrow",
+    "label": "earned",
+    "map": {
+      "x": 8,
+      "y": 266.9375,
+      "width": 192.625,
+      "height": 190.828125,
+      "bottom": 457.765625,
+      "right": 200.625
+    },
+    "card": {
+      "x": 12,
+      "y": 534.765625,
+      "width": 366,
+      "height": 161.234375,
+      "bottom": 696,
+      "right": 378
+    },
+    "buttons": {
+      "x": 22,
+      "y": 642,
+      "width": 346,
+      "height": 44,
+      "bottom": 686,
+      "right": 368
+    },
+    "dashboard": {
+      "x": 208.625,
+      "y": 266.9375,
+      "width": 173.359375,
+      "height": 190.828125,
+      "bottom": 457.765625,
+      "right": 381.984375
+    },
+    "flow": {
+      "x": 217.625,
+      "y": 281.9375,
+      "width": 155.359375,
+      "height": 1229.578125,
+      "bottom": 1511.515625,
+      "right": 372.984375
+    }
+  },
+  {
+    "name": "narrow",
+    "label": "reload",
+    "map": {
+      "x": 8,
+      "y": 218.9375,
+      "width": 192.625,
+      "height": 238.828125,
+      "bottom": 457.765625,
+      "right": 200.625
+    },
+    "card": {
+      "x": 12,
+      "y": 534.765625,
+      "width": 366,
+      "height": 161.234375,
+      "bottom": 696,
+      "right": 378
+    },
+    "buttons": {
+      "x": 22,
+      "y": 642,
+      "width": 346,
+      "height": 44,
+      "bottom": 686,
+      "right": 368
+    },
+    "dashboard": {
+      "x": 208.625,
+      "y": 218.9375,
+      "width": 173.359375,
+      "height": 238.828125,
+      "bottom": 457.765625,
+      "right": 381.984375
+    },
+    "flow": {
+      "x": 217.625,
+      "y": 281.9375,
+      "width": 155.359375,
+      "height": 1223.578125,
+      "bottom": 1505.515625,
+      "right": 372.984375
+    }
+  }
+]

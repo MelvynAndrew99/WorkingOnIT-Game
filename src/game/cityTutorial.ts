@@ -1,6 +1,7 @@
 /** Saved, optional teaching goals use ordinary placement, journeys and emergency dispatch. */
 import { connectedHomes, findPath, type City, type Point, type Tool } from './cityModel.ts';
 import type { ServiceKind } from './cityIncidents.ts';
+import {CITY_RULES} from './cityRules.ts';
 import {refreshStarter, starterSnapshot, STARTER_GRANTS, type StarterProgress} from './cityStarterTutorial.ts';
 import {
   STALL_SECONDS, WAIVER_BUDGET, MAYOR_OFFER,
@@ -37,7 +38,7 @@ const LESSONS: {id:GrantLessonId;title:string;body:string;hint:string;tool?:Tool
   {id:'first-visit',title:'Your first customer',body:'Build a home and a store. Join their entrance arrows with roads and watch a shopping visit finish.',hint:'Join the entrance arrows with roads. A finished shopping visit pays for the next building.',tool:'road'},
   {id:'park-visit',title:'Give them somewhere to go',body:'Connect a park and watch a leisure visit finish. Parked visitors free road space, then rejoin traffic when they leave.',hint:'Stores have 4 visitor slots and parks have 8, counting inbound reservations. More destinations help serve unmet demand.',tool:'park'},
   {id:'driver-rules',title:'Meet your drivers',body:'Each household chooses reachable shopping and leisure destinations with room. Cars queue, respect controls, return home, and look for another route around blocked roads.',hint:'Responding police, ambulances and fire engines can cross red lights when clear and pass queues using available opposing lanes. Returning crews follow ordinary road rules.'},
-  {id:'junction-control',title:'Give the crossing a rule',body:'Place a stop sign or traffic light at a junction. Watch who gets a turn; tap a light again to change its timing.',hint:'Unsigned crossings favour east-west traffic. Stops and lights prevent failed-yield collisions at their crossing. Stops cost $25; Lights cost $75. Changing light timing is free.',tool:'stop'},
+  {id:'junction-control',title:'Give the crossing a rule',body:'Place a stop sign or traffic light at a junction. Watch who gets a turn; tap a light again to change its timing.',hint:'Unsigned crossings favour east-west traffic. Busy stops can need lights; heavy conflicting turns can need a safer route. Stops cost $25; Lights cost $75. Changing light timing is free.',tool:'stop'},
   {id:'accident-response',title:'When drivers fail to yield',body:'An unsigned crossing can accumulate conflict warnings and cause a real crash. Observe an incident in your town, or keep your controlled crossing safe.',hint:'You do not need to cause a crash. If your crossing has a Stop or Light and no incidents are active, acknowledge the safety explanation.'},
   {id:'rescue',title:'Make room for the crews',body:'Watch police clear a crash, an ambulance reach an injured driver, and firefighters handle a vehicle fire. All required crews must finish before a wreck clears.',hint:'Build connected Police, Clinic and Fire stations. Serious crashes have a rescue deadline. You can keep a controlled crossing safe and acknowledge how crews respond without causing an accident.',tool:'hospital'},
   {id:'detour',title:'Keep a way around',body:'Give drivers an alternate road around a blocked crossing. A detour keeps traffic moving, but does not rescue people or clear a wreck.',hint:'Build an alternate road around the blocked crossing. A detour keeps traffic moving, but does not rescue people or clear a wreck.',tool:'road'},
@@ -73,7 +74,8 @@ function hasDetour(city:City, p:TutorialProgress):boolean {
 /** Safety is an explicit learning alternative, never a fabricated rescue. */
 function safeCrossing(city:City,p:TutorialProgress):Point|undefined {
   const lesson=current(p)?.id;
-  if((lesson!=='accident-response'&&lesson!=='rescue')||city.incidents.some(i=>i.status==='active'))return undefined;
+  if((lesson!=='accident-response'&&lesson!=='rescue')||city.incidents.some(i=>i.status==='active')
+    ||city.risks.some(r=>r.exposure>=CITY_RULES.intersectionSafety.warningExposure))return undefined;
   return city.controls[0];
 }
 

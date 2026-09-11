@@ -3,7 +3,7 @@ import { store, useStore } from '../state/store.ts';
 import { getSave, flushSave } from '../state/save.ts';
 import { expandedMap, type ExpansionDirection } from '../game/cityMap.ts';
 import { cityCommand, onCityCommand } from '../game/cityControls.ts';
-import { expansionSnapshot, markExpansionBriefingSeen } from '../game/cityExpansion.ts';
+import { connectedEdgeReason, expansionSnapshot, markExpansionBriefingSeen } from '../game/cityExpansion.ts';
 import './mapControls.css';
 
 /** Direction buttons share the map's fixed-camera compass. */
@@ -17,7 +17,8 @@ export default function MapControls({ wide }: { wide: boolean }) {
     const mayorDialog = useRef<HTMLDialogElement>(null);
     const growButton = useRef<HTMLButtonElement>(null);
     const briefingOpened = useRef(false);
-    const next = expandedMap(map, direction);
+    const connectionBlocked = expansion.connectedEdge === direction;
+    const next = connectionBlocked ? null : expandedMap(map, direction);
     const bounds = next ?? map;
     const teaching = state.tutorial?.status === 'active' && state.tutorial.currentId === 'h-expand';
     const openExpansion = () => {
@@ -79,13 +80,14 @@ export default function MapControls({ wide }: { wide: boolean }) {
                 <h2 id="expansion-heading">Room to grow</h2>
                 {expansion.freeRemaining > 0 ? <blockquote>“We need more land so we can build more roads! And it’s free! I do have a gift for negotiation.”</blockquote> : <p>The mayor funds more land when you finish land missions and level up.</p>}
                 <p className="expansion-allowance"><strong>{expansion.freeRemaining > 0 ? `${expansion.freeRemaining} free expansion${expansion.freeRemaining === 1 ? '' : 's'} remaining` : `${expansion.permits} expansion permit${expansion.permits === 1 ? '' : 's'} available`}</strong> · Level {expansion.level}</p>
-                <svg className="expansion-preview" viewBox={`${bounds.x - 2} ${bounds.y - 2} ${bounds.width + 4} ${bounds.height + 4}`} role="img" aria-label={next ? `${map.width} by ${map.height} town, expand ${direction} to ${next.width} by ${next.height}` : 'Maximum map size reached on this axis'}>
+                <svg className="expansion-preview" viewBox={`${bounds.x - 2} ${bounds.y - 2} ${bounds.width + 4} ${bounds.height + 4}`} role="img" aria-label={next ? `${map.width} by ${map.height} town, expand ${direction} to ${next.width} by ${next.height}` : connectionBlocked ? 'Outside connection fixes this map edge' : 'Maximum map size reached on this axis'}>
                     <rect x={bounds.x} y={bounds.y} width={bounds.width} height={bounds.height} fill="#eccb78" />
                     <rect x={map.x} y={map.y} width={map.width} height={map.height} fill="#578971" stroke="#c8e0c2" strokeWidth=".5" />
                 </svg>
                 <p>Choose an edge. Green is your town; gold is new land.</p>
-                <div className="expansion-directions" role="group" aria-label="Expansion direction">{(['north', 'west', 'east', 'south'] as const).map(d => <button key={d} className={`expansion-${d}`} aria-label={`Expand ${d}`} aria-pressed={direction === d} onClick={() => setDirection(d)}>{d[0].toUpperCase() + d.slice(1)}</button>)}</div>
-                <p>{next ? `${map.width} × ${map.height} → ${next.width} × ${next.height} tiles` : 'This axis has reached its 64-tile limit.'}</p>
+                <div className="expansion-directions" role="group" aria-label="Expansion direction">{(['north', 'west', 'east', 'south'] as const).map(d => <button key={d} className={`expansion-${d}`} aria-label={`Expand ${d}`} aria-pressed={direction === d} disabled={expansion.connectedEdge===d} onClick={() => setDirection(d)}>{d[0].toUpperCase() + d.slice(1)}</button>)}</div>
+                {expansion.connectedEdge && <p>{connectedEdgeReason(expansion.connectedEdge)}</p>}
+                <p>{next ? `${map.width} × ${map.height} → ${next.width} × ${next.height} tiles` : connectionBlocked ? 'Choose another edge to add land.' : 'This axis has reached its 64-tile limit.'}</p>
                 {!expansion.canExpand && <p role="status">{expansion.lockedReason}</p>}
                 {expansion.freeRemaining === 0 && <p>Next land mission: {expansion.target} connected households with completed shopping visits. <strong>{expansion.current}/{expansion.target}</strong></p>}
                 <button disabled={!next || !expansion.canExpand} className="expand-confirm" onClick={() => { cityCommand({ type: 'expand', direction }); dialog.current?.close(); }}>Add land{expansion.freeRemaining > 0 ? ' · Free' : ' · 1 permit'}</button>

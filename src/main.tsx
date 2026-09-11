@@ -1,5 +1,7 @@
+import {loadChallenges,flushChallenges} from './state/challenges.ts';
 import {initMusic,setMusicSleeping} from './audio/music.ts';
 import {initVehicleAudio,setVehicleAudioSleeping} from './audio/vehicles.ts';
+import {initTrafficAudio,setTrafficAudioSleeping} from './audio/traffic.ts';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import RundotGameAPI from '@series-inc/rundot-game-sdk/api';
@@ -15,6 +17,10 @@ import './styles/app.css';
  * games use. Keep the numbered steps in this order; add your own work at the
  * marked points.
  */
+function persistActiveGame() {
+    if (['challenge','challenges'].includes(store.get().phase)) flushChallenges();
+    else flushSave();
+}
 async function boot() {
     // 1. SDK first. Nothing may call RundotGameAPI before this resolves.
     //    Resolves even if init fails (local dev outside the RUN host).
@@ -25,6 +31,7 @@ async function boot() {
     //    ADAPT: patch your own SaveData fields here; if the game is
     //    localized, restore the language here too — before any UI renders.
     await loadSave();
+    await loadChallenges();
 
     // 3. Mount React. `phase` starts at 'loading', so this paints the
     //    loading screen (progress bar at 0%).
@@ -46,6 +53,10 @@ async function boot() {
         });
     });
 
+    // Start fetching the menu theme during the loading bar so it is ready
+    // when the menu appears (nothing plays while phase is 'loading').
+    initMusic();
+
     // 5. Warm all critical assets (see src/assets/manifest.ts). Deferred
     //    assets keep loading in the background after this resolves.
     await warmAssets((p) => store.patch({ loadProgress: p }));
@@ -53,8 +64,8 @@ async function boot() {
     // 6. Loading done — hand over to the menu.
     store.patch({ phase: 'menu' });
 
-    initMusic();
     initVehicleAudio();
+    initTrafficAudio();
 
     // 7. Host lifecycle hooks. Register AFTER boot so handlers never race
     //    half-initialized state.
@@ -64,9 +75,9 @@ async function boot() {
     registerLifecycles({
         onPause: () => store.patch({ paused: true }),
         onResume: () => store.patch({ paused: false }),
-        onSleep: () => {setMusicSleeping(true);setVehicleAudioSleeping(true);flushSave();},
-        onAwake: () => {setMusicSleeping(false);setVehicleAudioSleeping(false);},
-        onQuit: () => flushSave(), // treat onSleep as the reliable one
+        onSleep: () => {setMusicSleeping(true);setVehicleAudioSleeping(true);setTrafficAudioSleeping(true);persistActiveGame();},
+        onAwake: () => {setMusicSleeping(false);setVehicleAudioSleeping(false);setTrafficAudioSleeping(false);},
+        onQuit: () => persistActiveGame(), // treat onSleep as the reliable one
     });
 
     // 8. Post-boot, fire-and-forget work goes here — analytics boot event,

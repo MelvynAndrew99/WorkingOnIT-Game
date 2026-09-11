@@ -1,3 +1,4 @@
+import {FLOW_MISSION_ID, FLOW_OBJECTIVE_RULES, flowSnapshot, parseFlowProgress, type FlowProgress} from './cityFlow.ts';
 import {CITY_RULES} from './cityRules.ts';
 import {incidentServices} from './cityIncidents.ts';
 /** Optional growth goals. Visits earn recognition; completed jobs offer an optional, one-time cash claim. */
@@ -6,6 +7,7 @@ import {expansionSnapshot,expansionTarget,refreshExpansionProgress} from './city
 
 export interface MissionProgress {
   version: 1;
+  flow?: FlowProgress;
   hidden: boolean;
   completed: string[];
   claimed: string[];
@@ -56,12 +58,18 @@ export const MISSION_DEFINITIONS: readonly MissionDefinition[] = [
     tool: 'road', target: CITY_RULES.missions.networkMinimumHomes, reward: 0, kind: 'store', pattern: 'flow',
     diagnosticView: 'access', dependencies: ['word-on-the-street'],
     lesson: 'A busy road is successful only when every household can use it. Keep the whole neighbourhood connected as it grows.' },
+  { id: 'neighborhood-flow', title: 'A neighborhood worth visiting',
+    task: 'Help the neighborhood shop and get home reliably.',
+    manager: 'Repeat customers, returning home. My reputation is really going places.',
+    crew: 'Every household needs shopping visits and returns. Improve roads, controls or nearby stores. A working layout already counts.',
+    tool: 'road', target: 6, reward: 0, kind: 'store', pattern: 'flow', diagnosticView: 'traffic',
+    dependencies: ['word-on-the-street'], lesson: 'Keep useful service going as your own town grows. No countdown.' },
 ] as const;
 
 export const createMissionProgress = (): MissionProgress => ({ version: 1, hidden: false, completed: [], claimed: [], shoppers: [], parkVisitors: [] });
 
 /** Ancillary job data must never make an otherwise valid saved town unloadable. */
-export function parseMissionProgress(raw: unknown, nextId: number): MissionProgress {
+export function parseMissionProgress(raw: unknown, nextId: number, elapsed = Infinity): MissionProgress {
   if (!raw || typeof raw !== 'object') return createMissionProgress();
   const p = raw as MissionProgress;
   const ids = (a: unknown): a is number[] => Array.isArray(a) && a.length <= 1024
@@ -70,7 +78,8 @@ export function parseMissionProgress(raw: unknown, nextId: number): MissionProgr
     && a.every(id => typeof id === 'string' && /^[a-z0-9-]{1,64}$/.test(id)) && new Set(a).size === a.length;
   if (p.version !== 1 || typeof p.hidden !== 'boolean' || !names(p.completed)
     || (p.claimed !== undefined && !names(p.claimed)) || !ids(p.shoppers) || !ids(p.parkVisitors)) return createMissionProgress();
-  return { version: 1, hidden: p.hidden, completed: [...p.completed], claimed: [...(p.claimed ?? [])], shoppers: [...p.shoppers], parkVisitors: [...p.parkVisitors] };
+  return { version: 1, hidden: p.hidden, completed: [...p.completed], claimed: [...(p.claimed ?? [])], shoppers: [...p.shoppers], parkVisitors: [...p.parkVisitors],
+    ...(parseFlowProgress(p.flow, elapsed) ? {flow:parseFlowProgress(p.flow, elapsed)} : {}) };
 }
 
 /** A served household must still exist and retain access; demolition does not raise progress. */
@@ -86,14 +95,21 @@ function served(city: City, ids: number[], kind: 'store' | 'park'): number {
   return count;
 }
 
-function items(city: City): MissionItem[] {
+function items(city: City, includeFlow = true): MissionItem[] {
   const p = city.missions ?? createMissionProgress();
   const needShopping = MISSION_DEFINITIONS.some(j => j.kind === 'store' && !p.completed.includes(j.id));
   const needLeisure = MISSION_DEFINITIONS.some(j => j.kind === 'park' && !p.completed.includes(j.id));
   const shopping = needShopping ? served(city, p.shoppers, 'store') : 0;
   const leisure = needLeisure ? served(city, p.parkVisitors, 'park') : 0;
-  return MISSION_DEFINITIONS.map(job => {
+  return MISSION_DEFINITIONS.filter(job => includeFlow || job.id !== FLOW_MISSION_ID).map(job => {
     const done = p.completed.includes(job.id);
+    if (job.id === FLOW_MISSION_ID) {
+      const flow = flowSnapshot(city, p.flow?.targetHomes ?? Math.max(job.target, city.buildings.filter(b=>b.kind==='home').length), 'shopping', FLOW_OBJECTIVE_RULES);
+      const available = done || (['complete','skipped'].includes(city.tutorial?.status ?? '') && job.dependencies.every(id=>p.completed.includes(id)));
+      return {...job, target:flow.requiredHomes, current:done ? flow.requiredHomes : flow.qualifiedHomes, done, claimed:true,
+        available, lockedReason:available ? '' : 'Finish or skip the tutorial and serve the first neighborhood.',
+        task:`Help all ${flow.requiredHomes} homes shop and get home.`};
+    }
     const target = job.id === 'everyone-connected' ? Math.max(job.target, city.buildings.filter(b => b.kind === 'home').length) : job.target;
     const unmet = job.dependencies.filter(id => !p.completed.includes(id));
     return { ...job, target, current: done ? target : Math.min(target, job.kind === 'store' ? shopping : leisure),
@@ -118,7 +134,8 @@ export function recordMissionVisit(city: City, trip: Trip): void {
 /** Credit foresight even when work is done before its suggested place in the list. */
 export function refreshMissions(city: City): void {
   const p = city.missions ??= createMissionProgress();
-  for (const job of items(city)) if (!job.done && job.current >= job.target) p.completed.push(job.id);
+  // FLOW owns its sampled completion in refreshFlowProgress; visit credit never uses its report.
+  for (const job of items(city, false)) if (!job.done && job.current >= job.target) p.completed.push(job.id);
   refreshExpansionProgress(city);
 }
 

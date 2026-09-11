@@ -1,0 +1,127 @@
+Give your independent Grok performance review directly from these excerpts. Do not use tools or inspect other files. Rank optimizations and semantic risks. The game uses 40Hz simulation and 60Hz rendering. Codex profile of three synthetic/saved fixtures found roadIndex 25% inclusive CPU, findPath 37%, flowSnapshot 28% (overlapping times). Preserve behavior/saves.
+
+src/game/cityTraffic.ts:67
+/** Roads never change inside one simulation call, so this index is built once per step. */
+export function roadIndex(city: City): RoadIndex {
+  const roads = new Set(city.roads.map(tileKey));
+  const junctions = new Set<string>();
+  for (const p of city.roads) {
+    if (nearby(p).filter(n => roads.has(tileKey(n))).length >= JUNCTION_DEGREE) junctions.add(tileKey(p));
+  }
+  return { roads, junctions, areas: junctionAreas(junctions) };
+}
+
+
+src/game/cityIncidents.ts:70
+function areaOf(city: City, p: Point): string | undefined {
+  return roadIndex(city).areas.get(key(p));
+}
+
+function sameIntersection(city: City, a: Point, b: Point): boolean {
+  const area = areaOf(city, a);
+  return area !== undefined && areaOf(city, b) === area;
+}
+
+function inIncidentArea(city: City, p: Point): boolean {
+  for (const i of city.incidents) {
+    if (i.status !== 'active') continue;
+    if (at(p, i.x, i.y) || sameIntersection(city, p, i)) return true;
+  }
+  return false;
+}
+
+
+src/game/cityIncidents.ts:350
+function expireRisks(city: City, dt: number): void {
+  const index = roadIndex(city);
+  city.risks = city.risks.filter(risk => {
+    if (!index.junctions.has(key(risk)) || governingControl(city, index, risk)?.kind!==risk.control || inIncidentArea(city, risk)) return false;
+    if(risk.encounters)risk.encounters=risk.encounters.filter(e=>e.at>city.elapsed-SAFETY.encounterWindowSeconds);
+    if(city.elapsed-risk.lastConflictAt>SAFETY.coolingDelaySeconds+1e-9)
+      risk.exposure=Math.max(0,round6(risk.exposure-dt*SAFETY.coolingPerSecond));
+    if(risk.exposure<SAFETY.warningExposure)delete risk.warnedAt;
+    return risk.exposure>1e-9 || !!risk.encounters?.length;
+  });
+  // Road edits can join previously separate areas; legacy saves also stored risk per tile.
+  // Keep the strongest warning, not the sum, and retain distinct encounters only once.
+  const areas=new Map<string,JunctionRisk>();
+  for(const risk of city.risks){
+    const area=index.areas.get(key(risk))!;
+    const existing=areas.get(area);
+    if(!existing){areas.set(area,risk);continue;}
+    existing.exposure=Math.max(existing.exposure,risk.exposure);
+    existing.lastConflictAt=Math.max(existing.lastConflictAt,risk.lastConflictAt);
+    if(risk.warnedAt!==undefined)existing.warnedAt=Math.min(existing.warnedAt??risk.warnedAt,risk.warnedAt);
+    if(existing.encounters||risk.encounters){
+      const encounters=new Map<string,NonNullable<JunctionRisk['encounters']>[number]>();
+      for(const e of [...(existing.encounters??[]),...(risk.encounters??[])].sort((a,b)=>a.at-b.at))encounters.set(`${e.firstId}:${e.secondId}`,e);
+      existing.encounters=[...encounters.values()].sort((a,b)=>a.at-b.at).slice(-Math.ceil(SAFETY.encounterWindowSeconds/TRAFFIC_TICK));
+    }
+  }
+
+src/game/cityFlow.ts:15
+export function flowSnapshot(city: City, targetHomes: number, purpose: TripPurpose = 'shopping',
+  rules: {returnsPerHome:number;maximumStoppedSeconds:number;maximumJourneySeconds:number} = FLOW_PROTOTYPE) {
+  if (!Number.isSafeInteger(targetHomes) || targetHomes < 1) throw new Error('Flow needs a fixed positive household target');
+  const now = Math.round(city.elapsed * 1e6) / 1e6, since = now - METRICS_WINDOW;
+  const kind = purpose === 'shopping' ? 'store' : 'park';
+  const destinations = city.buildings.filter(b => b.kind === kind).map(b => ({...b, ...visitorSlots(city, b)}));
+  const records = city.history.filter(h => h.at > since && h.at <= now && h.service?.purpose === purpose);
+  const homes = city.buildings.filter(b => b.kind === 'home').map(home => {
+    const household = city.households.find(h => h.homeId === home.id);
+    const trip = city.trips.find(t => t.homeId === home.id && !t.service && !t.external);
+    const returns = records.filter(h => h.service!.homeId === home.id);
+    const liveVisit = trip?.purpose === purpose && trip.rewarded && trip.visitedAt !== undefined
+      && trip.visitedAt > since ? 1 : 0;
+    const visits = returns.filter(h => h.service!.visitedAt > since).length + liveVisit;
+    const reachable = destinations.filter(d => findPath(city, entrance(home), entrance(d))
+      && findPath(city, entrance(d), entrance(home)));
+    const goal = trip?.phase === 'visiting' ? entrance(home) : trip ? goalOf(city, trip) : null;
+    const committedAccess = !!trip && !!goal && !findPath(city, trip.path[bodyTile(trip)], goal);
+    const access = reachable.length === 0 || committedAccess;
+    const pending = household?.[purpose] ?? 0;
+    // A completed parked stay awaiting its return merge must remain visible too.
+    const parkedWait = trip?.phase === 'visiting' && trip.rewarded && trip.visitedAt !== undefined
+
+src/game/cityScene.ts:380
+    function renderActivity() {
+        activity.clear();
+        const live = new Set<string>();
+        const liveBadges = new Set<string>();
+        function label(key:string,text:string,x:number,y:number,color=0xffeed6) {
+            live.add(key);
+            let t=statusLabels.get(key);
+            if(!t){t=new Text({text,style:{fontFamily:'system-ui',fontSize:12,fontWeight:'bold',fill:color,stroke:{color:0x122d26,width:3}}});t.anchor.set(.5);activityLabels.addChild(t);statusLabels.set(key,t);}
+            t.text=text;t.style.fill=color;t.style.fontSize=17.6/(stage.scale()*camera.zoom);t.style.stroke={color:0x122d26,width:3/(stage.scale()*camera.zoom)};t.position.set(px(x),py(y));
+        }
+        if(inspectedRoad && city.roads.some(p=>same(p,inspectedRoad!)))activity.rect(px(inspectedRoad.x)+1,py(inspectedRoad.y)+1,tile-2,tile-2).stroke({color:0x42d9e8,width:3,alpha:.9});
+
+src/game/cityModel.ts:452
+export function stepCity(city: City, dt: number): void {
+  if (!finite(dt) || dt === 0) return;
+  retryAutomaticConnection(city);
+  const index = roadIndex(city);
+  // Advance exactly across tick/payment/departure boundaries so frame rate cannot change outcomes.
+  while (dt > 1e-9) {
+    const slice = Math.min(dt, INCOME_INTERVAL - city.incomeClock, SPAWN_INTERVAL - city.spawnClock, TRAFFIC_TICK - city.tickClock);
+    city.elapsed += slice; city.incomeClock += slice; city.spawnClock += slice; city.tickClock += slice; dt -= slice;
+    if (city.tickClock >= TRAFFIC_TICK - 1e-9) {
+      city.tickClock = 0;
+      trafficTick(city, index);
+      stepVisits(city, index, TRAFFIC_TICK);
+      // Exactly one incident step per traffic tick, with or without vehicles on the road.
+      stepIncidents(city, TRAFFIC_TICK);
+      stepExternal(city, index, TRAFFIC_TICK);
+      refreshTutorial(city);
+      refreshFlowProgress(city);
+    }
+    if (city.incomeClock >= INCOME_INTERVAL - 1e-9) { city.incomeClock = 0; city.funds += income(city); }
+    if (city.spawnClock >= SPAWN_INTERVAL - 1e-9) {
+      city.spawnClock = 0;
+      growDemand(city, SPAWN_INTERVAL);
+      spawnTrips(city, index);
+    }
+  }
+}
+function parsePoints(raw: unknown, roads: Set<string>, limit: number): Point[] | null {
+  if (raw === undefined) return [];

@@ -1,3 +1,61 @@
+## One-way roads delivered locally (2026-09-11)
+
+OW-01/02 first implementation slice is complete: [delivery](transit-and-one-way/IMPLEMENTED.md). Shared directed routes/movement/saves, user-selected corner/ring paths, cached arrows and safe edit guards; 303 tests, build and desktop/narrow browser checks. Actual supplied-town ring was tested with existing controls; automatic circulating priority is not implemented. Bus foundation/art and SIG-01 offsets remain queued. User mission plan remains pending. No publication.
+
+## Requested bus and one-way design work (2026-09-11)
+
+User is writing the mission structure. Three Codex design agents delivered transit simulation, directed-road/ring behavior and asset requirements; [the package](transit-and-one-way/README.md) defines implementation assignments OW-01/02, SIG-01, BUS-01/02, ART-01 and VERIFY-01. One-way movement is the proposed first runtime slice, with bus/walking foundation and artwork preparation independent where possible. Bus stations occupy land and include parking; stops occupy one square; passengers must complete actual journeys while buses physically delay traffic. Reuse existing art where available. Signal coordination requires phase-offset work beyond current timing presets. No new mission order, runtime implementation, save edits or publication in this design pass. Existing widening/roadworks work remains queued; the current user request supersedes its older next-feature ordering for this pass.
+
+# Challenges alongside the sandbox
+
+## Priority intersection rebalance delivered (2026-09-11)
+
+Today's user-prioritized shared danger mechanics are delivered locally: heavier conflicting use can overwhelm stops; heavy opposing turns can make a long shared green dangerous. Quiet traffic and suitable controls/routes remain safe in measured comparisons. Level 2/3 maps unchanged, both modes have actionable warnings, saved measurements prepare a later safety heatmap. [Delivery and evidence](traffic-safety-balance/IMPLEMENTED.md), 272 tests/build/desktop+narrow pass. Next balance follow-up: observe play, then incident-based severity and genuine pile-ups with real crew access. No publication.
+
+## Shared intersection balancing review delivered (2026-09-11)
+
+User explicitly wants mechanics balancing across missions and sandbox while preserving the current Level 3. Installed Grok's completed [review and Codex handoff](traffic-safety-balance/README.md) recommend local conflicting-arrival danger, effective controls, and incident-based police/EMS/fire rosters including real pile-ups. Prototype actual failed-yield contact alongside area-level exposure/decay; do not turn compliant waiting or bad Flow labels into crashes. Severity and pile-up reachability, physical responder access and save compatibility require verification. Numbers remain provisional. Five existing lesson tests pass; no runtime rebalance or publication in this assignment pass.
+
+## First 25 missions: latest direction for the next discussion
+
+The first ten missions will focus on placing roads, connecting homes to stores and reducing commute time across different intersection layouts. This supersedes the planned early crash/control lesson order, but does not change published maps or saved progress yet. [Mission requirements: Levels 1–25](challenges/MISSIONS.md) records the confirmed direction and a proposed sequence expanding into congestion, destination capacity, crashes, emergency access and diversion. Individual maps, targets, budgets, star criteria and later-level ordering await discussion/playtesting. The user reports 46 unique players and hopes short challenges encourage return visits; retention is a hypothesis, not a measured result. Documentation only in this pass; no implementation, publication or agent discussion scheduled automatically.
+
+
+## Challenge route and revised lessons delivered
+
+Latest direction supersedes the earlier three-level order/return-only opening: numbered road-map selection, victory Retry/Next, Level 1 actual store arrival, Level 2 vertically spaced homes returning within a provisional 45 simulated seconds, Level 3 missing roads/no control with real collision avoidance. Original Room to move is a fourth bonus; old stars and neighborhood layouts are preserved. Fixed budgets, separate sandbox, main-menu exit and future learn/earn/sandbox unlock direction remain.262 model tests, build and desktop/narrow verification pass locally; observed fun remains unverified. See [delivery](challenges/IMPLEMENTED.md). No publication.
+
+
+## Challenge opening lessons delivered
+
+User reordered the opening to one home/store connection, then a group of homes needing roads; Room to move is now third. Implemented fixed challenge budgets, per-level saves/stars with legacy migration, matching gold entry button and direct main-menu exit.259 model tests, production build and desktop/narrow checks pass. See [challenge delivery](challenges/IMPLEMENTED.md). Broader challenge authoring/inventory and further lessons remain queued alongside sandbox development.
+
+
+## Latest scope correction (2026-09-10)
+
+The sandbox remains the main game. CHALLENGE work develops alongside it as small predetermined puzzles that teach and test sandbox lessons; it does not supersede sandbox development or postpone it. Immediate authorized slice: main-menu Challenges entry and the existing FLOW puzzle with explicit success criteria and isolated progress/retries. Preserve Claude’s story/monetization direction, ongoing FLOW work and all towns. The subsequent A-to-B and five-lesson proposals remain queued, not implemented.
+
+
+First main-menu entry and FLOW lesson delivered locally: [implementation](challenges/IMPLEMENTED.md),256 model tests and production build. Broader format/inventory/A-to-B items below remain queued; the current slice is not their complete delivery. Blocking correctness regressions still come first.
+
+| Order | Item | Gate |
+| --- | --- | --- |
+| 1 | CHALLENGE-01: challenge data format and headless runner | Loads a `parseCity`-validated snapshot plus inventory/goal/time limit; runs with `stepCity`; untouched map fails, reference solution passes, results match across runs and step sizes |
+| 2 | CHALLENGE-02: first playable challenge, car A to B in under 60 simulated seconds | Plan/Go/Reset flow, limited inventory, fixed vs editable construction, separate progress save; city save untouched |
+| 3 | CHALLENGE-03: first five-lesson set and par/stars | Connect, route around, right of way, emergency access, divert; verified by pre-simulation; desktop and narrow checks |
+| Later | CHALLENGE-04: map-derived challenge generation | Candidates from exported maps kept only when pre-simulation proves a small fix works and a human finds the cause readable |
+| Later | Radio station unlock | Hours-played unlock first; finale unlock once an ending exists; Suno commercial rights confirmed |
+| Later | The Man: good-advice-wrong-order chains | Builds on "Not yet / I have a plan" deferral; advice stays mechanically truthful |
+
+# FLOW-01 implemented locally (2026-09-10)
+
+## FLOW-02 delivered locally (2026-09-10)
+
+Current-objective and compact feedback integration is complete locally: [FLOW-02 delivery and evidence](flow-puzzles/flow02/README.md). Existing-system recognition, current service/returns/waiting, cause distinctions and road-approach inspection are implemented. Actual Claude UI and Grok review, independent Codex tests and lead integration;253 tests, build and desktop/narrow browser checks pass. No publication. FLOW-03 observed playtest/tuning is the next flow task; earlier queued labels below are superseded for FLOW-02 only.
+
+
+The first demand/measurement prototype is complete: [results and verification](flow-puzzles/FLOW-01.md). Same queued nine-home town yields 46 original / 68 retimed / 93 nearby-store returns in 180 measured seconds; every household receives repeated service, and spare reachable store capacity remains. Bounded per-purpose visit/return attribution, unserved/current waiting checks and saved shopping/leisure tie fairness are implemented. 244 tests and production build pass. No publication. FLOW-02 objective/feedback integration and FLOW-03 observed playtest are still pending; earlier queued labels below are superseded for FLOW-01 only.
+
 # Working ON IT! backlog
 
 ## Saved police / EMS junction jam corrected locally (2026-09-10)

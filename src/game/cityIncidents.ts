@@ -1,9 +1,9 @@
 import {routingSnapshot,weightedRoute,routeCost,civilianRoute} from './cityRouting.ts';
 import {stepPolicePatrols} from './cityPatrols.ts';
 import {CITY_RULES} from './cityRules.ts';
-/** Unsigned-junction crashes, service dispatch, and rescue outcomes. No renderer or HUD imports. */
+/** Intersection conflicts, service dispatch, and rescue outcomes. No renderer or HUD imports. */
 import { entrance, findPath, retarget, stations, SERVICE_OF, isBlocked, type City, type Point, type Trip } from './cityModel.ts';
-import { commitTripRoute, startBlocked, roadIndex, bodyTile, governingControl, EMERGENCY_TILES_PER_SECOND, TRAVEL_TILES_PER_SECOND, TRAFFIC_TICK } from './cityTraffic.ts';
+import { commitTripRoute, startBlocked, roadIndex, bodyTile, governingControl, conflictingContact, contactAxis, signalAxis, EMERGENCY_TILES_PER_SECOND, TRAVEL_TILES_PER_SECOND, TRAFFIC_TICK, type RoadIndex } from './cityTraffic.ts';
 
 export type ServiceKind = 'ems' | 'fire' | 'police';
 export type Incident = {
@@ -22,10 +22,14 @@ export type Incident = {
 export function incidentServices(incident:Incident):ServiceKind[] { return incident.tutorialEmsOnly ? ['ems'] : incident.required; }
 export type JunctionRisk = {
   x: number; y: number; exposure: number; lastConflictAt: number; firstId: number; secondId: number;
+  /** Distinct real encounters, bounded to a simulated-time window; also feeds future map diagnostics. */
+  encounters?: {firstId: number; secondId: number; at: number}[];
+  control?: 'stop' | 'signal';
+  warnedAt?: number;
 };
 
-/** Seconds of sustained incompatible claims at an unsigned junction before a failed-yield crash. Provisional. */
-export const RISK_THRESHOLD = 6;
+/** Encounter exposure at which a fresh failed yield can crash after a visible warning. Provisional. */
+export const RISK_THRESHOLD = CITY_RULES.intersectionSafety.crashExposure;
 /** Simultaneous wrecks. Further conflicts still warn. */
 export const MAX_ACTIVE_INCIDENTS = 3;
 /** Serious/fire rescue clock. A game deadline, not a real medical response time. */
@@ -34,7 +38,7 @@ export const WORK_SECONDS: Record<ServiceKind, number> = { police: 6, ems: 6, fi
 /** Sustained stationary response before an available backup may take over. */
 export const BACKUP_WAIT_SECONDS = CITY_RULES.routing.emergencyBackupSeconds;
 const MAX_CLEARED = 16;
-const COOL_SECONDS = 1;
+const SAFETY = CITY_RULES.intersectionSafety;
 const SEVERITIES = ['minor', 'serious', 'fire'] as const;
 const SERVICE_ORDER: ServiceKind[] = ['police', 'ems', 'fire'];
 const NEEDS: Record<(typeof SEVERITIES)[number], ServiceKind[]> = {
@@ -95,32 +99,15 @@ function nearContact(trip: Trip, point: Point): boolean {
   return !!next && at(next, point.x, point.y);
 }
 
-function axisToward(trip: Trip, point: Point): 'ns' | 'ew' | null {
-  const k = bodyTile(trip);
-  const here = trip.path[k];
-  if (!here) return null;
-  const axis = (from: Point, to: Point) => (from.x !== to.x ? 'ew' : from.y !== to.y ? 'ns' : null);
-  if (at(here, point.x, point.y)) {
-    const prev = k > 0 ? trip.path[k - 1] : null;
-    if (prev) return axis(prev, here);
-    const next = trip.path[k + 1];
-    return next ? axis(here, next) : null;
-  }
-  if (Math.abs(here.x - point.x) + Math.abs(here.y - point.y) === 1) return axis(here, point);
-  const next = trip.path[k + 1];
-  return next && at(next, point.x, point.y) ? axis(here, next) : null;
-}
-
-function livePair(city: City, point: Point, firstId: number, secondId: number): [Trip, Trip] | null {
+function livePair(city: City, point: Point, firstId: number, secondId: number, index: RoadIndex): [Trip, Trip] | null {
   if (firstId === secondId) return null;
   const first = city.trips.find(t => t.id === firstId);
   const second = city.trips.find(t => t.id === secondId);
   if (!first || !second || !drivingCivilian(first) || !drivingCivilian(second)) return null;
   if (!nearContact(first, point) || !nearContact(second, point)) return null;
-  const a = axisToward(first, point);
-  const b = axisToward(second, point);
-  // Same-axis traffic is following or opposing through-traffic, never a failed yield.
-  if (!a || !b || a === b) return null;
+  if (!conflictingContact(index, point, first, second)) return null;
+  // A pair sitting still is waiting, not a new failed-yield encounter.
+  if (first.hold > TRAFFIC_TICK && second.hold > TRAFFIC_TICK) return null;
   return [first, second];
 }
 
@@ -130,25 +117,38 @@ export function recordConflict(city: City, point: Point, firstId: number, second
   if(training)return false;
   if (!Number.isFinite(dt) || dt <= 0 || !isId(firstId) || !isId(secondId) || firstId === secondId) return false;
   const index = roadIndex(city);
-  if (governingControl(city, index, point)) { cancelRisks(city, point); return false; }
+  const control = governingControl(city, index, point);
+  const area=index.areas.get(key(point));
+  let risk = city.risks.find(r => index.areas.get(key(r))===area);
+  if(risk && risk.control!==control?.kind){cancelRisks(city,point);risk=undefined;}
   if (inIncidentArea(city, point)) { cancelRisks(city, point); return false; }
-  if(!index.junctions.has(key(point)) || !livePair(city,point,firstId,secondId))return false;
-  let risk = city.risks.find(r => at(point, r.x, r.y));
+  const pair = livePair(city,point,firstId,secondId,index);
+  if(!index.junctions.has(key(point)) || !pair)return false;
+  // Signals protect perpendicular movements. Only incompatible turns sharing green remain exposed.
+  if(control?.kind==='signal' && pair.some(t=>contactAxis(t,point)!==signalAxis(city,control)))return false;
   if (!risk) {
-    risk = { x: point.x, y: point.y, exposure: 0, lastConflictAt: Number.NEGATIVE_INFINITY, firstId, secondId };
+    risk = { x: point.x, y: point.y, exposure: 0, lastConflictAt: round6(city.elapsed), firstId, secondId,
+      encounters:[], ...(control?{control:control.kind}:{}) };
     city.risks.push(risk);
   }
-  if (Math.abs(risk.lastConflictAt - city.elapsed) < 1e-9) {
-    risk.firstId = firstId; risk.secondId = secondId;
-  } else {
-    risk.exposure = Math.min(RISK_THRESHOLD,round6(risk.exposure + dt));
-    risk.lastConflictAt = round6(city.elapsed);
-    risk.firstId = firstId; risk.secondId = secondId;
-  }
+  risk.encounters=(risk.encounters??[]).filter(e=>e.at>city.elapsed-SAFETY.encounterWindowSeconds);
+  const first=Math.min(firstId,secondId),second=Math.max(firstId,secondId);
+  if(risk.encounters.some(e=>Math.abs(e.at-city.elapsed)<1e-9))return false;
+  if(risk.encounters.some(e=>e.firstId===first&&e.secondId===second))return false;
+  risk.encounters.push({firstId:first,secondId:second,at:round6(city.elapsed)});
+  risk.firstId=firstId;risk.secondId=secondId;
+  const vehicles=new Set(risk.encounters.flatMap(e=>[e.firstId,e.secondId])).size;
+  if(control && vehicles<SAFETY.controlledConflictVehicles)return false;
+  const weight=control?.kind==='signal'?SAFETY.signalTurnEncounterExposure:control?SAFETY.controlledEncounterExposure:SAFETY.unsignedEncounterExposure;
+  risk.exposure=Math.min(RISK_THRESHOLD,round6(risk.exposure+weight));
+  risk.lastConflictAt=round6(city.elapsed);
+  if(risk.exposure>=SAFETY.warningExposure)risk.warnedAt??=round6(city.elapsed);
   if (risk.exposure + 1e-9 < RISK_THRESHOLD) return false;
+  if(city.elapsed-(risk.warnedAt??city.elapsed)<SAFETY.warningSeconds-1e-9)return false;
   if (active(city).length >= MAX_ACTIVE_INCIDENTS) return false;
-  const pair = livePair(city, point, firstId, secondId);
-  if (!pair) return false;
+  // A contact cannot consume a third civilian or overlap a responder already on the tile.
+  if(city.trips.some(t=>!pair.includes(t)&&!t.sceneParked&&phaseOf(t)!=='visiting'
+    &&t.path[bodyTile(t)]&&at(t.path[bodyTile(t)],point.x,point.y)))return false;
   const severity = SEVERITIES[city.accidentCount % SEVERITIES.length];
   createIncident(city,point,pair,severity);
   return true;
@@ -350,10 +350,30 @@ function dispatch(city: City): void {
 function expireRisks(city: City, dt: number): void {
   const index = roadIndex(city);
   city.risks = city.risks.filter(risk => {
-    if (!index.junctions.has(key(risk)) || governingControl(city, index, risk) || inIncidentArea(city, risk)) return false;
-    if (city.elapsed - risk.lastConflictAt > Math.max(COOL_SECONDS, dt) + 1e-9) return false;
-    return risk.exposure > 1e-9;
+    if (!index.junctions.has(key(risk)) || governingControl(city, index, risk)?.kind!==risk.control || inIncidentArea(city, risk)) return false;
+    if(risk.encounters)risk.encounters=risk.encounters.filter(e=>e.at>city.elapsed-SAFETY.encounterWindowSeconds);
+    if(city.elapsed-risk.lastConflictAt>SAFETY.coolingDelaySeconds+1e-9)
+      risk.exposure=Math.max(0,round6(risk.exposure-dt*SAFETY.coolingPerSecond));
+    if(risk.exposure<SAFETY.warningExposure)delete risk.warnedAt;
+    return risk.exposure>1e-9 || !!risk.encounters?.length;
   });
+  // Road edits can join previously separate areas; legacy saves also stored risk per tile.
+  // Keep the strongest warning, not the sum, and retain distinct encounters only once.
+  const areas=new Map<string,JunctionRisk>();
+  for(const risk of city.risks){
+    const area=index.areas.get(key(risk))!;
+    const existing=areas.get(area);
+    if(!existing){areas.set(area,risk);continue;}
+    existing.exposure=Math.max(existing.exposure,risk.exposure);
+    existing.lastConflictAt=Math.max(existing.lastConflictAt,risk.lastConflictAt);
+    if(risk.warnedAt!==undefined)existing.warnedAt=Math.min(existing.warnedAt??risk.warnedAt,risk.warnedAt);
+    if(existing.encounters||risk.encounters){
+      const encounters=new Map<string,NonNullable<JunctionRisk['encounters']>[number]>();
+      for(const e of [...(existing.encounters??[]),...(risk.encounters??[])].sort((a,b)=>a.at-b.at))encounters.set(`${e.firstId}:${e.secondId}`,e);
+      existing.encounters=[...encounters.values()].sort((a,b)=>a.at-b.at).slice(-Math.ceil(SAFETY.encounterWindowSeconds/TRAFFIC_TICK));
+    }
+  }
+  city.risks=[...areas.values()];
 }
 
 function advanceDeadlines(city: City): void {
@@ -477,9 +497,9 @@ export function incidentSummary(city: City): {
   active: number; warning: string; details: { id: number; label: string; needs: string; deadlineSeconds: number | null }[];
 } {
   const live = active(city).sort((a, b) => a.id - b.id);
-  const risk = [...city.risks].sort((a, b) => b.exposure - a.exposure || a.y - b.y || a.x - b.x)[0];
+  const risk = city.risks.filter(r=>r.exposure>=SAFETY.warningExposure).sort((a, b) => b.exposure - a.exposure || a.y - b.y || a.x - b.x)[0];
   const warning = risk
-    ? `Failed-yield risk at ${risk.x},${risk.y}. A crash may happen if this continues. Place a stop or light.`
+    ? `Failed-yield risk at ${risk.x},${risk.y}. ${risk.control==='stop'?'Busy stop: use lights or split the traffic.':risk.control==='signal'?'Conflicting turns: change light timing or separate routes.':'Busy crossing: add controls or a safer route.'}`
     : '';
   return {
     active: live.length,
@@ -497,6 +517,23 @@ export function incidentSummary(city: City): {
       };
     }),
   };
+}
+
+/** Read-only area measurements for debugging now and a later safety overlay. Not a Flow grade. */
+export function intersectionSafetySnapshot(city:City){
+  const index=roadIndex(city);
+  return [...new Set(index.areas.values())].map(area=>{
+    const [x,y]=area.split(',').map(Number);
+    const risk=city.risks.find(r=>index.areas.get(key(r))===area);
+    const control=governingControl(city,index,{x,y});
+    const encounters=(risk?.encounters??[]).filter(e=>e.at>city.elapsed-SAFETY.encounterWindowSeconds);
+    const exposure=risk?.exposure??0;
+    return {x,y,control:control?.kind??'unsigned',preset:control?.kind==='signal'?control.preset:null,
+      windowSeconds:SAFETY.encounterWindowSeconds,conflictEncounters:encounters.length,
+      conflictingVehicles:new Set(encounters.flatMap(e=>[e.firstId,e.secondId])).size,
+      exposure,warningThreshold:SAFETY.warningExposure,crashThreshold:RISK_THRESHOLD,
+      state:inIncidentArea(city,{x,y})?'incident':exposure>=SAFETY.warningExposure?'danger':exposure>0?'watch':'quiet'};
+  });
 }
 
 function parseServices(raw: unknown, allowed: ServiceKind[]): ServiceKind[] | null {
@@ -551,10 +588,26 @@ function parseOneRisk(raw: unknown, elapsed: number, seen: Set<string>): Junctio
   if (!isInt(r.x) || !isInt(r.y) || !isId(r.firstId) || !isId(r.secondId) || r.firstId === r.secondId) return null;
   if (!isTime(r.exposure) || r.exposure > RISK_THRESHOLD + TRAFFIC_TICK) return null;
   if (!isTime(r.lastConflictAt) || r.lastConflictAt > elapsed + 1e-6) return null;
+  if(r.control!==undefined&&r.control!=='stop'&&r.control!=='signal')return null;
+  if(r.warnedAt!==undefined&&(!isTime(r.warnedAt)||r.warnedAt>elapsed+1e-6))return null;
+  let encounters:JunctionRisk['encounters'];
+  if(r.encounters!==undefined){
+    if(!Array.isArray(r.encounters)||r.encounters.length>Math.ceil(SAFETY.encounterWindowSeconds/TRAFFIC_TICK)+1)return null;
+    encounters=[];const pairs=new Set<string>();
+    for(const value of r.encounters){
+      if(!value||typeof value!=='object')return null;
+      const e=value as Record<string,unknown>;
+      if(!isId(e.firstId)||!isId(e.secondId)||e.firstId>=e.secondId||!isTime(e.at)||e.at>elapsed+1e-6)return null;
+      const pair=`${e.firstId}:${e.secondId}`;
+      if(pairs.has(pair))return null;pairs.add(pair);
+      encounters.push({firstId:e.firstId,secondId:e.secondId,at:e.at});
+    }
+  }
   const atKey = `${r.x},${r.y}`;
   if (seen.has(atKey)) return null;
   seen.add(atKey);
-  return { x: r.x, y: r.y, exposure: r.exposure, lastConflictAt: r.lastConflictAt, firstId: r.firstId, secondId: r.secondId };
+  return { x: r.x, y: r.y, exposure: r.exposure, lastConflictAt: r.lastConflictAt, firstId: r.firstId, secondId: r.secondId,
+    ...(encounters?{encounters}:{}),...(r.control?{control:r.control}:{}),...(r.warnedAt!==undefined?{warnedAt:r.warnedAt}:{}) };
 }
 
 function tripRefsOk(city: City, incidents: Incident[]): boolean {
@@ -620,7 +673,7 @@ export function parseIncidentState(raw: Record<string, unknown>, city: City): bo
   for (const value of (raw.risks ?? []) as unknown[]) {
     const risk = parseOneRisk(value, city.elapsed, riskAt);
     if (!risk) return false;
-    if(risk.firstId>=city.nextId || risk.secondId>=city.nextId)return false;
+    if(risk.firstId>=city.nextId || risk.secondId>=city.nextId || risk.encounters?.some(e=>e.firstId>=city.nextId||e.secondId>=city.nextId))return false;
     if(!roadIndex(city).junctions.has(key(risk)))continue;
     risks.push(risk);
   }

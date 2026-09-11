@@ -293,3 +293,23 @@ Select the destination before weighting its route, and validate departure occupa
 ### Emergency weighted routing keeps intent separate from vehicle type (J3)
 
 Cost dispatch and subsequent scene-approach reconsideration consistently; otherwise a tile-count retarget can overwrite the weighted choice. Active responses may omit control delay and cross civilian diversions only because physical movement already supports those exceptions. Routine returns use ordinary speed and restrictions even before their old response speed field is updated. Reserve ordinary query capacity separately from prioritized responses and test repeated response pressure. Route selection never replaces safe admission, committed passing, parked work or return merges. Evidence:232 model tests and390/1440 browser response/reload/work/return plus civilian completions; physical-phone performance remains unmeasured.
+
+### FLOW-01 service observations and purpose fairness (verified)
+
+Timestamp actual completed stays separately from physical returns; carry optional local attribution in the existing bounded traffic history and retain completed parked customers in live observations. A valid route both ways does not prove the current car can return from its committed destination. Keep fixed household targets and all current households alongside averages; absent old attribution means unknown evidence, not invented progress. Restore elapsed time before parsing trip timestamps.
+
+Equal-urgency demand ties can starve shopping if leisure refills before every departure. Persist the last successful departure purpose and alternate ties without reassigning a committed journey. A real long-park-trip/reload regression verifies continuing shopping and leisure service.
+
+Comparison fixtures must assert each placement and every destination's reachability: a spare slot in an accidentally disconnected store is not evidence of usable spare capacity. Same queued-town copies verify retiming and nearby destinations with every household served; a preplanned layout needs no forced jam. 244 model tests and build pass; narrow-window qualification variation and player-observed fun remain tuning work. See [FLOW-01](flow-puzzles/FLOW-01.md).
+
+### FLOW-02 civic recognition and compact feedback (verified)
+
+Keep comparison thresholds separate from civic qualification through the same measurement function. A shopping quota that ignores real park journeys can reject useful mixed-purpose service; verify a retained-park town and reload before choosing the gate. A slower original layout may genuinely serve all homes and should not be forced to fail. New recognition belongs in the existing receipt system, with optional observation state and a saved high-water household target; corrupted optional state must not erase old receipts.
+
+Pure helpers in mutually importing model modules are safe at call time, but a top-level definition reading a not-yet-initialized imported constant caused an ES-module initialization failure. Keep mission definitions independent of that initialization order.
+
+Polled Flow labels/counts should stay outside live regions. Reuse the objective's compact note and scrollable Details slots. Numeric bounds passed while the initial narrow Dashboard still had poor reading space; inspect screenshots, shorten copy and measure heading fit too. Road approach observation must follow connected roads, not a geometric radius across an unconnected parallel street. Verified in253 model tests, build and two-layout browser evidence; observed fun remains separate. [FLOW-02](flow-puzzles/flow02/README.md).
+
+### Moving a saved external connector (verified)
+
+Run one-time sandbox migration after validating and selecting the winning host/local save, keeping pure parseCity useful for original-state reproductions. Moving the connector must update every visitor origin and returning goal together, preserving local path geometry and fractional position. Returners must re-enter physical routing instead of completing at the obsolete endpoint. Verify a disconnected wait, reconnect through actual construction, physical completion and reload. An expansion rejection must precede progress refresh or allowance consumption. Reconnection guidance belongs in the measured objective layout; adding a supplemental row caused overlap on narrow screens. See [delivery](land-progression/connected-edge/README.md).

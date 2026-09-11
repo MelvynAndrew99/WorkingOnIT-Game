@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import DiagnosticViews from './DiagnosticViews.tsx';
+import FlowFeedback, { readFlow } from './FlowFeedback.tsx';
 import { useStore } from '../state/store.ts';
 import './cityDialogs.css';
 
@@ -9,7 +10,9 @@ export default function CityDialogs({ panel, close, openDebug }: { panel: 'repor
   useEffect(() => { if (panel) heading.current?.focus(); }, [panel]);
   if (!panel) return null;
   return <section className="city-dashboard" id="city-dashboard" aria-labelledby="city-dashboard-title" onKeyDown={e=>{if(e.key==='Escape'){e.stopPropagation();close();}}}>
-    <div className="dashboard-heading"><h2 ref={heading} tabIndex={-1} id="city-dashboard-title">Dashboard</h2><button onClick={close} aria-label="Close Dashboard">Close</button></div>
+    <div className="dashboard-heading"><h2 ref={heading} tabIndex={-1} id="city-dashboard-title">Dashboard</h2><button onClick={close} aria-label="Close Dashboard"><span aria-hidden="true">×</span></button></div>
+    {/* Current service leads the report, whether or not the job has been earned. */}
+    <FlowFeedback flow={readFlow(s)} place="dashboard" />
     <section aria-label="Map views"><h3>Map views</h3><DiagnosticViews onDebug={openDebug} /></section>
     <section className="dashboard-definitions" aria-label="Statistics definitions">
       <h3>What the numbers mean</h3>
@@ -37,7 +40,7 @@ export default function CityDialogs({ panel, close, openDebug }: { panel: 'repor
         {s.incidentInfo.details.map(i => <article className="incident-detail" key={i.id}><strong>{i.label}</strong><p>{i.needs}</p>{i.deadlineSeconds !== null && <p>Rescue deadline: {Math.max(0, Math.ceil(i.deadlineSeconds))}s</p>}</article>)}
       </section>
       <section><h3>How crossings and crews behave</h3>
-        <p>Stop signs and traffic lights prevent conflicting entries. At unsigned crossings, sustained conflict creates an accident warning. Build a detour or use Road closure to divert new entries. Emergency crews travel from their actual stations and need a usable route to the scene.</p>
+        <p>Repeated conflicting arrivals make an unsigned crossing dangerous. Stops suit moderate traffic; busy stops can need lights or another route. Signals separate crossing traffic, but heavy opposing turns sharing green can need different timing or separate routes. Watch the junction warning. Emergency crews travel from their actual stations and need a usable route to the scene.</p>
         <p>Responding crews can cross red lights when the junction is clear. Traffic yields, and crews can pass queues in a clear opposing lane on straight roads with space to merge back. Blocked lanes still delay a rescue. Returning crews follow normal traffic rules.</p>
       </section>
     </div>

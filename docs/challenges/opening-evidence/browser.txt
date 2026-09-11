@@ -1,0 +1,22 @@
+warning: Git tree '/home/phil/Code/jams/AI-Overlord' is dirty
+Context Collapse environment ready: node, npm, rundot
+[
+  {
+    name: 'desktop',
+    gold: [ [Object], [Object] ],
+    threeIndependentStars: true,
+    legacyFlowPreserved: true,
+    noIncome: true,
+    directExit: true,
+    sandboxUnchanged: true
+  },
+  {
+    name: 'narrow',
+    gold: [ [Object], [Object] ],
+    threeIndependentStars: true,
+    legacyFlowPreserved: true,
+    noIncome: true,
+    directExit: true,
+    sandboxUnchanged: true
+  }
+]

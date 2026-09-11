@@ -1,3 +1,96 @@
+## One-way streets delivered locally (September 11, 2026)
+
+[Implementation](transit-and-one-way/IMPLEMENTED.md) delivers direction selection, ring flows and arrows through shared route/physical/save rules. Existing roads remain two-way until edited; direction changes preserve real trips and require occupied/reserved space to clear. Existing Stop/Light controls still govern ring entrances; circular geometry does not automatically establish roundabout priority. Buses and coordinated signal offsets remain queued, and the user still owns mission structure. No upload in this implementation pass.
+
+## Bus infrastructure, walking and one-way streets (September 11, 2026)
+
+The user is preparing the mission plan and requests parallel design/delegation of a physical bus station with parking, one-square bus stops, real buses that trade localized queues for fewer cars per traveler, and one-way roads for circular/dense layouts. Neighborhood walking and coordinated signals are intended teaching opportunities. [Design package and assignments](transit-and-one-way/README.md) supplies source-grounded transit, directed-road and art handoffs. Three Codex design agents were launched; implementation is still queued. Preserve existing missions, saves and the smooth-frame-pacing constraint. Dimensions/capacities/prices are provisional; traffic direction, roundabout entry priority and signal phase offsets must each work in the model before being taught. This new work takes precedence over the older generic widening-next sequence for the current requested design pass; widening remains queued.
+
+## Outside connection remains an edge (September 11, 2026)
+
+The connected side is fixed: expand elsewhere. Existing interior connectors move to a free outer-edge tile, with a highlighted prompt to build the road connection. Preserve the town and visitors; relocating an exit never teleports a car or completes a rescue. See [implementation](land-progression/connected-edge/README.md).
+
+Manager correction: he should sound sincerely helpful, not conceited. His motives are self-serving but he does not announce that through a credit-taking punchline after every suggestion. User proposes: “Oh, another crash! Here is what I would do, build more roads!” His priority choices and eagerness carry the underlying motive. Delayed advice is still separate work.
+
+## Title-screen character clarification (September 11, 2026)
+
+The manager’s worn MANAGER label reads strongly as MAN because AGER has faded/rubbed off through use. He is kind and knowledgeable, but out of touch. The title uses “Good as new!” over his visibly obvious road patch: the visual mismatch lands without prior gameplay context. Reserve the more-roads joke and credit-taking theme for gameplay; do not use happy-accident wording on the title, which could imply players should cause crashes. This supersedes the peeled-off-lettering explanation.
+
+## Intersection danger as a core optimization mechanic (2026-09-11)
+
+Latest user priority is shared intersection balancing, including danger with unsuitable controls as traffic use grows. Preserve the current Level 2/3 maps. Poor Flow ratings alone do not cause crashes; repeated local conflicting arrivals do. Quiet traffic can remain safe unsigned. Moderate crossings can use stops; overloaded stops can need lights or route separation. Signals protect perpendicular traffic, while heavy opposing left turns sharing green can need different timing or separated routes. This supersedes older blanket-control-immunity descriptions below.
+
+Implemented locally with distinct encounter history, area-wide exposure and gradual cooling, a warning lead time, and actionable warnings in both modes. Correct controls/routes must still serve every household; waiting forever or deleting demand is not success. Saved diagnostic measurements support a safety heatmap later. [Measured delivery](traffic-safety-balance/IMPLEMENTED.md): 272 tests, build and desktop/narrow verification pass. Incident severity cycling and physical pile-up response remain separate follow-up work. No publication or mission-map changes.
+
+## Approved map, sparse starter town and later growth (latest user direction)
+
+The user approves the modern top-down map, The Man's identity, DKC-inspired progression and portrait/ribbon awards. They envision future cities, locations or changes as the town grows. For levels1–25, they prefer a less-dense starting town if Grok supports it. Actual installed Grok recommends a sparse starter plate: ordinary modest buildings, open parcels, gravel shoulders and unfinished dirt stubs around a useful paved network. The approved dense-city artwork remains valuable for a later destination or grown-up version after25, outside current scope.
+
+A new sparse backdrop is implemented locally; all25sites keep one coherent theme,1–4 remain playable and existing missions/saves are unchanged. Dirt is decorative, not a new road mechanic. No automatic growth, map-swap trigger or future-city unlock has been implemented. [Starter town delivery](challenges/starter-town/README.md). No publication.
+
+## Mission map revision: one town and The Man's awards (latest user decision)
+
+The user rejects the fantasy scenery and five short themed sections from the first progression overhaul. Use the approved title-screen modern city, viewed from above, as one continuous theme for levels1–25. A second theme/map only belongs beyond25 and is outside the jam scope. DKC1/2 references inform connected waypoints, an NPC progressing through the world and character heads marking finished levels; do not import their art or fantasy setting.
+
+Completed site numbers become The Man's recognizable face, with a decorative award ribbon in the corner. A small replay number may remain on the ribbon tail and in accessible labels/briefings. Use the title character's swept hair, tie, reflective vest and clipboard, not a generic hardhat replacement. His awards express eager self-credit for real useful work. Optional comedic map hints should derive from the game's sincere-help/poor-priorities/recognition tone and teach sound access/return/service concepts.
+
+Actual installed Grok received the rejection and revised the design; Codex implemented the single pannable city, referenced character art, portrait/ribbon presentation and optional landmark dialogue. Levels1–4 retain their real maps and saves;5 awaits user authoring and5–25 remain upcoming. [Delivery and verification](challenges/commute-map/README.md). No publication.
+
+## Challenges mode, The Man and the radio (September 10, 2026)
+
+## First 25 missions: latest direction for the next discussion
+
+The first ten missions will focus on placing roads, connecting homes to stores and reducing commute time across different intersection layouts. This supersedes the planned early crash/control lesson order, but does not change published maps or saved progress yet. [Mission requirements: Levels 1–25](challenges/MISSIONS.md) records the confirmed direction and a proposed sequence expanding into congestion, destination capacity, crashes, emergency access and diversion. Individual maps, targets, budgets, star criteria and later-level ordering await discussion/playtesting. The user reports 46 unique players and hopes short challenges encourage return visits; retention is a hypothesis, not a measured result. Documentation only in this pass; no implementation, publication or agent discussion scheduled automatically.
+
+
+## Learn it, earn it, use it in your town (confirmed progression direction)
+
+User confirms a mobile-first progression built around small, quick, predetermined challenge quests. Like Chess.com puzzles, they teach pattern recognition and strategy; like a Candy Crush-style level path, they introduce ideas in a curated sequence with clear objectives, completion rewards and increasing combinations of learned skills. Introduce one idea, let the player practice it, then build on it before introducing another mechanic. Exact session lengths, level counts and reward thresholds still need playtesting.
+
+**Meet it → practice it → solve with it → unlock it for your town.** Challenge quests become the intended route for learning and earning new sandbox tools, buildings or mechanics. The player gets access to the mechanic inside its teaching challenge, demonstrates understanding, earns the unlock, and can then use it freely in their persistent town. Unlocking availability does not imply a free placed building. Exact feature-to-quest mappings remain to design; examples such as a crossing lesson unlocking traffic lights or a capacity lesson unlocking wider roads are illustrative, not an implemented unlock tree.
+
+**The sandbox remains the main game**, including its story and monetization direction below. Challenges are its learning path and a curated showcase for new content, developed alongside the sandbox rather than replacing or postponing it. Players bring what they earn into their own towns, where they can combine mechanics and optimize systems freely. Challenge attempts stay disposable; earned progress and the sandbox town stay persistent.
+
+This also defines a repeatable development and release approach: build a mechanic in the shared simulation, author a few focused challenges that demonstrate it, test valid solutions and alternatives automatically, observe whether players understand and enjoy it, then make it earnable for sandbox use. Later features can extend the challenge path with new lessons and unlocks. Automated correctness does not establish fun. Curated level progression does not imply lives, energy, paid retries or timer skips.
+
+Implementation recommendations, not yet selected reward rules: grant the functional unlock for lesson completion, with extra stars rewarding mastery rather than blocking basic access; retain existing towns' tools and earned unlocks; ensure players already have essential recovery tools before exposing their town to the corresponding problem. Do not require leaving an active emergency to unlock its rescue service. Define save migration, new-town starting tools and the relationship to the H-road tutorial/Skip before enabling gates. Existing tutorial behavior and access remain unchanged until that transition is implemented.
+
+Status: design direction recorded, **challenge-earned sandbox unlocks are not implemented yet**. The current four playable challenges, fixed budgets and saved stars remain as documented in [challenge delivery](challenges/IMPLEMENTED.md). This update does not authorize runtime gating, payments or publication.
+
+## Mobile challenge map and completion flow (September 10)
+
+Use a scrollable numbered route map, inspired by the clarity of Candy Crush's level path, with this game's own visual identity. Tap a level for a concise objective, enter a disposable town, solve it, then celebrate with a saved star and **Retry / Next / Level map**. Keep a Main menu exit and the persistent sandbox separate. Small focused lessons should introduce mechanics, combine familiar ideas and provide curated showcases as the game grows; challenge-earned sandbox unlocks remain the intended future progression described above.
+
+The opening sequence now teaches: **1. connect a home and store, winning immediately when the car arrives; 2. connect vertically separated homes and complete their shopping round trips within a stated time; 3. rebuild a missing crossing and serve everyone without an accident, learning traffic management.** A preinstalled winning light would defeat the third lesson. The older sustained-flow puzzle remains a fourth bonus with its saved progress intact. Current Level 2 uses a provisional 45 simulated seconds from running traffic; pause freezes it. Retry never removes earned stars. This timed disposable lesson does not introduce a sandbox failure countdown.
+
+Implemented route/results and four lessons are documented in [challenge delivery](challenges/IMPLEMENTED.md). One completion star is saved today; additional star criteria and feature unlock mappings still need design and playtesting. Fixed challenge budgets have no income. Do not infer energy, paid retries or timer skips from the reference images.
+
+## Challenge lessons alongside the sandbox: latest clarification
+
+Begin with connecting one home to a store, then roads for a group of homes; the traffic-flow puzzle follows. Challenges currently have fixed construction budgets with no town-support or visit income. Normal refunds remain useful for experimentation. The sandbox economy and main-game story/monetization direction remain unchanged. Main-menu Challenges shares the main Continue styling, and levels provide a direct Main menu exit. See [implementation](challenges/IMPLEMENTED.md).
+
+
+## Sandbox remains the main game (September 10, 2026, corrected)
+
+User corrects the earlier challenges-first interpretation: build the sandbox as the main game, including the story and monetization direction below, while using small predetermined challenge levels to teach pattern recognition and test the lessons/mechanics being built. These develop together; sandbox work is not deferred until after a challenge release. Bounded challenges can provide completed jam content without replacing the main game. Add a main-menu Challenges entry and make the existing flow puzzle's objective explicit. Challenge retries and progress stay separate from the sandbox town. Challenge-earned sandbox unlocks are now the confirmed direction above; exact mappings, later stars and level count remain open. No publication is authorized.
+
+
+User direction from a monetization and character discussion. All of it needs people playing before it counts as good design.
+
+**Challenges (puzzle section).** The user wants Chess.com-style puzzles that teach the rules gradually and grow harder under the same game rules, with the sandbox for free experimentation. The first puzzle: get a car from A to B in this city in under 1 minute, with limited supplies. Maps can be exported and simulated in advance, so puzzles can ask the player to add to or update an existing map, as civil engineers do. Implementation starts September 11. See [challenges plan](challenges/PLAN.md) for the proposed contract, pre-simulation checks, first puzzle set and open questions. "Challenges" is a working label chosen to avoid confusion with the existing mission card.
+
+**The Man.** The manager is referred to as **The Man** for now; a later change is possible. The "AGER" on his worn MANAGER sign has peeled off, so people call him The Man and he cheerfully adopts it. It is an inverted Doctor Who nod: nobody knows his name because he isn't important enough to remember. Players learn about him gradually, including his mayoral aspirations and over-enthusiasm. A real-name reveal at the finale is a lead proposal, not a decision.
+
+**His catchphrase.** The user wants a Bob Ross-inspired "no mistakes, just happy little accidents" philosophy. The irony is that traffic engineering treats crashes as preventable, and he doesn't understand that. User research (September 10): the phrase "happy little accidents" can be used in this comedy context, but never pair it with Bob Ross's name, face or branding, or imply that he is saying it. The Man says it as his own philosophy. Twists such as "No mistakes, just happy little detours" remain optional variants. A crew reply such as "We call them crashes now, sir" is candidate copy. Final wording is not selected.
+
+**Deaths are a player mechanic.** Fatalities are a game mechanic for the player, not a portrayal of The Man.
+
+**Good advice, wrong order.** His help is actually good but poorly prioritized, like most managers, and it often needs yak shaving: prerequisite work before it can be carried out. Players learn to choose between doing what he says immediately and fixing the consequences later, or adding it to their to-do list and working toward it. This becomes obvious as the levels progress. It builds on the queued "Not yet / I have a plan" deferral in [BACKLOG.md](BACKLOG.md).
+
+**Radio station.** Suno-made songs, including kids' songs and What a Jam!, unlock on beating the game or after a number of hours played. Lead proposals: count active unpaused play time, unlock on whichever comes first, keep it unlocked when later updates extend the ending, and verify Suno commercial-use rights before any paid song content. The ending is not defined yet because mechanics are still being built. Hours-played can ship before the finale exists.
+
+**Scope and monetization.** The user now expects v1 to take a few months beyond the jam and plans YouTube Shorts devlogs of development. Favored monetization directions are the radio (an optional RunBucks early unlock on top of the free earned path) and vanity items that play on the manager's ego, such as statues and plaques. All of it is deferred until playtesting shows people enjoy the game. Lead recommends avoiding paid timer skips, energy systems, pay-to-rescue, and selling funds, land permits or solutions. Nothing is implemented. RUN's options are documented in `node_modules/@series-inc/rundot-game-sdk/docs/rundot-developer-platform/api/` (PURCHASES, SHOP, ENTITLEMENTS, ADS).
+
 ## Latest roadworks decision (September 10, 2026)
 
 Upgrade areas initially block all vehicles, including emergency responders. The user expects short downtime and requests a pause-menu Arcade/Realistic simulation preference. Actual Grok reviewed the shared-engine mode contract: [roadworks modes](roadworks/MODES.md). Proposed first distinction is shorter upgrade/restoration time in Arcade, with shared physical safety and clear access information. Neither mode silently permits responders through active works. Exact timing and any additional rescue protection are not yet selected. Installed Claude is assigned the sprite generation; rendering must remain independent of logical road geometry.
@@ -489,3 +582,11 @@ Cars must not yield in place when their existing reservation is what prevents th
 ### Gameplay UI overhaul priority (2026-09-10)
 
 User requests one global stats top bar with Heatmap/Dashboard actions, anchored bottom-left mission title/description/progress/reward, a uniform bottom-right build grid, and a reserved center map with responsive non-overlapping containers. This is the next feature priority ahead of J4/J5 and advanced driver behavior; correctness regressions remain first. See docs/ui-overhaul/PLAN.md and UI-01 through UI-05 in docs/BACKLOG.md. Phone stacking and precise stat meanings are documented implementation proposals; weather is not currently simulated. Preserve functioning tutorials, saved towns, view controls and real map placement. This entry records planning only, no UI changes or release.
+
+## FLOW-01 implementation evidence (2026-09-10)
+
+The existing-tool flow prototype is implemented locally; [FLOW-01 results](flow-puzzles/FLOW-01.md) distinguish verified mechanics from observed fun. The same queued nine-home demand supports a useful signal-retiming solution and nearby destination placement, and good initial timing qualifies without manufactured failure. Read-only measurements attribute actual visits and returns, retain unmet needs and current waiting, and distinguish access/capacity/traffic. Equal-urgency departure purposes alternate to prevent leisure monopolizing a household car. No existing mission/land/cash receipts are redefined. FLOW-02 visible integration and FLOW-03 player observation remain next; the raw 60-second qualification and nine-home fixture are prototype parameters, not selected campaign balance. No publication or widening/roadworks/modes implementation.
+
+## FLOW-02 visible service integration (2026-09-10)
+
+[FLOW-02](flow-puzzles/flow02/README.md) is implemented locally. A neighborhood worth visiting adds a recognition objective to the existing progression, with a visible six-home/current-population target and saved growth high-water mark until earned. Every home must have a real recent shopping return, preserved access and acceptable current waiting; one return per60seconds with4-second stabilization is the lead's forgiving civic default after Grok review, while FLOW-01 retains its stricter comparison. Recognition never revokes, and successful service does not add demand. Compact neighborhood Flow and existing Details/Dashboard distinguish current service, unmet needs, full destinations, route failures and selected-road approach waiting. Actual Claude UI, Codex implementation/verification and Grok review are documented.253 tests, build and desktop/narrow browser checks pass; no publication. FLOW-03 still needs observed player enjoyment and tuning.

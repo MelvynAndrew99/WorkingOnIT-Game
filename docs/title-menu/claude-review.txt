@@ -1,0 +1,11 @@
+Five concise notes, tied to hierarchy, personality, and accessibility:
+
+1. **Hierarchy — twin gold buttons dilute the primary CTA.** If "Start your city/Continue commute" and "Challenges" are both full gold road-signs, they read as equal weight. Give the primary a filled/larger sign and demote Challenges to an outline or smaller sign so eye-flow is unambiguous.
+
+2. **Sign-shape a11y risk.** Road-sign silhouettes eat into label padding — at mobile widths this threatens legibility and the 44px minimum tap target (notched corners shrink the effective hit area). Also define explicit focus/hover/disabled states now, since the shape makes default browser outlines look wrong.
+
+3. **Skip tutorial belongs at the decision point, not in Settings.** It's a per-playthrough choice, not a persistent preference — burying it in Settings means new players won't find it and returning players will hunt for it every time. Surface it as a toggle/link on the "Start your city" flow itself.
+
+4. **New city/reset needs to be visually demoted from Settings.** Grouping a destructive action in the same utility row as Settings risks accidental clicks. Make it a smaller tertiary/icon-style control, and have the "confirmed reset" step name what's lost (e.g. city name, day count) rather than a generic Are you sure?.
+
+5. **Personality should carry state, not just swap a label.** "Continue commute" alone is easy to misread as a fresh start. Pair it with a one-line status (e.g. "Day 12 · pop 4,300") under the button — reinforces the tagline's voice and gives returning players confidence they're resuming, not restarting. On mobile, also put that CTA block before the illustrated scene in reading/DOM order, and give the hi-vis manager artwork real alt text for screen readers.

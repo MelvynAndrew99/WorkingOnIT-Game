@@ -37,7 +37,7 @@ test('growth arc completes through real distinct shopping and park visits withou
   assert.ok(c.missions!.parkVisitors.length >= 3);
   assert.equal(c.accidentCount, 0);
   assert.equal(c.fatalities, 0);
-  assert.deepEqual(missionSnapshot(c).items.map(i => i.current), [1, 3, 3, 6, 6]);
+  assert.deepEqual(missionSnapshot(c).items.filter(i => i.id !== 'neighborhood-flow').map(i => i.current), [1, 3, 3, 6, 6]);
   assert.ok(c.completed > 0);
 });
 

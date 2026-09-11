@@ -42,3 +42,14 @@
 }
 @media(prefers-reduced-motion:reduce){.city-ui.dispatch-ui .build-palette button{transition:none}}
 .dispatch-ui:not([data-layout=wide]) .build-palette{gap:var(--space-1,4px)}
+
+/* Direction edits are explicit and stay above the reserved map boundary. */
+.build-group:first-child .build-shelf{grid-template-columns:repeat(5,minmax(0,1fr))}
+.build-group:first-child .build-tool-detail{flex-direction:column;gap:1px}
+.build-group:first-child .build-icon{height:16px;width:16px;flex-basis:16px}
+.build-group:first-child .build-tool strong{font-size:15px}
+.direction-editor{order:2;display:grid;gap:4px;padding:6px;border:1px solid #ffe179;border-radius:6px;background:#172b45}
+.direction-editor p{margin:0;font-size:14px;line-height:1.3}
+.direction-actions{display:flex;flex-wrap:wrap;gap:4px}
+.city-ui.dispatch-ui .direction-actions button{flex:1 1 auto;font-size:14px;padding:4px 8px;background:#263c54;color:#ffe179}
+.city-ui.dispatch-ui .direction-actions button:disabled{opacity:.45}

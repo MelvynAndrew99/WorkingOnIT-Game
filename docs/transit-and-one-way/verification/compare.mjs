@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {readFileSync,writeFileSync} from 'node:fs';
+const baseline=JSON.parse(readFileSync(new URL('../../performance-review/player-town/after-model.json',import.meta.url)));
+const current=JSON.parse(readFileSync(new URL('one-way-model.json',import.meta.url)));
+assert.equal(current.length,3);
+for(const [i,trial] of current.entries())assert.deepEqual(trial.hashes,baseline[i].hashes,`full-city checkpoints trial ${i+1}`);
+const median=values=>[...values].sort((a,b)=>a-b)[Math.floor(values.length/2)];
+const timings=rows=>Object.fromEntries(['ms','p50','p95','p99'].map(k=>[k,median(rows.map(r=>r[k]))]));
+const result={baseline:'Recorded post-optimization after-model.json, same immutable supplied save and deterministic 60-second workload',trials:3,checkpointsPerTrial:60,allFullCityHashesEqual:true,baselineMedian:timings(baseline),currentMedian:timings(current),limitation:'Historical comparison, not simultaneous source A/B. Model timing does not establish browser or target-device smoothness.'};
+writeFileSync(new URL('comparison.json',import.meta.url),JSON.stringify(result,null,2));console.log(JSON.stringify(result,null,2));

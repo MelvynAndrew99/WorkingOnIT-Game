@@ -45,3 +45,11 @@ Verification: production build and diff whitespace check pass. Chromium decoded1
 Integrated user-supplied `public/audio/vehicles/PoliceSiren_AP1.1061.mp3` unchanged. Browser reports2.624 seconds. It repeats during police emergency responses (including response waiting), stops/rewinds when no police response remains, and stays silent for patrols, cancelled responses, scene work and returns. Vehicle audio now maintains one independent loop per service, sharing existing effects preferences and lifecycle gates. Multiple police cars do not stack duplicate loops; police and fire can sound together.
 
 Production build and whitespace checks pass. Actual Chromium playback verified police decoding/repeat, simultaneous fire playback and independent stop, idempotent initialization, response-end reset, pause/menu/sleep/visibility, mute/zero volume and saved preference reload. No new UI or clip editing; phone-speaker balance and seam quality remain listening checks. Local integration, no release upload.
+
+## Traffic pass-bys, trial (2026-09-10)
+
+User supplied four Splice WAVs (96 kHz/24-bit, 11.5 to 18 seconds), converted to 192 kbps/48 kHz MP3s at `public/audio/vehicles/CarPassBy_*.mp3` at full length; the inbox WAVs were deleted at the user's request (they keep the Splice originals). The cue list's 1–3 second traffic-pass one-shot is replaced by a background layer: each clip builds, passes and fades, so overlapping full clips blend. User approved it as a trial that may be removed.
+
+`src/audio/traffic.ts` starts clips while civilian cars are outbound or returning (not visiting, waiting or crashed; service vehicles excluded). At most 1/2/3 play together at 1–2/3–7/8+ moving cars, with random 3–9 second gaps between starts and no immediate repeat. Each play gets random 0.75–1 level and 0.92–1.08 rate. Per-clip gains even out measured loudness (-17.3 to -22.7 LUFS, all peaking near -0.8 dBFS). Volume is half the shared effects volume (12.5% at the 25% default) and follows the effects mute plus menu, pause, hidden page and RUN sleep. To remove: delete the module, its calls in `cityScene.ts` and `main.tsx`, and the four MP3s.
+
+User listening check (same day): "so subtle but it works, way better than expected." Kept at the current mix; no tuning requested.

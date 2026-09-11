@@ -1,0 +1,52 @@
+Self
+ 36.6% findPath cityModel.ts
+ 10.4%  cityTraffic.ts
+  9.2% roadIndex cityTraffic.ts
+  5.7% routingSnapshot cityRouting.ts
+  5.0%  cityFlow.ts
+  4.4% junctionAreas junctionAreas.ts
+  3.0% (garbage collector) 
+  1.9% tileKey cityTraffic.ts
+  1.7% stepCity cityModel.ts
+  1.5% weightedRoute cityRouting.ts
+  1.4% replan cityTraffic.ts
+  1.3% trafficTick cityTraffic.ts
+  1.2% civilianRoute cityRouting.ts
+  1.2%  cityIncidents.ts
+  1.1% areaOf cityIncidents.ts
+  1.0% expireRisks cityIncidents.ts
+  0.9% isYielding cityTraffic.ts
+  0.8% retarget cityModel.ts
+  0.8% nearestStore cityModel.ts
+  0.7% inIncidentArea cityIncidents.ts
+  0.7% recordConflict cityIncidents.ts
+  0.6%  cityMissions.ts
+  0.6% isEmergencyResponse cityTraffic.ts
+  0.6% grid cityTraffic.ts
+  0.6% sameIntersection cityIncidents.ts
+Inclusive
+100.0% (root) 
+ 96.5% evaluate 
+ 96.5% run module_job
+ 96.4%  benchmark.mjs
+ 91.3% stepCity cityModel.ts
+ 36.8% findPath cityModel.ts
+ 35.5% stepVisits cityVisits.ts
+ 28.1% flowSnapshot cityFlow.ts
+ 28.0%  cityFlow.ts
+ 25.2% roadIndex cityTraffic.ts
+ 20.4% recordMissionVisit cityMissions.ts
+ 20.4% refreshMissions cityMissions.ts
+ 18.3% trafficTick cityTraffic.ts
+ 17.1% items cityMissions.ts
+ 17.1%  cityMissions.ts
+ 15.8% stepIncidents cityIncidents.ts
+ 15.3% expireRisks cityIncidents.ts
+ 15.0% civilianRoute cityRouting.ts
+ 14.4% refreshFlowProgress cityFlow.ts
+ 12.7% routingSnapshot cityRouting.ts
+ 11.8%  cityTraffic.ts
+ 11.0%  cityIncidents.ts
+ 11.0% inIncidentArea cityIncidents.ts
+ 10.3% sameIntersection cityIncidents.ts
+  8.9% replan cityTraffic.ts
