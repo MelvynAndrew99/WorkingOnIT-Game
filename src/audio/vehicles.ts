@@ -47,11 +47,13 @@ export function setFiretruckResponding(value:boolean):void {fire.responding=valu
 export function setPoliceResponding(value:boolean):void {police.responding=value;syncSiren(police);}
 export function setVehicleAudioSleeping(value:boolean):void {sleeping=value;sync();}
 export function effectsSettings(){return {volume,muted};}
+const effectsListeners=new Set<()=>void>();
+export function subscribeEffects(listener:()=>void):()=>void {effectsListeners.add(listener);return ()=>{effectsListeners.delete(listener);};}
 export function setEffectsVolume(value:number):void {
  if(!Number.isFinite(value))return;
- volume=Math.min(1,Math.max(0,value));saveSettings();sync();
+ volume=Math.min(1,Math.max(0,value));saveSettings();sync();effectsListeners.forEach(l=>l());
 }
-export function setEffectsMuted(value:boolean):void {muted=value;saveSettings();sync();}
+export function setEffectsMuted(value:boolean):void {muted=value;saveSettings();sync();effectsListeners.forEach(l=>l());}
 function saveSettings():void {
  try {localStorage.setItem(SETTINGS_KEY,JSON.stringify({volume,muted}));}catch{ /* Session preference still works. */ }
 }

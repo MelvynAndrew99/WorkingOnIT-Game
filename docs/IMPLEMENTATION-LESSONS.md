@@ -1,5 +1,9 @@
 # Shared implementation lessons
 
+## Visual weather and paused rendering (2026-09-12)
+
+Derive atmosphere from saved simulation time to preserve pause/reload continuity without new city-save fields. Keep display preferences separate, and explicitly repaint when a paused player hides an effect. A bounded reused Graphics layer can sit inside the map's existing clip while leaving cars, emergency labels and previews legible. Cache keys must include all affected geometry, including viewport height and map origin; test actual redraw behavior after height-only resizing. Hold one reduced-motion media query per scene and clean up its listener. Verified with actual Grok implementation plus Codex integration corrections, 15 focused tests and desktop/narrow browser checks; no performance measurements. [Weather delivery](weather/README.md).
+
 ## Road transitions must fit the visible vehicle (2026-09-11)
 
 - A double-width rectangle and isolated markings do not communicate a lane transition. Share pavement contours with display interpolation, remove the rectangular underlay, and match the source atlas curb width/colour. Check both orientations and offsets.

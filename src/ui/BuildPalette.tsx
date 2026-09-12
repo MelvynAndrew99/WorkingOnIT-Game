@@ -98,20 +98,20 @@ export default function BuildPalette() {
                 : `${fullName(e)} (${priceLabel(e)}). ${e.note}` });
     }
     return <div className="build-palette" role="group" aria-label="Build and traffic tools">
-        {!s.transitPanel && <div className="build-categories" role="group" aria-label="Construction categories">
+        {!s.transitPanel && !s.busStopPanel && <div className="build-categories" role="group" aria-label="Construction categories">
             {GROUPS.map(g => <button key={g.id} type="button" className="build-category"
                 aria-label={g.label} data-tutorial-target={guide.categoryTarget===g.id}
                 aria-describedby={guide.categoryTarget===g.id?'tutorial-locator-instruction':undefined}
                 aria-pressed={category === g.id} aria-controls={`shelf-${g.id}`}
                 onClick={() => setCategory(g.id)}>{g.label}</button>)}
         </div>}
-        {!s.transitPanel && isBuildingTool(s.tool) && <button type="button" className="build-rotate" title="Rotate the footprint and entrance; artwork stays upright. Desktop shortcut: R."
+        {!s.transitPanel && !s.busStopPanel && isBuildingTool(s.tool) && <button type="button" className="build-rotate" title="Rotate the footprint and entrance; artwork stays upright. Desktop shortcut: R."
             aria-label={`Rotate new buildings, entrance now facing ${FACING[s.rotation]}`}
             onClick={() => {
                 const rotation = (s.rotation + 1) % 4;
                 store.patch({ rotation, message: `Entrance faces ${FACING[rotation]}. The footprint and entrance rotate; artwork stays upright.` });
             }}><strong><span aria-hidden="true">↻ </span>Rotate <kbd>R</kbd></strong><em>Entrance: {FACING[s.rotation]}</em></button>}
-        {!s.transitPanel && s.tool==='wideRoad' && <button type="button" className="build-rotate wide-road-rotate" aria-label="Rotate 4-lane road" onClick={()=>store.patch({rotation:(s.rotation+1)%4, message:'4-lane road: rotate to fit, then place the highlighted two-tile footprint.'})}><strong>↻ Rotate <kbd>R</kbd></strong><em>{s.rotation%2?'North–south':'East–west'}</em></button>}
+        {!s.transitPanel && !s.busStopPanel && s.tool==='wideRoad' && <button type="button" className="build-rotate wide-road-rotate" aria-label="Rotate 4-lane road" onClick={()=>store.patch({rotation:(s.rotation+1)%4, message:'4-lane road: rotate to fit, then place the highlighted two-tile footprint.'})}><strong>↻ Rotate <kbd>R</kbd></strong><em>{s.rotation%2?'North–south':'East–west'}</em></button>}
         {s.tool==='direction' && <div className="direction-editor" role="group" aria-label="Road direction editor">
             <p>Drag in travel order, or tap roads then Finish. Tap the first road to close a loop.</p>
             <div className="direction-actions">
@@ -122,7 +122,7 @@ export default function BuildPalette() {
             <p className="direction-tip">Backtrack to undo. Draw the opposite way to reverse.</p>
         </div>}
         <TransitPanel />
-        {!s.transitPanel && <div className="build-groups">
+        {!s.transitPanel && !s.busStopPanel && <div className="build-groups">
             {GROUPS.map(g => <section key={g.id} className="build-group" data-active={category === g.id}>
                 <div className="build-group-heading"><h3 className="build-group-label">{g.label}</h3>{g.id==='roads'&&s.tool==='wideRoad'&&<button type="button" className="build-heading-rotate" aria-label="Rotate 4-lane road" onClick={()=>store.patch({rotation:(s.rotation+1)%4,message:'4-lane road: rotate to fit, then place the highlighted two-tile footprint.'})}>↻ Rotate <span>{s.rotation%2?'North–south':'East–west'}</span></button>}</div>
                 <div id={`shelf-${g.id}`} className="build-shelf" role="group" aria-label={`${g.label} tools`}

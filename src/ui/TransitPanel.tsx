@@ -1,10 +1,25 @@
 import {cityCommand} from '../game/cityControls.ts';
-import {useStore} from '../state/store.ts';
+import {store,useStore} from '../state/store.ts';
 
 /** Fleet and ordered map taps share one compact inspector, with no route menus. */
 export default function TransitPanel(){
     const s=useStore(), panel=s.transitPanel;
-    if(!panel||s.phase==='challenge')return null;
+    if(s.phase==='challenge')return null;
+    if(s.busStopPanel){const stop=s.busStopPanel;return <div className="direction-editor transit-editor" role="group" aria-label="Bus stop">
+        <p><strong>Bus stop</strong> · {stop.waiting} waiting · Longest wait {stop.waitSeconds}s</p>
+        {stop.issue&&<p>This bus stop cannot be served. {stop.issue} Buses skip it until access is restored.</p>}
+        {s.movingBusStop!==null?<>
+            <p>Tap an empty roadside square. Existing riders and route order stay with this stop. No charge.</p>
+            <div className="direction-actions">
+                <button onClick={()=>store.patch({rotation:(s.rotation+1)%4})}>Rotate stop · {['west','north','east','south'][s.rotation]}bound</button>
+                <button onClick={()=>cityCommand({type:'bus-stop',action:'cancel'})}>Cancel move</button>
+            </div>
+        </>:<div className="direction-actions">
+            <button onClick={()=>cityCommand({type:'bus-stop',action:'move',id:stop.id})}>Move stop</button>
+            <button aria-label="Close bus stop" onClick={()=>cityCommand({type:'bus-stop',action:'close'})}>×</button>
+        </div>}
+    </div>;}
+    if(!panel)return null;
     const draft=s.transitDraft;
     return <div className="direction-editor transit-editor" role="group" aria-label="Bus service">
         <p><strong>Bus depot {panel.stationId}</strong> · {panel.fleet.length}/2 bays · {panel.summary}</p>

@@ -10,6 +10,7 @@ export const MAX_TRANSIT_JOURNEYS = 256;
 export type JourneyState = 'walking-out' | 'waiting-out' | 'riding-out' | 'visiting' | 'walking-back'
   | 'waiting-back' | 'riding-back' | 'complete' | 'stranded' | 'crashed' | 'cancelled';
 export type TransitJourney = {
+  walkRange?:number;
   id:number; homeId:number; destinationId:number; purpose:TripPurpose; mode:'walk'|'bus'; state:JourneyState;
   origin:Point; path:Point[]; progress:number; startedAt:number; wait:number; visitRemaining:number;
   rewarded:boolean; returned:boolean; activityReserved:boolean; visitedAt?:number; external?:{origin:Point};
@@ -142,7 +143,7 @@ export function stepWalkingJourneys(city:City,journeys:TransitJourney[],dt:numbe
     if(j.state!=='walking-out'&&j.state!=='walking-back')continue;
     let pendingGoal=!!j.goal&&!same(j.goal,j.path[j.path.length-1]);
     if(pendingGoal&&Number.isInteger(j.progress)) {
-      const replacement=walkingPath(city,j.path[j.progress],j.goal!,j.incidentOutcome?city.map.width*city.map.height:WALK_RANGE,pedestrianBlocked);
+      const replacement=walkingPath(city,j.path[j.progress],j.goal!,j.incidentOutcome?city.map.width*city.map.height:j.walkRange??WALK_RANGE,pedestrianBlocked);
       if(!replacement){j.wait=round6(j.wait+dt);j.blockedReason='Walking route to the updated entrance is blocked';continue;}
       j.path=replacement;j.progress=0;pendingGoal=false;delete j.blockedReason;
     }
@@ -152,7 +153,7 @@ export function stepWalkingJourneys(city:City,journeys:TransitJourney[],dt:numbe
     if(blocked){
       // Re-route from an actual sidewalk node only. Never snap an interpolated walker to a road.
       if(Number.isInteger(j.progress)) {
-        const replacement=walkingPath(city,j.path[j.progress],j.path[j.path.length-1],WALK_RANGE,pedestrianBlocked);
+        const replacement=walkingPath(city,j.path[j.progress],j.path[j.path.length-1],j.walkRange??WALK_RANGE,pedestrianBlocked);
         if(replacement){j.path=replacement;j.progress=0;delete j.blockedReason;continue;}
       }
       j.wait=round6(j.wait+dt);j.blockedReason='Walking path blocked';continue;
@@ -193,6 +194,7 @@ export function parseJourneys(raw:unknown,city:City):TransitJourney[]|null {
     if(j.rewarded&&j.visitedAt===undefined)return null;
     if(j.returned!==(j.state==='complete')||(j.returned&&(!j.rewarded||j.activityReserved)))return null;
     if(j.walkTarget!==undefined&&!['board-out','visit','board-back','home'].includes(j.walkTarget))return null;
+    if(j.walkRange!==undefined&&(!Number.isSafeInteger(j.walkRange)||j.walkRange<6||j.walkRange>12))return null;
     if(j.goal!==undefined&&(!point(j.goal)||!containsTile(city.map,j.goal)))return null;
     if(j.incidentId!==undefined&&!integer(j.incidentId))return null;
     if(j.incidentOutcome!==undefined&&!['disrupted','rescued','incident-loss'].includes(j.incidentOutcome))return null;
@@ -252,7 +254,7 @@ export function parseJourneys(raw:unknown,city:City):TransitJourney[]|null {
       else return null;
     }
     if(expected&&j.goal&&!same(j.goal,expected))return null;
-    if(expected&&!same(endpoint,expected)&&!(j.external&&j.state==='walking-back'&&j.walkTarget==='home'&&j.goal&&same(j.goal,expected)))return null;
+    if(expected&&!(j.walkRange===12&&j.state.startsWith('riding'))&&!same(endpoint,expected)&&!(j.external&&j.state==='walking-back'&&j.walkTarget==='home'&&j.goal&&same(j.goal,expected)))return null;
     if((j.state.startsWith('waiting')||j.state.startsWith('riding'))&&j.progress!==j.path.length-1)return null;
     if(j.state==='complete'&&(!same(endpoint,j.origin)||j.progress!==j.path.length-1))return null;
     if(j.state==='visiting') {

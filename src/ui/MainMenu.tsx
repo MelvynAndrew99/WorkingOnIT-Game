@@ -2,6 +2,7 @@ import {musicSettings,setMusicVolume,setMusicMuted} from '../audio/music.ts';
 import {effectsSettings,setEffectsVolume,setEffectsMuted} from '../audio/vehicles.ts';
 import {finishTutorialAndConnect} from '../game/cityExternal.ts';
 import { useEffect, useRef, useState } from 'react';
+import { writeWeatherPreference, weatherHudLabel } from '../game/cityWeather.ts';
 import { store, type DisplayMode } from '../state/store.ts';
 import { getSave, startNewCity, flushSave } from '../state/save.ts';
 import './titleScreen.css';
@@ -16,6 +17,7 @@ export default function MainMenu() {
     const [music,setMusic]=useState(musicSettings);
     const [effects,setEffects]=useState(effectsSettings);
     const [showTips, setShowTips] = useState(store.get().showTips);
+    const [weatherEnabled, setWeatherEnabled] = useState(store.get().weatherEnabled);
     const dialog = useRef<HTMLDialogElement>(null);
     useEffect(() => {
         if (panel) dialog.current?.showModal();
@@ -82,6 +84,11 @@ export default function MainMenu() {
                     </select>
                 </label>
                 <p>Automatic uses a wide view in larger landscape windows and portrait on smaller screens. This changes your view, not your town.</p>
+                <label><input type="checkbox" checked={weatherEnabled} onChange={e => {
+                    const value = e.target.checked; setWeatherEnabled(value); writeWeatherPreference(value);
+                    store.patch({ weatherEnabled: value, weatherLabel: weatherHudLabel(getSave().city.elapsed, value) });
+                }} /> Weather</label>
+                <p>Slow visual cycle of clear, cloudy and rain over the town map. Atmosphere only; traffic is unchanged. Reduced-motion systems keep shading without falling rain.</p>
                 <label><input type="checkbox" checked={showTips} onChange={e => {
                     const value = e.target.checked; setShowTips(value); store.patch({ showTips: value });
                     try { localStorage.setItem('working-on-it:show-tips', String(value)); } catch { /* settings remain usable in memory */ }

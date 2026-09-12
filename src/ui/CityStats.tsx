@@ -6,13 +6,14 @@ export interface CityStatsProps {
   onRoad: number
   fatalities: number
   elapsedSeconds: number
+  weatherLabel: string
 }
 
 const VISITORS_TITLE = 'Currently parked shopping and leisure visitors.'
 const ON_ROAD_TITLE =
   'Active civilian journeys, excluding visiting and crashed vehicles and emergency crews.'
 const TIME_TITLE = 'Saved simulation elapsed time. Pausing freezes it.'
-const WEATHER_TITLE = 'No weather simulation exists yet.'
+const WEATHER_TITLE = 'Visual atmosphere over the map. Pause freezes it. Does not change traffic. Turn it off in Settings.'
 
 /** Exact currency text, always available to assistive technology. */
 function exactFunds(funds: number): string {
@@ -54,6 +55,7 @@ export default function CityStats({
   onRoad,
   fatalities,
   elapsedSeconds,
+  weatherLabel,
 }: CityStatsProps) {
   const fundsShort = shortFunds(funds)
   const fundsExact = exactFunds(funds)
@@ -84,8 +86,8 @@ export default function CityStats({
       </div>
       <div className="city-stat">
         <dt title={WEATHER_TITLE}>Weather</dt>
-        <dd className="city-stat-muted" title={WEATHER_TITLE}>
-          Not simulated
+        <dd className={weatherLabel === 'Off' ? 'city-stat-muted' : undefined} title={WEATHER_TITLE}>
+          {weatherLabel}
         </dd>
       </div>
     </dl>

@@ -1,0 +1,44 @@
+[
+  {
+    "source": "CrashAuto_BW.17104.wav",
+    "file": "crash-minor-01.mp3",
+    "sourceBytes": 1522556,
+    "bytes": 43052,
+    "duration": "2.618667"
+  },
+  {
+    "source": "CrashAuto_BW.17108.wav",
+    "file": "crash-minor-02.mp3",
+    "sourceBytes": 1618140,
+    "bytes": 45356,
+    "duration": "2.784000"
+  },
+  {
+    "source": "CrashAuto_S08IM.1.wav",
+    "file": "crash-minor-03.mp3",
+    "sourceBytes": 2045324,
+    "bytes": 57260,
+    "duration": "3.525333"
+  },
+  {
+    "source": "CrashAuto_S08IM.2.wav",
+    "file": "crash-minor-04.mp3",
+    "sourceBytes": 2085308,
+    "bytes": 58412,
+    "duration": "3.594667"
+  },
+  {
+    "source": "CrashAuto_S08IM.3.wav",
+    "file": "crash-minor-05.mp3",
+    "sourceBytes": 2242620,
+    "bytes": 63020,
+    "duration": "3.866667"
+  },
+  {
+    "source": "CrashAuto_S08IM.4.wav",
+    "file": "crash-minor-06.mp3",
+    "sourceBytes": 2187244,
+    "bytes": 61484,
+    "duration": "3.770667"
+  }
+]

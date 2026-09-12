@@ -2,6 +2,7 @@ import {loadChallenges,flushChallenges} from './state/challenges.ts';
 import {initMusic,setMusicSleeping} from './audio/music.ts';
 import {initVehicleAudio,setVehicleAudioSleeping} from './audio/vehicles.ts';
 import {initTrafficAudio,setTrafficAudioSleeping} from './audio/traffic.ts';
+import {initCrashAudio,setCrashAudioSleeping} from './audio/crashes.ts';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import RundotGameAPI from '@series-inc/rundot-game-sdk/api';
@@ -66,6 +67,7 @@ async function boot() {
 
     initVehicleAudio();
     initTrafficAudio();
+    initCrashAudio();
 
     // 7. Host lifecycle hooks. Register AFTER boot so handlers never race
     //    half-initialized state.
@@ -75,8 +77,8 @@ async function boot() {
     registerLifecycles({
         onPause: () => store.patch({ paused: true }),
         onResume: () => store.patch({ paused: false }),
-        onSleep: () => {setMusicSleeping(true);setVehicleAudioSleeping(true);setTrafficAudioSleeping(true);persistActiveGame();},
-        onAwake: () => {setMusicSleeping(false);setVehicleAudioSleeping(false);setTrafficAudioSleeping(false);},
+        onSleep: () => {setMusicSleeping(true);setVehicleAudioSleeping(true);setTrafficAudioSleeping(true);setCrashAudioSleeping(true);persistActiveGame();},
+        onAwake: () => {setMusicSleeping(false);setVehicleAudioSleeping(false);setTrafficAudioSleeping(false);setCrashAudioSleeping(false);},
         onQuit: () => persistActiveGame(), // treat onSleep as the reliable one
     });
 

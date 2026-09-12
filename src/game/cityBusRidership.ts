@@ -1,10 +1,10 @@
 /** Representative passengers: visible transport demand, deliberately separate from household service. */
 import {entrance, type City, type Building} from './cityModel.ts';
 import {walkingPath, WALK_RANGE} from './cityJourneys.ts';
-import {busRoutePreview, type Bus, type BusRoute, type TransitState} from './cityTransit.ts';
+import {busRoutePreview, busStopIssue, busServiceStops, type Bus, type BusRoute, type TransitState} from './cityTransit.ts';
 
 export type RiderStage='waiting-out'|'riding-out'|'waiting-visit'|'visiting'|'waiting-back'|'riding-back';
-export type BusRider={id:number;homeId:number;destinationId:number;originStopId:number;destinationStopId:number;routeId:number;stage:RiderStage;queuedAt:number;remaining:number;busId?:number};
+export type BusRider={walkRange?:number;id:number;homeId:number;destinationId:number;originStopId:number;destinationStopId:number;routeId:number;stage:RiderStage;queuedAt:number;remaining:number;busId?:number};
 export type BusRidership={version:1;checkedAt:number;homes:{homeId:number;nextAt:number;requests:number}[];riders:BusRider[];generated:number;completed:number;cancelled:number};
 export const MAX_BUS_RIDERS=256;
 const stops=(r:BusRoute)=>[r.stationId,...r.stopIds.filter(id=>id!==r.stationId)];
@@ -27,7 +27,7 @@ export function stepBusRidership(c:City,dt:number):void{
   const s=t.ridership??={version:1,checkedAt:c.elapsed,homes:[],riders:[],generated:0,completed:0,cancelled:0};
   for(const j of s.riders)if(j.stage==='visiting'){
     j.remaining=round(Math.max(0,j.remaining-dt));
-    if(j.remaining===0&&walkingPath(c,entrance(at(c,j.destinationId)),entrance(at(c,j.destinationStopId)))){j.stage='waiting-back';j.queuedAt=round(c.elapsed);}
+    if(j.remaining===0&&walkingPath(c,entrance(at(c,j.destinationId)),entrance(at(c,j.destinationStopId)),j.walkRange??WALK_RANGE)){j.stage='waiting-back';j.queuedAt=round(c.elapsed);}
   }
   const visiting=new Map<number,number>();
   for(const j of s.riders)if(j.stage==='visiting')visiting.set(j.destinationId,(visiting.get(j.destinationId)??0)+1);
@@ -37,10 +37,10 @@ export function stepBusRidership(c:City,dt:number):void{
   }
   if(c.elapsed+1e-6<s.checkedAt)return;
   s.checkedAt=round(c.elapsed+1);
-  for(const r of t.routes){const error=busRoutePreview(c,r.stationId,r.stopIds).error;if(error)r.blocked=error;else delete r.blocked;}
   let unserved=0;
-  const routes=t.routes.filter(r=>r.running&&!r.pendingStopIds&&t.fleet.some(b=>b.routeId===r.id)&&!t.journeys.some(j=>j.routeId===r.id)&&!r.blocked);
-  const stopIds=[...new Set(routes.flatMap(stops))].sort((a,b)=>a-b);
+  const usable=new Map(t.routes.map(r=>[r.id,busServiceStops(c,r)]));
+  const routes=t.routes.filter(r=>r.running&&!r.pendingStopIds&&t.fleet.some(b=>b.routeId===r.id)&&!t.journeys.some(j=>j.routeId===r.id)&&(usable.get(r.id)?.length??0)>1);
+  const stopIds=[...new Set(routes.flatMap(r=>usable.get(r.id)??[]))].sort((a,b)=>a-b);
   // One bounded, bidirectional multi-source flood per demand update; never a path query per home/stop pair.
   const key=(p:{x:number;y:number})=>`${p.x},${p.y}`,roads=new Set(c.roads.map(key));
   const coverage=new Map<string,number>(),queue:{x:number;y:number;distance:number;stopId:number}[]=[];
@@ -57,7 +57,7 @@ export function stepBusRidership(c:City,dt:number):void{
   const destinations=c.buildings.filter(b=>b.kind==='store'||b.kind==='park').map(b=>({b,stop:nearest(b)}));
   for(const home of c.buildings.filter(b=>b.kind==='home')){
     const origin=nearest(home);if(origin===undefined){unserved++;continue;}
-    const choices=destinations.flatMap(d=>d.stop===undefined||d.stop===origin?[]:routes.filter(r=>stops(r).includes(origin)&&stops(r).includes(d.stop!)).map(r=>({destination:d.b,stop:d.stop!,route:r}))).sort((a,b)=>a.destination.id-b.destination.id||a.route.id-b.route.id);
+    const choices=destinations.flatMap(d=>d.stop===undefined||d.stop===origin?[]:routes.filter(r=>usable.get(r.id)!.includes(origin)&&usable.get(r.id)!.includes(d.stop!)).map(r=>({destination:d.b,stop:d.stop!,route:r}))).sort((a,b)=>a.destination.id-b.destination.id||a.route.id-b.route.id);
     if(!choices.length){unserved++;continue;}
     let clock=s.homes.find(h=>h.homeId===home.id);
     if(clock&&c.elapsed+1e-6<clock.nextAt)continue;
@@ -81,7 +81,7 @@ export function exchangeBusRiders(c:City,b:Bus,stopId:number):number{
     const j=s.riders.find(j=>j.id===id);if(!j)continue;
     const back=j.stage==='riding-back';if((back?j.originStopId:j.destinationStopId)!==stopId)continue;
     // Broken sidewalks keep riders aboard, just as a broken road keeps a bus waiting.
-    if(!walkingPath(c,entrance(at(c,stopId)),entrance(at(c,back?j.homeId:j.destinationId))))continue;
+    if(!walkingPath(c,entrance(at(c,stopId)),entrance(at(c,back?j.homeId:j.destinationId)),j.walkRange??WALK_RANGE))continue;
     b.abstractOnboard=b.abstractOnboard.filter(x=>x!==id);delete j.busId;exchanged++;
     if(back){s.riders=s.riders.filter(x=>x.id!==id);s.completed++;}
     else {j.stage='waiting-visit';j.remaining=0;j.queuedAt=round(c.elapsed);}
@@ -92,9 +92,10 @@ export function exchangeBusRiders(c:City,b:Bus,stopId:number):number{
     if(busRiderCount(b)>=8)break;
     const back=j.stage==='waiting-back';if(j.stage!=='waiting-out'&&!back)continue;
     if((back?j.destinationStopId:j.originStopId)!==stopId||!stops(r).includes(j.originStopId)||!stops(r).includes(j.destinationStopId))continue;
-    if(!walkingPath(c,entrance(at(c,back?j.destinationId:j.homeId)),entrance(at(c,stopId))))continue;
+    if(!walkingPath(c,entrance(at(c,back?j.destinationId:j.homeId)),entrance(at(c,stopId)),j.walkRange??WALK_RANGE))continue;
     // A second route can share a queue, but must itself be a usable complete loop.
     if(j.routeId!==r.id&&(!r.running||r.pendingStopIds||busRoutePreview(c,r.stationId,r.stopIds).error))continue;
+    if(busStopIssue(c,at(c,back?j.originStopId:j.destinationStopId)))continue;
     j.routeId=r.id;j.stage=back?'riding-back':'riding-out';j.busId=b.id;b.abstractOnboard.push(j.id);exchanged++;
   }
   return exchanged;
@@ -116,6 +117,7 @@ export function parseBusRidership(raw:unknown,c:City,t:TransitState,add:(id:numb
   const stages=['waiting-out','riding-out','waiting-visit','visiting','waiting-back','riding-back'];
   for(const j of s.riders){
     if(!j||!add(j.id)||!homes.has(j.homeId)||at(c,j.homeId)?.kind!=='home'||!['store','park'].includes(at(c,j.destinationId)?.kind)||!stages.includes(j.stage)||!time(j.queuedAt)||!time(j.remaining,10)||s.riders.filter(x=>x.homeId===j.homeId).length>2)return null;
+    if(j.walkRange!==undefined&&(!Number.isSafeInteger(j.walkRange)||j.walkRange<6||j.walkRange>12))return null;
     const r=t.routes.find(r=>r.id===j.routeId);if(!r||j.originStopId===j.destinationStopId||!stops(r).includes(j.originStopId)||!stops(r).includes(j.destinationStopId))return null;
     const riding=j.stage==='riding-out'||j.stage==='riding-back',b=t.fleet.find(b=>b.id===j.busId);
     if(riding?(!b||b.routeId!==r.id||b.tripId===undefined||!b.abstractOnboard?.includes(j.id)):j.busId!==undefined)return null;

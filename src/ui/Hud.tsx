@@ -51,7 +51,7 @@ export default function Hud() {
 
   return <TutorialGuidanceProvider wide={wide} blocked={(notice&&!s.tutorial?.currentId.startsWith('h-'))}><div className="city-ui dispatch-ui" data-layout={layout} data-short={frame.height < 550} style={{'--frame-height': `${frame.height}px`} as React.CSSProperties}>
     <header className="city-header city-top-bar" aria-label="City statistics and actions">
-      <CityStats funds={s.funds} visitors={s.demand.visits} onRoad={s.activeTrips} fatalities={s.fatalities} elapsedSeconds={s.elapsedSeconds} />
+      <CityStats funds={s.funds} visitors={s.demand.visits} onRoad={s.activeTrips} fatalities={s.fatalities} elapsedSeconds={s.elapsedSeconds} weatherLabel={s.weatherLabel} />
       <nav className="city-global-actions" aria-label="City actions">
         <button aria-pressed={s.diagnosticView==='traffic'} onClick={()=>store.patch({diagnosticView:s.diagnosticView==='traffic'?'normal':'traffic'})}>Heatmap</button>
         <button ref={dashboardButton} aria-expanded={panel==='report'} aria-controls="city-dashboard" onClick={()=>panel?closeDashboard():openDashboard()}>Dashboard</button>

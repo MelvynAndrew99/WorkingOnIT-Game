@@ -18,7 +18,7 @@ export default function CityDialogs({ panel, close, openDebug }: { panel: 'repor
       <h3>What the numbers mean</h3>
       <p>Visitors: people currently parked for shopping or leisure, excluding reserved arriving spaces.</p>
       <p>On Road: active civilian journeys, including waiting drivers. Excludes parked visits, crashed vehicles and emergency crews.</p>
-      <p>Time: saved simulation elapsed time. Pause freezes it. Weather is not simulated.</p>
+      <p>Time: saved simulation elapsed time. Pause freezes it. Weather is a visual cycle of clear, cloudy and rain driven by that clock; it does not change traffic.</p>
       <p>Fatalities: total lives lost in this city.</p>
     </section>
     <div className="city-report-grid">

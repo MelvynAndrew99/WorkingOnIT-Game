@@ -29,7 +29,7 @@ export function busStopIssue(city:City,b:Building):string|null {
   return null;
 }
 function tangent(b:Building):Point{return [{x:-1,y:0},{x:0,y:-1},{x:1,y:0},{x:0,y:1}][b.rotation];}
-function leg(city:City,from:Building,to:Building):Point[]|null {
+export function busLeg(city:City,from:Building,to:Building):Point[]|null {
   const a=entrance(from),z=entrance(to),ad=tangent(from),zd=tangent(to);
   const start=from.kind==='busStop'?{x:a.x+ad.x,y:a.y+ad.y}:a;
   const end=to.kind==='busStop'?{x:z.x-zd.x,y:z.y-zd.y}:z;
@@ -56,7 +56,7 @@ function validateRoute(city:City,stationId:number,stopIds:number[]):{paths:Point
   const stops=ids.map(id=>building(city,id));
   for(const b of stops){if(!b||!['busStation','busStop'].includes(b.kind)||b.kind==='busStation'&&b.id!==stationId)return fail('A stop is missing or belongs to another station.');const issue=busStopIssue(city,b);if(issue)return fail(`Stop ${b.id}: ${issue}`);}
   const paths:Point[][]=[];
-  for(let i=0;i<stops.length;i++){const path=leg(city,stops[i]!,stops[(i+1)%stops.length]!);if(!path)return fail(`No legal road route from ${ids[i]} to ${ids[(i+1)%ids.length]}, including the return to the station.`);paths.push(path);}
+  for(let i=0;i<stops.length;i++){const path=busLeg(city,stops[i]!,stops[(i+1)%stops.length]!);if(!path)return fail(`No legal road route from ${ids[i]} to ${ids[(i+1)%ids.length]}, including the return to the station.`);paths.push(path);}
   return {paths,error:null};
 }
 export function buyBus(city:City,stationId:number):string{
@@ -83,7 +83,7 @@ export function applyBusRoute(city:City,stationId:number,stopIds:number[]):strin
 }
 export function setBusRouteRunning(city:City,stationId:number,running:boolean):string{
   const r=city.transit?.routes.find(r=>r.stationId===stationId);if(!r)return 'Select stops and finish the route first.';
-  if(running){const issue=busRoutePreview(city,stationId,r.stopIds).error;if(issue)return issue;if(!city.transit!.fleet.some(b=>b.stationId===stationId))return 'Buy a minibus first.';}
+  if(running){if(busServiceStops(city,r).length<2)return 'Restore road access to at least one stop and the depot.';if(!city.transit!.fleet.some(b=>b.stationId===stationId))return 'Buy a minibus first.';}
   r.running=running;return running?'Bus service started.':'Finishing existing rider journeys, then returning buses to their bays.';
 }
 export function transitRemovalGuard(city:City,b:Building):string|null{
@@ -118,12 +118,13 @@ export function arriveBus(city:City,trip:Trip):void{
   const r=t.routes.find(r=>r.id===b.routeId);if(!r)return;
   const ids=nodes(r),stopId=ids[b.stopIndex],stop=building(city,stopId);
   if(!stop||!same(trip.path.at(-1)!,entrance(stop))){r.blocked='Bus is waiting for its selected stop approach.';trip.phase='waiting';trip.resume='outbound';return;}
+  if(stop.kind==='busStop'&&busStopIssue(city,stop)){b.dwell=0;trip.phase='bus-dwell';trip.hold=0;return;}
   if(b.stopIndex===0){b.run++;b.readyAt=round(city.elapsed+BUS_HEADWAY);}let exchanged=0;
   for(const id of [...b.onboard]){
     const j=t.journeys.find(j=>j.id===id);if(!j)continue;
     const back=j.state==='riding-back',alight=back?j.returnAlightStopId:j.alightStopId;if(alight!==stopId)continue;
     const target=back?j.origin:entrance(building(city,j.destinationId)!);
-    const path=walkingPath(city,entrance(building(city,stopId)!),target);
+    const path=walkingPath(city,entrance(building(city,stopId)!),target,j.walkRange??6);
     if(!path){j.blockedReason='Walking access from this stop is blocked.';continue;}
     b.onboard=b.onboard.filter(id=>id!==j.id);delete j.busId;delete j.seat;
     j.state=back?'walking-back':'walking-out';j.walkTarget=back?'home':'visit';j.path=path;j.progress=0;delete j.blockedReason;exchanged++;
@@ -133,18 +134,83 @@ export function arriveBus(city:City,trip:Trip):void{
     if(busRiderCount(b)>=BUS_CAPACITY)break;
     const stop=j.state==='waiting-back'?j.returnBoardStopId:j.boardStopId;
     if(stop!==stopId||j.seat?.busId!==b.id||j.seat.runId!==b.run)continue;
+    const destination=building(city,j.state==='waiting-back'?j.returnAlightStopId!:j.alightStopId!);
+    if(!destination||busStopIssue(city,destination))continue;
     j.state=j.state==='waiting-back'?'riding-back':'riding-out';j.busId=b.id;b.onboard.push(j.id);delete j.blockedReason;exchanged++;
   }
   exchanged+=exchangeBusRiders(city,b,stopId);
   b.dwell=Math.min(4,1+exchanged*.25);trip.phase=stopId===r.stationId?'visiting':'bus-dwell';trip.hold=0;
 }
 function hasRiders(t:TransitState,r:BusRoute):boolean{return abstractRouteBusy(t,r.id)||t.journeys.some(j=>j.routeId===r.id);}
+const serviceCache=new WeakMap<City,{signature:string;legs:Map<string,{next:number;path:Point[]}|null>}>();
+/** Keep the saved stop order; only this departure skips unusable platforms. */
+function nextBusLeg(city:City,r:BusRoute,from:number,source:Building):{next:number;path:Point[]}|null {
+  const signature=topology(city);let cache=serviceCache.get(city);
+  if(!cache||cache.signature!==signature){cache={signature,legs:new Map()};serviceCache.set(city,cache);}
+  const k=`${r.id}:${r.stopIds.join(',')}:${from}`;
+  if(cache.legs.has(k))return cache.legs.get(k)!;
+  const ids=nodes(r);let selected:{next:number;path:Point[]}|null=null;
+  for(let offset=1;offset<ids.length;offset++){
+    const next=(from+offset)%ids.length,to=building(city,ids[next]);
+    if(!to||busStopIssue(city,to))continue;
+    const path=busLeg(city,source,to);
+    if(path){selected={next,path};break;}
+    // The depot is the end of a run; never skip it into another lap.
+    if(next===0)break;
+  }
+  if(cache.legs.size<MAX_ROUTES*17)cache.legs.set(k,selected);
+  return selected;
+}
+const usableCache=new WeakMap<City,{signature:string;routes:Map<string,number[]>}>();
+/** Demand uses only platforms that can still be reached and left, independently of skipped stops. */
+export function busServiceStops(city:City,r:BusRoute):number[]{
+  const signature=topology(city);let cache=usableCache.get(city);
+  if(!cache||cache.signature!==signature){cache={signature,routes:new Map()};usableCache.set(city,cache);}
+  const k=`${r.id}:${r.stopIds.join(',')}`,cached=cache.routes.get(k);if(cached)return cached;
+  const depot=building(city,r.stationId);if(!depot)return [];
+  const result=nodes(r).filter(id=>{const stop=building(city,id);return !!stop&&!busStopIssue(city,stop)&&(id===r.stationId||!!busLeg(city,depot,stop)&&!!busLeg(city,stop,depot));});
+  if(cache.routes.size<MAX_ROUTES)cache.routes.set(k,result);return result;
+}
+const skipRetry=new WeakMap<Trip,number>();
+const serviceProblems=new WeakMap<City,{at:number;invalid:Set<number>}>();
+function invalidBusStops(city:City):Set<number>{
+  let sample=serviceProblems.get(city);
+  if(!sample||city.elapsed>=sample.at){
+    sample={at:city.elapsed+1,invalid:new Set(city.buildings.filter(b=>b.kind==='busStop'&&busStopIssue(city,b)).map(b=>b.id))};
+    serviceProblems.set(city,sample);
+  }
+  return sample.invalid;
+}
+/** Reconsider at a real tile boundary, retaining approach geometry and occupancy checks. */
+function skipUnavailableTarget(city:City,index:RoadIndex,b:Bus,r:BusRoute,trip:Trip):void {
+  if(!Number.isInteger(trip.progress)||trip.laneChange||city.elapsed<(skipRetry.get(trip)??0))return;
+  skipRetry.set(trip,city.elapsed+1);
+  const ids=nodes(r),target=building(city,ids[b.stopIndex]);
+  if(!target||target.kind==='busStation')return;
+  if(!invalidBusStops(city).has(target.id)&&trip.phase!=='waiting'&&trip.hold<2)return;
+  const from=trip.path[trip.progress];
+  if(!busStopIssue(city,target)&&busPathToTarget(city,trip,from))return;
+  for(let offset=1;offset<ids.length;offset++){
+    const next=(b.stopIndex+offset)%ids.length,to=building(city,ids[next]);
+    if(!to||busStopIssue(city,to))continue;
+    const path=pathToBusStop(city,from,to);
+    if(path){
+      const candidate:Trip={...trip,path:[...trip.path.slice(0,trip.progress),...path],phase:'outbound',target:{...entrance(to)},hold:0};
+      if(commitTripRoute(city,index,trip,candidate)){b.stopIndex=next;delete r.blocked;}
+      return;
+    }
+    if(next===0)break;
+  }
+}
 function dispatch(city:City,index:RoadIndex,b:Bus,r:BusRoute):void{
-  const ids=nodes(r),preview=busRoutePreview(city,r.stationId,r.stopIds);
-  if(preview.error){r.blocked=preview.error;return;}delete r.blocked;
+  const ids=nodes(r);
   const old=b.tripId===undefined?undefined:city.trips.find(tr=>tr.id===b.tripId);
-  const from=old?b.stopIndex:0,next=(from+1)%ids.length,path=preview.paths[from];
-  if(!path)return;
+  const from=old?b.stopIndex:0, source=building(city,ids[from]);
+  if(!source)return;
+  const selected=nextBusLeg(city,r,from,source);
+  if(!selected){r.blocked='No usable road route to another stop or the depot.';return;}
+  delete r.blocked;
+  const {next,path}=selected;
   if(old&&old.phase!=='visiting'){
     // Keep the approach behind the bus for lane geometry until it enters the next tile.
     const previous=old.path.at(-2);const joined=previous?[{...previous},...path.map(p=>({...p}))]:path.map(p=>({...p}));
@@ -210,7 +276,7 @@ export function stepTransit(city:City,index:RoadIndex,dt:number):void{
   stepWalkingJourneys(city,t.journeys,dt,undefined,j=>{
     if(j.mode!=='bus')return false;
     const r=t.routes.find(r=>r.id===j.routeId),stop=building(city,j.returnBoardStopId!);if(!r||!stop){j.blockedReason='Return service is unavailable.';return true;}
-    const path=walkingPath(city,entrance(building(city,j.destinationId)!),entrance(stop));const seat=reserve(city,r,stop.id,j.returnAlightStopId!,path?path.length-1:0,j.id);
+    const path=walkingPath(city,entrance(building(city,j.destinationId)!),entrance(stop),j.walkRange??6);const seat=reserve(city,r,stop.id,j.returnAlightStopId!,path?path.length-1:0,j.id);
     if(!path||!seat){j.blockedReason='Waiting for return walking access or a bus seat.';return true;}
     j.seat=seat;j.activityReserved=false;j.path=path;j.progress=0;j.state='walking-back';j.walkTarget='board-back';delete j.blockedReason;return true;
   });
@@ -228,6 +294,7 @@ export function stepTransit(city:City,index:RoadIndex,dt:number):void{
     if(r.pendingStopIds&&!hasRiders(t,r)&&!t.fleet.some(b=>b.routeId===r.id&&b.tripId!==undefined)){r.stopIds=r.pendingStopIds;delete r.pendingStopIds;}
     for(const b of t.fleet.filter(b=>b.routeId===r.id)){
       const trip=city.trips.find(tr=>tr.id===b.tripId);
+      if(trip&&(trip.phase==='outbound'||trip.phase==='waiting'&&trip.resume==='outbound'))skipUnavailableTarget(city,index,b,r,trip);
       if(trip?.phase==='crashed'||trip?.phase==='waiting'||trip?.phase==='returning')continue;
       if(trip&&trip.phase!=='visiting'&&trip.phase!=='bus-dwell')continue;
       if(b.dwell>0){b.dwell=round(Math.max(0,b.dwell-dt));continue;}
@@ -313,6 +380,9 @@ export function busPathToTarget(city:City,trip:Trip,from:Point):Point[]|null {
   const b=city.transit?.fleet.find(b=>b.id===trip.busId),r=city.transit?.routes.find(r=>r.id===b?.routeId);
   if(trip.phase==='returning'||trip.resume==='returning')return trip.target?findPath(city,from,trip.target):null;
   if(!b||!r)return null;const target=building(city,nodes(r)[b.stopIndex]);if(!target)return null;
+  return pathToBusStop(city,from,target);
+}
+function pathToBusStop(city:City,from:Point,target:Building):Point[]|null {
   if(target.kind==='busStation')return findPath(city,from,entrance(target));
   if(busStopIssue(city,target))return null;
   const p=entrance(target),d=tangent(target),before={x:p.x-d.x,y:p.y-d.y};

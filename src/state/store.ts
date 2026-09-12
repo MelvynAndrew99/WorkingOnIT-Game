@@ -7,8 +7,12 @@ import { initialMap, type MapBounds } from '../game/cityMap.ts';
 import type { Tool } from '../game/cityModel.ts';
 import type { MissionSnapshot } from '../game/cityMissions.ts';
 import type { TutorialSnapshot } from '../game/cityTutorial.ts';
+import { readWeatherPreference, weatherHudLabel } from '../game/cityWeather.ts';
 export type DisplayMode = 'auto' | 'wide' | 'portrait';
 export interface AppState {
+    busStopPanel: {id:number;rotation:number;waiting:number;waitSeconds:number;issue:string}|null;
+    movingBusStop: number|null;
+    busStopNotices: {id:number;x:number;y:number;reason:string;waiting:number;waitSeconds:number}[];
     transitPanel: {stationId:number; fleet:{id:number;parked:boolean;riders:number;paid:number}[]; stops:number[];running:boolean;blocked:string;summary:string}|null;
     transitDraft: number[] | null;
     flow: FlowReport | null;
@@ -18,6 +22,8 @@ export interface AppState {
     diagnosticView: DiagnosticView;
     diagnostics: CityDiagnostics | null;
     displayMode: DisplayMode;
+    weatherEnabled: boolean;
+    weatherLabel: string;
     tutorial: TutorialSnapshot | null;
     tutorialNotice: boolean;
     missions: MissionSnapshot | null;
@@ -57,13 +63,15 @@ let showTips = true;
 try { showTips = localStorage.getItem('working-on-it:show-tips') !== 'false'; } catch { /* default if storage unavailable */ }
 let displayMode: DisplayMode = 'auto';
 try { const saved=localStorage.getItem('working-on-it:display-mode'); if(saved==='auto'||saved==='wide'||saved==='portrait')displayMode=saved; } catch { /* default if storage unavailable */ }
+const weatherEnabled = readWeatherPreference();
 const listeners = new Set<() => void>();
 let state: AppState = {
+    busStopPanel:null, movingBusStop:null, busStopNotices:[],
     transitPanel:null, transitDraft:null,
     flow: null,
     vehicleDebugOpen: false, selectedVehicleId: null, vehicleDebug: [],
     diagnosticView: 'normal', diagnostics: null,
-    displayMode,
+    displayMode, weatherEnabled, weatherLabel: weatherHudLabel(0, weatherEnabled),
     tutorial: null, tutorialNotice: false,
     missions: null,
     phase: 'loading', loadProgress: 0, paused: false, showTips, panning: false, map: initialMap(), tool: null, toolSelection: 0, directionSelection: 0, directionRestore: false, rotation: 0,

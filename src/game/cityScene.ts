@@ -1,3 +1,4 @@
+import {busStopNotices,busPassengerTimes,moveBusStop} from './cityBusStops.ts';
 import {transitionVehiclePose} from './cityRoadTransitions.ts';
 import {wideRoadArt} from './cityWideRoadArt.ts';
 import {wideRoadTopology,wideRoadFootprint} from './cityWideRoads.ts';
@@ -25,6 +26,7 @@ import { containsTile } from './cityMap.ts';
 import {debugVehicles, roadIndex, emergencyLaneOffset, travelLaneOffset, isEmergencyResponse, type JunctionControl} from './cityTraffic.ts';
 import {setFiretruckResponding,setPoliceResponding} from '../audio/vehicles.ts';
 import {stepTrafficAudio,stopTrafficAudio} from '../audio/traffic.ts';
+import {playMinorCrash,stopCrashAudio} from '../audio/crashes.ts';
 import {incidentSummary} from './cityIncidents.ts';
 import {BUILDING_LABELS, isBuildingTool} from '../ui/cityLabels.ts';
 import {areaTiles} from './junctionAreas.ts';
@@ -37,6 +39,8 @@ import {starterSnapshot, starterBypassTiles, starterDiversionPoint} from './city
 import { externalNeedsRoad, finishTutorialAndConnect, connectExternalCity } from './cityExternal.ts';
 import { missionSnapshot, refreshMissions } from './cityMissions.ts';
 import { store } from '../state/store.ts';
+import { weatherHudLabel } from './cityWeather.ts';
+import { createCityWeatherView } from './cityWeatherView.ts';
 export interface Scene { destroy(): void }
 
 /**
@@ -75,8 +79,9 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
     const statusLabels = new Map<string, Text>();
     const responderBadges = new Map<string, {container:Container; text:Text}>();
     let directionPoints: Point[] = [];
-    store.patch({directionSelection:0,transitPanel:null,transitDraft:null});
+    store.patch({directionSelection:0,transitPanel:null,transitDraft:null,busStopPanel:null,movingBusStop:null,busStopNotices:[]});
     const transitIssueByStop=new Map<number,string>();
+    let passengerTimes=busPassengerTimes(city);
     let routePreviewPaths:Point[][]=[];
     let previewDraft:number[]|null=null;
     let inspectedId: number | null = null;
@@ -85,7 +90,14 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
     const outline = new Graphics();      // placement validity, drawn above the ghost art
     ghost.addChild(outline);
     cars.addChild(carShadows);
-    root.addChild(ground, world, cars, controls, activity, activityLabels, ghost);
+    // Shade sits on pavement/buildings only. Rain is above cars but under
+    // construction ghosts and emergency labels so those stay readable.
+    const weatherShade = new Container();
+    const weatherRain = new Container();
+    root.addChild(ground, world, weatherShade, cars, controls, weatherRain, activity, activityLabels, ghost);
+    const weatherView = createCityWeatherView({ shade: weatherShade, rain: weatherRain, tileSize: TILE_SIZE });
+    const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const onMotionPreference = () => { syncWeather(); paint(); };
     const clip = new Graphics();
     const input = new Container();
     stage.root.addChild(root, clip, input);
@@ -133,15 +145,20 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
     }
     function reportSnapshot() {
         refreshMissions(city);
-        transitIssueByStop.clear();for(const b of city.buildings)if(b.kind==='busStop'){const issue=busStopIssue(city,b);if(issue)transitIssueByStop.set(b.id,issue);}
+        const stopNotices=busStopNotices(city);
+        passengerTimes=busPassengerTimes(city);
+        transitIssueByStop.clear();for(const n of stopNotices)transitIssueByStop.set(n.id,n.reason);
         if(store.get().transitDraft&&inspectedId!==null)routePreviewPaths=busRoutePreview(city,inspectedId,store.get().transitDraft!).paths;
         store.patch({
+            busStopNotices:stopNotices,
+            busStopPanel:(()=>{const b=city.buildings.find(b=>b.id===inspectedId&&b.kind==='busStop');if(!b)return null;const counts=waitingBusRiders(city);const linked=city.transit?.journeys.filter(j=>j.state==='waiting-out'&&j.boardStopId===b.id||j.state==='waiting-back'&&j.returnBoardStopId===b.id).length??0;return {id:b.id,rotation:b.rotation,waiting:(counts.get(b.id)??0)+linked,waitSeconds:passengerTimes.stops.get(b.id)??0,issue:transitIssueByStop.get(b.id)??''};})(),
             transitPanel:(()=>{const b=city.buildings.find(b=>b.id===inspectedId&&b.kind==='busStation');if(!b)return null;const route=city.transit?.routes.find(r=>r.stationId===b.id);return {stationId:b.id,fleet:(city.transit?.fleet??[]).filter(v=>v.stationId===b.id).map(v=>({id:v.id,parked:v.tripId===undefined,riders:busRiderCount(v),paid:v.paid})),stops:route?.stopIds??[],running:route?.running??false,blocked:route?.blocked??'',summary:transitSummary(city)};})(),
             vehicleDebug:store.get().vehicleDebugOpen?debugVehicles(city):[],
             flow: flowReport(city, inspectedRoad),
             diagnostics: cityDiagnostics(city), missions: missionSnapshot(city), tutorial: tutorialSnapshot(city),
             roadIssues: city.buildings.filter(b=>b.kind==='home').flatMap(b=>{const reason=homeRoadIssue(city,b);return reason?[{homeId:b.id,x:b.x,y:b.y,reason}]:[]}),
             elapsedSeconds: Math.floor(city.elapsed),
+            weatherLabel: weatherHudLabel(city.elapsed, store.get().weatherEnabled),
             map: city.map, funds: city.funds, income: income(city), connected: connectedHomes(city),
             tripSeconds: averageTripSeconds(city), homes: city.buildings.filter(b => b.kind === 'home').length,
             completed: city.completed, activeTrips: city.trips.filter(t=>!t.service && t.phase!=='visiting' && t.phase!=='crashed').length,
@@ -400,8 +417,9 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
         }
         const candidate = structuredClone(city) as City;
         const before = candidate.funds;
-        placeInCity(candidate, s.tool, hover.x, hover.y, s.rotation);
-        const valid = before !== candidate.funds || candidate.buildings.length !== city.buildings.length || candidate.roads.length !== city.roads.length || JSON.stringify(candidate.controls) !== JSON.stringify(city.controls) || JSON.stringify(candidate.closures)!==JSON.stringify(city.closures);
+        const moved=s.movingBusStop!==null?moveBusStop(candidate,s.movingBusStop,hover.x,hover.y,s.rotation):null;
+        if(!moved)placeInCity(candidate, s.tool, hover.x, hover.y, s.rotation);
+        const valid = moved?moved.ok: before !== candidate.funds || candidate.buildings.length !== city.buildings.length || candidate.roads.length !== city.roads.length || JSON.stringify(candidate.controls) !== JSON.stringify(city.controls) || JSON.stringify(candidate.closures)!==JSON.stringify(city.closures);
         const colour = s.tool === 'bulldoze' ? COLORS.remove : valid ? COLORS.valid : COLORS.invalid;
         if(s.tool==='stop' || s.tool==='signal') {
             const areas=roadIndex(city).areas;
@@ -542,7 +560,7 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
             for(const path of routePreviewPaths)for(const p of path)activity.rect(px(p.x)+3,py(p.y)+3,tile-6,tile-6).fill({color:0x46c4b7,alpha:.2});
             for(const [i,id] of draft.entries()){const stop=city.buildings.find(b=>b.id===id);if(stop)label(`route-order-${i}`,String(i+1),stop.x+.5,stop.y+.5,0x74fff0);}
         }
-        for(const bus of city.transit?.fleet??[]){const sprite=bus.tripId===undefined?null:carPool.get(bus.tripId);if(sprite)label(`bus-${bus.id}`,`${busRiderCount(bus)}/8`,sprite.x/tile,sprite.y/tile-.5,0x74fff0);}
+        for(const bus of city.transit?.fleet??[]){const sprite=bus.tripId===undefined?null:carPool.get(bus.tripId);if(sprite)label(`bus-${bus.id}`,`${busRiderCount(bus)}/8${passengerTimes.buses.has(bus.id)?` · ${passengerTimes.buses.get(bus.id)}s`:''}`,sprite.x/tile,sprite.y/tile-.5,0x74fff0);}
         if(inspectedRoad && city.roads.some(p=>same(p,inspectedRoad!)))activity.rect(px(inspectedRoad.x)+1,py(inspectedRoad.y)+1,tile-2,tile-2).stroke({color:0x42d9e8,width:3,alpha:.9});
         const station=city.buildings.find(b=>b.id===inspectedId&&b.kind==='policeStation');
         if(station){const e=entrance(station);activity.circle(px(e.x+.5),py(e.y+.5),CITY_RULES.policePatrol.radiusTiles*tile).fill({color:0x7bdfff,alpha:.06}).stroke({color:0x7bdfff,width:2,alpha:.8});}
@@ -586,7 +604,7 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
         for(const b of city.buildings) {
             if(b.kind==='busStop'||b.kind==='busStation'){
                 const waiting=waitingByStop.get(b.id)??0;
-                label(`transit-${b.id}`,`${b.kind==='busStation'?'BUS DEPOT':'BUS'} ${b.id}${waiting?` · ${waiting} waiting`:''}${transitIssueByStop.has(b.id)?' !':''}`,b.x+.5,b.y-.2,0x74fff0);
+                label(`transit-${b.id}`,`${waiting?`${passengerTimes.stops.get(b.id)??0}s`:b.kind==='busStation'?'BUS DEPOT':'BUS'}${transitIssueByStop.has(b.id)?' !':''}`,b.x+.5,b.y-.2,transitIssueByStop.has(b.id)?0xffb75e:0x74fff0);
                 // Match the existing yellow visitor markers, contained inside the stop plot.
                 const depot=b.kind==='busStation',s=shape(b);
                 for(let i=0;i<Math.min(waiting,8);i++)activity.roundRect(
@@ -689,7 +707,7 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
         clampCamera(camera, city.map);
         root.scale.set(camera.zoom);
         root.position.set(viewport.x+viewport.width/2-camera.x*tile*camera.zoom, viewport.y+viewport.height/2-camera.y*tile*camera.zoom);
-        renderGround(); preview(); renderActivity(); paint();
+        renderGround(); preview(); renderActivity(); syncWeather(); paint();
     }
     function focusTown() {
         const points = city.buildings.length ? city.buildings.map(b => ({x:b.x+1,y:b.y+1})) : city.roads;
@@ -723,8 +741,18 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
      * render loop — so anything built while paused needs an explicit repaint.
      */
     function paint() { if (!app.ticker.started && !root.destroyed) app.render(); }
+    function syncWeather() {
+        weatherView.sync({
+            elapsed: city.elapsed,
+            enabled: store.get().weatherEnabled,
+            reducedMotion: motionPreference.matches,
+            map: city.map,
+            camera,
+            viewport,
+        });
+    }
     /** Model changed: everything but the terrain has to be rebuilt. */
-    function refresh() { renderWorld(); preview(); renderCars(); renderControls(); renderActivity(); paint(); }
+    function refresh() { renderWorld(); preview(); renderCars(); renderControls(); renderActivity(); syncWeather(); paint(); }
 
     function screenPoint(e: FederatedPointerEvent): Point { return stage.root.toLocal(e.global); }
     function inside(p: Point): boolean { return p.x >= viewport.x && p.y >= viewport.y && p.x < viewport.x+viewport.width && p.y < viewport.y+viewport.height; }
@@ -744,6 +772,11 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
     }
     function build(p: Point) {
         const s = store.get();
+        if(s.movingBusStop!==null){
+            const result=moveBusStop(city,s.movingBusStop,p.x,p.y,s.rotation);
+            store.patch({message:result.message,...(result.ok?{movingBusStop:null,tool:null}:{})});
+            report();if(result.ok)flushSave();refresh();return;
+        }
         if(s.transitDraft!==null){
             const stop=city.buildings.find(b=>(b.kind==='busStop'||b.kind==='busStation'&&b.id===inspectedId)&&footprint(b).some(q=>same(p,q)));
             if(!stop){store.patch({message:'Tap a bus stop or this depot platform.'});return;}
@@ -781,7 +814,7 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
         const depot=city.buildings.find(b=>b.kind==='busStation'&&footprint(b).some(q=>same(p,q)));
         if(depot&&s.tool!=='bulldoze'&&s.tool!=='wideRoad'){inspectedId=depot.id;store.patch({tool:null,message:'Choose stops in order, buy a bus, then start service.'});report();return;}
         const busStop=city.buildings.find(b=>b.kind==='busStop'&&footprint(b).some(q=>same(p,q)));
-        if(busStop&&s.tool!=='bulldoze'&&s.tool!=='wideRoad'){inspectedId=busStop.id;const issue=busStopIssue(city,busStop);store.patch({message:`Bus stop ${busStop.id}: ${issue??`boards ${['west','north','east','south'][busStop.rotation]}bound traffic. Riders walk along connected sidewalks.`}`});report();return;}
+        if(busStop&&s.tool!=='bulldoze'&&s.tool!=='wideRoad'){inspectedId=busStop.id;store.patch({tool:null});const issue=busStopIssue(city,busStop);store.patch({message:`Bus stop ${busStop.id}: ${issue??`boards ${['west','north','east','south'][busStop.rotation]}bound traffic. Riders walk along connected sidewalks.`}`});report();return;}
         if(s.tool===null){store.patch({message:'Select a building or road tool from the menu first.'});return;}
         if(isBuildingTool(s.tool)) {
             const existing=city.buildings.find(b=>footprint(b).some(q=>same(p,q)));
@@ -858,6 +891,14 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
     const uncommand=onCityCommand(command=>{
         cancel();
         if(session && !['zoom','home','focus'].includes(command.type)) return;
+        if(command.type==='bus-stop'){
+            if(command.action==='close'){inspectedId=null;store.patch({movingBusStop:null,tool:null});report();preview();return;}
+            if(command.action==='cancel'){store.patch({movingBusStop:null,tool:null,message:'Stop move canceled.'});report();preview();return;}
+            const stop=city.buildings.find(b=>b.id===(command.id??inspectedId)&&b.kind==='busStop');if(!stop)return;
+            inspectedId=stop.id;camera.x=stop.x+.5;camera.y=stop.y+.5;
+            store.patch({transitDraft:null,vehicleDebugOpen:false,panning:false,tool:command.action==='move'?'busStop':null,movingBusStop:command.action==='move'?stop.id:null,rotation:stop.rotation,message:command.action==='move'?'Choose an empty roadside square. Rotate if needed. Route and riders stay with the stop; no charge.':transitIssueByStop.get(stop.id)??'Bus stop selected.'});
+            report();updateCamera();return;
+        }
         if(command.type==='transit'){
             if(command.action==='close'){inspectedId=null;store.patch({transitDraft:null});report();return;}
             const station=city.buildings.find(b=>b.id===inspectedId&&b.kind==='busStation');if(!station)return;
@@ -914,6 +955,7 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
         if (e.repeat || e.ctrlKey || e.metaKey || e.altKey || (e.target instanceof HTMLElement && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName))) return;
         const shortcuts: Record<string, Tool> = { '1': 'home', '2': 'store', '3': 'road', '4': 'bulldoze', '5': 'stop', '6': 'signal', '7': 'closure', '8':'direction', '9':'wideRoad' };
         if (shortcuts[e.key] && (!session || shortcuts[e.key]!=='direction') && starterToolAllowed(city,shortcuts[e.key])) store.patch({ tool: shortcuts[e.key], panning: false });
+        if(e.key==='Escape'&&store.get().movingBusStop!==null){store.patch({movingBusStop:null,tool:null,message:'Stop move canceled.'});preview();}
         if(e.key==='Escape'&&store.get().transitDraft!==null)store.patch({transitDraft:null,message:'Route draft canceled.'});
         if(e.key==='Escape'&&store.get().tool==='direction'){directionPoints=[];store.patch({directionSelection:0,message:'Direction edit canceled.'});}
         if (e.key.toLowerCase() === 'r') store.patch({ rotation: (store.get().rotation + 1) % 4 });
@@ -923,9 +965,14 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
     const tick = () => {
         const dt = Math.min(app.ticker.deltaMS / 1000, .1);
         const noticed=city.tutorial?.noticedIncident;
+        const firstNewId=city.nextId, previousAccidents=city.accidentCount;
         if(session)session.step(dt);else stepCity(city, dt);
+        if(city.accidentCount>previousAccidents){
+            for(const incident of city.incidents)if(incident.id>=firstNewId&&incident.severity==='minor')playMinorCrash();
+        }
         if(city.wideRoads!==renderedWideRoads)renderWorld();
         renderCars(); renderControls(); renderActivity();
+        syncWeather();
         setFiretruckResponding(city.trips.some(t=>t.service==='fire'&&!t.patrol&&!t.responseCancelled&&isEmergencyResponse(t)));
         setPoliceResponding(city.trips.some(t=>t.service==='police'&&!t.patrol&&!t.responseCancelled&&isEmergencyResponse(t)));
         stepTrafficAudio(dt,city.trips.filter(t=>!t.service&&t.path.length&&(!t.phase||t.phase==='legacy'||t.phase==='outbound'||t.phase==='returning')).length);
@@ -942,9 +989,10 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
         if(draft!==previewDraft){previewDraft=draft;routePreviewPaths=draft&&inspectedId!==null?busRoutePreview(city,inspectedId,draft).paths:[];renderActivity();}
 
         if(store.get().tool!=='direction' && directionPoints.length){directionPoints=[];store.patch({directionSelection:0});return;}
-        preview(); paint();
+        syncWeather(); preview(); paint();
     });
     const unresize = stage.onResize(layout);
+    motionPreference.addEventListener('change', onMotionPreference);
     const observer = new ResizeObserver(layout);
     // Observe the region AND its allocating bands: a band's change can move the
     // rectangle without resizing it. The region stays mounted across panel changes.
@@ -969,6 +1017,7 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
             setFiretruckResponding(false);
             setPoliceResponding(false);
             stopTrafficAudio();
+            stopCrashAudio();
             flushSave(); observer.disconnect(); unsub(); unresize();
             window.removeEventListener('keydown', keyboard);
             window.removeEventListener('blur', cancel);
@@ -977,6 +1026,8 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
             app.canvas.removeEventListener('wheel', wheel);
             uncommand();
             app.ticker.remove(tick);
+            motionPreference.removeEventListener('change', onMotionPreference);
+            weatherView.destroy();
             carPool.clear(); carFacing.clear();
             root.destroy({ children: true });
             clip.destroy(); input.destroy();
