@@ -7,7 +7,7 @@ import {STARTER_GRANTS} from './cityStarterTutorial.ts';
 
 export const STARTING_FUNDS = 900;
 export const COSTS = {
-  road: 20, stop: 25, signal: 75, home: 200, store: 400, park: 300, hospital: 800, fireStation: 700, policeStation: 600,
+  busStation:1000, busStop:50, road: 20, wideRoad: 40, stop: 25, signal: 75, home: 200, store: 400, park: 300, hospital: 800, fireStation: 700, policeStation: 600,
 } as const;
 export type PricedTool = keyof typeof COSTS;
 /** Simulation seconds without meaningful current-lesson progress before a grant. Provisional. */
@@ -50,7 +50,7 @@ export interface EconomyProgress {
   stallMark?: number;
 }
 
-const PRICED: PricedTool[] = ['stop', 'signal', 'road', 'home', 'store', 'park', 'hospital', 'fireStation', 'policeStation'];
+const PRICED: PricedTool[] = ['wideRoad','busStation','busStop','stop', 'signal', 'road', 'home', 'store', 'park', 'hospital', 'fireStation', 'policeStation'];
 const isPriced = (tool: string): tool is PricedTool => Object.hasOwn(COSTS, tool);
 const isLesson = (id: string): id is GrantLessonId => (LESSON_ORDER as readonly string[]).includes(id);
 const tileKey = (p: Point) => `${p.x},${p.y}`;
@@ -156,7 +156,9 @@ export function constructionChanged(before: City, after: City): boolean {
     || before.controls.length !== after.controls.length
     || before.closures.length !== after.closures.length
     || JSON.stringify(before.buildings) !== JSON.stringify(after.buildings)
-    || JSON.stringify(before.roads) !== JSON.stringify(after.roads);
+    || JSON.stringify(before.roads) !== JSON.stringify(after.roads)
+    || JSON.stringify(before.wideRoads) !== JSON.stringify(after.wideRoads)
+    || JSON.stringify(before.wideRoadWorks) !== JSON.stringify(after.wideRoadWorks);
 }
 
 export function parseRoadPaid(raw: unknown, roads: Point[], area: number): Record<string, number> | null | undefined {

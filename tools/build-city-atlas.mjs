@@ -277,6 +277,17 @@ for (const service of ['police', 'ems', 'fire']) for (const side of DIRS) {
     sprites.set(`car_${service}_${side}`, { w: img.width, h: img.height, buf });
 }
 
+// Approved Claude bus artwork, including the user's requested wheel correction.
+for (const side of DIRS) {
+    const img = read(path.join(ROOT, 'docs/artwork/transit/claude-bus', `bus-${side}.png`));
+    const across = side === 'E' || side === 'W';
+    if (img.width !== (across ? 36 : 22) || img.height !== (across ? 24 : 29))
+        throw new Error(`Unexpected bus sprite dimensions: ${side}`);
+    const buf = [];
+    for (let y = 0; y < img.height; y++) for (let x = 0; x < img.width; x++) buf.push(get(img, x, y));
+    sprites.set(`bus_${side}`, {w:img.width, h:img.height, buf});
+}
+
 // ---------------------------------------------------------------------------
 // Pack: shelf-fit into a power-of-two-width sheet, 1px transparent gutter.
 // ---------------------------------------------------------------------------

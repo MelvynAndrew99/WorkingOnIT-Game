@@ -1,0 +1,28 @@
+[
+  {
+    "width": 1440,
+    "passed": true,
+    "route": {
+      "id": 5,
+      "stationId": 1,
+      "stopIds": [
+        2,
+        3
+      ],
+      "running": true
+    }
+  },
+  {
+    "width": 390,
+    "passed": true,
+    "route": {
+      "id": 5,
+      "stationId": 1,
+      "stopIds": [
+        2,
+        3
+      ],
+      "running": true
+    }
+  }
+]

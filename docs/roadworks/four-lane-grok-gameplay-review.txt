@@ -1,0 +1,57 @@
+**4-lane roads should be a land-for-queue-storage choice on a two-way spine, not a faster default pavement.** Enjoyment comes from picking *which* corridor deserves two tiles, *which* two tiles the preview occupies, and living with merges, junctions, and destinations that still cap completed shopping returns.
+
+## Enjoyable decisions
+
+Direct place-and-preview already creates the good spatial puzzle: nudge the pointer to choose the pair of tiles, see tapers and blocked buildings, then commit. That is a layout decision, not a menu.
+
+The unique toy versus **existing two-lane one-ways** is one coherent two-way street: two-abreast movement, shared stop lines, curb access on the outside, one 2×2 junction instead of two desynced crossings. Players decide whether to sacrifice a building row (or empty frontage) for that coherence, or keep the town fabric and solve traffic some other way.
+
+Fun constraints, if readable: fair merges at tapers; opposing turns at wide junctions; full shops; construction that briefly closes the street. Success is more **completed household shopping returns** with the same homes and destinations still standing—not prettier asphalt or emptier lanes after you deleted the demand.
+
+## When each tool should win
+
+**Widening wins** when both directions queue on the *same* street, destinations still have spare service capacity, and you need extra parallel movement and queue room without finding a second right-of-way. Local curb access must stay on that spine. Greenfield towns may draw a 4-lane as an arterial from the start because the land is still empty.
+
+**Parallel ordinary / one-way roads win** when a spare street already exists, you want buildings *between* the pair, or you want inbound and outbound (or through vs local) split. Two-lane one-ways already buy a lot of capacity; 4-lane should not dominate that tool on cost or speed.
+
+**A bypass wins** when through-traffic is crushing a high-value strip you do not want to demolish, and empty land exists around the town. The old street keeps shops and homes; the new path takes the cut-through.
+
+**Signal timing wins** when the junction cannot clear, not when the midblock lacks lanes. It is cheap, instant, reversible, and does not spend land or downtime. If the exit or the shop is full, extra lanes only deliver cars into the same jam faster.
+
+**Buses win** only as a *service path*, and only when **linked household transit journeys** actually complete the shopping-return loop. Visible curb crowding must not count as a win, and you cannot assume cars vanish. If those journeys are weak, buses should lose this comparison honestly; do not balance 4-lanes against a fake transit valve.
+
+## Why two tiles can be worth it without becoming mandatory
+
+Value is **localized storage and two-abreast flow** on a busy two-way arterial. Cost is a whole extra tile of land, lost or moved frontage, construction closure, and merge discipline at every ordinary-road end. If free-flow speed matches ordinary roads, and extra completed trips stay clearly below 2× at the same demand, a wide road is an arterial you *choose*, not a blanket upgrade. Old towns stay 2-lane until the player spends land; new towns can paint a spine on empty dirt. Moving buildings, if it arrives later, should be a recovery/opt-in for a loved shop—not an implied tax that makes widening always correct.
+
+## Qualitative initial balance (provisional hypotheses)
+
+- **Cost:** New 4-lane on empty land about **2.5–3×** an ordinary road of the same length (not 2×: unified junctions and land should sting even with no demolition). In-place conversion about **1.5× that new-4-lane price**, plus lost trips during the short closure. Signals remain far cheaper; a bypass is ordinary-road prices on a longer empty path.
+- **Speed vs throughput:** Same free-flow speed as ordinary roads. Unconstrained midblock completed trips about **1.3–1.6×**, never a promised 2×. Ends, turns, and full destinations still govern.
+- **Bottleneck feedback:** Show the merge queue, downstream spillback, and “destination full” as the reason the extra lanes did not double service.
+- **Downtime:** Short, visible roadworks with detours (prior decision). Long enough to feel one disrupted shopping cycle; short enough that live-town upgrades are not a wipe. Cancellation/refund before excavation is full; after, partial.
+- **Progression:** Placeable from the start; no new unlock gates. Saves stay ordinary until the player upgrades. Narrowing is unsupported until designed—say that *before* conversion.
+
+## Traps and recovery
+
+**Demolishing homes/stores** can fake a traffic win by deleting demand and income. Preview must list affected households and destinations and that their shopping service will vanish if demolished. Comparisons only count if those buildings remain.
+
+**Narrowing ends** can make a 4-lane *worse* than the old street (unfair merge, taper eating a junction). Reject unsupported short stubs and junction-adjacent tapers with a plain “needs more space” message; show both queues getting a turn.
+
+**Cash for little visible improvement** happens when the shop, the T-junction, or the 2-lane exit was always the cap. After opening, show completed returns vs the same demand, not “look, more tarmac.”
+
+Other traps: construction sealing the only path; lost curb access/stops; preview eating the wrong row; dead ends with no turnaround; no way back to 2-lane.
+
+Recovery: no auto-demolition; explicit player action to remove buildings; cancel with refund before commit; if roadworks started, restore the old road and traffic rather than leaving a trench; keep passengers and committed trips across conversion.
+
+## Three fixed-demand playtests (gameplay criteria)
+
+1. **Widening helps.** Straight 4-lane between ordinary roads, both directions, shops not full, homes and destinations retained. Success: clearly more completed shopping returns, readable two-abreast, fair merge, no crash-as-content.
+2. **Downstream wins.** Same demand, wide midblock, tight exit or full destination. Success: completed trips stay about the same, the jam is visibly *after* the wide section, and the player can explain why a bypass or signals would be smarter.
+3. **Demolition is a trap.** Widening only fits if a shop or home comes down. Success: demolish-and-widen loses service/income relative to keep-demand + signals/bypass/parallel; refuse-and-reroute keeps the town useful. Traffic looking “easier” after deletion is a **fail** if service dropped.
+
+Desktop and narrow UI: the preview must make footprint, cost, downtime, and condemned buildings obvious in one glance.
+
+## Highest-priority gameplay recommendation
+
+**Sell extra queue room and two-abreast flow at ordinary speed, and make retained household shopping returns the only score.** If the preview hides demolition, or 4-lanes feel faster or twice as productive, they become mandatory and every alternative dies.

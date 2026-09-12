@@ -1,5 +1,6 @@
 /** Sparse directions on physical road connections. Missing metadata means two-way. */
 import type {City, Point} from './cityModel.ts';
+import { allowsWideRoadStep, wideRoadSignature, type WideRoadCity } from './cityWideRoads.ts';
 export type RoadDirection = 'forward' | 'reverse';
 export type RoadDirections = Record<string, RoadDirection>;
 const key = (p: Point) => `${p.x},${p.y}`;
@@ -8,16 +9,18 @@ export const roadEdgeKey = (a: Point,b: Point): string => first(a,b) ? `${key(a)
 export const roadDirectionForStep = (a: Point,b: Point): RoadDirection => first(a,b) ? 'forward' : 'reverse';
 /** Callers with a road index can validate existence here. Otherwise callers validate roads themselves.
  * No road scans: this predicate also runs at physical movement frequency. */
-export function allowsRoadStep(city: Pick<City,'roadDirections'>,a: Point,b: Point,roads?: ReadonlySet<string>): boolean {
+export function allowsRoadStep(city: Pick<City,'roadDirections'> & WideRoadCity,a: Point,b: Point,roads?: ReadonlySet<string>): boolean {
   if(Math.abs(a.x-b.x)+Math.abs(a.y-b.y)!==1)return false;
   if(roads&&(!roads.has(key(a))||!roads.has(key(b))))return false;
+  if(!allowsWideRoadStep(city,a,b))return false;
   if(!city.roadDirections)return true;
   const direction=city.roadDirections[roadEdgeKey(a,b)];
   return direction===undefined||direction===roadDirectionForStep(a,b);
 }
-export function directionSignature(city: Pick<City,'roadDirections'>): string {
-  if(!city.roadDirections)return '';
-  return Object.keys(city.roadDirections).sort().map(k=>`${k}:${city.roadDirections![k]}`).join(';');
+export function directionSignature(city: Pick<City,'roadDirections'> & WideRoadCity): string {
+  const wide=city.wideRoads?.length?wideRoadSignature(city):'';
+  const directions=city.roadDirections?Object.keys(city.roadDirections).sort().map(k=>`${k}:${city.roadDirections![k]}`).join(';'):'';
+  return wide?`${directions}|wide:${wide}`:directions;
 }
 export function roadEdgePoints(edge: string): [Point,Point] | null {
   const match=/^(-?\d+),(-?\d+)>(-?\d+),(-?\d+)$/.exec(edge);

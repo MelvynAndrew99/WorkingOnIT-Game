@@ -16,7 +16,7 @@ export function starterToolAllowed(city:City,tool:Tool):boolean {
  const h=city.tutorial?.hRoad;
  if(!h||city.tutorial?.status!=='active'||h.stage>=9)return true;
  if(tool==='bulldoze')return h.stage>=2;
- if(tool==='road'||tool==='direction')return h.stage>=5;
+ if(tool==='road'||tool==='direction'||tool==='wideRoad')return h.stage>=5;
  if(tool==='closure')return h.stage>=5;
  if(tool==='stop'||tool==='signal')return h.stage>=8;
  if(['hospital','policeStation','fireStation'].includes(tool))return h.stage>=5;

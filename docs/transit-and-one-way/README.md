@@ -1,6 +1,6 @@
 # Buses, walking access and one-way roads
 
-**Update:** one-way roads are now implemented locally; see [delivery and verification](IMPLEMENTED.md). The original design/assignment record below remains the plan for buses and signal coordination, which are not implemented yet.
+**Update:** [Representative rider demand, returns and yellow stop dots](bus-economics/IMPLEMENTED.md) are implemented locally. Local buses, walking journeys, fleet/route controls and incident/save integration are implemented: [bus delivery](buses/README.md). Performance testing remains on-request only. One-way roads are implemented locally; see [delivery and verification](IMPLEMENTED.md). The original design/assignment record below remains the plan for buses and signal coordination, with signal coordination still separate.
 
 September 11, 2026. User-requested design and delegation while the user authors the mission structure. This package specifies mechanics for both sandbox and challenges; it does not assign new mission numbers, change current maps, or publish a build.
 

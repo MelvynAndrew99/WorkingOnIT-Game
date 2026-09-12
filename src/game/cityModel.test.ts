@@ -209,7 +209,7 @@ test('recorded zero payment survives reload and cannot mint money', () => {
 });
 
 test('catalog has modest control costs and a new town cannot buy the full service set', () => {
-  assert.deepEqual(COSTS, { road: 20, stop:25, signal:75, home: 200, store: 400, park: 300, hospital: 800, fireStation: 700, policeStation: 600 });
+  assert.deepEqual(COSTS, { busStation:1000,busStop:50,road: 20, wideRoad:40, stop:25, signal:75, home: 200, store: 400, park: 300, hospital: 800, fireStation: 700, policeStation: 600 });
   const serviceCost = COSTS.hospital + COSTS.fireStation + COSTS.policeStation;
   assert.ok(STARTING_FUNDS < serviceCost);
   assert.ok(STARTING_FUNDS >= COSTS.home + COSTS.store + 7 * COSTS.road);

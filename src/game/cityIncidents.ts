@@ -171,6 +171,17 @@ function createIncident(city:City,point:Point,pair:Trip[],severity:Incident['sev
     trip.progress = 0;
     trip.hold = 0;
     trip.incidentId = incident.id;
+    if (trip.busId !== undefined) {
+      delete trip.trafficLane;
+      delete trip.laneChange;
+      for (const journey of city.transit?.journeys ?? []) {
+        if (journey.busId !== trip.busId) continue;
+        journey.state = 'crashed';
+        journey.incidentId = incident.id;
+        journey.incidentOutcome = 'disrupted';
+        journey.blockedReason = 'Bus crash: waiting for responders';
+      }
+    }
   }
 }
 
@@ -179,7 +190,7 @@ export function stageTutorialIncident(city:City,point:Point):boolean {
   const h=city.tutorial?.hRoad;
   if(city.tutorial?.status!=='active'||h?.stage!==4||h.incidentId!==undefined||city.incidents.length)return false;
   if(!city.roads.some(p=>at(p,point.x,point.y)))return false;
-  const driver=city.trips.find(t=>drivingCivilian(t)&&nearContact(t,point));
+  const driver=city.trips.find(t=>t.busId===undefined&&drivingCivilian(t)&&nearContact(t,point));
   if(!driver)return false;
   createIncident(city,point,[driver],'serious','impaired-driving');
   city.incidents.at(-1)!.tutorialEmsOnly=true;
@@ -229,6 +240,7 @@ function sendHome(city: City, trip: Trip): void {
     // Crews wait in their scene parking space until an actual lane can accept the return.
     if(!path||startBlocked(city,roadIndex(city),path,true))return;
     delete trip.resume;delete trip.sceneParked;
+    delete trip.trafficLane;delete trip.laneChange;
     Object.assign(trip,{path,progress:0,phase:'returning',
       target:copy(entrance(station)),speed:TRAVEL_TILES_PER_SECOND,hold:0,workRemaining:0});
     return;
@@ -260,14 +272,43 @@ function stabilize(city: City, trip: Trip, incident: Incident): void {
   if (incident.rescueDeadline !== null && city.elapsed > incident.rescueDeadline + 1e-9) return;
   incident.outcome = 'rescued';
   city.rescuedCount += 1;
+  attributeBusIncident(city, incident);
+}
+
+/** These are affected-journey incident outcomes, not a new per-rider casualty policy. */
+function attributeBusIncident(city: City, incident: Incident): void {
+  for (const journey of city.transit?.journeys ?? []) {
+    if (journey.incidentId !== incident.id) continue;
+    journey.incidentOutcome = incident.outcome === 'rescued' ? 'rescued'
+      : incident.outcome === 'lost' ? 'incident-loss' : 'disrupted';
+    journey.blockedReason = incident.status === 'cleared' ? 'Bus recovering to station'
+      : incident.outcome === 'lost' ? 'Bus crash: rescue deadline missed; awaiting clearance'
+      : 'Bus crash: waiting for scene clearance';
+  }
 }
 
 function maybeClear(city: City, incident: Incident): void {
   if (incident.status !== 'active') return;
   if (incidentServices(incident).some(s => !incident.completedServices.includes(s))) return;
   incident.status = 'cleared';
-  city.trips = city.trips.filter(t => !(phaseOf(t) === 'crashed' && t.incidentId === incident.id));
+  attributeBusIncident(city, incident);
+  for (const trip of city.trips) {
+    if (trip.busId === undefined || phaseOf(trip) !== 'crashed' || trip.incidentId !== incident.id) continue;
+    // The compact bus remains a physical vehicle after the crews clear the wreck.
+    // Fleet ownership must survive, including when the return road is still blocked.
+    const station = city.buildings.find(b => b.id === trip.stationId);
+    trip.phase = 'waiting';
+    trip.resume = 'returning';
+    trip.hold = 0;
+    delete trip.incidentId;
+    const bus = city.transit?.fleet.find(b => b.id === trip.busId);
+    if (bus) { bus.stopIndex = 0; bus.dwell = 0; }
+    if (station) trip.target = copy(entrance(station));
+  }
+  city.trips = city.trips.filter(t => !(tripIsCivilianWreck(t) && t.incidentId === incident.id));
 }
+
+const tripIsCivilianWreck = (trip: Trip) => trip.busId === undefined && phaseOf(trip) === 'crashed';
 
 function finishWork(city: City, trip: Trip): void {
   const incident = city.incidents.find(i => i.id === trip.incidentId);
@@ -382,6 +423,7 @@ function advanceDeadlines(city: City): void {
     if (city.elapsed + 1e-9 < incident.rescueDeadline) continue;
     incident.outcome = 'lost';
     city.fatalities += 1;
+    attributeBusIncident(city, incident);
   }
 }
 
@@ -506,13 +548,15 @@ export function incidentSummary(city: City): {
     warning,
     details: live.map(incident => {
       const parts = incidentServices(incident).map(k => serviceNeed(city, incident, k)).filter(Boolean);
+      const riders = city.transit?.journeys.filter(j => j.incidentId === incident.id).length ?? 0;
       const held=city.tutorial?.status==='active'&&!!city.tutorial.hRoad&&!city.tutorial.hRoad.rescueClockStarted;
       const remaining = !held && incident.outcome === 'pending' && incident.rescueDeadline !== null
         ? round6(Math.max(0, incident.rescueDeadline - city.elapsed)) : null;
       return {
         id: incident.id,
         label: causeLabel(incident),
-        needs: (parts.length ? `Needs ${parts.join(', ')}` : 'All services complete')+(held?' · Training rescue clock held':''),
+        needs: (parts.length ? `Needs ${parts.join(', ')}` : 'All services complete')
+          +(riders?` · ${riders} ${riders===1?'rider':'riders'} affected`:'')+(held?' · Training rescue clock held':''),
         deadlineSeconds: remaining,
       };
     }),
@@ -646,7 +690,12 @@ function tripRefsOk(city: City, incidents: Incident[]): boolean {
     } else if(phaseOf(trip)==='crashed') {
       const p=trip.path[0];
       if(!incident || incident.status!=='active' || !p || !at(p,incident.x,incident.y))return false;
-    } else if(trip.incidentId!==undefined || trip.stationId!==undefined)return false;
+      if (trip.busId !== undefined) {
+        const outcome = incident.outcome === 'rescued' ? 'rescued' : incident.outcome === 'lost' ? 'incident-loss' : 'disrupted';
+        if (city.transit?.journeys.some(j => j.busId === trip.busId
+          && (j.state !== 'crashed' || j.incidentId !== incident.id || j.incidentOutcome !== outcome))) return false;
+      }
+    } else if(trip.incidentId!==undefined || (trip.stationId!==undefined&&trip.busId===undefined))return false;
   }
   return true;
 }

@@ -1,4 +1,6 @@
-import {allowsRoadStep, parseRoadDirections, pruneRoadDirections, type RoadDirections} from './cityDirections.ts';
+import {wideRoadFootprint, wideRoadPlacementGeometry, wideRoadTopology, parseWideRoads, type WideRoadSection} from './cityWideRoads.ts';
+import {busPathToTarget, initTransit, busStopIssue, transitRemovalGuard, stepTransit, parseTransit, type TransitState} from './cityTransit.ts';
+import {roadEdgePoints, allowsRoadStep, parseRoadDirections, pruneRoadDirections, type RoadDirections} from './cityDirections.ts';
 import {refreshFlowProgress, FLOW_MISSION_ID} from './cityFlow.ts';
 import {cachedRoadPath} from './cityPathfinding.ts';
 import {routingSnapshot,responseRoute,civilianRoute} from './cityRouting.ts';
@@ -7,7 +9,7 @@ import {patrolAvoid} from './cityPatrols.ts';
 import { INITIAL_WIDTH, INITIAL_HEIGHT, initialMap, containsTile, expandedMap, parseMap, type MapBounds, type ExpansionDirection } from './cityMap.ts';
 import {
   TRAFFIC_TICK, TRAVEL_TILES_PER_SECOND, roadIndex, withRoadIndex, trafficTick, migrateLegacyTraffic,
-  placeControl, controlAt, removeControl, pruneControls, parseControls, parseHistory, occupiedTiles, bodyTile, isEmergencyResponse, validEmergencyPasses, validRoadDirectionCommitments, emergencyReservedTiles,
+  placeControl, controlAt, removeControl, pruneControls, parseControls, parseHistory, occupiedTiles, bodyTile, isEmergencyResponse, validEmergencyPasses, validRoadDirectionCommitments, emergencyReservedTiles, directionReservedTiles,
   type JunctionControl, type TripRecord,
 } from './cityTraffic.ts';
 import {
@@ -45,8 +47,8 @@ export type { EconomyProgress, PricedTool } from './cityEconomy.ts';
 export const WIDTH = INITIAL_WIDTH;
 export const HEIGHT = INITIAL_HEIGHT;
 export const TILE_METERS = 10;
-export type BuildingKind = 'home' | 'store' | 'park' | 'hospital' | 'fireStation' | 'policeStation';
-export type Tool = BuildingKind | 'road' | 'bulldoze' | 'stop' | 'signal' | 'closure' | 'direction';
+export type BuildingKind = 'home' | 'store' | 'park' | 'hospital' | 'fireStation' | 'policeStation' | 'busStation' | 'busStop';
+export type Tool = BuildingKind | 'road' | 'bulldoze' | 'stop' | 'signal' | 'closure' | 'direction' | 'wideRoad';
 export type Point = { x: number; y: number };
 export type Building = { id: number; kind: BuildingKind; x: number; y: number; rotation: number; paid?: number; patrolReadyAt?: number };
 /**
@@ -54,12 +56,15 @@ export type Building = { id: number; kind: BuildingKind; x: number; y: number; r
  * outbound/returning drive, visiting is parked off the carriageway, waiting holds a road tile
  * with its intent intact, crashed is an immobile civilian wreck, working is a responder on scene.
  */
-export type TripPhase = 'legacy' | 'outbound' | 'visiting' | 'returning' | 'waiting' | 'crashed' | 'working';
+export type TripPhase = 'legacy' | 'outbound' | 'visiting' | 'returning' | 'waiting' | 'crashed' | 'working' | 'bus-dwell';
 export type TripPurpose = 'shopping' | 'leisure';
 /** progress and path stay the only source of vehicle position; wait/hold are queue metadata. */
 export type Trip = {
   /** Optional query schedule survives reload; derived costs do not. */
+  busId?: number;
   nextRouteQueryAt?: number;
+  trafficLane?: 0|1;
+  laneChange?: {from:0|1;to:0|1;shift:number};
   /** Local service observation only; absent in older saves. */
   startedAt?: number; visitedAt?: number;
   patrol?: true;
@@ -76,8 +81,13 @@ export type Trip = {
   /** Reserved straight overtaking corridor; shift is a continuous 0..1 lateral position. */
   emergencyPass?: { start: number; end: number; stage: 'out' | 'passing' | 'in'; shift: number };
 };
+export type WideRoadWork = {section:WideRoadSection; remaining:number; paid:number; cancelling?:true};
+export const WIDE_ROAD_WORK_SECONDS = 3;
 export type City = {
+  transit?: TransitState;
   roadDirections?: RoadDirections;
+  wideRoads?: WideRoadSection[];
+  wideRoadWorks?: WideRoadWork[];
   expansion?:ExpansionProgress;
   tutorial?: TutorialProgress;
   external?: ExternalConnection;
@@ -93,14 +103,17 @@ export type City = {
 };
 /** Footprints before rotation. The entrance sits one tile beyond the bottom row. */
 export const SIZES: Record<BuildingKind, { w: number; h: number }> = {
+  busStation: {w:3,h:3}, busStop: {w:1,h:1},
   home: { w: 2, h: 2 }, store: { w: 3, h: 2 }, park: { w: 3, h: 3 },
   hospital: { w: 3, h: 2 }, fireStation: { w: 3, h: 2 }, policeStation: { w: 3, h: 2 },
 };
 export const LABELS: Record<BuildingKind, string> = {
+  busStation:'Bus station', busStop:'Bus stop',
   home: 'Home', store: 'Store', park: 'Park', hospital: 'Hospital', fireStation: 'Fire station', policeStation: 'Police station',
 };
 /** Which emergency service each station dispatches. Incident dispatch reads this, never artwork. */
 export const SERVICE_OF: Record<BuildingKind, ServiceKind | null> = {
+  busStation:null, busStop:null,
   home: null, store: null, park: null, hospital: 'ems', fireStation: 'fire', policeStation: 'police',
 };
 export const INCOME_INTERVAL = 10;
@@ -158,7 +171,7 @@ export function footprint(b: Building): Point[] {
 }
 export function entrance(b: Building): Point {
   const { h } = SIZES[b.kind] ?? SIZES.home;
-  return transform(b, { x: b.kind === 'home' ? 0 : 1, y: h });
+  return transform(b, { x: b.kind === 'home' || b.kind === 'busStop' ? 0 : 1, y: h });
 }
 export const isStation = (b: Building): boolean => SERVICE_OF[b.kind] !== null;
 export const isDestination = (b: Building): boolean => b.kind === 'store' || b.kind === 'park';
@@ -168,12 +181,12 @@ export function stations(city: City, service: ServiceKind): Building[] {
 }
 /** Civilian diversions admit responding services; active wrecks always block entry. */
 export function isBlocked(city: City, p: Point, responding = false): boolean {
-  return (!responding && city.closures.some(c => equal(c, p)))
+  return (!!city.wideRoadWorks && roadWorkTiles(city).some(q=>equal(p,q))) || (!responding && city.closures.some(c => equal(c, p)))
     || city.incidents.some(i => i.status === 'active' && i.x === p.x && i.y === p.y);
 }
 /** Every tile new traffic may not enter. Empty in a town with no closures and no incidents. */
 export function blockedTiles(city: City, responding = false): Set<string> {
-  const set = new Set<string>();
+  const set = new Set<string>(roadWorkTiles(city).map(key));
   if (!responding) for (const c of city.closures) set.add(key(c));
   for (const i of city.incidents) if (i.status === 'active') set.add(`${i.x},${i.y}`);
   return set;
@@ -211,7 +224,7 @@ function nearestStore(city: City, home: Building): { store: Building; path: Poin
   let best: { store: Building; path: Point[] } | null = null;
   for (const store of city.buildings.filter(b => b.kind === 'store')) {
     const path = findPath(city, entrance(home), entrance(store));
-    if (path && (!city.roadDirections || findPath(city, entrance(store), entrance(home))) && (!best || path.length < best.path.length)) best = { store, path };
+    if (path && (!(city.roadDirections || city.wideRoads) || findPath(city, entrance(store), entrance(home))) && (!best || path.length < best.path.length)) best = { store, path };
   }
   return best;
 }
@@ -228,7 +241,7 @@ export function averageTripSeconds(city: City): number | null {
   const routes = city.buildings.filter(b => b.kind === 'home').map(b => routeForHome(city, b)).filter(p => p !== null);
   if (routes.length === 0) return null;
   return routes.reduce((sum, path) => {
-    const back = city.roadDirections ? findPath(city,path[path.length-1],path[0]) : path;
+    const back = (city.roadDirections || city.wideRoads) ? findPath(city,path[path.length-1],path[0]) : path;
     return sum + ((path.length - 1) + (back!.length - 1)) / TRAVEL_TILES_PER_SECOND;
   }, 0) / routes.length;
 }
@@ -241,6 +254,7 @@ export const destinationOf = (city: City, trip: Trip): Building | undefined =>
 /** Where a vehicle is still heading, so a detour or a rebuilt road can resume the same journey. */
 export function goalOf(city: City, trip: Trip): Point | null {
   const phase = trip.phase ?? 'legacy';
+  if (trip.busId !== undefined) return trip.target ?? null;
   if (phase === 'waiting') return trip.target ?? null;
   if (trip.service) return trip.target ?? trip.path[trip.path.length - 1] ?? null;
   if (phase === 'outbound') {
@@ -277,9 +291,9 @@ export function retarget(city: City, trip: Trip, from: Point, avoid?: Set<string
   const offset = smooth ? round6(trip.progress - (k - 1)) : 0;
   const responding = isEmergencyResponse(trip);
   if(trip.patrol)avoid=new Set([...patrolAvoid(city,trip),...(avoid??[])]);
-  let route = selectedRoute ?? (trip.service && !responding && !trip.patrol && !avoid
+  let route = trip.busId !== undefined ? busPathToTarget(city,trip,from) : selectedRoute ?? (trip.service && !responding && !trip.patrol && !avoid
     ? civilianRoute(city,from,goal,trip) : findPath(city, from, goal, responding, avoid));
-  if(!route&&!trip.service&&!avoid){
+  if(!route&&trip.busId===undefined&&!trip.service&&!avoid){
     const planned=plannedRoadPath(city,from,goal);
     // Advance along existing clear roads, stopping before the first blocked tile.
     const leavesSceneAccess=planned?.[2]&&city.incidents.some(i=>i.status==='active'&&i.x===planned[2].x&&i.y===planned[2].y);
@@ -328,6 +342,7 @@ function validTrip(city: City, trip: Trip): boolean {
   const last = trip.path.length - 1;
   if (!(trip.progress <= last + 1e-9)) return false;
   const phase = trip.phase ?? 'legacy';
+  if (trip.busId !== undefined) return !trip.service && !trip.external && trip.homeId === 0 && trip.storeId === 0 && !!trip.target && ['outbound','waiting','bus-dwell','visiting','crashed','returning'].includes(phase);
   if (trip.service) return phase === 'outbound' || phase === 'returning' || phase === 'working' || phase === 'waiting';
   const home = homeOf(city, trip);
   if (trip.external ? !validExternalTrip(city, trip) : !home) return false;
@@ -352,8 +367,8 @@ function validTrip(city: City, trip: Trip): boolean {
 function revalidateTrips(city: City): void {
   const roads = new Set(city.roads.map(key));
   city.trips = city.trips.filter(trip => {
-    if (!trip.service && !trip.external && !homeOf(city, trip)) return false;
-    if ((trip.phase ?? 'legacy') === 'visiting') return !!destinationOf(city, trip);
+    if (trip.busId === undefined && !trip.service && !trip.external && !homeOf(city, trip)) return false;
+    if ((trip.phase ?? 'legacy') === 'visiting') return trip.busId !== undefined || !!destinationOf(city, trip);
     const here = trip.path[bodyTile(trip)];
     return !!here && roads.has(key(here));
   });
@@ -363,6 +378,7 @@ function revalidateTrips(city: City): void {
  * journey, and with it a crash victim and any rescue deadline attached to that vehicle.
  */
 function removalGuard(city: City, b: Building): string | null {
+  const transitGuard = transitRemovalGuard(city,b); if(transitGuard)return transitGuard;
   if (isStation(b) && city.trips.some(t => t.service && t.stationId === b.id))
     return b.kind==='policeStation' ? 'A police vehicle is out on patrol or a call. Remove the station when it returns.' : `A ${LABELS[b.kind].toLowerCase()} vehicle is still out on a call.`;
   if (b.kind === 'home' && city.trips.some(t => !t.service && t.homeId === b.id))
@@ -378,11 +394,66 @@ function charge(city: City, tool: Tool): number | string {
   if (price === 0 && tool in COSTS) consumeGrant(city, tool);
   return price;
 }
-export function place(city: City, tool: Tool, x: number, y: number, rotation = 0): string {
+/** Close the changing section and its immediate approaches while its connections change. */
+export function wideRoadWorkFootprint(section:WideRoadSection):Point[] {
+  const points=new Map<string,Point>();
+  for(const p of wideRoadFootprint(section))for(const q of [p,{x:p.x-1,y:p.y},{x:p.x+1,y:p.y},{x:p.x,y:p.y-1},{x:p.x,y:p.y+1}])points.set(key(q),q);
+  return [...points.values()];
+}
+export function roadWorkTiles(city:City):Point[] {
+  return (city.wideRoadWorks??[]).flatMap(w=>wideRoadWorkFootprint(w.section));
+}
+export function previewWideRoadPlacement(city:City,x:number,y:number,rotation=0):{ok:boolean;message:string;tiles:Point[];cost:number;section:WideRoadSection} {
+  const section:WideRoadSection={x,y,axis:rotation%2===0?'horizontal':'vertical'};
+  const tiles=wideRoadFootprint(section), cost=tiles.filter(p=>!city.roads.some(q=>equal(p,q))).length*COSTS.road;
+  const fail=(message:string)=>({ok:false,message,tiles,cost,section});
+  if(!integer(rotation)||rotation>3)return fail('Choose a horizontal or vertical four-lane road.');
+  const tutorial=starterPlacementError(city,'wideRoad',x,y,rotation);if(tutorial)return fail(tutorial);
+  if(!tiles.every(p=>inBounds(city,p)))return fail('Both road tiles must fit inside the map.');
+  const geometry=wideRoadPlacementGeometry(city,section);if(!geometry.ok)return fail(geometry.message);
+  if(city.wideRoads?.some(s=>s.x===x&&s.y===y&&s.axis===section.axis))return fail('This section already has four lanes.');
+  if(city.buildings.some(b=>footprint(b).some(p=>tiles.some(q=>equal(p,q)))))return fail('Clear the highlighted building space before placing this road.');
+  if(city.wideRoadWorks?.some(w=>wideRoadFootprint(w.section).some(p=>tiles.some(q=>equal(p,q)))))return fail('Roadwork is already using this space.');
+  const region=new Set(wideRoadWorkFootprint(section).map(key));
+  if(Object.keys(city.roadDirections??{}).some(edge=>roadEdgePoints(edge)?.some(p=>tiles.some(q=>equal(p,q)))))return fail('Restore these One-way connections to Two-way before widening.');
+  if(city.incidents.some(i=>i.status==='active'&&region.has(key(i))))return fail('Clear the nearby incident before changing this road.');
+  if([...directionReservedTiles(city)].some(k=>region.has(k)))return fail('Traffic must clear this section and its approaches before widening. Divert arrivals and let vehicles leave.');
+  if(city.funds<cost)return fail(`Four lanes need $${cost}. Existing road tiles are kept and only the extra space is charged.`);
+  return {ok:true,message:city.roads.some(p=>tiles.some(q=>equal(p,q)))?`Widen road — $${cost}, ${WIDE_ROAD_WORK_SECONDS} seconds of roadwork.`:`Build four lanes — $${cost}.`,tiles,cost,section};
+}
+function finishWideRoad(city:City,section:WideRoadSection):void {
+  for(const p of wideRoadFootprint(section))if(!city.roads.some(q=>equal(p,q))){city.roads.push(p);recordRoadPayment(city,p,COSTS.road);}
+  city.wideRoads=[...(city.wideRoads??[]),{...section}];
+  pruneControls(city);
+}
+function finishRoadWorks(city:City):void {
+  const complete=(city.wideRoadWorks??[]).filter(w=>w.remaining<=1e-9);
+  for(const work of complete){
+    if(work.cancelling)city.funds+=work.paid;
+    else finishWideRoad(city,work.section);
+  }
+  if(complete.length){city.wideRoadWorks=city.wideRoadWorks!.filter(w=>w.remaining>1e-9);if(!city.wideRoadWorks.length)delete city.wideRoadWorks;}
+}
+export function place(city: City, tool: Tool, x: number, y: number, rotation = 0, restoring = false): string {
   const tutorialError=starterPlacementError(city,tool,x,y,rotation);if(tutorialError)return tutorialError;
+  if(tool==='wideRoad'){
+    const preview=previewWideRoadPlacement(city,x,y,rotation);if(!preview.ok)return preview.message;
+    city.funds-=preview.cost;
+    if(preview.tiles.some(p=>city.roads.some(q=>equal(p,q)))) {
+      (city.wideRoadWorks??=[]).push({section:preview.section,remaining:WIDE_ROAD_WORK_SECONDS,paid:preview.cost});
+      return `Road widening started. This section and its approaches close for ${WIDE_ROAD_WORK_SECONDS} simulated seconds, including emergency traffic.`;
+    }
+    finishWideRoad(city,preview.section);
+    return 'Four-lane road built. Two lanes each way; ordinary driving speed.';
+  }
   if(tool==='direction')return 'Select consecutive road squares with the One-way tool, then Apply.';
   const p = { x, y };
   if (!inBounds(city, p)) return 'Choose a tile inside the map.';
+  const work=city.wideRoadWorks?.find(w=>wideRoadFootprint(w.section).some(q=>equal(p,q)))??city.wideRoadWorks?.find(w=>wideRoadWorkFootprint(w.section).some(q=>equal(p,q)));
+  if(work){
+    if(tool==='bulldoze'&&!work.cancelling){work.cancelling=true;work.remaining=Math.min(work.remaining,1);return 'Making the road safe. The original road and full construction refund return within one simulated second.';}
+    return 'Roadwork is in progress here. Run traffic to finish, or use Bulldoze to cancel safely.';
+  }
   const building = city.buildings.find(b => footprint(b).some(tile => equal(tile, p)));
   const tileIndex = city.roads.findIndex(tile => equal(tile, p));
   if (tool === 'stop' || tool === 'signal') {
@@ -418,6 +489,24 @@ export function place(city: City, tool: Tool, x: number, y: number, rotation = 0
       revalidateTrips(city);
       return `Removed. Full $${refund} refund.`;
     } else if (tileIndex >= 0) {
+      const sections=city.wideRoads?.filter(s=>wideRoadFootprint(s).some(q=>equal(p,q)))??[];
+      if(sections.length){
+        const removed=new Map<string,Point>();for(const s of sections)for(const q of wideRoadFootprint(s))removed.set(key(q),q);
+        // Expand only through overlapping cross-sections, so junctions are never torn in half.
+        let changed=true;while(changed){changed=false;for(const s of city.wideRoads??[])if(wideRoadFootprint(s).some(q=>removed.has(key(q))))for(const q of wideRoadFootprint(s))if(!removed.has(key(q))){removed.set(key(q),q);changed=true;}}
+        const region=new Set([...removed.values()].flatMap(q=>[q,{x:q.x-1,y:q.y},{x:q.x+1,y:q.y},{x:q.x,y:q.y-1},{x:q.x,y:q.y+1}]).map(key));
+        if([...directionReservedTiles(city)].some(k=>region.has(k))||city.incidents.some(i=>i.status==='active'&&region.has(key(i))))return 'Traffic and incidents must clear both carriageways and their approaches before removal.';
+        if(roadWorkTiles(city).some(q=>region.has(key(q))))return 'Finish nearby roadworks before removing this road.';
+        let refund=0;for(const q of removed.values())refund+=clearRoadPayment(city,q);
+        city.roads=city.roads.filter(q=>!removed.has(key(q)));city.closures=city.closures.filter(q=>!removed.has(key(q)));
+        city.wideRoads=city.wideRoads!.filter(s=>!wideRoadFootprint(s).some(q=>removed.has(key(q))));if(!city.wideRoads.length)delete city.wideRoads;
+        city.funds+=refund;pruneRoadDirections(city);pruneControls(city);revalidateTrips(city);
+        return `Both carriageways removed. Full $${refund} refund.`;
+      }
+      if(city.wideRoads&&[p,{x:x-1,y},{x:x+1,y},{x,y:y-1},{x,y:y+1}].some(q=>wideRoadTopology(city).tiles.has(key(q)))) {
+        const region=new Set(wideRoadWorkFootprint({x,y,axis:'horizontal'}).concat(wideRoadWorkFootprint({x,y,axis:'vertical'})).map(key));
+        if([...directionReservedTiles(city)].some(k=>region.has(k)))return 'Traffic must clear the wide-road junction before removing this connection.';
+      }
       if (occupiedTiles(city).has(key(p))) return 'A vehicle is on that road. Wait for it to pass.';
       const refund = clearRoadPayment(city, p);
       city.roads.splice(tileIndex, 1);
@@ -429,9 +518,14 @@ export function place(city: City, tool: Tool, x: number, y: number, rotation = 0
       return `Removed. Full $${refund} refund.`;
     } else return 'Nothing to remove here.';
   }
+  if(tool==='road'&&city.wideRoads&&wideRoadTopology(city).tiles.has(key(p)))return 'This is a four-lane road. Clear traffic and remove both carriageways before rebuilding a narrower road.';
   if (!(tool in COSTS)) return 'Choose a construction tool.';
   if (building || tileIndex >= 0) return 'That tile is occupied.';
   if (tool === 'road') {
+    if(city.wideRoads&&[p,{x:x-1,y},{x:x+1,y},{x,y:y-1},{x,y:y+1}].some(q=>wideRoadTopology(city).tiles.has(key(q)))){
+      const region=new Set(wideRoadWorkFootprint({x,y,axis:'horizontal'}).concat(wideRoadWorkFootprint({x,y,axis:'vertical'})).map(key));
+      if([...directionReservedTiles(city)].some(k=>region.has(k)))return 'Traffic must clear the wide-road connection before adding a junction.';
+    }
     if ([...emergencyReservedTiles(city)].some(k => { const [qx,qy]=k.split(',').map(Number); return Math.abs(qx-x)+Math.abs(qy-y)<=1; })) return 'An emergency vehicle is passing nearby. Wait for it to merge.';
     const priced = charge(city, tool);
     if (typeof priced === 'string') return priced;
@@ -447,12 +541,15 @@ export function place(city: City, tool: Tool, x: number, y: number, rotation = 0
   const access = entrance(candidate);
   if (![...tiles, access].every(tile => inBounds(city, tile))) return 'The building and its entrance must fit inside the map.';
   const occupied = new Set([...city.roads, ...city.buildings.flatMap(footprint)].map(key));
+  if (tiles.some(tile=>roadWorkTiles(city).some(q=>equal(tile,q)))||roadWorkTiles(city).some(q=>equal(access,q)))return 'Leave the roadwork area and its approaches clear until construction finishes.';
   if (tiles.some(tile => occupied.has(key(tile)))) return 'The building footprint overlaps construction.';
   if (city.buildings.some(b => footprint(b).some(tile => equal(tile, access)) || tiles.some(tile => equal(tile, entrance(b))))) return 'Leave road access at each entrance arrow.';
+  if(tool==='busStop'&&!restoring){const issue=busStopIssue(city,candidate);if(issue)return issue;}
   const priced = charge(city, tool);
   if (typeof priced === 'string') return priced;
   recordBuildingPayment(candidate, priced);
   city.buildings.push(candidate); city.nextId++;
+  if(tool==='busStation'||tool==='busStop')initTransit(city);
   if (tool === 'home' && city.missions?.flow && !city.missions.completed.includes(FLOW_MISSION_ID))
     city.missions.flow.targetHomes = Math.max(city.missions.flow.targetHomes, city.buildings.filter(b=>b.kind==='home').length);
   noteTutorialConstruction(city, tool);
@@ -461,7 +558,12 @@ export function place(city: City, tool: Tool, x: number, y: number, rotation = 0
 export function stepCity(city: City, dt: number): void {
   if (!finite(dt) || dt === 0) return;
   retryAutomaticConnection(city);
-  withRoadIndex(city, index => advanceCity(city, dt, index));
+  if(!city.wideRoadWorks?.length){withRoadIndex(city,index=>advanceCity(city,dt,index));return;}
+  while(dt>1e-9){
+    const slice=Math.min(dt,...(city.wideRoadWorks??[]).map(w=>w.remaining));
+    if(slice>1e-9){withRoadIndex(city,index=>advanceCity(city,slice,index));dt-=slice;for(const w of city.wideRoadWorks??[])w.remaining=round6(Math.max(0,w.remaining-slice));}
+    finishRoadWorks(city);
+  }
 }
 
 function advanceCity(city: City, dt: number, index: ReturnType<typeof roadIndex>): void {
@@ -471,6 +573,7 @@ function advanceCity(city: City, dt: number, index: ReturnType<typeof roadIndex>
     city.elapsed += slice; city.incomeClock += slice; city.spawnClock += slice; city.tickClock += slice; dt -= slice;
     if (city.tickClock >= TRAFFIC_TICK - 1e-9) {
       city.tickClock = 0;
+      stepTransit(city, index, TRAFFIC_TICK);
       trafficTick(city, index);
       stepVisits(city, index, TRAFFIC_TICK);
       // Exactly one incident step per traffic tick, with or without vehicles on the road.
@@ -502,7 +605,7 @@ function parsePoints(raw: unknown, roads: Set<string>, limit: number): Point[] |
   }
   return points;
 }
-const PHASES: TripPhase[] = ['legacy', 'outbound', 'visiting', 'returning', 'waiting', 'crashed', 'working'];
+const PHASES: TripPhase[] = ['legacy', 'outbound', 'visiting', 'returning', 'waiting', 'crashed', 'working', 'bus-dwell'];
 const SERVICES: ServiceKind[] = ['ems', 'fire', 'police'];
 /** Copy only the optional fields the save actually carries, so a reload equals the live trip. */
 function parseTrip(city: City, raw: Trip, nextId: number): Trip | null {
@@ -522,6 +625,7 @@ function parseTrip(city: City, raw: Trip, nextId: number): Trip | null {
   if (trip.startedAt !== undefined && trip.visitedAt !== undefined && trip.startedAt > trip.visitedAt) {
     delete trip.startedAt; delete trip.visitedAt;
   }
+  if(raw.busId!==undefined){if(!integer(raw.busId)||raw.busId<1||raw.busId>=nextId)return null;trip.busId=raw.busId;}
   if(raw.nextRouteQueryAt!==undefined){if(!finite(raw.nextRouteQueryAt))return null;trip.nextRouteQueryAt=raw.nextRouteQueryAt;}
   if(raw.patrol!==undefined){if(raw.patrol!==true||raw.service!=='police'||raw.incidentId!==undefined)return null;trip.patrol=true;}
   if(raw.sceneParked!==undefined){if(raw.sceneParked!==true||!raw.service||raw.phase!=='working'||raw.responseCancelled||raw.patrol)return null;trip.sceneParked=true;}
@@ -558,6 +662,14 @@ function parseTrip(city: City, raw: Trip, nextId: number): Trip | null {
     trip.target = { x: raw.target.x, y: raw.target.y };
   }
   if (raw.resume !== undefined) { if (!PHASES.includes(raw.resume)) return null; trip.resume = raw.resume; }
+  if(raw.trafficLane!==undefined){if(raw.trafficLane!==0&&raw.trafficLane!==1)return null;trip.trafficLane=raw.trafficLane;}
+  if(raw.laneChange!==undefined){
+    const lane=raw.laneChange;
+    if(!lane || (lane.from!==0&&lane.from!==1) || (lane.to!==0&&lane.to!==1) || lane.from===lane.to
+      || lane.from!==(trip.trafficLane??0) || !finite(lane.shift) || lane.shift>1
+      || trip.progress!==Math.floor(trip.progress) || raw.emergencyPass)return null;
+    trip.laneChange={from:lane.from,to:lane.to,shift:lane.shift};
+  }
   if (raw.emergencyPass !== undefined) {
     const p = raw.emergencyPass;
     if (!p || !trip.service || trip.phase !== 'outbound' || !integer(p.start) || !integer(p.end)
@@ -586,7 +698,7 @@ export function parseCity(raw: unknown): City | null {
   if (!map) return null;
   const area = map.width * map.height;
   if ((r.version !== 1 && r.version !== 2) || !Array.isArray(r.roads) || !Array.isArray(r.buildings) || !Array.isArray(r.trips)
-    || r.roads.length > area || r.buildings.length > area / 4 || r.trips.length > area / 2
+    || r.roads.length > area || r.buildings.length > area || r.trips.length > area / 2
     || !finite(r.funds) || !finite(r.elapsed) || !integer(r.completed) || !integer(r.nextId) || r.nextId < 1
     || !finite(r.incomeClock) || r.incomeClock >= INCOME_INTERVAL || !finite(r.spawnClock) || r.spawnClock >= SPAWN_INTERVAL) return null;
   // Legacy saves predate queues, controls, visits and incidents; missing fields migrate to defaults.
@@ -610,7 +722,7 @@ export function parseCity(raw: unknown): City | null {
     const paid = parsePaidAmount(b.paid, COSTS[b.kind]);
     if (paid === null) return null;
     const count = city.buildings.length;
-    place(city, b.kind, b.x, b.y, b.rotation);
+    place(city, b.kind, b.x, b.y, b.rotation, true);
     if (city.buildings.length !== count + 1) return null;
     city.buildings[count].id = b.id; ids.add(b.id);
     if(b.patrolReadyAt!==undefined){
@@ -638,6 +750,27 @@ export function parseCity(raw: unknown): City | null {
   const directions = parseRoadDirections(r.roadDirections, roads);
   if(directions === null)return null;
   if(directions !== undefined)city.roadDirections = directions;
+  const wideRoads = parseWideRoads(r.wideRoads, roads);
+  if(wideRoads === null)return null;
+  if(wideRoads !== undefined)city.wideRoads = wideRoads;
+  if(r.wideRoadWorks!==undefined){
+    if(!Array.isArray(r.wideRoadWorks)||r.wideRoadWorks.length>area)return null;
+    const works:WideRoadWork[]=[],used=new Set<string>();
+    for(const raw of r.wideRoadWorks){
+      if(!raw||typeof raw!=='object'||!raw.section||!finite(raw.remaining)||raw.remaining<=0||raw.remaining>WIDE_ROAD_WORK_SECONDS||!integer(raw.paid)||(raw.cancelling!==undefined&&raw.cancelling!==true))return null;
+      const section=raw.section as WideRoadSection;
+      if(!wideRoadPlacementGeometry(city,section).ok)return null;
+      const tiles=wideRoadFootprint(section);
+      if(!tiles.every(p=>inBounds(city,p))||tiles.some(p=>used.has(key(p))||city.buildings.some(b=>footprint(b).some(q=>equal(p,q)))))return null;
+      if(!tiles.some(p=>roads.has(key(p)))||city.wideRoads?.some(s=>s.x===section.x&&s.y===section.y&&s.axis===section.axis))return null;
+      if(raw.paid!==tiles.filter(p=>!roads.has(key(p))).length*COSTS.road)return null;
+      for(const p of tiles)used.add(key(p));
+      works.push({section:{x:section.x,y:section.y,axis:section.axis},remaining:raw.remaining,paid:raw.paid,...(raw.cancelling?{cancelling:true as const}:{})});
+    }
+    if(works.length)city.wideRoadWorks=works;
+  }
+  const ownedWideTiles=new Set([...(city.wideRoads??[]),...(city.wideRoadWorks??[]).map(w=>w.section)].flatMap(wideRoadFootprint).map(key));
+  if(Object.keys(city.roadDirections??{}).some(edge=>roadEdgePoints(edge)?.some(p=>ownedWideTiles.has(key(p)))))return null;
   const closures = parsePoints(r.closures, roads, area);
   if (!closures) return null;
   city.closures = closures;
@@ -651,7 +784,7 @@ export function parseCity(raw: unknown): City | null {
     if (!Array.isArray(t.path) || t.path.length < 1 || t.path.length > area * 2) return null;
     const trip = parseTrip(city, t, r.nextId);
     if (!trip || ids.has(trip.id) || trip.wait > r.elapsed + 1e-6
-      || (!trip.service && !trip.external && city.trips.some(other => !other.service && !other.external && other.homeId === trip.homeId))
+      || (trip.busId === undefined && !trip.service && !trip.external && city.trips.some(other => other.busId === undefined && !other.service && !other.external && other.homeId === trip.homeId))
       || !validTrip(city, trip)) return null;
     city.trips.push(trip); ids.add(trip.id);
   }
@@ -661,6 +794,13 @@ export function parseCity(raw: unknown): City | null {
   const controls = parseControls(r.controls, roadIndex(city), area);
   if (!controls) return null;
   city.elapsed = r.elapsed; // Validate time-based household benefits against the restored clock.
+  city.nextId = r.nextId;
+  delete city.transit;
+  const transit = parseTransit(r.transit,city);
+  if(transit === null)return null;
+  if(transit !== undefined)city.transit=transit;
+  const liveVisitors=city.trips.filter(t=>t.external).length+(transit?.journeys.filter(j=>j.external).length??0);
+  if(liveVisitors>16||city.external.completed+liveVisitors>city.external.arrivals)return null;
   const households = parseHouseholds(r.households, city);
   if (!households || !capacityRespected(city)) return null;
   city.households = households;
@@ -670,6 +810,7 @@ export function parseCity(raw: unknown): City | null {
   city.nextId = r.nextId; city.incomeClock = r.incomeClock; city.spawnClock = r.spawnClock; city.tickClock = tickClock;
   // Incidents own their own validation and reconstruct their counters onto this detached city.
   if (!parseIncidentState(r, city) || !validEmergencyPasses(city) || !validRoadDirectionCommitments(city)) return null;
+  if(city.wideRoadWorks){const reserved=directionReservedTiles(city),blocked=new Set(roadWorkTiles(city).map(key));if([...reserved].some(k=>blocked.has(k))||city.incidents.some(i=>i.status==='active'&&blocked.has(key(i))))return null;}
   const economy = parseEconomyProgress(r.economy, city.elapsed);
   if (!economy) return null;
   city.economy = economy;

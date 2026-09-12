@@ -1,3 +1,4 @@
+import TransitPanel from './TransitPanel.tsx';
 import { cityCommand } from '../game/cityControls.ts';
 import { useEffect } from 'react';
 import { LABELS, toolPrices, type PricedTool, type Tool } from '../game/cityModel.ts';
@@ -12,14 +13,15 @@ type Category = 'roads' | 'places' | 'services';
 type Entry = { tool: Tool; label: string; name?: string; note: string; key?: string };
 const GROUPS: { id: Category; label: string; entries: Entry[] }[] = [
     { id: 'roads', label: 'Roads', entries: [
-        { tool: 'road', label: 'Road', key: '3', note: 'Drag to draw. Link every entrance arrow.' },
-        { tool: 'direction', label: 'One-way', key: '8', note: 'Tap neighboring road squares in order, then apply. Tap the first square again to close a ring.' },
+        { tool: 'road', label: '2-lane', name: '2-lane road', key: '3', note: 'Drag to draw. Link every entrance arrow.' },
+        { tool: 'wideRoad', label: '4-lane', name: '4-lane road', key: '9', note: 'Two tiles wide, two lanes each way. Rotate, then drag or tap on clear land or existing roads.' },
+        { tool: 'direction', label: 'One-way', key: '8', note: 'Draw along roads in travel order. Release to finish, or tap squares and tap the last again.' },
         { tool: 'stop', label: 'Stops', name: 'All-way stop', key: '5', note: 'Tap a junction. Cars halt, then take turns.' },
         { tool: 'signal', label: 'Lights', name: 'Traffic lights', key: '6', note: 'Tap a junction to cycle balanced, N/S, E/W.' },
         { tool: 'closure', label: 'Divert', name: 'Road closure', key: '7', note: 'Tap a road to close or reopen it. Cars detour.' },
     ] },
     { id: 'places', label: 'Places', entries: [
-        { tool: 'home', label: 'Home', key: '1', note: 'One car per home, out to shops and parks.' },
+        { tool: 'home', label: 'Home', key: '1', note: 'Households travel to shops and parks.' },
         { tool: 'store', label: 'Store', key: '2', note: 'Shopping visits pay when they finish.' },
         { tool: 'park', label: 'Park', note: 'Recreation visits support household income.' },
         { tool: 'bulldoze', label: 'Clear', name: 'Remove, full refund', key: '4', note: 'Refunds what you paid. Tap a building or road you placed.' },
@@ -27,13 +29,18 @@ const GROUPS: { id: Category; label: string; entries: Entry[] }[] = [
     { id: 'services', label: 'Services', entries: [
         { tool: 'policeStation', label: 'Police', note: 'Police patrol nearby roads and respond to crashes. Select the station to see its patrol radius.' },
         { tool: 'fireStation', label: 'Fire', note: 'Crews put out burning vehicles.' },
+        { tool: 'busStation', label: 'Bus depot', note: '3×3 lot with two bus bays. Tap a built depot to buy buses and choose stops.' },
+        { tool: 'busStop', label: 'Bus stop', note: 'One square beside a straight road. Rotate to choose its boarding curb.' },
         { tool: 'hospital', label: 'Clinic', name: 'Clinic (Hospital)', note: 'EMS treats the injured before the deadline.' },
     ] },
 ];
 /** Small code-native symbols stay legible independently of building artwork. */
 function ToolIcon({tool,locked}:{tool:Tool;locked:boolean}) {
     const paths:Partial<Record<Tool,React.ReactNode>> = {
+        busStation:<><rect x="2" y="3" width="20" height="18"/><path d="M2 9h20M6 13v5m6-5v5m6-5v5"/></>,
+        busStop:<><rect x="6" y="2" width="12" height="12" rx="2"/><path d="M12 14v8M9 5h6v5H9z"/></>,
         direction:<><path d="M3 12h18m-7-7 7 7-7 7" /></>,
+        wideRoad:<><path d="M3 2v20M21 2v20M11 2v20m2-20v20M7 2v4m0 4v4m0 4v4M17 2v4m0 4v4m0 4v4" /></>,
         road:<><path d="M5 2v20M19 2v20M12 2v4m0 4v4m0 4v4" /></>,
         home:<><path d="m3 11 9-8 9 8M5 10v11h14V10M10 21v-7h4v7" /></>,
         store:<><path d="M3 9h18l-2-6H5L3 9Zm2 0v12h14V9M9 21v-7h6v7M3 9v3h18V9" /></>,
@@ -53,7 +60,7 @@ function ToolIcon({tool,locked}:{tool:Tool;locked:boolean}) {
 const FACING = ['south', 'west', 'north', 'east'];
 const fullName = (e: Entry): string => e.name ?? (isBuildingTool(e.tool) ? LABELS[e.tool] : e.label);
 /** Tools the economy charges for. Closures and removal have no price. */
-const PRICED = new Set<Tool>(['stop', 'signal', 'road', 'home', 'store', 'park', 'hospital', 'fireStation', 'policeStation']);
+const PRICED = new Set<Tool>(['stop', 'signal', 'road', 'wideRoad', 'home', 'store', 'park', 'hospital', 'fireStation', 'policeStation', 'busStation', 'busStop']);
 const priceOf = (prices: Record<PricedTool, number>, tool: Tool): number | null =>
     PRICED.has(tool) ? prices[tool as PricedTool] : null;
 
@@ -85,44 +92,45 @@ export default function BuildPalette() {
     function select(e: Entry) {
         if (!starterToolAllowed(city, e.tool)) return;
         const cost = priceOf(prices, e.tool);
-        store.patch({ tool: e.tool, panning: false,
+        store.patch({ tool: e.tool, panning: false, transitDraft:null,
             message: cost !== null && cost > s.funds
                 ? `${fullName(e)} costs $${cost}. You have $${s.funds.toLocaleString()} right now.`
                 : `${fullName(e)} (${priceLabel(e)}). ${e.note}` });
     }
     return <div className="build-palette" role="group" aria-label="Build and traffic tools">
-        <div className="build-categories" role="group" aria-label="Construction categories">
+        {!s.transitPanel && <div className="build-categories" role="group" aria-label="Construction categories">
             {GROUPS.map(g => <button key={g.id} type="button" className="build-category"
                 aria-label={g.label} data-tutorial-target={guide.categoryTarget===g.id}
                 aria-describedby={guide.categoryTarget===g.id?'tutorial-locator-instruction':undefined}
                 aria-pressed={category === g.id} aria-controls={`shelf-${g.id}`}
                 onClick={() => setCategory(g.id)}>{g.label}</button>)}
-        </div>
-        {isBuildingTool(s.tool) && <button type="button" className="build-rotate" title="Rotate the footprint and entrance; artwork stays upright. Desktop shortcut: R."
+        </div>}
+        {!s.transitPanel && isBuildingTool(s.tool) && <button type="button" className="build-rotate" title="Rotate the footprint and entrance; artwork stays upright. Desktop shortcut: R."
             aria-label={`Rotate new buildings, entrance now facing ${FACING[s.rotation]}`}
             onClick={() => {
                 const rotation = (s.rotation + 1) % 4;
                 store.patch({ rotation, message: `Entrance faces ${FACING[rotation]}. The footprint and entrance rotate; artwork stays upright.` });
             }}><strong><span aria-hidden="true">↻ </span>Rotate <kbd>R</kbd></strong><em>Entrance: {FACING[s.rotation]}</em></button>}
+        {!s.transitPanel && s.tool==='wideRoad' && <button type="button" className="build-rotate wide-road-rotate" aria-label="Rotate 4-lane road" onClick={()=>store.patch({rotation:(s.rotation+1)%4, message:'4-lane road: rotate to fit, then place the highlighted two-tile footprint.'})}><strong>↻ Rotate <kbd>R</kbd></strong><em>{s.rotation%2?'North–south':'East–west'}</em></button>}
         {s.tool==='direction' && <div className="direction-editor" role="group" aria-label="Road direction editor">
-            <p>{s.directionSelection < 2 ? 'Tap neighboring road squares in travel order.' : `${s.directionSelection-1} connections selected. Arrows show travel order.`} Tap the first square again to close a ring.</p>
+            <p>Drag in travel order, or tap roads then Finish. Tap the first road to close a loop.</p>
             <div className="direction-actions">
-                <button disabled={s.directionSelection<2} onClick={()=>cityCommand({type:'road-direction',mode:'forward'})}>Apply one-way</button>
-                <button disabled={s.directionSelection<2} onClick={()=>cityCommand({type:'road-direction',mode:'reverse'})}>Reverse</button>
-                <button disabled={s.directionSelection<2} onClick={()=>cityCommand({type:'road-direction',mode:'two-way'})}>Two-way</button>
-                <button disabled={!s.directionSelection} onClick={()=>cityCommand({type:'road-direction',mode:'undo'})}>Undo tile</button>
-                <button onClick={()=>cityCommand({type:'road-direction',mode:'cancel'})}>Cancel</button>
+                <label className="direction-restore"><input type="checkbox" checked={s.directionRestore} onChange={event=>store.patch({directionRestore:event.target.checked})}/> Restore two-way</label>
+                    <button disabled={s.directionSelection<2} onClick={()=>cityCommand({type:'road-direction',mode:s.directionRestore?'two-way':'forward'})}>Finish</button>
+                    <button disabled={!s.directionSelection} aria-label="Cancel direction selection" onClick={()=>cityCommand({type:'road-direction',mode:'cancel'})}>×</button>
             </div>
+            <p className="direction-tip">Backtrack to undo. Draw the opposite way to reverse.</p>
         </div>}
-        <div className="build-groups">
+        <TransitPanel />
+        {!s.transitPanel && <div className="build-groups">
             {GROUPS.map(g => <section key={g.id} className="build-group" data-active={category === g.id}>
-                <h3 className="build-group-label">{g.label}</h3>
+                <div className="build-group-heading"><h3 className="build-group-label">{g.label}</h3>{g.id==='roads'&&s.tool==='wideRoad'&&<button type="button" className="build-heading-rotate" aria-label="Rotate 4-lane road" onClick={()=>store.patch({rotation:(s.rotation+1)%4,message:'4-lane road: rotate to fit, then place the highlighted two-tile footprint.'})}>↻ Rotate <span>{s.rotation%2?'North–south':'East–west'}</span></button>}</div>
                 <div id={`shelf-${g.id}`} className="build-shelf" role="group" aria-label={`${g.label} tools`}
                     >
                     {g.entries.map(e => {
                         const cost = priceOf(prices, e.tool);
                         const locked = !starterToolAllowed(city, e.tool);
-                        const unlock = (e.tool === 'road'||e.tool === 'direction') ? 'Unlocks at the bypass lesson' : e.tool === 'closure' ? 'Unlocks at the diversion lesson' : ['hospital','fireStation','policeStation'].includes(e.tool) ? 'Unlocks at the rescue lesson' : ['stop','signal'].includes(e.tool) ? 'Unlocks at the prevention lesson' : 'Unlocks as the tutorial progresses';
+                        const unlock = (e.tool === 'road'||e.tool === 'wideRoad'||e.tool === 'direction') ? 'Unlocks at the bypass lesson' : e.tool === 'closure' ? 'Unlocks at the diversion lesson' : ['hospital','fireStation','policeStation'].includes(e.tool) ? 'Unlocks at the rescue lesson' : ['stop','signal'].includes(e.tool) ? 'Unlocks at the prevention lesson' : 'Unlocks as the tutorial progresses';
                         return <button key={e.tool} type="button" className="build-tool" data-tool={e.tool} data-locked={locked} disabled={locked}
                             data-tutorial-target={guide.tool===e.tool&&!guide.categoryTarget}
                             aria-describedby={guide.tool===e.tool&&!guide.categoryTarget?'tutorial-locator-instruction':undefined}
@@ -136,6 +144,6 @@ export default function BuildPalette() {
                     })}
                 </div>
             </section>)}
-        </div>
+        </div>}
     </div>;
 }

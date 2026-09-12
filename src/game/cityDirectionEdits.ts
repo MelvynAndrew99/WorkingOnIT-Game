@@ -2,6 +2,7 @@
 import type { City, Point } from './cityModel.ts';
 import { roadEdgeKey, roadDirectionForStep } from './cityDirections.ts';
 import { directionReservedTiles } from './cityTraffic.ts';
+import { wideRoadTopology } from './cityWideRoads.ts';
 import { starterToolAllowed } from './cityStarterTutorial.ts';
 
 export type DirectionEditMode = 'forward' | 'reverse' | 'two-way';
@@ -15,6 +16,7 @@ export function applyRoadDirections(city:City,points:Point[],mode:DirectionEditM
   if(!Array.isArray(points)||points.length<2||points.length>city.roads.length+1)return fail('Select at least two connected road tiles.');
   const roads=new Set(city.roads.map(key));
   if(points.some(p=>!p||!Number.isSafeInteger(p.x)||!Number.isSafeInteger(p.y)||!roads.has(key(p))))return fail('Select existing road tiles.');
+  if(city.wideRoads?.length&&points.some(p=>wideRoadTopology(city).tiles.has(key(p))))return fail('Four-lane carriageways already have fixed directions. Use the road tools to change their layout.');
   const proposed=new Map<string,{value:'forward'|'reverse'|undefined;a:Point;b:Point}>();
   for(let i=1;i<points.length;i++) {
     const a=points[i-1],b=points[i];

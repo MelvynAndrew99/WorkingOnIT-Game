@@ -1,3 +1,4 @@
+import {roadWorkTiles} from './cityModel.ts';
 import {allowsRoadStep, directionSignature} from './cityDirections.ts';
 /** Reusable BFS trees for ordinary unweighted paths. No persisted state or vehicle occupancy. */
 import type {City, Point} from './cityModel.ts';
@@ -28,6 +29,7 @@ function graphFor(city: City, responding: boolean, ignoreBlocked: boolean): Grap
   // Keeping this exact also notices incident creation/clearance within a simulation tick.
   const roadKeys = city.roads.map(key);
   const blockedKeys = ignoreBlocked ? [] : [
+    ...roadWorkTiles(city).map(key),
     ...(responding ? [] : city.closures.map(key)),
     ...city.incidents.filter(i => i.status === 'active').map(key),
   ];

@@ -26,9 +26,9 @@ export function patrolRoute(city:City,station:Building):Point[]|null {
  if(queue.length<2)return null;
  // Pick among the furthest reachable roads, alternating branches between outings.
  const distance=(p:Point)=>(p.x-start.x)**2+(p.y-start.y)**2;
- const avoid=city.roadDirections ? new Set(city.roads.filter(p=>!roads.has(key(p))).map(key)) : undefined;
+ const avoid=(city.roadDirections||city.wideRoads) ? new Set(city.roads.filter(p=>!roads.has(key(p))).map(key)) : undefined;
  const returns=new Map<string,Point[]>();
- const eligible=city.roadDirections ? queue.slice(1).filter(p=>{
+ const eligible=(city.roadDirections||city.wideRoads) ? queue.slice(1).filter(p=>{
   const back=findPath(city,p,start,false,avoid);if(!back)return false;returns.set(key(p),back);return true;
  }) : queue.slice(1);
  if(!eligible.length)return null;

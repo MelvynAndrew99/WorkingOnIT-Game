@@ -1,6 +1,8 @@
 # Buses, stations, stops and walking — design contract
 
-2026-09-11. Design and implementation assignments only; no runtime feature, balance result, artwork selection or publication is claimed. Mission structure remains with the user.
+**Latest user direction (September 11):** representative abstract rider queues are now explicitly allowed before complete household coupling so buses visibly fill and serve destinations without pedestrian sprites. See [Grok review and revised prototype rules](bus-economics/README.md). This supersedes the strict linked-rider prerequisite below for that prototype; preserve existing linked journeys and separate abstract counts from their income/service receipts.
+
+2026-09-11. Original design/assignment record below. The [bus system](buses/README.md), approved pixel bus art and [representative rider prototype](bus-economics/IMPLEMENTED.md) are now delivered locally. Balance validation and publication are not claimed. Mission structure remains with the user.
 
 ## Requested behavior
 

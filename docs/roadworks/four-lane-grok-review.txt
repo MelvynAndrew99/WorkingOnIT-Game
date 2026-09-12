@@ -1,0 +1,87 @@
+**Verdict:** Ship this as a real four-lane *facility* (paired carriageways, one player-facing road, dedicated transitions and junctions), not as two ordinary roads glued together. The land-cost, click-to-place, and “junctions still constrain throughput” direction is right. The design is not ready to freeze geometry, construction economy, or narrowing. First value is a movement-correct straight section plus honest placement rejection—not atlas completeness.
+
+Below, **agreed** means already selected. **Recommend** is not locked.
+
+## Already agreed (do not reopen)
+
+- Two tiles wide, two lanes each way; paired one-way carriageways presented as one road; keep current vehicle scale.
+- Extra land is the cost; moving/demolishing buildings is a player tradeoff; **no automatic demolition**.
+- Select road type, then place like Stops/Lights: empty land or over existing roads when the **full** footprint fits. **No widening-side menu.** New 4-lane roads from the start.
+- Proposed labels count total lanes: **2-lane road** / **4-lane road** (copy still a UI proposal).
+- Transitions and wide intersections need art **and** movement rules; this is not a sprite-only capacity bump.
+- Short roadworks/detour plans remain; construction timing, cost, cancel/refund are **unselected**.
+- Old towns and missions stay intact until the player upgrades; no save/mission edits in this pass.
+- Fun/readability and low CPU matter; performance testing only on request.
+
+Unsettled on purpose: taper length, turn geometry, relocation mechanic/price, narrowing, construction numbers.
+
+## Major risks
+
+1. **Two one-ways ≠ one road.** Existing directed two-lane roads, per-tile conflict checks, and “merge before a lane ends” do not give a shared 4-lane junction. If halves stay independent, you get a phantom median gap, double stop lines, and accidental roundabout rings. That is the failure mode players will call broken.
+
+2. **Click-place vs footprint truth.** A 4-lane stamp plus end tapers is larger than the painted carriageways. If the preview lies, players will fight invisible extra tiles. If rejection is mute, the tool feels random. Centre offset by half a tile (widen one side) will desync art and paths unless both share one offset.
+
+3. **Junction cores are not the whole junction.** 2×1 (ordinary through wide) and 2×2 (wide–wide) are cores only. Tapers, turn paths, and queues live outside. Short stubs next to intersections will be the first unsupported cases; they need refuse-and-explain, not a squeezed fake merge.
+
+4. **Buses and access.** Buses already skip ordinary lane-change logic. Outer-curb stops plus passing traffic on a second lane will be wrong unless that path is explicit. Opposite-direction access must use a legal junction/turnaround—no invisible centre-line cross.
+
+5. **Conversion without a clock.** Drain traffic, keep passengers/incidents/committed moves, and keep the roadworks hook—but timing is unselected. Instant convert after drain is fine for a prototype; do not pretend excavation exists until duration is chosen.
+
+6. **Balance optics.** Four lanes look like “twice the road.” Completed journeys will not double if exits, turns, and destinations stay 2-lane. If it *feels* like twice the service, or if demand is quietly raised, the upgrade becomes a placebo or a treadmill.
+
+Do not invent capacities or frame times. None were measured.
+
+## Recommended placement (simple, no side menu)
+
+Keep the agreed select-and-place rule. **Recommend** this resolution for the missing side choice:
+
+- One tool per type. Preview at the pointer is the contract: both carriageway tiles, required transitions, illegal tiles, cost, affected entrances/stops.
+- **Side is pointer bias, not a menu.** The extra tile is the one the cursor sits on or leans toward. Move one tile to flip. Same idea as nudging a stop onto the curb.
+- Paint with the existing road stroke if the game already paints roads; the brush is a two-tile stamp, always both halves, one undo.
+- Over an ordinary road: conversion **only** if extra land **and** both end treatments fit. One free side → that side. Both free → pointer bias. Occupied building tile → reject; player moves or demolishes first.
+- Empty land: place a new 4-lane road; do not require an old road underneath.
+- Unsupported connection, dead end without turnaround, taper overlapping a building or junction, or one-way/roundabout that would break directed entry → **refuse with a specific missing-space/connection line.** No silent consumption, no half-road.
+
+That preserves the user’s “2-lane button, click where there is space” preference without reintroducing a stretch-and-choose-side workflow.
+
+## Transitions and intersections
+
+Treat the proposed connection table as a **whitelist**, not a promise that every adjacency is legal.
+
+**Recommend:** first implementation only places shapes on that list. Everything else fails closed.
+
+- **2-lane ↔ 4-lane:** visible taper, centre-line shift, split/merge, mirrored/rotated for either offset. Movement: one lane feeds two; two merge to one **before** the ordinary road, with reserved merge space and fair zipper (reuse existing merge-before-end; do not let one lane skip the queue). Art offset and path offset are the same number.
+- **Side street vs 4-lane:** one T or cross spanning both carriageways. Explicit paths across the near half to the far half. Never two unrelated junctions with an uncontrolled median wait.
+- **4-lane vs 4-lane:** one 2×2 core, shared stop lines, lane-specific moves, compatible simultaneous streams, downstream space before entry, and a clearance reservation so a vehicle that has entered can finish. Existing approach-conflict rules stay; widening is not crash immunity.
+- **Bends:** keep inner/outer identity; swept-space checks; do not collapse to one lane.
+- **Access/stops:** outside curb only.
+- **Policy to keep:** median crosses only at junctions and supported end treatments; no midblock U-turns; wide dead ends unsupported until a turnaround exists; one-ways keep directed IO; roundabout yields must not see the pair as a ring.
+
+Cache legal connections and junction paths on edit. Routing and physics must read the same graph.
+
+**Atlas:** neighbor masks cannot tell a median from a street. Dedicated variants; Kenney first; author only missing pieces.
+
+## Balance
+
+Agreed constraint: more parallel movement and queue storage, **not** twice the completed trips, not automatic demand-up, not credit for merely driving on 4-lane.
+
+**Recommend** when (and only when) balance testing is authorized: identical demand, one town where a mid-block widen actually stores queues, one where the downstream 2-lane exit or a turning conflict caps service. Judge by completed outward/return trips and readable jams, not by “cars on asphalt.”
+
+Fun is lane identity, a fair merge you can see, and a jam whose cause is visible. Low CPU is cached paths and **one** junction, not two simulated halves.
+
+## Minimal prototype sequence
+
+Do this in order. Stop if movement and preview disagree.
+
+1. Straight 4-lane between 2-lane roads; **both** offset sides; all rotations. No buildings. Paths and markings share the half-tile offset.
+2. Fair merge plus a blocked ordinary exit (downstream bottleneck).
+3. Placement: new 4-lane on empty land; convert 2-lane when the extra tile is free; reject when a building occupies it; preview shows tapers.
+4. Ordinary side street as **one** spanning T, then a spanning cross (2×1 core, paths outside the core as needed).
+5. 4-lane–4-lane 2×2, including opposing turns and clearance.
+6. Wide bend with two live lanes.
+7. Outer-curb entrance and bus stop; verify buses vs passing traffic.
+8. Edit reject/recover; drain and preserve passengers, incidents, committed moves; load an old save unchanged.
+9. Responders and no phantom ring at existing roundabout/one-way links.
+10. Balance A/B only when asked. No perf pass. No mission or live-save edits. Instant convert-after-drain is enough until construction time is chosen; leave the existing short roadworks/detour slot unused, not deleted.
+
+Narrowing, relocation pricing, and taper length stay out until this slice is visibly correct.

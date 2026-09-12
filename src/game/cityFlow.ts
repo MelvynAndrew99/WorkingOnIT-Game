@@ -1,3 +1,5 @@
+import {journeyAsTrip} from './cityJourneys.ts';
+import {hasJourneyAccess} from './cityTransit.ts';
 /** FLOW-01 measurement foundation. Read-only, with no rewards, timers or demand changes. */
 import {entrance, findPath, goalOf, type City, type TripPurpose} from './cityModel.ts';
 import {bodyTile, METRICS_WINDOW} from './cityTraffic.ts';
@@ -26,15 +28,16 @@ function readFlowSnapshot(city: City, targetHomes: number, purpose: TripPurpose,
   const records = city.history.filter(h => h.at > since && h.at <= now && h.service?.purpose === purpose);
   const homes = city.buildings.filter(b => b.kind === 'home').map(home => {
     const household = city.households.find(h => h.homeId === home.id);
-    const trip = city.trips.find(t => t.homeId === home.id && !t.service && !t.external);
+    const car = city.trips.find(t => t.homeId === home.id && !t.service && !t.external);
+    const journey=city.transit?.journeys.find(j=>j.homeId===home.id&&!j.external);
+    const trip=car??(journey?journeyAsTrip(journey):undefined);
     const returns = records.filter(h => h.service!.homeId === home.id);
     const liveVisit = trip?.purpose === purpose && trip.rewarded && trip.visitedAt !== undefined
       && trip.visitedAt > since ? 1 : 0;
     const visits = returns.filter(h => h.service!.visitedAt > since).length + liveVisit;
-    const reachable = destinations.filter(d => findPath(city, entrance(home), entrance(d))
-      && findPath(city, entrance(d), entrance(home)));
+    const reachable = destinations.filter(d => hasJourneyAccess(city,entrance(home),entrance(d)));
     const goal = trip?.phase === 'visiting' ? entrance(home) : trip ? goalOf(city, trip) : null;
-    const committedAccess = !!trip && !!goal && !findPath(city, trip.path[bodyTile(trip)], goal);
+    const committedAccess = journey ? !!journey.blockedReason : !!trip && !!goal && !findPath(city, trip.path[bodyTile(trip)], goal);
     const access = reachable.length === 0 || committedAccess;
     const pending = household?.[purpose] ?? 0;
     // A completed parked stay awaiting its return merge must remain visible too.
@@ -50,7 +53,7 @@ function readFlowSnapshot(city: City, targetHomes: number, purpose: TripPurpose,
       && (journeySeconds === null || journeySeconds <= rules.maximumJourneySeconds);
     return {homeId: home.id, visits, returns: returns.length, pending, access, capacity, traffic,
       stoppedSeconds, journeySeconds, qualified,
-      carOut: !!trip, purpose: trip?.purpose ?? null,
+      carOut: !!car, purpose: trip?.purpose ?? null,
       returning: trip?.phase === 'returning' || (trip?.phase === 'waiting' && trip.resume === 'returning'),
       parkedAwaitingReturn: trip?.phase === 'visiting' && !!trip.rewarded,
       unknownJourneyAge: !!trip && trip.startedAt === undefined};

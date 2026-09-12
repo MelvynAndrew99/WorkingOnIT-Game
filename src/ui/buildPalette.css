@@ -44,12 +44,30 @@
 .dispatch-ui:not([data-layout=wide]) .build-palette{gap:var(--space-1,4px)}
 
 /* Direction edits are explicit and stay above the reserved map boundary. */
-.build-group:first-child .build-shelf{grid-template-columns:repeat(5,minmax(0,1fr))}
+.build-group:first-child .build-shelf{grid-template-columns:repeat(3,minmax(0,1fr))}
+.dispatch-ui[data-layout=wide] .build-group:first-child .build-shelf{grid-template-columns:repeat(6,minmax(0,1fr))}
 .build-group:first-child .build-tool-detail{flex-direction:column;gap:1px}
 .build-group:first-child .build-icon{height:16px;width:16px;flex-basis:16px}
 .build-group:first-child .build-tool strong{font-size:15px}
 .direction-editor{order:2;display:grid;gap:4px;padding:6px;border:1px solid #ffe179;border-radius:6px;background:#172b45}
-.direction-editor p{margin:0;font-size:14px;line-height:1.3}
+.city-ui.dispatch-ui .direction-editor p{margin:0;font-size:14px;line-height:1.3}
 .direction-actions{display:flex;flex-wrap:wrap;gap:4px}
 .city-ui.dispatch-ui .direction-actions button{flex:1 1 auto;font-size:14px;padding:4px 8px;background:#263c54;color:#ffe179}
 .city-ui.dispatch-ui .direction-actions button:disabled{opacity:.45}
+
+.direction-restore{display:flex;align-items:center;gap:6px;min-height:36px;font-size:14px;flex:1 1 auto}
+.direction-restore input{width:18px;height:18px;accent-color:#ffe179}
+.city-ui.dispatch-ui .direction-editor .direction-tip{font-size:12px;color:#bfcddd}
+
+.build-group:last-child .build-shelf{grid-template-columns:repeat(3,minmax(0,1fr))}
+.build-group:last-child .build-tool strong{font-size:15px}
+.transit-editor{max-height:230px;overflow-y:auto;overscroll-behavior:contain}
+.city-ui.dispatch-ui .transit-editor p button{min-height:36px;padding:4px 8px;font-size:14px}
+
+/* Keep road rotation beside the desktop road shelf, without pushing it below the tools. */
+.build-group-heading{display:none}
+.build-heading-rotate{display:none!important}
+.dispatch-ui[data-layout=wide] .build-group-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.dispatch-ui[data-layout=wide] .wide-road-rotate{display:none!important}
+.city-ui.dispatch-ui[data-layout=wide] .build-heading-rotate{display:flex!important;align-items:center;justify-content:space-between;gap:12px;padding:4px 8px;background:#ffd22e;color:#102333;border-color:#ffe477;font-size:15px}
+.build-heading-rotate span{font-size:14px}

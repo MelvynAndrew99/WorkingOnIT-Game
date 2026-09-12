@@ -1,5 +1,6 @@
+import {hasJourneyAccess} from './cityTransit.ts';
 /** Saved land permits: two introductory strips, then completed growth missions. */
-import {entrance,findPath,type City} from './cityModel.ts';
+import {entrance,type City} from './cityModel.ts';
 import type {ExpansionDirection} from './cityMap.ts';
 
 /** Keep one outside-facing edge fixed, including corner connections. Legacy
@@ -20,7 +21,7 @@ export const createExpansionProgress=():ExpansionProgress=>({version:1,used:0,le
 export const expansionTarget=(level:number)=>6+3*level;
 export function expansionHouseholds(city:City):number {
  const visited=new Set(city.missions?.shoppers??[]),shops=city.buildings.filter(b=>b.kind==='store');
- return city.buildings.filter(b=>b.kind==='home'&&visited.has(b.id)&&shops.some(s=>!!findPath(city,entrance(b),entrance(s))&&!!findPath(city,entrance(s),entrance(b)))).length;
+ return city.buildings.filter(b=>b.kind==='home'&&visited.has(b.id)&&shops.some(s=>hasJourneyAccess(city,entrance(b),entrance(s)))).length;
 }
 export function refreshExpansionProgress(city:City):void {
  const e=city.expansion??=createExpansionProgress(),served=expansionHouseholds(city);

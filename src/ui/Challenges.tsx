@@ -44,7 +44,7 @@ function ChallengeResult({run,next,retry,leave}:{run:ReturnType<typeof getChalle
     <button className="result-map" onClick={leave}>Level map</button>
   </dialog>;
 }
-const names:Record<Tool,string>={direction:'One-way',road:'Road',stop:'Stops',signal:'Lights',store:'Store',closure:'Divert',bulldoze:'Clear',policeStation:'Police',hospital:'Clinic',fireStation:'Fire',home:'Home',park:'Park'};
+const names:Record<Tool,string>={wideRoad:'4-lane road',busStation:'Bus depot',busStop:'Bus stop',direction:'One-way',road:'Road',stop:'Stops',signal:'Lights',store:'Store',closure:'Divert',bulldoze:'Clear',policeStation:'Police',hospital:'Clinic',fireStation:'Fire',home:'Home',park:'Park'};
 function ChallengeReset({reset,cancel}:{reset:()=>void;cancel:()=>void}) {
   const dialog=useRef<HTMLDialogElement>(null);
   useEffect(()=>{dialog.current?.showModal();},[]);

@@ -1,3 +1,6 @@
+import {abstractService} from './cityBusRidership.ts';
+import {journeyActivitySlots, tryWalkingJourney} from './cityJourneys.ts';
+import {tryTransitJourney, transitSummary} from './cityTransit.ts';
 import {civilianRoute} from './cityRouting.ts';
 /**
  * Household demand, destination capacity, and off-road visits.
@@ -80,12 +83,13 @@ export function growDemand(city: City, seconds: number): void {
 export function visitorSlots(city: City, b: Building): { occupied: number; inbound: number; capacity: number } {
   let occupied = 0, inbound = 0;
   for (const t of city.trips) {
-    if (t.service || t.storeId !== b.id) continue;
+    if (t.busId !== undefined || t.service || t.storeId !== b.id) continue;
     const phase = phaseOf(t);
     if (phase === 'visiting') occupied++;
     // A car held up on its way home has already given its slot back.
     else if (phase === 'outbound' || (phase === 'waiting' && t.resume === 'outbound')) inbound++;
   }
+  if(city.transit){const travelers=journeyActivitySlots(city.transit.journeys,b.id);occupied+=travelers.occupied;inbound+=travelers.inbound;}
   return { occupied, inbound, capacity: VISITOR_CAPACITY[kindOf(b)] };
 }
 /**
@@ -107,7 +111,7 @@ export function chooseDestinationFrom(city: City, origin: Point, purpose: TripPu
     if (slots.occupied + slots.inbound >= slots.capacity) continue;
     const path = allowBlocked?plannedRoadPath(city,origin,entrance(b)):findPath(city, origin, entrance(b));
     if (!path) continue;
-    if (city.roadDirections && !(allowBlocked?plannedRoadPath(city,entrance(b),origin):findPath(city,entrance(b),origin))) continue;
+    if ((city.roadDirections || city.wideRoads) && !(allowBlocked?plannedRoadPath(city,entrance(b),origin):findPath(city,entrance(b),origin))) continue;
     const cost = (path.length - 1) / TRAVEL_TILES_PER_SECOND + (slots.occupied + slots.inbound) * CROWD_PENALTY;
     if (!best || cost < best.cost - 1e-9 || (Math.abs(cost - best.cost) < 1e-9 && b.id < best.building.id))
       best = { building: b, path, cost };
@@ -127,7 +131,7 @@ function purposeFor(h: Household): TripPurpose | null {
 export function spawnTrips(city: City, index: RoadIndex): void {
   for (const home of city.buildings) {
     if (home.kind !== 'home') continue;
-    if (city.trips.some(t => !t.service && t.homeId === home.id)) continue;
+    if (city.trips.some(t => !t.service && t.homeId === home.id)||city.transit?.journeys.some(j=>j.homeId===home.id&&!j.external)) continue;
     const h = householdFor(city, home.id);
     // During the tutorial emergency, finish the current round trip first, then
     // keep the shopping assignment instead of substituting a reachable park.
@@ -141,6 +145,13 @@ export function spawnTrips(city: City, index: RoadIndex): void {
     for (const purpose of order) {
       if ((purpose === 'shopping' ? h.shopping : h.leisure) <= 0) continue;
       const choice = chooseDestination(city, home, purpose);
+      if(city.transit){
+        const back=choice?findPath(city,entrance(choice.building),entrance(home)):null;
+        const roadKeys=new Set(choice?.path.map(p=>`${p.x},${p.y}`));
+        const queue=city.trips.filter(t=>!t.service&&t.phase!=='visiting'&&roadKeys.has(`${t.path[bodyTile(t)].x},${t.path[bodyTile(t)].y}`));
+        const carCost=choice&&back?(choice.path.length+back.length-2)/TRAVEL_TILES_PER_SECOND+queue.reduce((n,t)=>n+2+Math.min(20,t.hold),0):Infinity;
+        if(tryWalkingJourney(city,home,purpose,carCost)||!abstractService(city)&&tryTransitJourney(city,entrance(home),home.id,purpose,carCost)) {h.lastDeparturePurpose=purpose;break;}
+      }
       if (!choice) continue;
       const goal = choice.path[choice.path.length - 1];
       const path=civilianRoute(city, choice.path[0], goal) ?? choice.path;
@@ -157,6 +168,7 @@ export function spawnTrips(city: City, index: RoadIndex): void {
 export function beginVisit(city: City, trip: Trip): void {
   const destination = destinationOf(city, trip);
   if (!destination) { trip.phase = 'returning'; retarget(city, trip, trip.path[bodyTile(trip)]); return; }
+  delete trip.trafficLane; delete trip.laneChange;
   trip.phase = 'visiting';
   trip.visitRemaining = VISIT_SECONDS[kindOf(destination)];
   trip.hold = 0;
@@ -174,7 +186,7 @@ function consumeNeed(city: City, trip: Trip): void {
 export function stepVisits(city: City, index: RoadIndex, dt: number): void {
   const leaving: number[] = [];
   for (const trip of city.trips) {
-    if (trip.service || phaseOf(trip) !== 'visiting') continue;
+    if (trip.busId !== undefined || trip.service || phaseOf(trip) !== 'visiting') continue;
     const remaining = trip.visitRemaining ?? 0;
     if (remaining > 0) { trip.visitRemaining = round6(Math.max(0, remaining - dt)); continue; }
     const home = homeOf(city, trip);
@@ -193,6 +205,7 @@ export function stepVisits(city: City, index: RoadIndex, dt: number): void {
     trip.target = { ...goal };
     const path = civilianRoute(city, trip.path[trip.path.length - 1], goal, trip);
     if (!path || startBlocked(city, index, path)) continue;
+    delete trip.trafficLane; delete trip.laneChange;
     trip.phase = 'returning';
     trip.path = path;
     trip.progress = 0;
@@ -212,18 +225,21 @@ export function homeRoadIssue(city:City, home:Building):string|null {
 }
 /** HUD-facing occupancy for one building. Numbers are households, not people. */
 export function buildingStatus(city: City, b: Building): VisitorSlots {
+  if(b.kind==='busStation'||b.kind==='busStop')return {occupied:0,inbound:0,capacity:b.kind==='busStation'?2:0,label:transitSummary(city)};
   if (isDestination(b)) {
     const slots = visitorSlots(city, b);
-    const label = `${slots.occupied} of ${slots.capacity} visitor slots used`
+    const parkedCars=city.trips.filter(t=>t.busId===undefined&&!t.service&&t.storeId===b.id&&t.phase==='visiting').length;
+    const label = `${slots.occupied} of ${slots.capacity} activity places used, ${parkedCars} cars parked`
       + (slots.inbound > 0 ? `, ${slots.inbound} on the way` : '');
     return { occupied: slots.occupied, capacity: slots.capacity, inbound: slots.inbound, label };
   }
   if (b.kind === 'home') {
-    const out = city.trips.some(t => !t.service && t.homeId === b.id);
+    const journey=city.transit?.journeys.find(j=>j.homeId===b.id&&!j.external);
+    const out = !!journey || city.trips.some(t => !t.service && t.homeId === b.id);
     const h = city.households.find(x => x.homeId === b.id);
     const waiting = (h?.shopping ?? 0) + (h?.leisure ?? 0);
     return { occupied: out ? 1 : 0, capacity: 1, inbound: 0,
-      label: `${out ? 'Car out' : 'Car at home'}, ${waiting} trip${waiting === 1 ? '' : 's'} wanted${homeRoadIssue(city,b)?` · ${homeRoadIssue(city,b)}`:''}` };
+      label: `${journey ? (journey.mode==='bus'?'Traveler using bus':'Traveler walking') : out ? 'Car out' : 'Car at home'}, ${waiting} trip${waiting === 1 ? '' : 's'} wanted${homeRoadIssue(city,b)?` · ${homeRoadIssue(city,b)}`:''}` };
   }
   const responding = city.trips.some(t => t.service && t.stationId === b.id);
   return { occupied: responding ? 1 : 0, capacity: 1, inbound: 0, label: city.trips.some(t=>t.stationId===b.id&&t.patrol)?'Police on local patrol':responding ? 'Vehicle responding' : 'Vehicle ready' };
@@ -235,7 +251,7 @@ export function demandSummary(city: City): { shopping: number; leisure: number; 
     if (!city.buildings.some(b => b.id === h.homeId && b.kind === 'home')) continue;
     shopping += h.shopping; leisure += h.leisure;
   }
-  return { shopping, leisure, visits: city.trips.filter(t => !t.service && phaseOf(t) === 'visiting').length };
+  return { shopping, leisure, visits: city.trips.filter(t => t.busId === undefined && !t.service && phaseOf(t) === 'visiting').length+(city.transit?.journeys.filter(j=>j.state==='visiting').length??0) };
 }
 /**
  * Missing households migrate to fresh demand; corrupt records reject the save.

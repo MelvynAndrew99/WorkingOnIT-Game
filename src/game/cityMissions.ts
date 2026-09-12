@@ -1,8 +1,9 @@
+import {hasJourneyAccess} from './cityTransit.ts';
 import {FLOW_MISSION_ID, FLOW_OBJECTIVE_RULES, flowSnapshot, parseFlowProgress, type FlowProgress} from './cityFlow.ts';
 import {CITY_RULES} from './cityRules.ts';
 import {incidentServices} from './cityIncidents.ts';
 /** Optional growth goals. Visits earn recognition; completed jobs offer an optional, one-time cash claim. */
-import { COSTS, entrance, findPath, constructionPriceForCity, type City, type Trip, type Tool } from './cityModel.ts';
+import { COSTS, entrance, constructionPriceForCity, type City, type Trip, type Tool } from './cityModel.ts';
 import {expansionSnapshot,expansionTarget,refreshExpansionProgress} from './cityExpansion.ts';
 
 export interface MissionProgress {
@@ -88,8 +89,7 @@ function served(city: City, ids: number[], kind: 'store' | 'park'): number {
   const seen = new Set(ids);
   let count = 0;
   for (const b of city.buildings) if (b.kind === 'home' && seen.has(b.id)
-    && destinations.some(d => findPath(city, entrance(b), entrance(d)) !== null
-      && findPath(city, entrance(d), entrance(b)) !== null)) {
+    && destinations.some(d => hasJourneyAccess(city,entrance(b),entrance(d)))) {
     count++;
   }
   return count;

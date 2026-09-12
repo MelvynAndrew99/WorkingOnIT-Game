@@ -1,5 +1,7 @@
+import {journeyAsTrip} from './cityJourneys.ts';
+import {hasJourneyAccess} from './cityTransit.ts';
 /** Read-only observations: no spawning, rerouting or rewards belong here. */
-import {entrance, findPath, type City} from './cityModel.ts';
+import {entrance, type City} from './cityModel.ts';
 import {visitorSlots} from './cityVisits.ts';
 import {bodyTile} from './cityTraffic.ts';
 import {CITY_RULES} from './cityRules.ts';
@@ -12,13 +14,16 @@ export function cityDiagnostics(city: City) {
     .map(t => ({id:t.id,...t.path[bodyTile(t)],hold:t.hold}));
   const homes = city.buildings.filter(b=>b.kind==='home').map(home => {
     const household=city.households.find(h=>h.homeId===home.id);
-    const trip=city.trips.find(t=>t.homeId===home.id&&!t.service&&!t.external);
+    const car=city.trips.find(t=>t.homeId===home.id&&!t.service&&!t.external);
+    const journey=city.transit?.journeys.find(j=>j.homeId===home.id&&!j.external);
+    const trip=car??(journey?journeyAsTrip(journey):undefined);
     let status: 'ready'|'access'|'capacity'|'traffic'|'idle'='ready', reason='Shopping access both ways';
     const wantedKind=trip?.purpose==='leisure'||(!household?.shopping&&!!household?.leisure)?'park':'store';
     const choices=city.buildings.filter(b=>b.kind===wantedKind);
-    const reachable=choices.filter(b=>findPath(city,entrance(home),entrance(b))&&findPath(city,entrance(b),entrance(home)));
+    const reachable=choices.filter(b=>hasJourneyAccess(city,entrance(home),entrance(b)));
     if(!choices.length){status='access';reason=`No ${wantedKind==='store'?'store':'park'} built`;}
     else if(!reachable.length){status='access';reason=`No usable route to ${wantedKind==='store'?'store':'park'} and home`;}
+    else if(journey?.blockedReason){status='traffic';reason=journey.blockedReason;}
     else if(trip&&traffic.some(t=>t.id===trip.id)){status='traffic';reason=`Car waiting ${trip.hold.toFixed(0)}s`;}
     else if(!trip && ((household?.shopping??0)+(household?.leisure??0)>0) && reachable.every(b=>{const v=visitorSlots(city,b);return v.occupied+v.inbound>=v.capacity;})){
       status='capacity';reason=`Reachable ${wantedKind==='store'?'stores':'parks'} full (including inbound)`;

@@ -8,6 +8,8 @@ const edge = (a: Point, b: Point) => `${key(a)}>${key(b)}`;
 const neighbours = (p: Point) => [{x:p.x+1,y:p.y},{x:p.x,y:p.y+1},{x:p.x-1,y:p.y},{x:p.x,y:p.y-1}];
 export type RoutingSnapshot = {
   roadDirections?: RoadDirections;
+  wideRoads?: City['wideRoads'];
+  roadPoints?: Point[];
   at: number; revision: string; roads: ReadonlySet<string>; blocked: ReadonlySet<string>;
   areas: ReadonlyMap<string,string>; controls: ReadonlyMap<string,number>;
   queues: ReadonlyMap<string,ReadonlyArray<{id:number; seconds:number}>>;
@@ -40,6 +42,7 @@ export function routingSnapshot(city: City, index: RoadIndex = roadIndex(city), 
   const blocked=blockedTiles(city,response);
   return {at:city.elapsed, revision:(response?'response|':'ordinary|')+[...index.roads].sort().join(';')+'|'+[...blocked].sort().join(';')+'|'+JSON.stringify(city.controls)+'|'+directionSignature(city),
     ...(city.roadDirections?{roadDirections:{...city.roadDirections}}:{}),
+    ...(city.wideRoads ? {wideRoads:city.wideRoads.map(s=>({...s})), roadPoints:city.roads.map(p=>({...p}))} : {}),
     roads:new Set(index.roads),blocked,areas:new Map(index.areas),controls,queues};
 }
 export type RouteCost = {travel:number; queue:number; control:number; total:number};

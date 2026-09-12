@@ -18,6 +18,7 @@ import {tutorialBuildTarget} from './TutorialGuidance.tsx';
 import {starterDiversionPoint} from '../game/cityStarterTutorial.ts';
 
 export const TOOL_NAMES: Record<Tool, string> = {
+  wideRoad:'4-lane road',busStation:'Bus depot',busStop:'Bus stop',
   home: 'Home', store: 'Store', park: 'Park', direction: 'One-way', road: 'Road', hospital: 'Clinic',
   policeStation: 'Police', fireStation: 'Fire', bulldoze: 'Remove', stop: 'Stop', signal: 'Light', closure: 'Detour',
 };

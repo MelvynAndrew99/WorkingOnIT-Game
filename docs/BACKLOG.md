@@ -1,3 +1,11 @@
+## Bus ridership and occupancy markers delivered locally (September 11, 2026)
+
+The agreed representative home/shop/park rules now generate shared saved stop queues, physical eight-seat loads, destination stays and return trips. Bus stops/depot use the existing yellow visitor-dot style. Legacy passengers finish intact; representative riders do not mint existing household/mission rewards or remove cars. [Delivery and checks](transit-and-one-way/bus-economics/IMPLEMENTED.md). No publication or performance testing; gateway abstraction and eventual real household/economy coupling remain follow-ons. This supersedes older bus-pending notes below.
+
+## One-way lanes and yield follow-up delivered locally (2026-09-11)
+
+User favors low CPU cost and selection-order interactions over complex menus. Delivered two usable one-way lanes with physical safe merges and saved lane positions; drag/release or ordered taps/close-loop editing replaces the old direction menu. Simple directed loops automatically yield at entrances while circulating cars keep priority. Existing loop controls remain saved but dormant; adjacent signals still work. This supersedes earlier single-lane/menu and no-automatic-roundabout limitations. Topology is cached, circulating lookahead is indexed once per tick, and unchanged-town full state matches all 180 baseline checkpoints. [Delivery and verification](transit-and-one-way/lanes-and-roundabouts/README.md). No global right-on-red change, bus implementation, mission edits, publication or active-save modification.
+
 ## One-way roads delivered locally (2026-09-11)
 
 OW-01/02 first implementation slice is complete: [delivery](transit-and-one-way/IMPLEMENTED.md). Shared directed routes/movement/saves, user-selected corner/ring paths, cached arrows and safe edit guards; 303 tests, build and desktop/narrow browser checks. Actual supplied-town ring was tested with existing controls; automatic circulating priority is not implemented. Bus foundation/art and SIG-01 offsets remain queued. User mission plan remains pending. No publication.

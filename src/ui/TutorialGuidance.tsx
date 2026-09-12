@@ -10,7 +10,7 @@ export type BuildCategory = 'roads'|'places'|'services';
 export function buildCategory(tool:Tool|null):BuildCategory {
     if(tool===null)return 'places';
     if(['home','store','park','bulldoze'].includes(tool))return 'places';
-    if(['hospital','fireStation','policeStation'].includes(tool))return 'services';
+    if(['hospital','fireStation','policeStation','busStation','busStop'].includes(tool))return 'services';
     return 'roads';
 }
 /** Shared with the objective so the locator follows the same first-visit substeps. */

@@ -1,3 +1,8 @@
+import {abstractService} from './cityBusRidership.ts';
+import {tryTransitJourney} from './cityTransit.ts';
+import {walkingPath, type TransitJourney} from './cityJourneys.ts';
+import {visitorSlots} from './cityVisits.ts';
+import {TRAVEL_TILES_PER_SECOND} from './cityTraffic.ts';
 import {allowsRoadStep} from './cityDirections.ts';
 import {civilianRoute} from './cityRouting.ts';
 /** Explicit outside-city arrivals. Gateway geometry is saved independently of map edges/art. */
@@ -59,12 +64,17 @@ export function relocateInteriorGateway(city:City):boolean {
       t.phase='waiting';t.resume='returning';t.target={...next};
     }
   }
+  for(const j of city.transit?.journeys??[]){
+    if(!j.external)continue;
+    j.origin={...next};j.external.origin={...next};
+    if(j.walkTarget==='home')j.goal={...next};
+  }
   return true;
 }
 
 export function externalNeedsRoad(city:City):boolean {
   const e=city.external;
-  return !!(e?.needsRoadConnection&&e.gateway&&!city.buildings.some(b=>(b.kind==='store'||b.kind==='park')&&plannedRoadPath(city,e.gateway!,entrance(b))&&(!city.roadDirections||plannedRoadPath(city,entrance(b),e.gateway!))));
+  return !!(e?.needsRoadConnection&&e.gateway&&!city.buildings.some(b=>(b.kind==='store'||b.kind==='park')&&plannedRoadPath(city,e.gateway!,entrance(b))&&(!(city.roadDirections||city.wideRoads)||plannedRoadPath(city,entrance(b),e.gateway!))));
 }
 
 const tileKey = (p:Point) => `${p.x},${p.y}`;
@@ -89,7 +99,7 @@ function automaticGatewayPath(city:City):Point[]|null {
     const [x,y]=k.split(',').map(Number),p={x,y};
     blocked.add(k);for(const q of neighbors(p))blocked.add(tileKey(q));
   }
-  const queue=city.roadDirections?network.filter(p=>plannedRoadPath(city,p,seed)):[...network],previous=new Map<string,Point|null>(queue.map(p=>[tileKey(p),null]));
+  const queue=(city.roadDirections||city.wideRoads)?network.filter(p=>plannedRoadPath(city,p,seed)):[...network],previous=new Map<string,Point|null>(queue.map(p=>[tileKey(p),null]));
   const m=city.map;
   for(let i=0;i<queue.length;i++){
     const p=queue[i];
@@ -146,11 +156,23 @@ export function stepExternal(city:City,index:RoadIndex,dt:number):void {
   if(e.arrivalClock<interval)return;
   // A blocked/full gateway misses this arrival. No hidden backlog or reopening burst.
   e.arrivalClock=0;
-  if(city.trips.filter(t=>t.external).length>=limit)return;
+  if(city.trips.filter(t=>t.external).length+(city.transit?.journeys.filter(j=>j.external).length??0)>=limit)return;
   const first:TripPurpose=e.arrivals%2===0?'shopping':'leisure';
   const order:TripPurpose[]=first==='shopping'?['shopping','leisure']:['leisure','shopping'];
   for(const purpose of order){
     const choice=chooseDestinationFrom(city,e.gateway,purpose);
+    if(city.transit&&city.transit.journeys.length<256){
+      const carCost=choice?(choice.path.length-1)*2/TRAVEL_TILES_PER_SECOND+(startBlocked(city,index,choice.path)?20:0):Infinity;
+      let admitted=false;
+      if(city.transit.walkingEnabled)for(const destination of city.buildings){
+        if(destination.kind!==(purpose==='shopping'?'store':'park'))continue;
+        const slots=visitorSlots(city,destination);if(slots.occupied+slots.inbound>=slots.capacity)continue;
+        const walk=walkingPath(city,e.gateway,entrance(destination));if(!walk||(walk.length-1)*2>=carCost)continue;
+        const journey:TransitJourney={id:city.nextId++,homeId:0,destinationId:destination.id,purpose,mode:'walk',state:'walking-out',origin:{...e.gateway},external:{origin:{...e.gateway}},path:walk,progress:0,startedAt:Math.round(city.elapsed*1e6)/1e6,wait:0,visitRemaining:0,rewarded:false,returned:false,activityReserved:true,walkTarget:'visit'};
+        city.transit.journeys.push(journey);admitted=true;break;
+      }
+      if(admitted||!abstractService(city)&&tryTransitJourney(city,e.gateway,0,purpose,carCost,true)){e.arrivals++;break;}
+    }
     if(!choice||choice.path.length<2)continue;
     const path=civilianRoute(city,e.gateway,choice.path.at(-1)!)??choice.path;
     if(startBlocked(city,index,path))continue;

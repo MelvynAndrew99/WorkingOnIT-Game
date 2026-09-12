@@ -1,5 +1,20 @@
 # Shared implementation lessons
 
+## Road transitions must fit the visible vehicle (2026-09-11)
+
+- A double-width rectangle and isolated markings do not communicate a lane transition. Share pavement contours with display interpolation, remove the rectangular underlay, and match the source atlas curb width/colour. Check both orientations and offsets.
+- A lone aligned section has no full-width through-lane length; render it as a connector. Preserve full turning pavement for a very short offset dogleg rather than forcing an S taper that puts tires onto grass. Real side junctions and building entrances also need their apron.
+- Inspect exact paused vehicle samples as well as empty-road screenshots; moving simulation can advance a supposedly fixed pose before capture. Geometry tests should verify continuity, opposing lane separation and unchanged saved state.
+
+
+## Paired carriageways and timed topology edits (2026-09-11)
+
+- Adjacency cannot distinguish a median from a street. Shared paired-road topology must drive pathfinding, weighted snapshots, physical movement and rendering. Include both narrow-end offsets and rotations in actual return-route tests; retain return-reachability checks whenever any directed facility exists, not just manual one-way metadata.
+- Multi-tile junctions need reservations spanning their full crossing/exit, including departures originating inside an extended junction. New departures or replans must not reserve an active work area even when their first tile is outside it. Verify physical service journeys and mid-motion reload, not graph reachability alone.
+- Complete timed edits outside a cached simulation-index scope, then rebuild topology and invalidate the static visual cache together. Save exact payment provenance and restoration state; duplicate or conflicting metadata must reject rather than silently change directions.
+- A refreshed source snapshot can leave an already-running Vite server serving timestamped modules alongside fresh bare imports. Restart the isolated server before final UI automation; a second store instance otherwise falsely reports missing construction. Keep world-space preview text readable at narrow scale, and inspect the actual desktop controls after adding rotation rows.
+- Evidence and limits: [four-lane delivery](roadworks/FOUR-LANE-IMPLEMENTED.md), 48 model test files, build and desktop/narrow controls. No performance or final balance conclusions follow from these functional checks.
+
 ## Saved-city troubleshooting workflow (2026-09-10)
 
 User explicitly requests reusing the successful full-town debugging process for future issues. Follow [the saved-city troubleshooting brief](SAVED-CITY-DEBUGGING.md): collect diagnostics plus the complete city save, preserve the original, reproduce with the real simulation in isolation, trace actual blockers, and retain regression coverage including reload and preservation checks. Diagnostics alone are not a full save. Explain that browser `copy()` returning `undefined` is normal. Never reset or modify the player’s active town to obtain a reproduction; distinguish verified model recovery from active-browser recovery and publication.

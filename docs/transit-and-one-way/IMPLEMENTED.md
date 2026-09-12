@@ -1,3 +1,5 @@
+> Superseded follow-up: [two usable lanes, selection-order editing and automatic roundabout yields](lanes-and-roundabouts/README.md) are now implemented locally. The limitations below describe the earlier slice.
+
 # One-way roads implemented locally
 
 September 11, 2026. Bus work and coordinated signal offsets remain separate. Existing missions and the player's active save are unchanged; this build has not been published.

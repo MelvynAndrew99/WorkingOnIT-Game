@@ -1,8 +1,10 @@
 # Keep the town running through roadworks
 
-Status: design discussion, September 10, 2026. No runtime implementation or publication. This extends the flow-puzzle plan: useful service is the whole-game core, with later field-inspired challenges, rather than a one-off Level 1 objective.
+Status: initial design September 10, 2026; [four-lane roads and short conversion roadworks delivered locally September 11](FOUR-LANE-IMPLEMENTED.md). No publication. This extends the flow-puzzle plan: useful service is the whole-game core, with later field-inspired challenges, rather than a one-off Level 1 objective. Broader construction-mode proposals below remain separate unless selected in that delivery.
 
 ## User decisions
+
+September 11 update: the user selected two-tile-wide four-lane roads, with dedicated narrow/wide transitions and shared wide intersections. See [four-lane design](FOUR-LANE-DESIGN.md) for agreed direction, proposed connection rules and implementation boundaries.
 
 - Fun exceeds technical accuracy, with readable cause/effect and satisfying improvement.
 - Single points of failure can be roads serving neighborhoods, the only usable store, or the only usable park.
