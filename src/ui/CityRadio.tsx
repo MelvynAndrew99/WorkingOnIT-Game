@@ -73,13 +73,13 @@ export default function CityRadio({defaultExpanded = false, opens = 'up', stopOn
         <div className="city-radio-mini" role="group" aria-label="W-ON-IT City Radio">
             <PowerButton on={radio.power} />
             <button type="button" className="city-radio-mini-info" aria-expanded={expanded} aria-controls={sheetId}
-                aria-label={`${expanded ? 'Close' : 'Open'} City Radio. ${current ? `${current.frequency.toFixed(1)} FM, ${current.title}` : 'Radio off'}`}
-                onClick={() => setExpanded(value => !value)}>
+                aria-label={`${expanded ? 'Close' : 'Open'} City Radio. ${current ? `${current.frequency.toFixed(1)} FM, ${current.stationName}, ${current.title}` : 'Radio off'}`}
+                onClick={() => { if (!radio.power) setRadioPower(true); setExpanded(value => !value); }}>
                 <span className="city-radio-mini-title">{radio.power && current ? current.title : 'W-ON-IT City Radio'}</span>
                 <span className="city-radio-mini-status">
                     {radio.playing ? <Equalizer /> : locked ? <LockIcon /> : <span className="city-radio-dot" aria-hidden="true" />}
                     {radio.power && current && <span className="city-radio-mini-freq">{current.frequency.toFixed(1)}</span>}
-                    <span className="city-radio-mini-detail">{!radio.power ? 'Tap to tune in' : locked ? (radio.notice ? 'Preview over' : 'Preview') : status === 'ON AIR' ? current?.artist : status.toLowerCase().replace(/^./, c => c.toUpperCase())}</span>
+                    <span className="city-radio-mini-detail">{!radio.power ? 'Tap to tune in' : locked ? (radio.notice ? 'Preview over' : 'Preview') : status === 'ON AIR' ? current?.stationName : status.toLowerCase().replace(/^./, c => c.toUpperCase())}</span>
                 </span>
                 <svg className="city-radio-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6" /></svg>
             </button>
@@ -108,7 +108,7 @@ function RadioReceiver({id, radio, onCollapse}: {id: string; radio: RadioState; 
     };
     let headline = 'Radio off', detail = 'Tap power or pick a station.';
     if (radio.power && !current) { headline = 'Static'; detail = 'Keep turning the dial.'; }
-    else if (current) { headline = current.title; detail = current.artist; }
+    else if (current) { headline = current.title; detail = current.stationName; }
 
     return <section id={id} className="city-radio-receiver" aria-label="City Radio receiver">
         <header className="city-radio-head">
@@ -150,7 +150,7 @@ function RadioReceiver({id, radio, onCollapse}: {id: string; radio: RadioState; 
                     <span className="city-radio-needle" style={{left: `${bandPercent(radio.dial)}%`} as CSSProperties} />
                 </div>
                 <input type="range" min={DIAL_MIN} max={DIAL_MAX} step="0.1" value={radio.dial}
-                    aria-label="Tuning dial" aria-valuetext={`${radio.dial.toFixed(1)} FM${current ? `, ${current.title}` : ''}`}
+                    aria-label="Tuning dial" aria-valuetext={`${radio.dial.toFixed(1)} FM${current ? `, ${current.stationName}, ${current.title}` : ''}`}
                     onChange={event => scrub(Number(event.target.value))} onPointerUp={settleNow} />
             </div>
             <button type="button" className="city-radio-key" aria-label="Seek up" onClick={() => seekAndPlay(1)}>
@@ -165,9 +165,9 @@ function RadioReceiver({id, radio, onCollapse}: {id: string; radio: RadioState; 
                 const missing = radio.missing.includes(track.id);
                 return <li key={track.id}>
                     <button type="button" data-current={on} data-locked={!open} onClick={() => playStation(track)}
-                        aria-label={`${track.title} by ${track.artist}, ${track.frequency.toFixed(1)} FM${open ? '' : ', preview only'}${missing ? ', not installed' : ''}`}>
+                        aria-label={`${track.stationName}, ${track.title} by ${track.artist}, ${track.frequency.toFixed(1)} FM${open ? '' : ', preview only'}${missing ? ', not installed' : ''}`}>
                         <span className="city-radio-station-freq">{track.frequency.toFixed(1)}</span>
-                        <span className="city-radio-station-name"><strong>{track.title}</strong><small>{track.artist}</small></span>
+                        <span className="city-radio-station-name"><strong>{track.title}</strong><small>{track.stationName}</small></span>
                         <span className="city-radio-station-state">{on && radio.playing ? <Equalizer /> : !open ? <><LockIcon /><span className="city-radio-station-preview">Preview</span></> : null}</span>
                     </button>
                 </li>;

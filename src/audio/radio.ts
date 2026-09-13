@@ -21,6 +21,8 @@ export interface RadioTrack {
     id: string;
     title: string;
     artist: string;
+    /** Fictional channel identity, separate from the song credit. */
+    stationName: string;
     src: string;
     /** Dial position in MHz, unique per song. */
     frequency: number;
@@ -33,18 +35,19 @@ export interface RadioTrack {
 
 /** Add songs at 128kbps in public/audio/radio/ and list them here. */
 export const RADIO_TRACKS: readonly RadioTrack[] = [
-    {id:'what-a-jam', title:'What a Jam!', artist:'The Man', src:'audio/radio/what-a-jam.mp3', frequency:101.5,
+    {id:'title', stationName:'The Mix', title:'Working ON IT!', artist:'City Works', src:'audio/music/TitleTheme.mp3', frequency:92.3,
+        dj:'Our theme song. Inspired by me, basically.', unlock:{kind:'free'}},
+    {id:'what-a-jam', stationName:'Now FM', title:'What a Jam!', artist:'The Man', src:'audio/radio/what-a-jam.mp3', frequency:95.5,
         dj:'My song. About me. Requested by me.', unlock:{kind:'mission', challengeId:'what-a-jam', label:'Beat Level 25 to hear the whole song'},
         previewStart:33, previewSeconds:PREVIEW_SECONDS},
-    {id:'room-for-us', title:'Room For Us', artist:'City Works', src:'audio/radio/room-for-us.mp3', frequency:98.7,
-        dj:'A song about being needed. I relate. Deeply.', unlock:{kind:'purchase', sku:'radio-room-for-us', label:'Unlock with game credits'},
-        previewStart:39, previewSeconds:PREVIEW_SECONDS},
-    {id:'fill-it-up', title:'Fill It Up!', artist:'City Works', src:'audio/radio/fill-it-up.mp3', frequency:95.5,
+    {id:'we-got-pizza-we-got-praise', stationName:'Country', title:'We Got Pizza, We Got Praise', artist:'City Works', src:'audio/radio/we-got-pizza-we-got-praise.mp3', frequency:97.1,
+        dj:'Pizza and praise. A little thank-you for playing during the jam.', unlock:{kind:'free'}},
+    {id:'too-busy-to-work', stationName:'The Rock', title:'Too Busy to Work', artist:'City Works', src:'audio/radio/too-busy-to-work.mp3', frequency:98.7,
+        dj:'Very busy. Supervising all this work takes work.', unlock:{kind:'free'}},
+    {id:'fill-it-up', stationName:'UK Hits', title:'Fill It Up!', artist:'City Works', src:'audio/radio/fill-it-up.mp3', frequency:101.5,
         dj:'Long commute, empty wallet. Lucky they have me.', unlock:{kind:'purchase', sku:'radio-fill-it-up', label:'Unlock with game credits'},
         previewStart:50, previewSeconds:PREVIEW_SECONDS},
-    {id:'title', title:'Working ON IT!', artist:'City Works', src:'audio/music/TitleTheme.mp3', frequency:92.3,
-        dj:'Our theme song. Inspired by me, basically.', unlock:{kind:'free'}},
-    {id:'junction', title:'Busy Junction', artist:'City Works', src:'audio/music/pause-menu.mp3', frequency:105.7,
+    {id:'junction', stationName:'Classic FM', title:'Busy Junction', artist:'City Works', src:'audio/music/pause-menu.mp3', frequency:105.7,
         dj:'Stuck in a queue? Stay calm. I am on it.', unlock:{kind:'free'}},
 ];
 
@@ -112,7 +115,7 @@ export function formatRadioTime(seconds: number) {
 const listeners = new Set<() => void>();
 const FADE_SECONDS = 1.5;
 let audio: HTMLAudioElement | null = null;
-let power = false, dial = 101.5, trackId: string | null = null, playing = false, loading = false;
+let power = false, dial = RADIO_TRACKS[0].frequency, trackId: string | null = null, playing = false, loading = false;
 let notice: string | null = null, sleeping = false, resumeAfterSleep = false;
 const missing = new Set<string>();
 let snapshot: RadioState = build();
@@ -278,7 +281,8 @@ export function tune(mhz: number, settle: boolean) {
     else emit();
 }
 export function seekRadio(step: 1 | -1) {
-    const next = seekStation(dial, step);
+    // Before the first tune, SEEK starts the theme instead of skipping a hidden preset.
+    const next = !power && trackId === null ? RADIO_TRACKS[0] : seekStation(dial, step);
     if (next) tune(next.frequency, true);
 }
 export function setRadioPower(on: boolean) {

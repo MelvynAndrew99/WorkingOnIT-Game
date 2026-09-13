@@ -1,3 +1,15 @@
+## Approved realistic radio branding (2026-09-13)
+
+User rejects the playful station names and approves: 92.3 The Mix, 95.5 Now FM, 97.1 Country, 98.7 The Rock, 101.5 UK Hits, 105.7 Classic FM. User identifies 101.5 as UK pop, 105.7 as classical/non-lyrical and 95.5 as modern. Applied to the existing station-name displays; song order, audio and unlock rules preserved. Supersedes the W-ON-IT FM/Gridlock/Pizza Party/Breakroom/Full Tank/Junction station names. Local only; publication remains user-managed.
+
+## Additional free jam radio gift (2026-09-13)
+
+User adds We Got Pizza, We Got Praise from inbox as a free jam gift immediately after What a Jam! Installed at 97.1 FM as full free playback, converted to verified 128kbps MP3 (179.52s, 2.87MB); inbox original preserved. No timed eligibility cutoff specified or implemented. Other station order and lock rules preserved. [Audio record](public/audio/radio/README.md). Local only; no publication or active-save edits.
+
+## Front-page radio tuning and playlist (2026-09-13)
+
+User requests first tuning to the theme, reordered songs, free Too Busy to Work from inbox at 128kbps, and Room For Us removal. Delivered initial theme dial/first SEEK, functional Tap to tune in, and frequency order Working ON IT! → What a Jam! → Too Busy to Work → Fill It Up! → retained Busy Junction. New song verified 128kbps (3.5MB); original inbox preserved; Room For Us game MP3 deleted. User reiterates previews apply only while locked: What a Jam retains Level 25 entitlement, Fill It Up retains locked chorus preview/full-on-entitlement behavior (purchase wiring remains unimplemented). Build/typecheck, radio regression command and isolated desktop/narrow browser tuning, playback and simulated entitlement checks pass. [Audio details](public/audio/radio/README.md). Local only; no publication, player-save edits or performance tests.
+
 ## Integrated performance pass delivered locally (2026-09-13)
 
 User explicitly requested desktop/mobile performance testing on isolated small/busy towns, targeted fixes, preservation checks and no publication. Implemented exact path-cache coordinate validation without road-string allocation, a shared read-only safety-report index, retained terrain margins, and returned Pixi texture-pool disposal before renderer destruction. Demand, traffic rules, saves and visual features remain unchanged. Busy fixed-step model total improves 7.9%; safety-report microbenchmark 97.2%. Production pan/zoom p95 improves across both towns/layouts, while steady software-rendered desktop remains slow and some construction/join tails do not improve. Measured renderer teardown retention (506 DOM nodes/54 listeners per cycle) is removed; residual heap growth and extra bounded terrain retention remain documented.
