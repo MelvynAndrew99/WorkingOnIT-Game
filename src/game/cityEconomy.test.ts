@@ -240,17 +240,17 @@ test('invalid placement consumes neither cash nor allowance', () => {
   assert.ok(allowance.home === 1 && after === 0);
 });
 
-test('mixed paid and free tiles survive west expansion and reload', () => {
+test('mixed paid and free tiles survive plot unlock and reload', () => {
   const city = createCity();
   starter(city);
   stepCity(city, STALL_SECONDS);
   refreshTutorial(city);
   const parkPrice = constructionPriceForCity(city, 'park');
   if (parkPrice === 0) place(city, 'park', 4, 7, 2);
-  expandCity(city, 'west');
-  place(city, 'road', -1, 4);
+  expandCity(city, 'east');
+  place(city, 'road', 16, 4);
   const loaded = reload(city);
-  assert.equal(loaded.map.x, -8);
+  assert.equal(loaded.map.width, 32);
   for (const building of loaded.buildings) {
     assert.equal(paidForBuilding(building), building.paid ?? COSTS[building.kind]);
   }

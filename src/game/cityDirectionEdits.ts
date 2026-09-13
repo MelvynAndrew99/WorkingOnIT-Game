@@ -1,3 +1,4 @@
+import {privateLaneKeys, PRIVATE_LANE_MESSAGE} from './cityPrivateLanes.ts';
 /** Atomic road direction edits. Traffic owns physical reservations; art never defines legality. */
 import type { City, Point } from './cityModel.ts';
 import { roadEdgeKey, roadDirectionForStep } from './cityDirections.ts';
@@ -14,6 +15,7 @@ export function applyRoadDirections(city:City,points:Point[],mode:DirectionEditM
   if(!starterToolAllowed(city,'direction'))return fail('One-way roads unlock with Roads. Follow the tutorial, or Skip tutorial to unlock everything.');
   if(!['forward','reverse','two-way'].includes(mode))return fail('Choose One-way, Reverse, or Two-way.');
   if(!Array.isArray(points)||points.length<2||points.length>city.roads.length+1)return fail('Select at least two connected road tiles.');
+  if(points.some(p=>p&&privateLaneKeys(city).has(key(p))))return fail(PRIVATE_LANE_MESSAGE);
   const roads=new Set(city.roads.map(key));
   if(points.some(p=>!p||!Number.isSafeInteger(p.x)||!Number.isSafeInteger(p.y)||!roads.has(key(p))))return fail('Select existing road tiles.');
   if(city.wideRoads?.length&&points.some(p=>wideRoadTopology(city).tiles.has(key(p))))return fail('Four-lane carriageways already have fixed directions. Use the road tools to change their layout.');

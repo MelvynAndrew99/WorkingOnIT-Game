@@ -31,7 +31,7 @@ export const hasChallengeRun=(id:ChallengeId=selected)=>!!runs[id];
 export function selectChallenge(id:ChallengeId){
   if(!challengeUnlocked(id))throw Error(`Complete ${challengePrerequisite(id)?.title??'the previous mission'} first.`);
   selected=id;
-  if(runs[id]&&((id==='neighborhood-roads'&&runs[id]!.revision!==2)||(id==='a-town-that-works'&&runs[id]!.revision!==3)||(id==='past-the-wreck'&&runs[id]!.revision!==4))){stars[id]=challengeHasStar(id);archivedRuns[id]=runs[id];runs[id]=createChallenge(id);flushChallenges();}
+  if(runs[id]&&((id==='neighborhood-roads'&&runs[id]!.revision!==2)||(id==='a-town-that-works'&&runs[id]!.revision!==3)||(id==='past-the-wreck'&&runs[id]!.revision!==4)||(id==='another-front-door'&&runs[id]!.revision!==3))){stars[id]=challengeHasStar(id);archivedRuns[id]=runs[id];runs[id]=createChallenge(id);flushChallenges();}
   return getChallengeRun();}
 export function getChallengeRun() {return runs[selected]??=createChallenge(selected);}
 export function retryChallenge() {stars[selected]=challengeHasStar();runs[selected]=createChallenge(selected);flushChallenges();return runs[selected]!;}

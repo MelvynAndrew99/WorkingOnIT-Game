@@ -1,3 +1,21 @@
+## Measured integrated performance and renderer lifetime (2026-09-13)
+
+- Capture the current integrated working tree, including uncommitted changes, as the baseline. Keep browser contexts and saves isolated, use production builds for the main comparison, and avoid concurrent timed work. Compare fixed-dt complete-state hashes separately from wall-time browser samples: slow frames alter the transient traffic state through the existing dt cap.
+- Exact ordered-coordinate comparisons can validate cached road graphs without allocating coordinate strings each query. Continue checking all directions, temporary blocks and in-place mutations; do not let a read cache span simulation changes.
+- Scope repeated read-only diagnostics to one road index. Verify identical output, city purity, nested scope behavior, later edits and finally cleanup. CPU savings do not establish a frame-rate gain when the browser waits elsewhere.
+- Retaining a bounded terrain margin removes repeated texture rebuilds on short pans. Ownership, geometry and late artwork must still invalidate; verify pixel equality through zoom/resize/land changes. Extra retained sprites are a memory tradeoff and need measurement.
+- Installed Pixi8.19.0 can retain destroyed renderers through pooled render-texture source callbacks. Heap retainers and a native-click control distinguished this from automation retention. Clear returned `TexturePool` targets after scene destruction and before renderer destruction; never clear shared atlas Assets. Validate repeated game/menu/radio cycles and rendering after re-entry. This removes the demonstrated DOM/listener growth, not every possible JS cache or leak.
+- [Evidence](performance-integrated/README.md): three CPU/render fixes plus teardown cleanup; build, focused/differential/visual/lifecycle checks. Report unchanged steady software-renderer pacing, worse tails, baseline functional failures and unverified physical-device/long-soak behavior explicitly.
+
+## Multi-entrance buildings and grouped communities (2026-09-13)
+
+- Keep physical entrance choices in saved model coordinates; render arrows and future art variants from the same points. Preserve the original driveway when upgrading. Validate every selected tile against lot perimeter, bounds and other footprints; construction protects all enabled access tiles.
+- When adding parallel resident trips, reserve unpaid demand until completed visits consume it. Saved demand, capacity and outstanding trips must agree; an upgraded building must not duplicate its current needs or convert work into shopping credit.
+- Preserve a congestion-aware route already selected by the traffic planner. The first apartment return branch overwrote it with a shortest path; a focused regression now protects the selected detour while unselected routes still reconsider alternate doors.
+- Group membership records an organizational choice, not proof of operational access. Keep membership across a severed road, report structural disconnection, and retain physical routing/one-way/occupancy as the authority for every journey and responder.
+- Verify provider output before integrating it. Installed Claude wrote partial office/residential art, then reported a session limit; placeholders remain and no completed artwork claim is made. User artist ownership still applies when the preferred artist is temporarily unavailable.
+- Evidence: [offices and complexes](apartments/README.md), focused conservation/routing/group tests and isolated1440/390 pointer/UI/reload checks. No performance measurements.
+
 # Shared implementation lessons
 
 ## Visual weather and paused rendering (2026-09-12)

@@ -1,63 +1,133 @@
-/* UI-02 top-bar statistics group. Scoped to .city-stats-bar only. */
+/* Top stats, grouped by meaning: money tile, live people, harm, then clock + weather. */
 
 .city-stats-bar {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 20px;
+  align-items: stretch;
+  gap: 6px;
   margin: 0;
   padding: 0;
   min-width: 0;
-  font-size: 17.6px;
-  line-height: 1.25;
-  color: #f5f7fc;
+  line-height: 1.15;
+  color: var(--hud-text, #f3f6fa);
 }
 
 .city-stats-bar .city-stat {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  text-align: left;
-  min-width: 0;
+  justify-content: center;
   gap: 2px;
+  min-width: 0;
+  padding: 3px 12px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  text-align: left;
 }
 
 .city-stats-bar dt {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   margin: 0;
-  min-width: 0;
-  font-size: 17.6px;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  color: var(--muted, #afbdd0);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--muted, #a9bbd0);
+}
+
+.city-stats-bar dt .hud-icon {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  stroke-width: 2.2;
 }
 
 .city-stats-bar dd {
   margin: 0;
-  min-width: 0;
-  max-width: 100%;
-  font-size: 17.6px;
-  font-weight: 750;
+  font-size: 18px;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
-  overflow-wrap: anywhere;
-  word-break: break-word;
+  white-space: nowrap;
+  color: var(--hud-text, #f3f6fa);
+}
+
+/* Funds: the one number the player spends from, so it gets a tile. */
+.city-stats-bar .city-stat.is-hero {
+  background: linear-gradient(180deg, #f0c56a1f, #f0c56a0a);
+  border-color: #f0c56a40;
+}
+
+.city-stats-bar .is-hero dt {
+  color: var(--hud-kicker, #d4c19a);
 }
 
 .city-stats-bar .city-stat-funds {
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 850;
-  color: var(--yellow, #ffd22e);
+  letter-spacing: -0.03em;
+  color: var(--yellow, #f0c56a);
 }
 
+.city-stats-bar .city-stat-funds.is-negative {
+  color: #ff9b7a;
+}
+
+.city-stats-bar .is-live dt {
+  color: var(--cyan, #5bc4d4);
+}
+
+/* Harm stays quiet at zero and becomes a red tile the moment someone dies. */
 .city-stats-bar .city-stat-warn {
-  color: var(--cyan, #42d9e8);
+  color: var(--muted, #a9bbd0);
+}
+
+.city-stats-bar .city-stat.is-alert {
+  background: linear-gradient(180deg, #ff7a5a2a, #ff7a5a12);
+  border-color: #ff9b7a66;
+}
+
+.city-stats-bar .city-stat.is-alert dt,
+.city-stats-bar .city-stat.is-alert .city-stat-warn {
+  color: #ff9b7a;
+}
+
+/* Clock and weather describe the world, not the city's performance: push them right. */
+.city-stats-bar .city-stat.is-meta {
+  border-left: 1px solid #3d547066;
+  border-radius: 0;
+}
+
+.city-stats-bar .is-meta + .is-meta {
+  border-left: 0;
+}
+
+.city-stats-bar .is-meta dd {
+  font-size: 16px;
+  font-weight: 700;
+  color: #d8e2ef;
+}
+
+.city-stats-bar .is-clock[data-paused=true] dt::after {
+  content: 'Paused';
+  margin-left: 2px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: var(--yellow, #f0c56a);
+  color: #1a2436;
+  letter-spacing: 0.06em;
+}
+
+.city-stats-bar .is-clock[data-paused=true] dd {
+  color: var(--yellow, #f0c56a);
 }
 
 .city-stats-bar .city-stat-muted {
-  color: var(--muted, #afbdd0);
+  color: var(--muted, #a9bbd0);
   font-weight: 600;
 }
 
-/* Exact funds stay available to assistive technology when the display abbreviates. */
 .city-stats-bar .city-stat-exact {
   position: absolute;
   width: 1px;
@@ -70,33 +140,80 @@
   white-space: nowrap;
 }
 
-/* Narrow frames: two columns of inline label/value rows, labels still left-aligned.
-   Three single-line rows replace two rows of stacked pairs, so the same six fields
-   cost less vertical space and leave more height for the map. */
+.dispatch-ui[data-layout='wide'] .city-stats-bar .is-meta:not(.is-meta + .is-meta) {
+  margin-left: auto;
+}
+
+/* Narrow frames: one tight inline row per pair, icons dropped to save width. */
 .dispatch-ui:not([data-layout='wide']) .city-stats-bar {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-items: baseline;
-  gap: 4px 14px;
-  width: 100%;
+  align-items: center;
+  gap: 4px 12px;
 }
 
 .dispatch-ui:not([data-layout='wide']) .city-stats-bar .city-stat {
   flex-direction: row;
   align-items: baseline;
-  gap: 8px;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
 }
 
-/* Values share a right edge within each column so the numbers stay scannable. */
-.dispatch-ui:not([data-layout='wide']) .city-stats-bar dd {
-  margin-left: auto;
-  text-align: right;
+.dispatch-ui:not([data-layout='wide']) .city-stats-bar .city-stat.is-hero,
+.dispatch-ui:not([data-layout='wide']) .city-stats-bar .city-stat.is-alert {
+  padding: 0 8px;
+  border: 1px solid;
+  border-radius: 10px;
+}
+
+.dispatch-ui:not([data-layout='wide']) .city-stats-bar .city-stat.is-hero {
+  background: #f0c56a14;
+  border-color: #f0c56a40;
+}
+
+.dispatch-ui:not([data-layout='wide']) .city-stats-bar .city-stat.is-alert {
+  background: #ff7a5a1f;
+  border-color: #ff9b7a66;
 }
 
 .dispatch-ui:not([data-layout='wide']) .city-stats-bar dt {
-  white-space: nowrap;
+  font-size: 10px;
+}
+
+.dispatch-ui:not([data-layout='wide']) .city-stats-bar dt .hud-icon {
+  display: none;
+}
+
+.dispatch-ui:not([data-layout='wide']) .city-stats-bar dd,
+.dispatch-ui:not([data-layout='wide']) .city-stats-bar .is-meta dd {
+  font-size: 15px;
 }
 
 .dispatch-ui:not([data-layout='wide']) .city-stats-bar .city-stat-funds {
-  font-size: 19px;
+  font-size: 20px;
+}
+
+/* Wide but cramped frames (small laptop windows, landscape tablets): tighten tiles so
+   stats and actions share one row. */
+@container game-frame (max-width: 1180px) {
+  .dispatch-ui[data-layout='wide'] .city-stats-bar {
+    gap: 0;
+  }
+
+  .dispatch-ui[data-layout='wide'] .city-stats-bar .city-stat {
+    padding: 3px 7px;
+  }
+
+  .dispatch-ui[data-layout='wide'] .city-stats-bar dd,
+  .dispatch-ui[data-layout='wide'] .city-stats-bar .is-meta dd {
+    font-size: 16px;
+  }
+
+  .dispatch-ui[data-layout='wide'] .city-stats-bar .city-stat-funds {
+    font-size: 22px;
+  }
+
+  .dispatch-ui[data-layout='wide'] .city-stats-bar dt .hud-icon {
+    display: none;
+  }
 }

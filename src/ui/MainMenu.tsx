@@ -1,11 +1,15 @@
 import {musicSettings,setMusicVolume,setMusicMuted} from '../audio/music.ts';
 import {effectsSettings,setEffectsVolume,setEffectsMuted} from '../audio/vehicles.ts';
 import {finishTutorialAndConnect} from '../game/cityExternal.ts';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import {radioState, subscribeRadio} from '../audio/radio.ts';
+import {CHALLENGES, challengeAvailable} from '../game/cityChallenges.ts';
+import {challengeHasStar} from '../state/challenges.ts';
 import { writeWeatherPreference, weatherHudLabel } from '../game/cityWeather.ts';
 import { store, type DisplayMode } from '../state/store.ts';
 import { getSave, startNewCity, flushSave } from '../state/save.ts';
 import {IconMusic,IconSpeaker,MenuToggle,VolumeMixer} from './menuControls.tsx';
+import CityRadio from './CityRadio.tsx';
 import './menuPanel.css';
 import './titleScreen.css';
 
@@ -15,6 +19,17 @@ const DISPLAY_OPTIONS: {value: DisplayMode; label: string; choice: string}[] = [
     {value: 'portrait', label: 'Mobile (portrait view)', choice: 'Mobile'},
 ];
 
+function compactMoney(value: number) {
+    return Math.abs(value) >= 1e6 ? `${(value / 1e6).toFixed(1)}M` : Math.abs(value) >= 1e4 ? `${Math.round(value / 1e3)}K` : value.toLocaleString();
+}
+
+function missionProgress() {
+    const levels = CHALLENGES.filter(d => challengeAvailable(d.id));
+    const awards = levels.filter(d => challengeHasStar(d.id)).length;
+    const next = levels.findIndex(d => !challengeHasStar(d.id));
+    return {awards, total: levels.length, done: next < 0, level: next + 1, title: next < 0 ? '' : levels[next].title};
+}
+
 export default function MainMenu() {
     const city = getSave().city;
     const untouchedStarter = city.tutorial?.hRoad?.stage === 0 && city.buildings.length === 0 && city.elapsed === 0;
@@ -22,6 +37,9 @@ export default function MainMenu() {
     const [panel, setPanel] = useState<'new' | 'settings' | null>(null);
     const [artAvailable, setArtAvailable] = useState(true);
     const dialog = useRef<HTMLDialogElement>(null);
+    const radio = useSyncExternalStore(subscribeRadio, radioState);
+    const missions = missionProgress();
+    const caption = !radio.playing ? 'Good as new!' : radio.trackId === 'what-a-jam' ? 'That’s my song!' : 'Turn it up!';
     useEffect(() => {
         if (panel) dialog.current?.showModal();
         else dialog.current?.close();
@@ -44,26 +62,44 @@ export default function MainMenu() {
                 <p>Fix the commute.</p>
             </header>
             <div className="title-art" aria-hidden="true">
-                {artAvailable && <img src="images/title/working-on-it.png" alt="" fetchPriority="high" onError={() => setArtAvailable(false)} />}
-                <div className="title-scene-caption"><span className="title-manager-label"><span className="title-manager-worn">CI</span>TY MAN<span className="title-manager-worn">AGER</span></span><p>Good as new!</p></div>
+                {artAvailable && <img src="images/title/menu-hero.jpg" alt="" fetchPriority="high" onError={event => {
+                    if (event.currentTarget.src.includes('menu-hero')) event.currentTarget.src = 'images/title/menu-scene.png';
+                    else setArtAvailable(false);
+                }} />}
+                <div className="title-scene-caption"><span className="title-manager-label"><span className="title-manager-worn">CI</span>TY MAN<span className="title-manager-worn">AGER</span></span><p>{caption}</p></div>
             </div>
             <nav className="title-navigation" aria-label="Main menu">
                 <p className="title-route-label">YOUR NEXT MOVE</p>
-                <button className="title-road-button title-play" aria-label={hasTown ? 'Continue commute' : 'Start your city'} onClick={play}>
-                    <span className="title-route-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M8 28 12 4h8l4 24M16 5v5m0 4v5m0 4v5" /></svg></span>
-                    <span className="title-button-copy"><strong>{hasTown ? 'Continue commute' : 'Start your city'}</strong><small>{hasTown ? 'Your town. Your next big idea.' : 'Build a town. Get things moving.'}</small></span>
+                <button className="title-road-button title-missions" aria-label={missions.done ? 'Missions, all complete' : `Missions, Level ${missions.level}: ${missions.title}`} onClick={()=>store.patch({phase:'challenges',paused:false})}>
+                    <span className="title-route-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M7 29V4m0 1c6-5 12 5 19 0v14c-7 5-13-5-19 0" /><path d="M13 5v13m7-12v13M8 11c6-4 12 5 18 0" /></svg></span>
+                    <span className="title-button-copy">
+                        <span className="title-button-kicker">Missions <span>{missions.awards}/{missions.total}</span></span>
+                        <strong>{missions.done ? `All ${missions.total} jobs done` : missions.awards === 0 ? 'Start Level 1' : `Level ${missions.level}`}</strong>
+                        <small>{missions.done ? 'Replay any level. The Man insists.' : missions.title}</small>
+                        <span className="title-mission-meter" aria-hidden="true"><span style={{width: `${(missions.awards / missions.total) * 100}%`}} /></span>
+                    </span>
                     <span className="title-arrow" aria-hidden="true">➜</span>
                 </button>
-                <button className="title-road-button title-challenges" aria-label="Challenges" onClick={()=>store.patch({phase:'challenges',paused:false})}>
-                    <span className="title-route-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M7 29V4m0 1c6-5 12 5 19 0v14c-7 5-13-5-19 0" /><path d="M13 5v13m7-12v13M8 11c6-4 12 5 18 0" /></svg></span>
-                    <span className="title-button-copy"><strong>Challenges</strong><small>Small maps. Big traffic ideas.</small></span>
+                <button className="title-road-button title-play title-sandbox" aria-label={hasTown ? 'Sandbox, continue your town' : 'Sandbox, start your town'} onClick={play}>
+                    <span className="title-button-copy">
+                        <span className="title-button-kicker">Sandbox</span>
+                        <strong>{hasTown ? 'Continue your town' : 'Start your town'}</strong>
+                        {!hasTown && <small>Build a town. Get things moving.</small>}
+                    </span>
+                    <span className="title-sandbox-art" aria-hidden="true"><svg viewBox="0 0 64 64"><path d="M4 50h56M4 36h56M22 4v56M44 4v56" className="road" /><path d="M4 50h56M4 36h56M22 4v56M44 4v56" className="lane" /><rect x="27" y="16" width="12" height="12" rx="2" className="home" /><rect x="49" y="40" width="10" height="7" rx="2" className="shop" /><rect x="7" y="21" width="9" height="9" rx="2" className="home" /><circle cx="33" cy="36" r="3" className="car" /></svg></span>
                     <span className="title-arrow" aria-hidden="true">➜</span>
+                    {hasTown && <span className="title-town-stats">
+                        <span><b>{city.buildings.length.toLocaleString()}</b> buildings</span>
+                        <span><b>{city.completed.toLocaleString()}</b> trips</span>
+                        <span><b>${compactMoney(city.funds)}</b></span>
+                    </span>}
                 </button>
                 <div className="title-utilities">
                     {hasTown && <button className="title-road-button" onClick={() => setPanel('new')}><span className="title-utility-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg></span> New city</button>}
                     <button className="title-road-button" onClick={() => setPanel('settings')}><span className="title-utility-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round"><path d="M21.00,12.00 L20.83,13.76 L18.47,14.68 L17.82,15.89 L18.36,18.36 L17.00,19.48 L14.68,18.47 L13.37,18.87 L12.00,21.00 L10.24,20.83 L9.32,18.47 L8.11,17.82 L5.64,18.36 L4.52,17.00 L5.53,14.68 L5.13,13.37 L3.00,12.00 L3.17,10.24 L5.53,9.32 L6.18,8.11 L5.64,5.64 L7.00,4.52 L9.32,5.53 L10.63,5.13 L12.00,3.00 L13.76,3.17 L14.68,5.53 L15.89,6.18 L18.36,5.64 L19.48,7.00 L18.47,9.32 L18.87,10.63 Z" /><circle cx="12" cy="12" r="3" /></svg></span> Settings</button>
                 </div>
             </nav>
+            <CityRadio className="title-radio" />
             <footer className="title-footer"><span aria-hidden="true" className="title-stripes" /><span>A better commute starts with you.</span></footer>
         </div>
         <dialog ref={dialog} className="title-dialog menu-dialog" onCancel={() => setPanel(null)} onClose={() => setPanel(null)} aria-labelledby="title-dialog-heading">

@@ -1,4 +1,7 @@
+import type {PrivateLanePlan} from '../game/cityPrivateLanes.ts';
 import type {FlowReport} from '../game/cityFlow.ts';
+import { emptyPulse, type CityPulse } from '../game/cityPulse.ts';
+import type { IncidentWarning } from '../game/cityIncidents.ts';
 import type {VehicleDebug} from '../game/cityTraffic.ts';
 import type {DiagnosticView,CityDiagnostics} from '../game/cityDiagnostics.ts';
 import { useSyncExternalStore } from 'react';
@@ -10,6 +13,13 @@ import type { TutorialSnapshot } from '../game/cityTutorial.ts';
 import { readWeatherPreference, weatherHudLabel } from '../game/cityWeather.ts';
 export type DisplayMode = 'auto' | 'wide' | 'portrait';
 export interface AppState {
+    apartmentComplexPanel: {id:number;blocks:number;residents:number;connected:boolean}|null;
+    apartmentComplexDraft: number|null;
+    apartmentComplexPreview: (PrivateLanePlan & {targetId:number})|null;
+    officePanel: {id:number;entrances:number;capacity:number;upgradeCost:number}|null;
+    apartmentEntranceDraft: number|null;
+    entranceEditSlot: 'primary'|'secondary'|null;
+    apartmentPanel: {id:number;entrances:number;residents:number;upgradeCost:number}|null;
     busStopPanel: {id:number;rotation:number;waiting:number;waitSeconds:number;issue:string}|null;
     movingBusStop: number|null;
     busStopNotices: {id:number;x:number;y:number;reason:string;waiting:number;waitSeconds:number}[];
@@ -53,7 +63,8 @@ export interface AppState {
     averageWait: number;
     throughput: number;
     demand: {shopping:number;leisure:number;visits:number};
-    incidentInfo: {active:number;warning:string;details:{id:number;label:string;needs:string;deadlineSeconds:number|null}[]};
+    pulse: CityPulse;
+    incidentInfo: {active:number;warning:string;warnings:IncidentWarning[];details:{id:number;label:string;needs:string;deadlineSeconds:number|null}[]};
     rescued: number;
     fatalities: number;
     inspected: {id:number;name:string;occupied:number;capacity:number;inbound:number;label:string}|null;
@@ -66,6 +77,7 @@ try { const saved=localStorage.getItem('working-on-it:display-mode'); if(saved==
 const weatherEnabled = readWeatherPreference();
 const listeners = new Set<() => void>();
 let state: AppState = {
+    apartmentComplexPanel:null,apartmentComplexDraft:null,apartmentComplexPreview:null,officePanel:null,apartmentEntranceDraft:null,entranceEditSlot:null, apartmentPanel:null,
     busStopPanel:null, movingBusStop:null, busStopNotices:[],
     transitPanel:null, transitDraft:null,
     flow: null,
@@ -77,7 +89,8 @@ let state: AppState = {
     phase: 'loading', loadProgress: 0, paused: false, showTips, panning: false, map: initialMap(), tool: null, toolSelection: 0, directionSelection: 0, directionRestore: false, rotation: 0,
     elapsedSeconds: 0, funds: STARTING_FUNDS, income: 20, connected: 0, roadIssues: [], homes: 0, completed: 0, activeTrips: 0, tripSeconds: null,
     longestStop: 0, waiting: 0, averageWait: 0, throughput: 0,
-    demand:{shopping:0,leisure:0,visits:0}, incidentInfo:{active:0,warning:'',details:[]}, rescued:0,fatalities:0,inspected:null,
+    demand:{shopping:0,leisure:0,visits:0}, pulse: emptyPulse(),
+    incidentInfo:{active:0,warning:'',warnings:[],details:[]}, rescued:0,fatalities:0,inspected:null,
     message: 'Place homes and stores. Link the entrance arrows with roads.',
 };
 export const store = {
@@ -96,7 +109,7 @@ export function useStore<T = AppState>(selector: (s: AppState) => T = (s) => s a
 export function selectConstructionTool(tool:Tool|null,message?:string):void {
     const current=store.get();
     const next=tool!==null&&current.tool===tool&&!current.panning?null:tool;
-    store.patch({tool:next,panning:false,transitDraft:null,movingBusStop:null,vehicleDebugOpen:false,
+    store.patch({tool:next,panning:false,apartmentComplexDraft:null,apartmentComplexPreview:null,apartmentEntranceDraft:null,entranceEditSlot:null,transitDraft:null,movingBusStop:null,vehicleDebugOpen:false,
         toolSelection:current.toolSelection+1,
         message:next===null?'Inspect mode. Select a road, building or bus stop.':message??'Select a location on the map.'});
 }

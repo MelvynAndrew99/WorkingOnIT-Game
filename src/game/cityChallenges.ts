@@ -1,3 +1,4 @@
+import {apartmentComplexSummary} from './cityApartmentComplexes.ts';
 import {initialEmergency,observeEmergency,bindEmergency,observeEmergencyEdit,emergencyStages,parseEmergency,type EmergencyEvidence} from './cityEmergencyChallenges.ts';
 import {emergencyDefinition} from './fixtures/emergencyTown.ts';
 import {CAMPAIGN_LEVELS, campaignDefinition, campaignTown, type CampaignId} from './fixtures/campaignTown.ts';
@@ -8,7 +9,7 @@ import {wideRoadFootprint} from './cityWideRoads.ts';
 import {originalEntrance} from './fixtures/neighborhoodTown.ts';
 import type {Point} from './cityModel.ts';
 /** Focused lessons use the sandbox model; they never own or mutate its saved town. */
-import {createCity, entrance, findPath, footprint, parseCity, place, stepCity, type City, type Tool} from './cityModel.ts';
+import {createCity, entrance, entrances, findPath, footprint, parseCity, place, stepCity, type City, type Tool} from './cityModel.ts';
 import {flowSnapshot} from './cityFlow.ts';
 import {flowTown} from './fixtures/flowTown.ts';
 
@@ -39,7 +40,7 @@ export function challengeUnlockedBy(id:ChallengeId,hasAward:(id:ChallengeId)=>bo
 export const challengeAvailable=(id:ChallengeId)=>!('staged' in challengeDefinition(id));
 export const nextChallenge=(id:ChallengeId)=>CHALLENGES.slice(CHALLENGES.findIndex(d=>d.id===id)+1).find(d=>challengeAvailable(d.id));
 export const challengeTools=(id:ChallengeId):Tool[]=>campaignDefinition(id)?[...campaignDefinition(id)!.tools]:id==='shopping-flow'?CHALLENGE_TOOLS:id==='safe-crossing'?['road','stop','signal','bulldoze']:['road','bulldoze'];
-export interface ChallengeRun {id:ChallengeId;revision?:number;emergency?:EmergencyEvidence;routeServed?:number[];shoppingIncome?:number;startedAt?:number;serviceSince?:number;finishedAt?:number;failed?:'time'|'accident';served?:number[];leisureServed?:number[];busServed?:number[];city: City; earned: boolean; readySince?: number; accumulator: number; checkedAt: number;}
+export interface ChallengeRun {id:ChallengeId;revision?:number;emergency?:EmergencyEvidence;apartmentServed?:number[];routeServed?:number[];shoppingIncome?:number;startedAt?:number;serviceSince?:number;finishedAt?:number;failed?:'time'|'accident';served?:number[];leisureServed?:number[];busServed?:number[];city: City; earned: boolean; readySince?: number; accumulator: number; checkedAt: number;}
 export const challengeHasIncome=(id:ChallengeId)=>id==='keep-another-way';
 export const jamRewardEarned=(run:ChallengeRun)=>run.id==='what-a-jam'&&run.earned;
 export function createChallenge(id:ChallengeId='shopping-flow'): ChallengeRun {
@@ -70,14 +71,14 @@ export function createChallenge(id:ChallengeId='shopping-flow'): ChallengeRun {
   if(campaign)for(const control of city.controls)control.paid=0;
   city.funds = definition.budget;
   if(city.tutorial)city.tutorial.status = 'complete';
-  return bindEmergency({id,revision:id==='past-the-wreck'?4:emergencyDefinition(id)?3:2,...(emergencyDefinition(id)?{emergency:initialEmergency(city)}:{}),city, earned:false, accumulator:0, checkedAt:city.elapsed});
+  return bindEmergency({id,revision:id==='another-front-door'?3:id==='past-the-wreck'?4:emergencyDefinition(id)?3:2,...(emergencyDefinition(id)?{emergency:initialEmergency(city)}:{}),city, earned:false, accumulator:0, checkedAt:city.elapsed});
 }
-export function challengeSnapshot(run: ChallengeRun) {return flowSnapshot(run.city,challengeDefinition(run.id).homes,'shopping', {returnsPerHome:run.id==='shopping-flow'?2:1,maximumStoppedSeconds:20,maximumJourneySeconds:60});}
+export function challengeSnapshot(run: ChallengeRun) {return flowSnapshot(run.city,Math.max(1,challengeDefinition(run.id).homes),'shopping', {returnsPerHome:run.id==='shopping-flow'?2:1,maximumStoppedSeconds:20,maximumJourneySeconds:60});}
 export function challengePlace(city: City, tool: Tool, x: number, y: number, rotation = 0, id:ChallengeId='shopping-flow'): string {
   if (!challengeTools(id).includes(tool)) return 'Use the construction tools supplied for this lesson.';
   if(id==='around-the-island'&&x===8&&y===6)return 'Keep the center island clear. Build around it.';
   if(id==='one-way-home'&&tool==='bulldoze'&&y===6&&x>=2&&x<=13)return 'Keep the inherited eastbound street. Add a way home.';
-  if(['another-front-door','past-the-wreck'].includes(id)&&tool==='bulldoze'&&x===8&&y>=5&&y<=12)return 'Keep the original entrance. Build another connection.';
+  if(id==='past-the-wreck'&&tool==='bulldoze'&&x===8&&y>=5&&y<=12)return 'Keep the original entrance. Build another connection.';
   if (tool==='bulldoze' && city.buildings.some(b=>(b.kind==='home'||(id!=='shopping-flow'&&!campaignDefinition(id))||(!!campaignDefinition(id)&&b.paid===0)) && footprint(b).some(p=>p.x===x&&p.y===y)))
     return 'Keep the existing buildings: every household needs service.';
   observeEmergencyEdit(city);
@@ -107,10 +108,14 @@ export function stepChallenge(run: ChallengeRun, seconds: number) {
       if(challengeStages(run)[0].done)run.serviceSince??=run.city.elapsed;
       else {run.serviceSince=undefined;run.served=[];}
     }
+    if(isApartmentLesson(run)){
+      if(joinedApartmentGroups(run.city).length)run.serviceSince??=run.city.elapsed;
+      else {run.serviceSince=undefined;run.apartmentServed=[];}
+    }
     observeEmergency(run);
     const budget=run.city.funds;
     const unpaid=challengeHasIncome(run.id)?new Set(run.city.trips.filter(t=>!t.rewarded&&!t.service&&!t.external&&t.purpose==='shopping').map(t=>t.id)):new Set<number>();
-    const routeLesson=['apartment-avenue','another-front-door'].includes(run.id);
+    const routeLesson=run.id==='apartment-avenue'||run.id==='another-front-door'&&!isApartmentLesson(run);
     const returningByNewRoute=routeLesson?run.city.trips.filter(t=>t.phase==='returning'&&!t.service&&!t.external&&t.purpose==='shopping'&&usesLessonRoute(run,t.path)).map(t=>t.homeId):[];
     const before=run.city.elapsed;
     const busBefore=run.city.transit?.ridership;
@@ -123,6 +128,7 @@ export function stepChallenge(run: ChallengeRun, seconds: number) {
     if(income)run.shoppingIncome=(run.shoppingIncome??0)+income;
     run.city.funds=budget+income; run.accumulator=Math.max(0,run.accumulator-.025);
     if(routeLesson)run.routeServed=[...new Set([...(run.routeServed??[]),...run.city.history.filter(h=>h.at>before&&h.service?.purpose==='shopping'&&returningByNewRoute.includes(h.service.homeId)).map(h=>h.service!.homeId)])];
+    if(isApartmentLesson(run)&&run.serviceSince!==undefined)run.apartmentServed=[...new Set([...(run.apartmentServed??[]),...run.city.history.filter(h=>h.service?.purpose==='shopping'&&(h.service.startedAt??-1)>=run.serviceSince!).map(h=>h.service!.homeId)])].filter(id=>run.city.buildings.some(b=>b.kind==='apartment'&&b.id===id));
     observeEmergency(run);
     if(campaignDefinition(run.id)){
       const after=run.city.transit?.ridership;
@@ -160,8 +166,9 @@ export function parseChallenge(raw: unknown): ChallengeRun | null {
   const r=raw as ChallengeRun, city=parseCity(r.city);
   const id=r.id??'shopping-flow'; // Preserve the original single-level save.
   if(!CHALLENGES.some(c=>c.id===id)||!challengeAvailable(id))return null;
-  if (!city || city.buildings.filter(b=>b.kind==='home').length!==challengeDefinition(id).homes || city.external?.gateway) return null;
+  if (!city || city.buildings.filter(b=>b.kind==='home').length!==(id==='another-front-door'&&r.revision!==3?4:challengeDefinition(id).homes) || city.external?.gateway) return null;
   if(r.routeServed!==undefined&&(!['apartment-avenue','another-front-door'].includes(id)||!Array.isArray(r.routeServed)||new Set(r.routeServed).size!==r.routeServed.length||r.routeServed.some(n=>!city.buildings.some(b=>b.kind==='home'&&b.id===n))))return null;
+  if(r.apartmentServed!==undefined&&(!isApartmentLesson(r)||!Array.isArray(r.apartmentServed)||new Set(r.apartmentServed).size!==r.apartmentServed.length||r.apartmentServed.some(id=>!Number.isSafeInteger(id)||!city.buildings.some(b=>b.kind==='apartment'&&b.id===id))))return null;
   if(r.shoppingIncome!==undefined&&(!challengeHasIncome(id)||!Number.isSafeInteger(r.shoppingIncome)||r.shoppingIncome<0||r.shoppingIncome%100!==0))return null;
   const validTime=(n:unknown):n is number=>typeof n==='number'&&Number.isFinite(n)&&n>=0&&n<=city.elapsed;
   const emergency=emergencyDefinition(id)&&(r.revision===3||r.revision===4)?parseEmergency(r.emergency,city,id,r.revision):undefined;
@@ -169,6 +176,7 @@ export function parseChallenge(raw: unknown): ChallengeRun | null {
   if(r.revision===4&&id!=='past-the-wreck')return null;
   if(emergencyDefinition(id)&&id!=='a-town-that-works'&&r.revision!==3&&r.revision!==4)return null;
   const parsed:ChallengeRun={id,revision:r.revision===4?4:r.revision===3?3:r.revision===2?2:1,...(emergency?{emergency}:{}),city,earned:r.earned===true,
+    ...(r.apartmentServed!==undefined?{apartmentServed:[...r.apartmentServed]}:{}),
     ...(r.routeServed!==undefined?{routeServed:Array.isArray(r.routeServed)?[...new Set(r.routeServed)].filter(n=>city.buildings.some(b=>b.kind==='home'&&b.id===n)):[]}:{}),
     ...(r.shoppingIncome!==undefined?{shoppingIncome:Number.isSafeInteger(r.shoppingIncome)&&r.shoppingIncome>=0&&r.shoppingIncome%100===0?r.shoppingIncome:0}:{}),
     ...(validTime(r.startedAt)?{startedAt:r.startedAt}:{}),
@@ -196,8 +204,14 @@ export function challengeStages(run:ChallengeRun):{label:string;done:boolean}[]{
  const shop={label:`Shopping round trips: ${p.served}/${d.homes}`,done:shopping};
  const park={label:`Park round trips: ${p.leisureServed}/${d.homes}`,done:leisure};
  const busStage={label:`Bus outings returned: ${p.busServed}/${d.homes}`,done:bus};
+ if(isApartmentLesson(run)){
+  const groups=joinedApartmentGroups(run.city),served=new Set(run.apartmentServed??[]);
+  const accessible=groups.filter(g=>g.buildingIds.every(id=>{const b=run.city.buildings.find(b=>b.id===id)!;return run.city.buildings.some(s=>s.kind==='store'&&entrances(b).some(e=>findPath(run.city,e,entrance(s))&&findPath(run.city,entrance(s),e)));}));
+  const count=Math.max(0,...accessible.map(g=>g.buildingIds.filter(id=>served.has(id)).length));
+  return [{label:'Place two nearby apartment blocks · $800 each',done:run.city.buildings.filter(b=>b.kind==='apartment').length>=2},{label:'Inspect → Join complex → select the other block',done:groups.length>0},{label:'Connect the private lanes to the shop street with Road',done:accessible.length>0},{label:`Press Play: shopping returns from joined blocks · ${Math.min(count,2)}/2`,done:count>=2}];
+ }
  if(d.objective==='wide')return [{label:'Join the avenue with a usable four-lane connection',done:run.city.buildings.filter(b=>b.kind==='home').every(h=>run.city.buildings.some(s=>s.kind==='store'&&!!findPath(run.city,entrance(h),entrance(s))&&!!findPath(run.city,entrance(s),entrance(h))))},{label:`Shopping returns using your new four-lane road: ${run.routeServed?.length??0}/${d.homes}`,done:run.routeServed?.length===d.homes}];
- if(d.objective==='entrance')return [{label:'Keep the original entrance and build another usable connection',done:hasSecondEntrance(run.city)},{label:`Shopping returns through the new entrance: ${run.routeServed?.length??0}/${d.homes}`,done:run.routeServed?.length===d.homes},{label:'Reopen the original entrance: toggle Divert off',done:!run.city.closures.length}];
+ if(run.id==='another-front-door'&&!isApartmentLesson(run))return [{label:'Keep the original entrance and build another usable connection',done:hasSecondEntrance(run.city)},{label:`Shopping returns through the new entrance: ${run.routeServed?.length??0}/4`,done:run.routeServed?.length===4},{label:'Reopen the original entrance: toggle Divert off',done:!run.city.closures.length}];
  if(d.objective==='income')return [{label:`Earn shopping income: $${run.shoppingIncome??0} / $300`,done:(run.shoppingIncome??0)>=300},shop,park];
  if(d.objective==='signal')return [{label:'Place Lights at the crossing',done:run.city.controls.some(c=>c.kind==='signal')},shop];
  if(d.objective==='stop')return [{label:'Place Stops at the crossing',done:run.city.controls.some(c=>c.kind==='stop')},shop];
@@ -247,3 +261,6 @@ export function challengeDirections(city:City,points:Point[],mode:DirectionEditM
  observeEmergencyEdit(city);
  return result;
 }
+
+function isApartmentLesson(run:Pick<ChallengeRun,'id'|'revision'>){return run.id==='another-front-door'&&run.revision===3;}
+function joinedApartmentGroups(city:City){return (city.apartmentComplexes??[]).filter(g=>g.buildingIds.length>=2&&g.privateLanes?.length&&apartmentComplexSummary(city,g.buildingIds[0])?.connected);}

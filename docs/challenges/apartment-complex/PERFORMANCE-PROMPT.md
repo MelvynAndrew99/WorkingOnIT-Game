@@ -1,0 +1,9 @@
+Review and improve Working ON IT!'s responsiveness after today's changes. Performance testing is explicitly authorized for this task.
+
+Read AGENTS.md and inspect the actual working tree to establish what changed today. Include apartments and offices, multiple resident/work journeys, automatic private-lane planning and joining, entrance editing, bounded land and purchase signs, the updated Level 14, HUD/inspectors, and radio/audio. Also check their interaction with existing four-lane roads, buses, emergency responders and visual weather.
+
+Use isolated copies of the supplied benchmark town and representative small and busy towns; never edit active player saves. Measure desktop and narrow/mobile layouts, with reproducible viewport/device/CPU settings, both paused and at 1×/2× simulation. Separate cold startup from steady play. Record frame-time distributions, long frames/tasks, input-to-visible-feedback latency, simulation/update and render costs, and memory growth across repeated mission entry/reset, reload, inspector opening and complex joins. Distinguish emulated mobile evidence from a real-device result.
+
+Exercise pan/zoom, road dragging, apartment placement, join preview/cancel/apply, entrance selection, land signs, mission checklists, menus and radio controls under live traffic. Profile first and identify the largest measured bottlenecks. Make targeted fixes, then repeat the same scenarios to show before/after evidence. Do not reduce traffic, change simulation speed, trip/occupancy/one-way/incident rules, simplify mission criteria, lose save evidence or silently remove visual features to improve scores. Preserve pending journeys and deterministic functional results. Run relevant functional regressions and the production build.
+
+Deliver a short ranked findings report, concrete changes, reproducible commands and evidence, measured improvements and remaining limitations. Do not publish; leave publication to me.

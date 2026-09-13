@@ -1,0 +1,48 @@
+[
+  {
+    "width": 1440,
+    "pointerPlacedBlocks": 2,
+    "apartmentResidents": [
+      6,
+      4
+    ],
+    "chosenEntrance": {
+      "x": 9,
+      "y": 11
+    },
+    "cancelWithoutPurchase": true,
+    "communityRoadTiles": 7,
+    "joinedResidents": 10,
+    "officeCapacity": 16,
+    "officeEntrance": {
+      "x": 23,
+      "y": 8
+    },
+    "actualWorkVisit": true,
+    "reload": true,
+    "errors": []
+  },
+  {
+    "width": 390,
+    "pointerPlacedBlocks": 2,
+    "apartmentResidents": [
+      6,
+      4
+    ],
+    "chosenEntrance": {
+      "x": 9,
+      "y": 11
+    },
+    "cancelWithoutPurchase": true,
+    "communityRoadTiles": 7,
+    "joinedResidents": 10,
+    "officeCapacity": 16,
+    "officeEntrance": {
+      "x": 23,
+      "y": 8
+    },
+    "actualWorkVisit": true,
+    "reload": true,
+    "errors": []
+  }
+]

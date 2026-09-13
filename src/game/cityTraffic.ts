@@ -1,3 +1,4 @@
+import { communityRoadKeys, communityEdgeSpeed } from './cityCommunityRoads.ts';
 import { wideRoadTopology } from './cityWideRoads.ts';
 import {arriveBus} from './cityTransit.ts';
 import { roundaboutIndex, roundaboutEntryBlocked, roundaboutTrafficGaps, addRoundaboutGaps, withRoundaboutIndex, type RoundaboutIndex } from './cityRoundabouts.ts';
@@ -67,9 +68,13 @@ export const isEmergencyResponse = (t: Trip) => !!t.service && (phaseOf(t) === '
 export const travelLaneOffset = (t: Trip) => t.emergencyPass?.shift ?? (t.laneChange
   ? t.laneChange.from + (t.laneChange.to-t.laneChange.from)*t.laneChange.shift : t.trafficLane ?? 0);
 export const emergencyLaneOffset = (t: Trip) => t.emergencyPass?.shift ?? 0;
-const stepOf = (t: Trip) => TRAFFIC_TICK * (t.service ? (isEmergencyResponse(t) ? EMERGENCY_TILES_PER_SECOND : TRAVEL_TILES_PER_SECOND) : (t.speed ?? TRAVEL_TILES_PER_SECOND));
+const stepOf = (t: Trip, index: RoadIndex) => {
+  const speed = t.service ? (isEmergencyResponse(t) ? EMERGENCY_TILES_PER_SECOND : TRAVEL_TILES_PER_SECOND) : (t.speed ?? TRAVEL_TILES_PER_SECOND);
+  const k = Math.min(Math.floor(t.progress), t.path.length - 1);
+  return TRAFFIC_TICK * communityEdgeSpeed(index.communityRoads, t.path[k], t.path[Math.min(k + 1, t.path.length - 1)], speed);
+};
 
-export type RoadIndex = { roads: Set<string>; junctions: Set<string>; areas: Map<string, string>; directions?: City['roadDirections']; wideDirections?: Map<string,string>; wideAreas?: Set<string>; roundabouts?:RoundaboutIndex; roundaboutGaps?:Map<string,Set<number>> };
+export type RoadIndex = { communityRoads?: ReadonlySet<string>; roads: Set<string>; junctions: Set<string>; areas: Map<string, string>; directions?: City['roadDirections']; wideDirections?: Map<string,string>; wideAreas?: Set<string>; roundabouts?:RoundaboutIndex; roundaboutGaps?:Map<string,Set<number>> };
 const simulationIndexes = new WeakMap<City, RoadIndex>();
 /** Share topology through nested routing/incident helpers only while roads cannot change.
  * Nothing survives the call: edits, reloads and direct model consumers always see fresh roads.
@@ -103,7 +108,7 @@ export function roadIndex(city: City): RoadIndex {
     ? new Set([...junctions].filter(key=>!roundabouts.byTile.has(key))) : junctions;
   const areas=junctionAreas(controlledJunctions);
   const wideAreas=new Set([...(wide?.tiles??[])].filter(([,v])=>v.junction).map(([key])=>areas.get(key)!).filter(Boolean));
-  return { roads, junctions, areas, directions: city.roadDirections, ...(wide?.tiles.size?{wideDirections,wideAreas}:{}),
+  return { roads, junctions, areas, ...(city.communityRoads?.length ? {communityRoads:communityRoadKeys(city)} : {}), directions: city.roadDirections, ...(wide?.tiles.size?{wideDirections,wideAreas}:{}),
     ...(roundabouts?{roundabouts}:{}) };
 }
 
@@ -426,7 +431,7 @@ function clearingAhead(index: RoadIndex, byId: TripIndex | undefined, g: Grid, t
     // Only a leader taking the same movement out of the tile is certainly on its way out of it.
     const leader = slotAt(index, other.path, j, other.trafficLane ?? 0);
     if (leader.exclusive || leader.enter !== slot.enter || leader.exit !== slot.exit) return false;
-    if ((j + 0.5 - other.progress) / stepOf(other) > arrival) return false;
+    if ((j + 0.5 - other.progress) / stepOf(other, index) > arrival) return false;
   }
   return true;
 }
@@ -449,7 +454,7 @@ function allowed(city: City, index: RoadIndex, grid: Grid, trip: Trip, k: number
     if (vacant(grid, required, trip.id)) continue;
     // Only the tile past the junction run may be claimed from a leader who is leaving it.
     if (i === end && i > k + 1 && !index.junctions.has(tileKey(path[i]))
-      && clearingAhead(index, byId, grid, trip, required, (i - 0.5 - trip.progress) / stepOf(trip))) continue;
+      && clearingAhead(index, byId, grid, trip, required, (i - 0.5 - trip.progress) / stepOf(trip, index))) continue;
     return false;
   }
   return true;
@@ -563,14 +568,14 @@ function tryPass(city: City,index: RoadIndex,g: Grid,held: Map<number,Slot[]>,tr
   return false;
 }
 
-function advancePass(trip: Trip): void {
+function advancePass(trip: Trip, index: RoadIndex): void {
   const pass=trip.emergencyPass!;
   // A 0.4s lateral transition sweeps only the exclusively held start/merge tile.
   if(pass.stage==='out') {
     pass.shift=round6(Math.min(1,pass.shift+TRAFFIC_TICK/0.4));
     if(pass.shift===1)pass.stage='passing';
   } else if(pass.stage==='passing') {
-    trip.progress=round6(Math.min(pass.end,trip.progress+stepOf(trip)));
+    trip.progress=round6(Math.min(pass.end,trip.progress+stepOf(trip, index)));
     if(trip.progress===pass.end)pass.stage='in';
   } else {
     pass.shift=round6(Math.max(0,pass.shift-TRAFFIC_TICK/0.4));
@@ -710,13 +715,13 @@ function replan(city: City, index: RoadIndex): Set<number> {
     const sceneK=bodyTile(trip),here=trip.path[sceneK];
     if(scene&&trip.hold>=CITY_RULES.routing.sceneReturnRecoverySeconds&&(phase==='returning'||phase==='waiting'&&trip.resume==='returning')&&
       here&&Math.abs(scene.x-here.x)+Math.abs(scene.y-here.y)===1&&trip.progress>sceneK+1e-9){
-      trip.progress=round6(Math.max(sceneK,trip.progress-stepOf(trip)));reversing.add(trip.id);continue;
+      trip.progress=round6(Math.max(sceneK,trip.progress-stepOf(trip, index)));reversing.add(trip.id);continue;
     }
     if (phase === 'waiting') {
       if (trip.target){
         const k=bodyTile(trip);
         if(trip.progress>k+1e-9){
-          trip.progress=round6(Math.max(k,trip.progress-stepOf(trip)));
+          trip.progress=round6(Math.max(k,trip.progress-stepOf(trip, index)));
           reversing.add(trip.id);
         }else tryRetarget(city,index,trip,trip.path[k]);
       }
@@ -739,7 +744,7 @@ function replan(city: City, index: RoadIndex): Set<number> {
       const avoid=new Set([tileKey(trip.path[k+1])]);
       if(retarget(city,candidate,trip.path[k],avoid)&&candidate.phase!=='waiting') {
         if(!safe) {
-          trip.progress=round6(Math.max(k,trip.progress-stepOf(trip)));
+          trip.progress=round6(Math.max(k,trip.progress-stepOf(trip, index)));
           reversing.add(trip.id);continue;
         }
         if(commitTripRoute(city,index,trip,candidate))continue;
@@ -773,7 +778,7 @@ function replan(city: City, index: RoadIndex): Set<number> {
             if(result && worthwhileRoute(old.total,result.cost.total)) {
               if(!safe) {
                 // Back up only inside space already owned. Recheck costs/admission at the centre.
-                trip.progress=round6(Math.max(k,trip.progress-stepOf(trip)));
+                trip.progress=round6(Math.max(k,trip.progress-stepOf(trip, index)));
                 trip.nextRouteQueryAt=city.elapsed;
                 reversing.add(trip.id);continue;
               }
@@ -799,7 +804,7 @@ function replan(city: City, index: RoadIndex): Set<number> {
           // creates a back-up/creep loop which prevents the queue ahead from ever clearing.
           if(retarget(city,candidate,trip.path[k],avoid) && candidate.phase!=='waiting') {
             if(!safe) {
-              trip.progress=round6(Math.max(k,trip.progress-stepOf(trip)));
+              trip.progress=round6(Math.max(k,trip.progress-stepOf(trip, index)));
               reversing.add(trip.id);
             } else commitTripRoute(city,index,trip,candidate);
           }
@@ -815,7 +820,7 @@ function replan(city: City, index: RoadIndex): Set<number> {
       if(!trip.service&&next&&!unusable(city,index,next,false)&&!sceneAhead&&trip.target&&!findPath(city,trip.path[k],trip.target))continue;
       // A closure appeared just ahead: back up within the already-owned tile at driving speed.
       // Re-route on reaching its centre, rather than snapping backwards by half a tile.
-      trip.progress=round6(Math.max(k,trip.progress-stepOf(trip)));
+      trip.progress=round6(Math.max(k,trip.progress-stepOf(trip, index)));
       reversing.add(trip.id);
       continue;
     }
@@ -860,7 +865,7 @@ function detectConflicts(city: City, index: RoadIndex, g: Grid): boolean {
     const k = cellIndex(trip.progress, last);
     if (k >= last) continue;
     // Only an actual claim on the junction this tick counts as a conflicting arrival.
-    if (round6(trip.progress + stepOf(trip)) <= k + 0.5 + 1e-9) continue;
+    if (round6(trip.progress + stepOf(trip, index)) <= k + 0.5 + 1e-9) continue;
     const target = trip.path[k + 1];
     if (!index.junctions.has(tileKey(target)) || index.junctions.has(tileKey(trip.path[k]))) continue;
     if (isBlocked(city, target) || !allowsRoadStep(city,trip.path[k],target,index.roads)) continue;
@@ -974,13 +979,13 @@ export function trafficTick(city: City, index: RoadIndex): void {
       trip.hold = round6(trip.hold + TRAFFIC_TICK); trip.wait = round6(trip.wait + TRAFFIC_TICK);
       continue;
     }
-    if (trip.emergencyPass) { advancePass(trip); continue; }
-    if (tryPass(city,index,g,held,trip)) { advancePass(trip); continue; }
+    if (trip.emergencyPass) { advancePass(trip, index); continue; }
+    if (tryPass(city,index,g,held,trip)) { advancePass(trip, index); continue; }
     const last = trip.path.length - 1;
     if (trip.progress >= last - 1e-9) { done.push(trip); continue; }
     const k = cellIndex(trip.progress, last);
     const edge = k + 0.5;
-    let next = round6(trip.progress + stepOf(trip));
+    let next = round6(trip.progress + stepOf(trip, index));
     if(trip.trafficLane && trip.progress<k && !laneContinuation(index,trip.path,k))next=Math.min(next,k);
     if (isYielding(city,trip,index)) next = trip.progress;
     // Stop on this tile's centre, not its far edge, when the way ahead has gone. From there the
@@ -1116,7 +1121,7 @@ export function parseHistory(raw: unknown, elapsed: number): TripRecord[] | null
     const service = h.service;
     // Ancillary attribution corruption cannot discard an otherwise valid town.
     if (service && Number.isSafeInteger(service.homeId) && service.homeId > 0
-      && (service.purpose === 'shopping' || service.purpose === 'leisure')
+      && (service.purpose === 'shopping' || service.purpose === 'leisure' || service.purpose === 'work')
       && Number.isFinite(service.visitedAt) && service.visitedAt >= 0 && service.visitedAt <= h.at
       && (service.startedAt === undefined || (Number.isFinite(service.startedAt)
         && service.startedAt >= 0 && service.startedAt <= service.visitedAt))) {

@@ -17,7 +17,7 @@ import './tutorialCoach.css';
 import {tutorialBuildTarget} from './TutorialGuidance.tsx';
 import {starterDiversionPoint} from '../game/cityStarterTutorial.ts';
 
-export const TOOL_NAMES: Record<Tool, string> = {
+export const TOOL_NAMES: Record<Tool, string> = {office:'Office: work visits and chosen entrances.',communityRoad:'Slower roads connecting apartment blocks.',apartment:'Apartment: four residents; upgrade to six and join complexes.',
   wideRoad:'4-lane road',busStation:'Bus depot',busStop:'Bus stop',
   home: 'Home', store: 'Store', park: 'Park', direction: 'One-way', road: 'Road', hospital: 'Clinic',
   policeStation: 'Police', fireStation: 'Fire', bulldoze: 'Remove', stop: 'Stop', signal: 'Light', closure: 'Detour',
@@ -99,7 +99,7 @@ export function tutorialObjective(s: AppState): Objective | null {
   const step = starter ? Math.min(t.total, t.completed + 1) : Math.max(1, t.lessons.findIndex(l => l.id === t.currentId) + 1);
   // No lesson builds on the player's map for them: the crossing lesson runs on their own
   // town, watching real traffic or keeping an existing crossing controlled.
-  const primary = t.currentId === 'h-expand' ? { label: 'Add land', run: () => cityCommand({ type: 'open-expansion' }) }
+  const primary = t.currentId === 'h-expand' ? { label: 'Show land', run: () => cityCommand({ type: 'open-expansion' }) }
     : t.currentId === 'driver-rules' ? { label: 'Understood', run: () => act('acknowledge-drivers') }
     : watchVisit ? { label: s.paused ? 'Run traffic' : 'Running', run: () => store.patch({ paused: false }) }
     : tool ? { label: TOOL_NAMES[tool], run: () => chooseTool(tool!), pressed: s.tool === tool && !s.panning }

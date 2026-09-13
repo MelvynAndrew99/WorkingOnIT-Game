@@ -1,5 +1,7 @@
 # All 25 beginner jam missions
 
+**Level 14 updated:** the home-based second entrance below is superseded by [Build an apartment complex](../apartment-complex/README.md), teaching placement, automatic joining and real shopping returns. Level 19 still teaches a second neighborhood entrance.
+
 Local implementation, September 13, 2026. This supersedes the staged apartment slots and unimplemented finale status in earlier mission handoffs. The user requested filling the gaps for the final jam day, increasing complexity through familiar skills, and keeping the first 25 simple and fun. More demanding optimization and new interactive objects belong after the jam.
 
 ## Playing order

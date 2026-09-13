@@ -20,6 +20,8 @@ export default function CityDialogs({ panel, close, openDebug }: { panel: 'repor
       <p>On Road: active civilian journeys, including waiting drivers. Excludes parked visits, crashed vehicles and emergency crews.</p>
       <p>Time: saved simulation elapsed time. Pause freezes it. Weather is a visual cycle of clear, cloudy and rain driven by that clock; it does not change traffic.</p>
       <p>Fatalities: total lives lost in this city.</p>
+      <p>Trips: civilian journeys that reached home. Last 60s is completed trips in that window of city time. Wait is their average delay. Shop, Work and Park count those recent purposes. Bus counts completed rides.</p>
+      <p>Tracker keeps failed-yield warnings, crashes, unserved homes and bus stops visible until they are fixed or the crossing stays quiet. Tap an item to centre the map.</p>
     </section>
     <div className="city-report-grid">
       <section><h3>Visits and income</h3>
@@ -32,7 +34,8 @@ export default function CityDialogs({ panel, close, openDebug }: { panel: 'repor
       {s.inspected && <section><h3>{s.inspected.name}</h3><p>{s.inspected.label}</p>{s.inspected.capacity > 0 && <p>{s.inspected.occupied}/{s.inspected.capacity} spaces occupied · {s.inspected.inbound} arriving</p>}</section>}
       <section><h3>Traffic and emergency response</h3>
         {s.incidentInfo.active > 0 && <p><strong>Manager:</strong> “Loop a road around that mess. Keep them driving while we get the crews in. A very visible recovery, thanks to my leadership.”</p>}
-        <p>{s.waiting} waiting now · {s.throughput} trips / last 60s</p>
+        <p>{s.waiting} waiting now · {s.throughput} trips / last 60s · {s.pulse.trips} journeys home</p>
+        <p>Last 60s: {s.pulse.shopping.recent} shopping · {s.pulse.work.recent} work · {s.pulse.leisure.recent} park · {s.pulse.bus.completed} bus rides all-time</p>
         <p>Mean completed-trip wait: {s.throughput ? `${s.averageWait.toFixed(1)}s` : '—'} · Longest current stop: {s.longestStop.toFixed(1)}s</p>
         <p>{s.tripSeconds === null ? 'Connect homes to stores to start trips.' : `Free-flow driving route: ${s.tripSeconds.toFixed(1)}s, excluding queues and visits.`}</p>
         <p>{s.incidentInfo.warning || 'No current junction warnings.'}</p>

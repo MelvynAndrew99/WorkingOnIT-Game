@@ -1,0 +1,524 @@
+/* Commute strip, issue banner and toggleable tracker. The panel shares dashboard geometry. */
+
+.city-pulse-bar {
+  --mix-shop: #c9a2ff;
+  --mix-work: #8fb0ff;
+  --mix-park: #7fd88a;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  margin: 0;
+  padding: 6px 0 0;
+  min-width: 0;
+  width: 100%;
+  border-top: 1px solid #3d547055;
+  line-height: 1.2;
+  color: var(--hud-text, #f3f6fa);
+}
+
+.pulse-group {
+  display: flex;
+  align-items: center;
+  gap: 6px 14px;
+  min-width: 0;
+}
+
+.pulse-group.is-total {
+  margin-left: auto;
+}
+
+.pulse-group-label {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--cyan, #5bc4d4);
+  background: #5bc4d41f;
+  border: 1px solid #5bc4d455;
+}
+
+.is-total .pulse-group-label {
+  color: var(--muted, #a9bbd0);
+  background: transparent;
+  border-color: #3d5470;
+}
+
+.pulse-stats {
+  display: flex;
+  align-items: baseline;
+  gap: 2px 14px;
+  margin: 0;
+}
+
+.city-pulse-bar .city-stat {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.city-pulse-bar dt {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted, #a9bbd0);
+}
+
+.city-pulse-bar dd {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.city-pulse-bar .is-lead dd {
+  font-size: 17px;
+  color: var(--cyan, #5bc4d4);
+}
+
+.is-total dd {
+  color: #d8e2ef;
+}
+
+/* Purpose mix: coloured keys over one bar, so the three counts read as a split of Trips. */
+.pulse-mix {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  padding-left: 14px;
+  border-left: 1px solid #3d547066;
+}
+
+.pulse-mix dt::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: currentColor;
+}
+
+.pulse-mix .is-shop dt { color: var(--mix-shop); }
+.pulse-mix .is-work dt { color: var(--mix-work); }
+.pulse-mix .is-park dt { color: var(--mix-park); }
+
+.pulse-mix-bar {
+  display: flex;
+  gap: 2px;
+  height: 4px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #3d547055;
+}
+
+.pulse-mix-bar span {
+  flex-basis: 0;
+  min-width: 3px;
+  transition: flex-grow 0.6s ease;
+}
+
+.pulse-mix-bar .is-shop { background: var(--mix-shop); }
+.pulse-mix-bar .is-work { background: var(--mix-work); }
+.pulse-mix-bar .is-park { background: var(--mix-park); }
+
+.dispatch-ui[data-short=true] .city-pulse-bar {
+  display: none;
+}
+
+/* Narrow frames: one side-scrolling strip; the bar collapses, the coloured keys stay. */
+.dispatch-ui:not([data-layout=wide]) .city-pulse-bar {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  min-height: 26px;
+  max-height: 32px;
+  margin-top: 0;
+  padding: 4px 0 2px;
+  gap: 2px 12px;
+  scrollbar-width: thin;
+  touch-action: pan-x;
+}
+
+.dispatch-ui:not([data-layout=wide]) .pulse-group,
+.dispatch-ui:not([data-layout=wide]) .pulse-stats,
+.dispatch-ui:not([data-layout=wide]) .city-pulse-bar .city-stat {
+  flex: 0 0 auto;
+  gap: 2px 10px;
+}
+
+.dispatch-ui:not([data-layout=wide]) .city-pulse-bar .city-stat {
+  gap: 5px;
+}
+
+.dispatch-ui:not([data-layout=wide]) .pulse-group.is-total {
+  margin-left: 0;
+}
+
+.dispatch-ui:not([data-layout=wide]) .pulse-mix-bar {
+  display: none;
+}
+
+.dispatch-ui:not([data-layout=wide]) .pulse-mix {
+  padding-left: 10px;
+}
+
+.dispatch-ui:not([data-layout=wide]) .pulse-group-label,
+.dispatch-ui:not([data-layout=wide]) .city-pulse-bar dt {
+  font-size: 10px;
+}
+
+.dispatch-ui:not([data-layout=wide]) .city-pulse-bar dd,
+.dispatch-ui:not([data-layout=wide]) .city-pulse-bar .is-lead dd {
+  font-size: 14px;
+}
+
+.city-ui.dispatch-ui .tracker-toggle {
+  position: relative;
+}
+
+.tracker-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #ff9b7a;
+  color: #1a120e;
+  font-size: 10px;
+  font-weight: 850;
+  line-height: 16px;
+  text-align: center;
+}
+
+/* Issue banner: severity icon, kind + title, optional detail, count, then an obvious Show. */
+.city-ui.dispatch-ui .tracker-chip,
+.challenge-ui .tracker-chip {
+  --issue: #ffb27a;
+  --issue-ink: #ffe1c7;
+  --issue-bg: #3a2418;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 200px;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 44px;
+  margin: 0;
+  padding: 4px 4px 4px 6px;
+  text-align: left;
+  border: 1px solid color-mix(in srgb, var(--issue) 55%, transparent);
+  border-left: 4px solid var(--issue);
+  border-radius: 12px;
+  background: linear-gradient(90deg, var(--issue-bg), #152033f0 70%);
+  color: var(--issue-ink);
+  box-shadow: 0 6px 18px #0005;
+}
+
+.city-ui.dispatch-ui .tracker-chip.is-watch {
+  --issue: #8fb3d9;
+  --issue-ink: #e3ecf6;
+  --issue-bg: #1c2d44;
+}
+
+.city-ui.dispatch-ui .tracker-chip.is-danger.is-crash {
+  --issue: #ff7a6a;
+  --issue-ink: #ffe0da;
+  --issue-bg: #44201c;
+}
+
+.tracker-chip-icon,
+.pulse-issue-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  color: #141e30;
+  background: var(--issue);
+}
+
+.tracker-chip-icon .hud-icon,
+.pulse-issue-icon .hud-icon {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2.2;
+}
+
+.is-danger.is-crash .tracker-chip-icon {
+  animation: issue-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes issue-pulse {
+  50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--issue) 30%, transparent); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .is-danger.is-crash .tracker-chip-icon { animation: none; }
+}
+
+.tracker-chip-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.issue-kicker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--issue);
+}
+
+.issue-tag {
+  padding: 0 6px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  opacity: 0.85;
+}
+
+.tracker-chip-line {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.tracker-chip-line strong {
+  font-weight: 850;
+  color: #fff;
+}
+
+.tracker-chip-detail {
+  margin-left: 8px;
+  font-weight: 600;
+  color: var(--issue-ink);
+  opacity: 0.85;
+}
+
+.tracker-chip-more {
+  flex: none;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #0e1624aa;
+  border: 1px solid #3d5470;
+  font-size: 12px;
+  font-weight: 800;
+  color: #d8e2ef;
+  white-space: nowrap;
+}
+
+.tracker-chip-show {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  align-self: stretch;
+  padding: 0 12px;
+  border-radius: 9px;
+  background: var(--issue);
+  color: #141e30;
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.tracker-chip-show .hud-icon {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2.4;
+}
+
+.city-ui.dispatch-ui .tracker-chip:hover .tracker-chip-show {
+  filter: brightness(1.1);
+}
+
+.dispatch-ui:not([data-layout=wide]) .tracker-chip-detail,
+.dispatch-ui:not([data-layout=wide]) .tracker-chip-icon {
+  display: none;
+}
+
+.dispatch-ui:not([data-layout=wide]) .tracker-chip {
+  padding-left: 10px;
+}
+
+@container game-frame (max-width: 1180px) {
+  .dispatch-ui[data-layout=wide] .pulse-group,
+  .dispatch-ui[data-layout=wide] .pulse-stats {
+    gap: 4px 9px;
+  }
+
+  .dispatch-ui[data-layout=wide] .city-pulse-bar dt,
+  .dispatch-ui[data-layout=wide] .pulse-group-label {
+    letter-spacing: 0.05em;
+  }
+
+  .dispatch-ui[data-layout=wide] .pulse-mix {
+    padding-left: 10px;
+  }
+}
+
+.city-pulse-panel {
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  pointer-events: auto;
+  padding: 12px 14px;
+  border: 1px solid #3d5470;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #1e2e46, #141e30);
+  font-size: 15px;
+  line-height: 1.4;
+  scrollbar-width: thin;
+  overflow-wrap: anywhere;
+  box-shadow: 0 16px 40px #0006, inset 0 1px 0 #ffffff14;
+}
+
+.city-pulse-panel h2 {
+  font-size: 20px;
+  font-weight: 850;
+  margin: 0;
+  letter-spacing: -0.03em;
+}
+
+.city-pulse-panel h3 {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--hud-kicker, #d4c19a);
+  margin: 16px 0 8px;
+}
+
+.city-pulse-panel p {
+  margin: 8px 0;
+  color: #c5d2e2;
+}
+
+.pulse-empty,
+.pulse-hint {
+  font-size: 13px;
+  color: var(--muted, #a9bbd0);
+}
+
+.city-ui.dispatch-ui .pulse-issue {
+  --issue: #ffb27a;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  margin: 0 0 8px;
+  padding: 10px 12px 10px 10px;
+  text-align: left;
+  border-radius: 12px;
+  border-left: 4px solid var(--issue);
+}
+
+.city-ui.dispatch-ui .pulse-issue.is-danger {
+  background: #382d19;
+  border-color: #c4893a;
+  border-left-color: var(--issue);
+  color: #ffe1a3;
+}
+
+.city-ui.dispatch-ui .pulse-issue.is-danger.is-crash {
+  --issue: #ff7a6a;
+  background: #3a1f1c;
+}
+
+.city-ui.dispatch-ui .pulse-issue.is-watch {
+  --issue: #8fb3d9;
+  background: #1a2b42;
+  border-color: #3d5470;
+  border-left-color: var(--issue);
+  color: #f3f6fa;
+}
+
+.pulse-issue-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pulse-issue strong {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.pulse-issue-text > span:last-child {
+  font-size: 13px;
+  font-weight: 600;
+  color: #d8e2ef;
+}
+
+.pulse-commute {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0 0;
+}
+
+.pulse-commute div {
+  display: grid;
+  gap: 2px;
+}
+
+.pulse-commute dt {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--hud-kicker, #d4c19a);
+}
+
+.pulse-commute dd {
+  margin: 0;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: #f3f6fa;
+}
+
+.dispatch-ui .city-map-content:has(.city-pulse-panel) {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr);
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.dispatch-ui[data-layout=wide] .city-map-content:has(.city-pulse-panel) {
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+}
+
+/* The Tracker badge already carries the count on narrow frames; give the title the room. */
+.dispatch-ui:not([data-layout=wide]) .tracker-chip-more {
+  display: none;
+}
+
+.dispatch-ui:not([data-layout=wide]) .pulse-issue-icon {
+  display: none;
+}

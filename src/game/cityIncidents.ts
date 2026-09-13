@@ -2,12 +2,14 @@ import {routingSnapshot,weightedRoute,routeCost,civilianRoute} from './cityRouti
 import {stepPolicePatrols} from './cityPatrols.ts';
 import {CITY_RULES} from './cityRules.ts';
 /** Intersection conflicts, service dispatch, and rescue outcomes. No renderer or HUD imports. */
-import { entrance, findPath, retarget, stations, SERVICE_OF, isBlocked, type City, type Point, type Trip } from './cityModel.ts';
-import { commitTripRoute, startBlocked, roadIndex, bodyTile, governingControl, conflictingContact, contactAxis, signalAxis, EMERGENCY_TILES_PER_SECOND, TRAVEL_TILES_PER_SECOND, TRAFFIC_TICK, type RoadIndex } from './cityTraffic.ts';
+import { entrance, entrances, findPath, retarget, stations, SERVICE_OF, isBlocked, type City, type Point, type Trip } from './cityModel.ts';
+import { commitTripRoute, startBlocked, roadIndex, withRoadIndex, bodyTile, governingControl, conflictingContact, contactAxis, signalAxis, EMERGENCY_TILES_PER_SECOND, TRAVEL_TILES_PER_SECOND, TRAFFIC_TICK, type RoadIndex } from './cityTraffic.ts';
 
 export type ServiceKind = 'ems' | 'fire' | 'police';
 export type Incident = {
   id: number; x: number; y: number;
+  /** Off-road apartment scene; access is through its enabled entrances. */
+  buildingId?: number;
   cause?: 'impaired-driving';
   /** Saved teaching override; retain the original roster for already dispatched crew validation. */
   tutorialEmsOnly?: boolean;
@@ -64,7 +66,7 @@ const isTime = (v: unknown): v is number => typeof v === 'number' && Number.isFi
 const isService = (v: unknown): v is ServiceKind => v === 'ems' || v === 'fire' || v === 'police';
 
 export function isIncidentBlocked(city: City, p: Point): boolean {
-  return city.incidents.some(i => i.status === 'active' && at(p, i.x, i.y));
+  return city.incidents.some(i => i.status === 'active' && i.buildingId === undefined && at(p, i.x, i.y));
 }
 
 function areaOf(city: City, p: Point): string | undefined {
@@ -78,7 +80,7 @@ function sameIntersection(city: City, a: Point, b: Point): boolean {
 
 function inIncidentArea(city: City, p: Point): boolean {
   for (const i of city.incidents) {
-    if (i.status !== 'active') continue;
+    if (i.status !== 'active' || i.buildingId !== undefined) continue;
     if (at(p, i.x, i.y) || sameIntersection(city, p, i)) return true;
   }
   return false;
@@ -198,8 +200,41 @@ export function stageTutorialIncident(city:City,point:Point):boolean {
   return true;
 }
 
+/** Author a building emergency without inventing a road collision or moving residents. */
+export function createBuildingIncident(city: City, buildingId: number, severity: Incident['severity'] = 'serious'): Incident | null {
+  const building = city.buildings.find(b => b.id === buildingId && (b.kind === 'apartment' || b.kind === 'office'));
+  if (!building || !SEVERITIES.includes(severity) || active(city).length >= MAX_ACTIVE_INCIDENTS
+    || city.incidents.some(i => i.status === 'active' && i.buildingId === buildingId)) return null;
+  const incident: Incident = {
+    id: city.nextId++, x: building.x, y: building.y, buildingId, severity,
+    status: 'active', createdAt: round6(city.elapsed), required: [...NEEDS[severity]], completedServices: [],
+    rescueDeadline: severity === 'minor' ? null : round6(city.elapsed + RESCUE_SECONDS),
+    outcome: severity === 'minor' ? 'none' : 'pending',
+  };
+  city.incidents.push(incident);
+  city.accidentCount += 1;
+  return incident;
+}
+
+export function createApartmentIncident(city:City,id:number,severity:Incident['severity']='serious'):Incident|null {
+  return city.buildings.some(b=>b.id===id&&b.kind==='apartment')?createBuildingIncident(city,id,severity):null;
+}
+export function createOfficeIncident(city:City,id:number,severity:Incident['severity']='serious'):Incident|null {
+  return city.buildings.some(b=>b.id===id&&b.kind==='office')?createBuildingIncident(city,id,severity):null;
+}
+/** Geometric access stays available for validation even if a road is temporarily closed. */
+export function incidentAccessPoints(city: City, incident: Incident): Point[] {
+  if (incident.buildingId === undefined) return nearby(incident);
+  const building = city.buildings.find(b => b.id === incident.buildingId && (b.kind === 'apartment' || b.kind === 'office'));
+  return building ? entrances(building) : [];
+}
+
+function atIncidentAccess(city: City, incident: Incident, point: Point): boolean {
+  return incidentAccessPoints(city, incident).some(p => at(p, point.x, point.y));
+}
+
 function accessTiles(city: City, incident: Incident): Point[] {
-  return nearby(incident)
+  return incidentAccessPoints(city, incident)
     .filter(p => city.roads.some(r => at(r, p.x, p.y)) && !isBlocked(city, p, true))
     .sort((a, b) => a.y - b.y || a.x - b.x);
 }
@@ -443,6 +478,10 @@ export function arriveResponse(city: City, trip: Trip): void {
   if (trip.phase === 'outbound' && !trip.responseCancelled) {
     const incident = city.incidents.find(i => i.id === trip.incidentId && i.status === 'active');
     if (!incident) { sendHome(city, trip); return; }
+    // An obsolete entrance target must replan before granting off-road work.
+    if (incident.buildingId !== undefined && (!trip.path[bodyTile(trip)]
+      || !atIncidentAccess(city, incident, trip.path[bodyTile(trip)])
+      || trip.progress < trip.path.length - 1)) return;
     trip.phase = 'working';
     trip.sceneParked = true;
     trip.workRemaining = WORK_SECONDS[trip.service];
@@ -480,7 +519,7 @@ export function stepIncidents(city: City, dt: number): void {
     const returning=trip.phase==='returning'||trip.phase==='waiting'&&trip.resume==='returning';
     // Recover old saves with a completed crew stuck turning around at its scene.
     if(returning&&trip.hold>=CITY_RULES.routing.sceneReturnRecoverySeconds&&scene?.completedServices.includes(trip.service)&&atScene&&
-      Math.abs(scene.x-atScene.x)+Math.abs(scene.y-atScene.y)===1&&Math.abs(trip.progress-k)<1e-9){
+      atIncidentAccess(city,scene,atScene)&&Math.abs(trip.progress-k)<1e-9){
       trip.path=[copy(atScene)];trip.progress=0;trip.phase='working';trip.sceneParked=true;
       trip.workRemaining=0;trip.target=copy(atScene);delete trip.resume;delete trip.responseCancelled;
     }
@@ -528,24 +567,38 @@ function serviceNeed(city: City, incident: Incident, kind: ServiceKind): string 
 }
 
 function causeLabel(incident: Incident): string {
-  const cause = incident.cause==='impaired-driving' ? (incident.tutorialEmsOnly?'Impaired-driver injury crash':'Impaired-driver crash and vehicle fire') : incident.severity === 'minor' ? 'Minor failed-yield crash'
+  const cause = incident.buildingId !== undefined ? (incident.severity === 'fire' ? 'Building fire' : incident.severity === 'serious' ? 'Building medical emergency' : 'Building police assistance') : incident.cause==='impaired-driving' ? (incident.tutorialEmsOnly?'Impaired-driver injury crash':'Impaired-driver crash and vehicle fire') : incident.severity === 'minor' ? 'Minor failed-yield crash'
     : incident.severity === 'serious' ? 'Serious collision' : 'Vehicle fire';
   const suffix = incident.outcome === 'lost' ? ' (help arrived too late)'
     : incident.outcome === 'rescued' ? ' (victims stable)' : '';
   return `${cause} at ${incident.x},${incident.y}${suffix}`;
 }
 
+/** Player-facing next step for a junction that has already crossed the warning threshold. */
+export function riskAdvice(control?: JunctionRisk['control']): string {
+  return control === 'stop' ? 'Busy stop: use lights or split the traffic.'
+    : control === 'signal' ? 'Conflicting turns: change light timing or separate routes.'
+    : 'Busy crossing: add controls or a safer route.';
+}
+
+export function riskWarningText(risk: Pick<JunctionRisk, 'x' | 'y' | 'control'>): string {
+  return `Failed-yield risk at ${risk.x},${risk.y}. ${riskAdvice(risk.control)}`;
+}
+
+export type IncidentWarning = { x: number; y: number; control: JunctionRisk['control']; exposure: number; text: string };
+
 export function incidentSummary(city: City): {
-  active: number; warning: string; details: { id: number; label: string; needs: string; deadlineSeconds: number | null }[];
+  active: number; warning: string; warnings: IncidentWarning[];
+  details: { id: number; label: string; needs: string; deadlineSeconds: number | null }[];
 } {
   const live = active(city).sort((a, b) => a.id - b.id);
-  const risk = city.risks.filter(r=>r.exposure>=SAFETY.warningExposure).sort((a, b) => b.exposure - a.exposure || a.y - b.y || a.x - b.x)[0];
-  const warning = risk
-    ? `Failed-yield risk at ${risk.x},${risk.y}. ${risk.control==='stop'?'Busy stop: use lights or split the traffic.':risk.control==='signal'?'Conflicting turns: change light timing or separate routes.':'Busy crossing: add controls or a safer route.'}`
-    : '';
+  const warnings = city.risks.filter(r => r.exposure >= SAFETY.warningExposure)
+    .sort((a, b) => b.exposure - a.exposure || a.y - b.y || a.x - b.x)
+    .map(risk => ({ x: risk.x, y: risk.y, control: risk.control, exposure: risk.exposure, text: riskWarningText(risk) }));
   return {
     active: live.length,
-    warning,
+    warning: warnings[0]?.text ?? '',
+    warnings,
     details: live.map(incident => {
       const parts = incidentServices(incident).map(k => serviceNeed(city, incident, k)).filter(Boolean);
       const riders = city.transit?.journeys.filter(j => j.incidentId === incident.id).length ?? 0;
@@ -565,18 +618,21 @@ export function incidentSummary(city: City): {
 
 /** Read-only area measurements for debugging now and a later safety overlay. Not a Flow grade. */
 export function intersectionSafetySnapshot(city:City){
-  const index=roadIndex(city);
-  return [...new Set(index.areas.values())].map(area=>{
-    const [x,y]=area.split(',').map(Number);
-    const risk=city.risks.find(r=>index.areas.get(key(r))===area);
-    const control=governingControl(city,index,{x,y});
-    const encounters=(risk?.encounters??[]).filter(e=>e.at>city.elapsed-SAFETY.encounterWindowSeconds);
-    const exposure=risk?.exposure??0;
-    return {x,y,control:control?.kind??'unsigned',preset:control?.kind==='signal'?control.preset:null,
-      windowSeconds:SAFETY.encounterWindowSeconds,conflictEncounters:encounters.length,
-      conflictingVehicles:new Set(encounters.flatMap(e=>[e.firstId,e.secondId])).size,
-      exposure,warningThreshold:SAFETY.warningExposure,crashThreshold:RISK_THRESHOLD,
-      state:inIncidentArea(city,{x,y})?'incident':exposure>=SAFETY.warningExposure?'danger':exposure>0?'watch':'quiet'};
+  // This report is read-only; nested incident-area lookups can share its index.
+  // The scope is released before a later road/control/incident edit is observed.
+  return withRoadIndex(city,index=>{
+    return [...new Set(index.areas.values())].map(area=>{
+      const [x,y]=area.split(',').map(Number);
+      const risk=city.risks.find(r=>index.areas.get(key(r))===area);
+      const control=governingControl(city,index,{x,y});
+      const encounters=(risk?.encounters??[]).filter(e=>e.at>city.elapsed-SAFETY.encounterWindowSeconds);
+      const exposure=risk?.exposure??0;
+      return {x,y,control:control?.kind??'unsigned',preset:control?.kind==='signal'?control.preset:null,
+        windowSeconds:SAFETY.encounterWindowSeconds,conflictEncounters:encounters.length,
+        conflictingVehicles:new Set(encounters.flatMap(e=>[e.firstId,e.secondId])).size,
+        exposure,warningThreshold:SAFETY.warningExposure,crashThreshold:RISK_THRESHOLD,
+        state:inIncidentArea(city,{x,y})?'incident':exposure>=SAFETY.warningExposure?'danger':exposure>0?'watch':'quiet'};
+    });
   });
 }
 
@@ -615,10 +671,16 @@ function parseOneIncident(raw: unknown, city: City, seen: Set<number>): Incident
   }
   if (r.outcome !== 'none' && r.outcome !== 'pending' && r.outcome !== 'rescued' && r.outcome !== 'lost') return null;
   if (r.status === 'cleared' && (r.outcome === 'pending' || (r.tutorialEmsOnly?!completed.includes('ems'):completed.length!==expected.length))) return null;
-  if (r.status === 'active' && !city.roads.some(p => at(p, r.x as number, r.y as number))) return null;
+  if (r.buildingId !== undefined) {
+    if (!isId(r.buildingId) || r.buildingId >= city.nextId || r.cause !== undefined || r.tutorialEmsOnly !== undefined) return null;
+    const building = city.buildings.find(b => b.id === r.buildingId);
+    if (building && ((building.kind !== 'apartment' && building.kind !== 'office') || !at(building, r.x as number, r.y as number))) return null;
+    if (!building && r.status === 'active') return null;
+  } else if (r.status === 'active' && !city.roads.some(p => at(p, r.x as number, r.y as number))) return null;
   seen.add(r.id);
   return {
     id: r.id, x: r.x, y: r.y, severity: r.severity, status: r.status, createdAt: r.createdAt,
+    ...(r.buildingId !== undefined ? {buildingId: r.buildingId as number} : {}),
     ...(r.cause==='impaired-driving'?{cause:'impaired-driving' as const}:{}),
     ...(r.tutorialEmsOnly===true?{tutorialEmsOnly:true}:{}),
     required: [...expected], completedServices: completed,
@@ -684,12 +746,12 @@ function tripRefsOk(city: City, incidents: Incident[]): boolean {
       } else {
         if(!trip.sceneParked&&((incident.status!=='active'&&!(incident.tutorialEmsOnly&&trip.service!=='ems')) || incident.completedServices.includes(trip.service)))return false;
         if(trip.sceneParked&&incident.completedServices.includes(trip.service)&&trip.workRemaining!==0)return false;
-        if(Math.abs(goal.x-incident.x)+Math.abs(goal.y-incident.y)!==1)return false;
+        if(!atIncidentAccess(city,incident,goal))return false;
         if(intent==='working' && (phase==='waiting' || trip.progress!==trip.path.length-1 || !isTime(trip.workRemaining)))return false;
       }
     } else if(phaseOf(trip)==='crashed') {
       const p=trip.path[0];
-      if(!incident || incident.status!=='active' || !p || !at(p,incident.x,incident.y))return false;
+      if(!incident || incident.buildingId !== undefined || incident.status!=='active' || !p || !at(p,incident.x,incident.y))return false;
       if (trip.busId !== undefined) {
         const outcome = incident.outcome === 'rescued' ? 'rescued' : incident.outcome === 'lost' ? 'incident-loss' : 'disrupted';
         if (city.transit?.journeys.some(j => j.busId === trip.busId
@@ -715,6 +777,8 @@ export function parseIncidentState(raw: Record<string, unknown>, city: City): bo
   for (const value of (raw.incidents ?? []) as unknown[]) {
     const incident = parseOneIncident(value, city, seen);
     if (!incident) return false;
+    if (incident.status === 'active' && incident.buildingId !== undefined
+      && incidents.some(i => i.status === 'active' && i.buildingId === incident.buildingId)) return false;
     incidents.push(incident);
   }
   const riskAt = new Set<string>();

@@ -57,3 +57,21 @@ test('planning through temporary blocks does not poison ordinary or emergency ro
  c.closures=[];
  assert.deepEqual(findPath(c,start,end),reference(c,start,end),'scope is released after an exception');
 });
+
+test('warm path caches observe in-place directions and roadwork changes without advancing time',async()=>{
+ const {plannedRoadPath}=await import('./cityModel.ts');
+ const c=town();c.roads=c.roads.filter(p=>p.y===0);
+ const start={x:-4,y:0},end={x:5,y:0};
+ assert.ok(findPath(c,start,end));assert.ok(findPath(c,start,end,true));
+ c.roadDirections={'0,0>1,0':'reverse'};
+ assert.equal(findPath(c,start,end),null);assert.equal(findPath(c,start,end,true),null);
+ c.roadDirections['0,0>1,0']='forward';
+ assert.ok(findPath(c,start,end));assert.ok(findPath(c,start,end,true));
+ c.wideRoadWorks=[{section:{x:0,y:0,axis:'horizontal'},remaining:3,paid:40}];
+ assert.equal(findPath(c,start,end),null);assert.equal(findPath(c,start,end,true),null);
+ assert.ok(plannedRoadPath(c,start,end));
+ c.wideRoadWorks[0].section.y=10;
+ assert.ok(findPath(c,start,end));assert.ok(findPath(c,start,end,true));
+ c.roads.reverse();
+ assert.deepEqual(findPath(c,start,end),reference(c,start,end));
+});

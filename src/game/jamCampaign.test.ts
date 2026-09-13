@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {readFileSync} from 'node:fs';
 import {CHALLENGES,challengeUnlockedBy,createChallenge,challengePlace,stepChallenge,parseChallenge,challengeStages,hasSecondEntrance,jamRewardEarned} from './cityChallenges.ts';
+import {neighborhoodTown} from './fixtures/neighborhoodTown.ts';
 import {solveCampaign} from './fixtures/campaignSolutions.ts';
 import {solveEmergency} from './fixtures/emergencySolutions.ts';
 const copy=<T>(v:T):T=>JSON.parse(JSON.stringify(v));
@@ -23,7 +24,7 @@ test('a normal road repair or disconnected four-lane decoration cannot complete 
  stepChallenge(r,180);assert.ok((r.served?.length??0)>0);assert.equal(r.routeServed?.length,0);assert.equal(r.earned,false);
 });
 test('second entrance proof requires actual returns through it and survives reload',()=>{
- const r=createChallenge('another-front-door');
+ const r=createChallenge('another-front-door');r.revision=2;r.city=neighborhoodTown();r.city.funds=1200;
  for(let y=6;y<=11;y++)challengePlace(r.city,'road',16,y,0,r.id);
  challengePlace(r.city,'signal',16,12,0,r.id);
  assert.ok(hasSecondEntrance(r.city));assert.equal(r.earned,false);assert.equal(r.routeServed?.length??0,0);

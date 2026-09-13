@@ -27,17 +27,27 @@ function graphFor(city: City, responding: boolean, ignoreBlocked: boolean): Grap
   if (prepared) return prepared;
   // Inspect values, not array identities/counts: tools and save migration can mutate in place.
   // Keeping this exact also notices incident creation/clearance within a simulation tick.
-  const roadKeys = city.roads.map(key);
   const blockedKeys = ignoreBlocked ? [] : [
     ...roadWorkTiles(city).map(key),
     ...(responding ? [] : city.closures.map(key)),
     ...city.incidents.filter(i => i.status === 'active').map(key),
   ];
-  const signature = roadKeys.join(';') + '|' + blockedKeys.join(';') + '|' + directionSignature(city);
+  const signature = blockedKeys.join(';') + '|' + directionSignature(city);
   let views = graphs.get(city);
   if (!views) { views = new Map(); graphs.set(city, views); }
   const cached = views.get(mode);
-  if (cached?.signature === signature) { scope?.set(mode, cached); return cached; }
+  // Graph points are private copies. Comparing every ordered coordinate preserves
+  // in-place/same-length invalidation without allocating road strings on cache hits.
+  if (cached?.signature === signature && cached.points.length === city.roads.length) {
+    let sameRoads = true;
+    for (let i = 0; i < city.roads.length; i++) {
+      if (cached.points[i].x !== city.roads[i].x || cached.points[i].y !== city.roads[i].y) {
+        sameRoads = false; break;
+      }
+    }
+    if (sameRoads) { scope?.set(mode, cached); return cached; }
+  }
+  const roadKeys = city.roads.map(key);
   const points = city.roads.map(p => ({x:p.x, y:p.y}));
   const ids = new Map(roadKeys.map((k, i) => [k, i]));
   const blocked = new Set(blockedKeys.flatMap(k => ids.has(k) ? [ids.get(k)!] : []));

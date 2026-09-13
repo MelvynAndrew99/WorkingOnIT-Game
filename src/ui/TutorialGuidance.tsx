@@ -9,7 +9,7 @@ import './tutorialGuidance.css';
 export type BuildCategory = 'roads'|'places'|'services';
 export function buildCategory(tool:Tool|null):BuildCategory {
     if(tool===null)return 'places';
-    if(['home','store','park','bulldoze'].includes(tool))return 'places';
+    if(['home','apartment','store','park','bulldoze'].includes(tool))return 'places';
     if(['hospital','fireStation','policeStation','busStation','busStop'].includes(tool))return 'services';
     return 'roads';
 }
@@ -34,7 +34,7 @@ type Guidance={category:BuildCategory;setCategory:(category:BuildCategory)=>void
 const Context=createContext<Guidance|null>(null);
 export function useTutorialGuidance(){const value=useContext(Context);if(!value)throw Error('Tutorial guidance requires its HUD provider');return value;}
 
-export function TutorialGuidanceProvider({children,wide,blocked}:{children:ReactNode;wide:boolean;blocked:boolean}){
+export function TutorialGuidanceProvider({children,wide:_wide,blocked}:{children:ReactNode;wide:boolean;blocked:boolean}){
     const s=useStore(),city=getSave().city;
     const [category,setCategory]=useState<BuildCategory>(()=>buildCategory(s.tool));
     const [dismissed,setDismissed]=useState('');
@@ -53,7 +53,7 @@ export function TutorialGuidanceProvider({children,wide,blocked}:{children:React
     const visible=!!target&&s.showTips&&!blocked&&!modal&&(starter||s.incidentInfo.active===0)
         &&(starter||!s.missions?.items.some(j=>j.done&&!j.claimed))&&s.phase==='playing'&&dismissed!==key;
     const tool=visible?target:undefined;
-    const categoryTarget=tool&&!wide&&category!==buildCategory(tool)?buildCategory(tool):undefined;
+    const categoryTarget=tool&&category!==buildCategory(tool)?buildCategory(tool):undefined;
     const selected=tool===s.tool&&!s.panning;
     const prices=toolPrices(city);
     const price=tool&&Object.hasOwn(prices,tool)?prices[tool as keyof typeof prices]:undefined;

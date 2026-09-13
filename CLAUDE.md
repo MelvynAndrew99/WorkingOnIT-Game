@@ -2,7 +2,7 @@
 <!-- Latest scope: first validate route shaping + junction controls with real queues and measured traffic feedback. Collision/hospital response follows, before its tutorial lessons. Use installed Claude Code/Grok Build for bounded delegated work; lead reviews and verifies locally. User generates Suno audio from prompts. -->
 # Current project direction
 
-Latest (2026-09-10): the sandbox remains the main game; small Chess.com-style Challenges develop alongside it using the real simulation. Read `docs/challenges/PLAN.md` (including its corrected scope section) before challenge work. The manager is referred to as The Man (his MANAGER sign lost its "AGER"). Radio unlock and monetization directions are recorded at the top of `docs/DESIGN.md`; none is implemented.
+Latest (2026-09-10): the sandbox remains the main game; small Chess.com-style Challenges develop alongside it using the real simulation. Read `docs/challenges/PLAN.md` (including its corrected scope section) before challenge work. The manager is referred to as The Man (his MANAGER sign lost its "AGER"). Radio unlock and monetization directions are recorded in `docs/DESIGN.md`. The title-screen W-ON-IT radio (`src/audio/radio.ts`, reusable `src/ui/CityRadio.tsx`) implements free, Level 25 and purchase unlock types; purchase flows are not implemented.
 
 Latest progression direction: civic objectives build recognition toward the manager's mayoral ambitions; silly successes can cause understandable downstream traffic problems. Deliver a short jam objective arc with room for post-jam missions and preserved city progress. Read `docs/DESIGN.md` under “Objectives: recognition on the road to City Hall” before mission work; example missions and numerical rewards remain proposals.
 

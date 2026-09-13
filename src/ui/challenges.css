@@ -2,18 +2,20 @@
 .challenge-menu header{display:flex;justify-content:space-between;align-items:center;gap:12px}.challenge-menu h1{font-size:2rem;font-weight:800}.challenge-menu h2{font-size:1.5rem;font-weight:800}
 .challenge-menu>p,.challenge-menu article p{margin:12px 0}.challenge-menu article{max-width:650px;margin:24px auto;padding:24px;border:1px solid #78aaa2;border-radius:16px;background:#143f3b}.challenge-menu summary{cursor:pointer;padding:8px 0}.challenge-menu .commute-button{margin-top:20px;font-size:20px}
 .challenge-menu button,.challenge-ui button{min-height:44px;border:1px solid #708a9f;border-radius:8px;padding:6px 12px}.challenge-menu button:focus-visible,.challenge-ui button:focus-visible{outline:3px solid #ffd75c;outline-offset:2px}
-.challenge-ui{z-index:3;position:absolute;inset:0;display:flex;flex-direction:column;pointer-events:none;color:#dceaf7;font-size:17.6px;line-height:1.3}
-.challenge-ui .city-header{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px;background:#102030;pointer-events:auto}.challenge-ui .city-header strong{margin-right:auto}
+.challenge-ui{z-index:3;position:absolute;inset:0;display:flex;flex-direction:column;pointer-events:none;color:#f3f6fa;font-size:15px;line-height:1.3}
+.challenge-ui .hud-icon{width:18px;height:18px;flex:none;display:block}
+.challenge-ui .city-header{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 12px;background:linear-gradient(180deg,#1a2a40,#141e30ee);border-bottom:1px solid #3d5470;pointer-events:auto}.challenge-ui .city-header strong{margin-right:auto;font-size:18px;letter-spacing:-.02em}
+.challenge-ui .hud-icon-btn{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:6px 10px;border-radius:12px;background:#1a2b42;border:1px solid #3d5470;color:#f3f6fa;font-weight:750}
 .challenge-ui .city-stage{display:flex;flex:1;min-height:100px;flex-direction:column;padding:0 8px;gap:4px}.challenge-ui nav{display:flex;gap:4px;pointer-events:auto}.challenge-ui .city-map-viewport{flex:1;min-height:100px;position:relative;pointer-events:none}
 .challenge-ui .city-controls{display:grid;grid-template-columns:minmax(300px,1fr) minmax(300px,1fr);gap:8px;padding:10px;background:#102030;pointer-events:auto;max-height:55%;overflow:auto}
-.challenge-objective p{margin:0 0 6px}.challenge-counts{color:#48dce6}.challenge-actions{display:flex;gap:8px}.challenge-details{max-height:170px;overflow:auto;margin-top:8px}.challenge-tools{display:flex;flex-wrap:wrap;gap:5px;align-content:start}.challenge-tools button{background:#1a3449;min-width:70px;flex:1}.challenge-tools small{display:block;font-size:17.6px;color:#ffdd70}.challenge-tools button[aria-pressed=true]{background:#45d5e5;color:#092c38}.challenge-message{grid-column:1/-1;margin:0;font-size:17.6px}
+.challenge-objective p{margin:0 0 6px}.challenge-counts{color:#48dce6}.challenge-actions{display:flex;gap:8px}.challenge-details{max-height:170px;overflow:auto;margin-top:8px}.challenge-tools{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:6px;align-content:start}.challenge-tools .build-tool{background:#192c46;min-width:0;flex:none;height:72px;border-radius:12px;border:1px solid #3d5470}.challenge-tools .build-cost,.challenge-tools small{display:block;font-size:12px;color:#f0c56a}.challenge-tools .build-tool[aria-pressed=true]{background:#5bc4d4;color:#102536;border-color:#c0fcff}.challenge-message{grid-column:1/-1;margin:0;font-size:17.6px}
 @media(max-width:650px){.challenge-menu article{padding:16px;margin:16px auto}.challenge-ui .city-controls{display:flex;flex-direction:column;max-height:55%}.challenge-tools{flex-wrap:nowrap;overflow-x:auto;flex-shrink:0;padding-bottom:4px}.challenge-tools button{flex-shrink:0}.challenge-ui .city-header strong{width:100%}.challenge-message{max-height:46px;overflow:auto}}
 
-.challenge-map-note{font-size:17.6px;line-height:1.2;margin:0;color:#52dce6}.challenge-ui nav{flex-wrap:wrap}
-.challenge-gameplay{position:absolute;right:12px;bottom:12px;z-index:1;display:flex;gap:8px;pointer-events:auto}.challenge-ui .challenge-gameplay button{min-height:52px;min-width:112px;padding:10px 18px;border:2px solid #fff3c2;border-radius:14px;font-size:20px;font-weight:800;box-shadow:0 3px 10px #0005}.challenge-ui .challenge-play{background:#ffd75c;color:#173d3d}.challenge-ui .challenge-reset{background:#173d3d;color:#fff3c2}.challenge-play:disabled{opacity:.65}
+.challenge-map-note{font-size:13px;line-height:1.3;margin:0;color:#5bc4d4}.challenge-ui nav{flex-wrap:wrap}
+.challenge-gameplay{position:absolute;right:12px;bottom:12px;z-index:1;display:flex;gap:8px;pointer-events:auto}.challenge-ui .challenge-gameplay button{min-height:48px;min-width:108px;padding:8px 14px;border:1px solid #f0d090;border-radius:14px;font-size:16px;font-weight:800;box-shadow:0 3px 10px #0005;display:inline-flex;align-items:center;gap:6px}.challenge-ui .challenge-play{background:linear-gradient(180deg,#f0c56a,#e0a83a);color:#1a2436;box-shadow:0 2px 0 #8a6418}.challenge-ui .challenge-reset{background:#152033;color:#f3f6fa;border-color:#3d5470}.challenge-play:disabled{opacity:.65}
 
 /* Reserve the map while rules expand; scroll the explanation inside the dock. */
-.challenge-ui .city-controls{height:35%;max-height:35%;flex-shrink:0;overflow:hidden;grid-template-rows:minmax(0,1fr) auto}
+.challenge-ui .city-controls{height:32%;max-height:32%;flex-shrink:0;overflow:hidden;grid-template-rows:minmax(0,1fr) auto;background:linear-gradient(0deg,#0d1522,#152033f7);border-top:1px solid #3d5470}
 .challenge-objective{min-height:0;overflow:auto}.challenge-details{max-height:none;overflow:visible}
 @media(max-width:650px){.challenge-ui .city-controls{height:36%;max-height:36%;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto auto}.challenge-tools{min-width:0}.challenge-message{grid-column:1}}
 
@@ -29,7 +31,7 @@
 .challenge-ui .challenge-speed[aria-pressed=true]{background:#ffd75c;color:#173d3d}
 .challenge-speed:disabled{opacity:.65}
 .challenge-construction{display:flex;flex-direction:column;gap:8px;min-width:0;min-height:0}
-.challenge-budget{display:flex;align-items:center;gap:8px;flex-shrink:0;color:#fff3c2;font-size:17.6px;line-height:1.3;padding:8px 10px;background:#173d3d;border-radius:8px;align-self:flex-start}
+.challenge-budget{display:flex;align-items:center;gap:8px;flex-shrink:0;color:#f3f6fa;font-size:13px;line-height:1.3;padding:8px 10px;background:#121c2c;border:1px solid #3d5470;border-radius:12px;align-self:flex-start}
 .challenge-budget strong{color:#ffdd70;font-variant-numeric:tabular-nums;white-space:nowrap}
 .challenge-construction .challenge-tools{min-height:0;overflow-y:auto}
 @media(max-width:650px){

@@ -1,4 +1,5 @@
 import './cityStats.css'
+import { IconCar, IconClock, IconFunds, IconHeartCrack, IconParked, IconWeather } from './hudIcons.tsx'
 
 export interface CityStatsProps {
   funds: number
@@ -7,6 +8,8 @@ export interface CityStatsProps {
   fatalities: number
   elapsedSeconds: number
   weatherLabel: string
+  /** Dims the clock so a frozen timer reads as intentional. */
+  paused?: boolean
 }
 
 const VISITORS_TITLE = 'Currently parked shopping and leisure visitors.'
@@ -45,7 +48,7 @@ function count(value: number): string {
 }
 
 /**
- * Top-bar statistics group: six left-aligned label/value pairs.
+ * Top-bar statistics, grouped by meaning: money, people right now, harm, then the clock.
  * Presentational only; the caller supplies the model snapshot.
  * Counters update silently (no aria-live) so screen readers are not spammed.
  */
@@ -56,36 +59,37 @@ export default function CityStats({
   fatalities,
   elapsedSeconds,
   weatherLabel,
+  paused = false,
 }: CityStatsProps) {
   const fundsShort = shortFunds(funds)
   const fundsExact = exactFunds(funds)
   return (
     <dl className="city-stats-bar">
-      <div className="city-stat">
-        <dt>Funds</dt>
-        <dd className="city-stat-funds" title={fundsExact}>
+      <div className="city-stat is-hero">
+        <dt><IconFunds />Funds</dt>
+        <dd className={`city-stat-funds${funds < 0 ? ' is-negative' : ''}`} title={fundsExact}>
           <span aria-hidden="true">{fundsShort}</span>
           <span className="city-stat-exact">{fundsExact}</span>
         </dd>
       </div>
-      <div className="city-stat">
-        <dt title={VISITORS_TITLE}>Visitors</dt>
+      <div className="city-stat is-live">
+        <dt title={VISITORS_TITLE}><IconParked />Visitors</dt>
         <dd title={VISITORS_TITLE}>{count(visitors)}</dd>
       </div>
-      <div className="city-stat">
-        <dt title={ON_ROAD_TITLE}>On Road</dt>
+      <div className="city-stat is-live">
+        <dt title={ON_ROAD_TITLE}><IconCar />On Road</dt>
         <dd title={ON_ROAD_TITLE}>{count(onRoad)}</dd>
       </div>
-      <div className="city-stat">
-        <dt>Fatalities</dt>
+      <div className={`city-stat is-harm${fatalities > 0 ? ' is-alert' : ''}`}>
+        <dt><IconHeartCrack />Fatalities</dt>
         <dd className="city-stat-warn">{count(fatalities)}</dd>
       </div>
-      <div className="city-stat">
-        <dt title={TIME_TITLE}>Time</dt>
+      <div className="city-stat is-meta is-clock" data-paused={paused}>
+        <dt title={TIME_TITLE}><IconClock />Time</dt>
         <dd title={TIME_TITLE}>{formatElapsed(elapsedSeconds)}</dd>
       </div>
-      <div className="city-stat">
-        <dt title={WEATHER_TITLE}>Weather</dt>
+      <div className="city-stat is-meta">
+        <dt title={WEATHER_TITLE}><IconWeather label={weatherLabel} />Weather</dt>
         <dd className={weatherLabel === 'Off' ? 'city-stat-muted' : undefined} title={WEATHER_TITLE}>
           {weatherLabel}
         </dd>

@@ -1,8 +1,8 @@
+import {createLandState,STARTER_OWNED_PLOTS} from '../cityLand.ts';
 import {EMERGENCY_LEVELS,emergencyDefinition,emergencyTown,type EmergencyId} from './emergencyTown.ts';
 /** Authored set pieces and reference operations. No player saves or puzzle-only physics. */
 import {createCity, place, entrance, type City, type Tool, type Point} from '../cityModel.ts';
 import {flowTown} from './flowTown.ts';
-import {neighborhoodTown} from './neighborhoodTown.ts';
 import {applyRoadDirections} from '../cityDirectionEdits.ts';
 export const CAMPAIGN_LEVELS = [
  {id:'shared-streets',title:'A longer connection',homes:4,budget:620,goal:'Connect both streets. Bring all 4 households home from shopping.',lesson:'Extend a shared network to reach both shops.',rules:'Two unfinished streets leave their homes short of a shop. Extend them or join them; every home needs a route out and back.',tools:['road','bulldoze'],objective:'shopping'},
@@ -11,7 +11,7 @@ export const CAMPAIGN_LEVELS = [
  {id:'one-way-home',title:'A way back',homes:3,budget:500,goal:'Build a one-way return street and bring all 3 households home.',lesson:'One-way traffic needs a complete route home.',rules:'Keep the eastbound main street. Build a return connection, then use One-way in travel order on the new street. Shopping arrivals alone do not count; everyone must return.',tools:['road','direction','bulldoze'],objective:'direction'},
  {id:'around-the-island',title:'Around the island',homes:4,budget:240,goal:'Make a roundabout and bring every household home safely.',lesson:'Entering traffic yields to cars already circulating.',rules:'Build roads around the reserved center square, then trace a closed One-way loop. Keep the approaches connected. A recognized roundabout and four shopping round trips earn the award; any accident ends this attempt.',tools:['road','direction','stop','signal','bulldoze'],objective:'roundabout'},
  {id:'apartment-avenue',title:'Join the avenue',homes:4,budget:1000,goal:'Join the four-lane avenue and bring every household home along it.',lesson:'A four-lane road takes two tiles of space.',rules:'The avenue has a gap. Select 4-lane road and extend both carriageways across it. Keep room for both lanes each way. Every home must finish a shopping return using at least four connected four-lane sections. Disconnected extra pavement does not count. Pause to build; no countdown.',tools:['road','wideRoad','stop','signal','bulldoze'],objective:'wide'},
- {id:'another-front-door',title:'Another way into the neighborhood',homes:4,budget:1200,goal:'Build a second connection to the avenue and use it for shopping returns.',lesson:'A neighborhood needs more than one usable way in and out.',rules:'Keep the original entrance. Spend your road budget on another two-lane connection from the neighborhood street to the four-lane avenue. Use controls where roads meet. Every household must return from shopping through a route that avoids the original entrance at (8,10). You may use Divert there to steer cars onto the new route, then reopen it.',tools:['road','wideRoad','stop','signal','closure','bulldoze'],objective:'entrance'},
+ {id:'another-front-door',title:'Build an apartment complex',homes:0,budget:2600,goal:'Place two apartments, join their private lanes, and bring residents home from shopping.',lesson:'Nearby apartment blocks can share access through automatic private lanes.',rules:'Place two 4×4 apartment blocks near each other, leaving clear space around their entrance arrows. Each costs $800 and houses four residents. Select Inspect, click a block, choose Join complex, then click the other block. Review the route and price, then Build lanes & join. Connect a private lane to the shop street with Road. Press Play: a shopping round trip from each joined block completes the lesson. Pause freely; no countdown. Joining builds the internal lanes but does not connect the shop for you.',tools:['apartment','road','stop','signal','bulldoze'],objective:'complex'},
  {id:'shops-and-strolls',title:'Shops and strolls',homes:6,budget:1200,goal:'Bring every household home from both shopping and a park visit.',lesson:'A wider road cannot replace a missing destination.',rules:'Keep the homes. Add a park and connect its entrance. You may add a nearer shop or improve the roads. Every household must finish both kinds of round trip; the 5-second shop and 10-second park stays count as part of the journey. No countdown.',tools:['road','wideRoad','store','park','stop','signal','bulldoze'],objective:'mixed'},
  {id:'first-bus-service',title:'All aboard',homes:4,budget:600,goal:'Buy a bus and run an outing from each home to a destination and back.',lesson:'Tap the depot to buy a bus and choose its stops.',rules:'Tap the depot and Buy bus ($400). Choose the two roadside stops in travel order and Finish route. Select Start service, then press Play. Waiting passengers appear automatically once the service and traffic are running. All four homes need a completed bus passenger outing and a shopping return. Stop placement or an empty bus alone does not win. Bus passengers are additional riders; this lesson does not claim to reduce household car trips.',tools:['road','busStop','bulldoze'],objective:'bus'},
  {id:'keep-another-way',title:'Let shopping fund a park',homes:4,budget:160,goal:'Connect the shop, earn $300 from shopping, then add a usable park.',lesson:'Working journeys can pay for the next improvement.',rules:'Use your starting $160 to connect the shop. Each completed shopping visit pays $100 in this lesson; waiting alone pays nothing. Earn at least $300, then buy a park and connect its entrance. Every home must finish both a shopping trip and a park trip. Choose where to build; pause freely and refund your own construction if needed.',tools:['road','store','park','stop','signal','bulldoze'],objective:'income'},
@@ -28,10 +28,13 @@ function line(c:City,a:Point,b:Point){for(let x=Math.min(a.x,b.x);x<=Math.max(a.
 export const smallRing:Point[]=[[7,5],[8,5],[9,5],[9,6],[9,7],[8,7],[7,7],[7,6],[7,5]].map(([x,y])=>({x,y}));
 export function campaignTown(id:CampaignId):City{
  if(emergencyDefinition(id))return emergencyTown(id as EmergencyId);
- if(id==='another-front-door')return neighborhoodTown();
  if(id==='green-for-the-queue'){const c=flowTown();c.controls=[];return c;}
  const c=createCity();c.funds=100000;c.tutorial!.status='complete';
- if(id==='apartment-avenue'){
+ if(id==='another-front-door'){
+  c.land=createLandState(STARTER_OWNED_PLOTS);c.map={x:0,y:0,width:32,height:32};
+  line(c,{x:2,y:12},{x:20,y:12});
+  fixturePlace(c,'store',18,10);
+ }else if(id==='apartment-avenue'){
   c.map={x:0,y:0,width:26,height:20};
   for(let x=2;x<=23;x++)if(x<9||x>14)place(c,'wideRoad',x,10);
   for(const x of [2,4,6,8])fixturePlace(c,'home',x,8);

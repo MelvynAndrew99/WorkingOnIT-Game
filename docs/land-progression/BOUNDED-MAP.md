@@ -1,6 +1,6 @@
 # Bounded town and on-map land purchases
 
-Design discussion, September 12, 2026. No runtime implementation or publication.
+Design discussion, September 12, 2026. Runtime implemented September 13, 2026: 64×48 envelope, 16×16 plots, on-map For sale signs, cash after two free unlocks. Envelope size is saved so later updates can add land. Existing towns keep their construction. Prices remain provisional.
 
 **Later timing clarification:** economy balancing is deferred until after the jam and tracked in [the backlog](../BACKLOG.md). Land prices/progression belong in that pass. The finite-map and on-map interaction discussion can continue without completing economic tuning; any interim price remains provisional. The proposed map size is still unselected.
 

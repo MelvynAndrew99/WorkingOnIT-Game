@@ -120,7 +120,7 @@ function items(city: City, includeFlow = true): MissionItem[] {
 
 /** Call only on the exactly-once completed-visit boundary, before setting trip.rewarded. */
 export function recordMissionVisit(city: City, trip: Trip): void {
-  if (trip.service || trip.rewarded || trip.phase !== 'visiting') return;
+  if (trip.purpose==='work' || trip.service || trip.rewarded || trip.phase !== 'visiting') return;
   const homes = new Set(city.buildings.filter(b => b.kind === 'home').map(b => b.id));
   if (!homes.has(trip.homeId)) return;
   const p = city.missions ??= createMissionProgress();
@@ -148,8 +148,8 @@ export function missionSnapshot(city: City): MissionSnapshot {
     const done=level<land.level,target=expansionTarget(level);
     jobs.push({pattern:'growth',diagnosticView:'normal',dependencies:[],available:true,lockedReason:'',
       lesson:'Carry the same access, flow and capacity checks into a larger neighbourhood.',id:`land-growth-${level+1}`,title:`Room to grow · Level ${level+1}`,task:`Get ${target} households to finish shopping visits with routes to stores and home.`,
-      manager:'More neighbours! More land! More roads! The mayor calls this evidence. I call it an audience.',crew:'Serve the households already here and keep their stores reachable. Each growth level earns one land expansion.',
-      tool:'home',target,current:done?target:land.current,done,claimed:done,reward:0,landReward:1});
+      manager:'More neighbours! More land! More roads! The mayor calls this evidence. I call it an audience.',crew:'Serve the households already here and keep their stores reachable. Buy more land from the For sale signs beside your town.',
+      tool:'home',target,current:done?target:land.current,done,claimed:done,reward:0});
   }
   let buildingsSpent = 0, servicesSpent = 0;
   for (const b of city.buildings) {
@@ -163,7 +163,7 @@ export function missionSnapshot(city: City): MissionSnapshot {
   return { hidden: p.hidden, recognition: jobs.filter(j => j.done).length, items: jobs,
     roadsSpent: city.roads.length * COSTS.road, buildingsSpent, servicesSpent, neededServiceCost,
     level: land.level, levelCurrent: land.current, levelTarget: land.target,
-    nextLevelReward: land.level >= 20 ? 'All growth levels earned' : 'One land expansion',
+    nextLevelReward: land.level >= 20 ? 'All growth levels earned' : 'Town recognition',
     currentMissionId: jobs.find(j => !j.done && j.available)?.id ?? null };
 }
 

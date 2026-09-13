@@ -7,7 +7,7 @@ import {STARTER_GRANTS} from './cityStarterTutorial.ts';
 
 export const STARTING_FUNDS = 900;
 export const COSTS = {
-  busStation:1000, busStop:50, road: 20, wideRoad: 40, stop: 25, signal: 75, home: 200, store: 400, park: 300, hospital: 800, fireStation: 700, policeStation: 600,
+  office:600, communityRoad:20, apartment:800, busStation:1000, busStop:50, road: 20, wideRoad: 40, stop: 25, signal: 75, home: 200, store: 400, park: 300, hospital: 800, fireStation: 700, policeStation: 600,
 } as const;
 export type PricedTool = keyof typeof COSTS;
 /** Simulation seconds without meaningful current-lesson progress before a grant. Provisional. */
@@ -50,7 +50,7 @@ export interface EconomyProgress {
   stallMark?: number;
 }
 
-const PRICED: PricedTool[] = ['wideRoad','busStation','busStop','stop', 'signal', 'road', 'home', 'store', 'park', 'hospital', 'fireStation', 'policeStation'];
+const PRICED: PricedTool[] = ['office','communityRoad','apartment','wideRoad','busStation','busStop','stop', 'signal', 'road', 'home', 'store', 'park', 'hospital', 'fireStation', 'policeStation'];
 const isPriced = (tool: string): tool is PricedTool => Object.hasOwn(COSTS, tool);
 const isLesson = (id: string): id is GrantLessonId => (LESSON_ORDER as readonly string[]).includes(id);
 const tileKey = (p: Point) => `${p.x},${p.y}`;

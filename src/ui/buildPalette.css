@@ -1,73 +1,278 @@
-/* UI-04. The shell owns reserved space; this file owns shelf geometry at all sizes. */
-.build-palette{display:grid;min-width:0;gap:var(--space-2,8px);pointer-events:auto;touch-action:manipulation;color:#ecf2fa}
-.build-categories{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--space-1,4px)}
-.city-ui.dispatch-ui .build-palette button{margin:0;min-width:44px;min-height:44px;font-size:17.6px;line-height:1.15;transition:background-color .12s,color .12s}
-.city-ui.dispatch-ui .build-category{position:relative;padding:6px 4px;background:#172b45;color:#c9d6e7;border-color:#3f5471}
-.city-ui.dispatch-ui .build-category[aria-pressed=true]{background:#263c54;color:#ffe179;border-color:#ffe179;box-shadow:inset 0 -3px #ffe179}
-.build-groups{display:grid;gap:var(--space-2,8px);min-width:0}
-.build-group{min-width:0;display:flex;flex-direction:column;gap:var(--space-2,8px)}
+/* Uniform construction tiles. One category at a time on every layout. */
+
+.build-palette{
+  display:grid;
+  min-width:0;
+  gap:8px;
+  pointer-events:auto;
+  touch-action:manipulation;
+  color:#ecf2fa;
+}
+.build-toolbar{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px;
+}
+.build-categories{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  flex:0 1 auto;
+}
+.dispatch-ui:not([data-layout=wide]) .build-categories{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  width:100%;
+}
+.city-ui.dispatch-ui .build-palette button{
+  margin:0;
+  min-width:44px;
+  min-height:44px;
+  font-size:13px;
+  line-height:1.15;
+  transition:background-color .12s,color .12s,border-color .12s,box-shadow .12s;
+}
+.city-ui.dispatch-ui .build-category{
+  position:relative;
+  padding:8px 16px;
+  background:#152033;
+  color:#c9d6e7;
+  border:1px solid #3d5470;
+  border-radius:12px;
+  font-weight:800;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  font-size:12px;
+  flex:0 0 auto;
+  min-width:88px;
+}
+.city-ui.dispatch-ui .build-category[aria-pressed=true]{
+  background:linear-gradient(180deg,#f0c56a,#e0a83a);
+  color:#1a2436;
+  border-color:#f0d090;
+  box-shadow:0 2px 0 #8a6418;
+}
+.build-groups{display:grid;gap:8px;min-width:0}
+.build-group{min-width:0;display:flex;flex-direction:column;gap:6px}
 .build-group[data-active=false]{display:none}
-.build-group-label{display:none;margin:0;color:#b6c9e0;font-size:17.6px;line-height:1.2;text-align:left}
-.build-shelf{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--space-1,4px)}
-.city-ui.dispatch-ui .build-shelf .build-tool{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:0;width:100%;height:68px;padding:6px 2px;background:#192c46;color:#ecf2fa;border:1px solid #49617e}
-.build-tool strong{font-size:17.6px;font-weight:700;white-space:nowrap;line-height:1.15}
-.build-tool-detail{display:flex;align-items:center;justify-content:center;gap:4px;max-width:100%}
-.build-icon{width:20px;height:20px;flex:0 0 20px}
-.build-cost{font-size:17.6px;color:#f3cf78;white-space:nowrap;font-variant-numeric:tabular-nums;line-height:1.15}
-.build-tool[data-waived=true] .build-cost{color:#5ddbe8;font-weight:750}
-.city-ui.dispatch-ui .build-shelf .build-tool[aria-pressed=true]{background:#5ddbe8;border-color:#c0fcff;color:#102536;box-shadow:inset 0 0 0 2px #102536}
+.build-group-label,.build-group-heading{display:none}
+.build-shelf{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(76px,1fr));
+  gap:6px;
+}
+.city-ui.dispatch-ui .build-shelf .build-tool,
+.challenge-ui .challenge-tools .build-tool{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:3px;
+  min-width:0;
+  width:100%;
+  height:72px;
+  padding:6px 4px;
+  background:#192c46;
+  color:#ecf2fa;
+  border:1px solid #3d5470;
+  border-radius:12px;
+}
+.build-tool strong{font-size:12px;font-weight:750;white-space:nowrap;line-height:1.15}
+.build-tool-detail{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;max-width:100%}
+.build-icon{width:22px;height:22px;flex:0 0 22px}
+.build-cost{font-size:12px;color:#f0c56a;white-space:nowrap;font-variant-numeric:tabular-nums;line-height:1.15;font-weight:700}
+.build-tool[data-waived=true] .build-cost{color:#5bc4d4;font-weight:750}
+.city-ui.dispatch-ui .build-shelf .build-tool[aria-pressed=true],
+.challenge-ui .challenge-tools .build-tool[aria-pressed=true]{
+  background:#5bc4d4;
+  border-color:#c0fcff;
+  color:#102536;
+  box-shadow:inset 0 0 0 2px #102536;
+}
 .build-tool[aria-pressed=true] .build-cost{color:#123246}
 .build-tool[data-afford=false] .build-cost{color:#ffb28d;text-decoration:underline dotted;text-underline-offset:3px}
 .build-tool[data-afford=false][aria-pressed=true] .build-cost{color:#612510}
-.city-ui.dispatch-ui .build-shelf .build-tool:disabled{opacity:1;cursor:not-allowed;background:#142237;color:#b8c5d6;border-style:dashed;border-color:#6e7f95;box-shadow:none}
+.city-ui.dispatch-ui .build-shelf .build-tool:disabled{
+  opacity:1;cursor:not-allowed;background:#142237;color:#b8c5d6;border-style:dashed;border-color:#6e7f95;box-shadow:none
+}
 .city-ui.dispatch-ui .build-tool:disabled .build-cost{color:#b8c5d6}
-.city-ui.dispatch-ui .build-palette .build-rotate{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;padding:6px 8px;background:#ffd22e;color:#102333;border-color:#ffe477}
-.build-rotate strong{white-space:nowrap}
-.build-rotate em{font-size:17.6px;font-style:normal;text-transform:capitalize}
-.build-rotate kbd{display:none}
-/* Keep category positions stable when a selected building exposes rotation. */
-.build-categories{order:0}.build-groups{order:1}.build-rotate{order:2}
-.dispatch-ui[data-layout=wide] .build-categories{display:none}
-.dispatch-ui[data-layout=wide] .build-groups{grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--space-2,8px)}
-.dispatch-ui[data-layout=wide] .build-group[data-active=false]{display:flex}
-.dispatch-ui[data-layout=wide] .build-group-label{display:block}
-.dispatch-ui[data-layout=wide] .build-rotate{justify-self:end;min-width:300px}
-.dispatch-ui[data-layout=wide] .build-rotate kbd{display:inline-block;font:inherit;border:1px solid currentColor;border-radius:3px;padding:0 4px}
-/* At smaller desktop frames keep equal columns while allowing groups to stack. */
-@container build-area (max-width:1100px){
- .dispatch-ui[data-layout=wide] .build-groups{grid-template-columns:repeat(2,minmax(0,1fr))}
+
+.city-ui.dispatch-ui .build-palette .build-rotate{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  min-height:44px;
+  padding:6px 10px;
+  background:linear-gradient(180deg,#f0c56a,#e0a83a);
+  color:#1a2436;
+  border-color:#f0d090;
+  box-shadow:0 2px 0 #8a6418;
+  flex:0 0 auto;
 }
-@container build-area (max-width:540px){
- .dispatch-ui[data-layout=wide] .build-groups{grid-template-columns:minmax(0,1fr)}
+.build-rotate .hud-icon{width:18px;height:18px}
+.build-rotate strong{white-space:nowrap;font-size:13px}
+.build-rotate em{font-size:12px;font-style:normal;text-transform:capitalize;opacity:.85}
+.build-rotate kbd{
+  display:inline-block;
+  font:inherit;
+  border:1px solid currentColor;
+  border-radius:4px;
+  padding:0 4px;
+  margin-left:4px;
+  font-size:11px;
 }
+@media(max-width:520px){
+  .build-rotate kbd{display:none}
+}
+
 @media(prefers-reduced-motion:reduce){.city-ui.dispatch-ui .build-palette button{transition:none}}
-.dispatch-ui:not([data-layout=wide]) .build-palette{gap:var(--space-1,4px)}
 
-/* Direction edits are explicit and stay above the reserved map boundary. */
-.build-group:first-child .build-shelf{grid-template-columns:repeat(3,minmax(0,1fr))}
-.dispatch-ui[data-layout=wide] .build-group:first-child .build-shelf{grid-template-columns:repeat(6,minmax(0,1fr))}
-.build-group:first-child .build-tool-detail{flex-direction:column;gap:1px}
-.build-group:first-child .build-icon{height:16px;width:16px;flex-basis:16px}
-.build-group:first-child .build-tool strong{font-size:15px}
-.direction-editor{order:2;display:grid;gap:4px;padding:6px;border:1px solid #ffe179;border-radius:6px;background:#172b45}
-.city-ui.dispatch-ui .direction-editor p{margin:0;font-size:14px;line-height:1.3}
-.direction-actions{display:flex;flex-wrap:wrap;gap:4px}
-.city-ui.dispatch-ui .direction-actions button{flex:1 1 auto;font-size:14px;padding:4px 8px;background:#263c54;color:#ffe179}
+.direction-editor{
+  display:grid;
+  gap:6px;
+  padding:10px 12px;
+  border:1px solid #3d5470;
+  border-radius:14px;
+  background:linear-gradient(180deg,#1a2b42,#121c2c);
+}
+.city-ui.dispatch-ui .direction-editor p,
+.challenge-ui .direction-editor p{margin:0;font-size:13px;line-height:1.35;color:#d5deea}
+.direction-actions{display:flex;flex-wrap:wrap;gap:6px}
+.city-ui.dispatch-ui .direction-actions button{
+  flex:1 1 auto;
+  font-size:13px;
+  padding:6px 10px;
+  background:#1a2b42;
+  color:#f0c56a;
+  border-radius:12px;
+}
 .city-ui.dispatch-ui .direction-actions button:disabled{opacity:.45}
+.direction-restore{display:flex;align-items:center;gap:6px;min-height:36px;font-size:13px;flex:1 1 auto}
+.direction-restore input{width:18px;height:18px;accent-color:#f0c56a}
+.city-ui.dispatch-ui .direction-editor .direction-tip{font-size:12px;color:#a9bbd0}
 
-.direction-restore{display:flex;align-items:center;gap:6px;min-height:36px;font-size:14px;flex:1 1 auto}
-.direction-restore input{width:18px;height:18px;accent-color:#ffe179}
-.city-ui.dispatch-ui .direction-editor .direction-tip{font-size:12px;color:#bfcddd}
-
-.build-group:last-child .build-shelf{grid-template-columns:repeat(3,minmax(0,1fr))}
-.build-group:last-child .build-tool strong{font-size:15px}
 .transit-editor{max-height:230px;overflow-y:auto;overscroll-behavior:contain}
-.city-ui.dispatch-ui .transit-editor p button{min-height:36px;padding:4px 8px;font-size:14px}
+.transit-head{display:flex;flex-direction:column;gap:2px}
+.transit-kicker{
+  margin:0;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--hud-kicker,#d4c19a);
+}
+.transit-title{margin:0;font-size:16px;font-weight:850;color:#f3f6fa}
+.transit-stats{display:flex;flex-wrap:wrap;gap:6px}
+.transit-stats span{
+  padding:4px 8px;
+  border-radius:999px;
+  background:#0e1624;
+  border:1px solid #3d5470;
+  font-size:12px;
+  font-weight:700;
+  font-variant-numeric:tabular-nums;
+  color:#d4c19a;
+}
+.transit-route{font-weight:700;color:#f3f6fa!important}
+.transit-fleet{list-style:none;margin:4px 0 0;padding:0;display:grid;gap:4px}
+.transit-fleet li{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-height:36px;
+  padding:4px 2px;
+  font-size:13px;
+}
+.transit-fleet strong{flex:none}
+.transit-fleet span{flex:1;color:#a9bbd0}
+.city-ui.dispatch-ui .transit-editor p button,
+.city-ui.dispatch-ui .transit-fleet button{min-height:36px;padding:4px 8px;font-size:13px}
 
-/* Keep road rotation beside the desktop road shelf, without pushing it below the tools. */
-.build-group-heading{display:none}
 .build-heading-rotate{display:none!important}
-.dispatch-ui[data-layout=wide] .build-group-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.dispatch-ui[data-layout=wide] .wide-road-rotate{display:none!important}
-.city-ui.dispatch-ui[data-layout=wide] .build-heading-rotate{display:flex!important;align-items:center;justify-content:space-between;gap:12px;padding:4px 8px;background:#ffd22e;color:#102333;border-color:#ffe477;font-size:15px}
-.build-heading-rotate span{font-size:14px}
+.wide-road-rotate{display:flex}
+
+/* Placed apartment/office inspectors share the construction dock with the
+   tool shelf. Keep stats and the paid action on one row whenever the dock
+   is wide enough, so Upgrade is not clipped under the resident count. */
+.place-inspector{
+  display:grid;
+  min-width:0;
+  border:1px solid #3d5470;
+  border-radius:14px;
+  background:linear-gradient(180deg,#1a2b42,#121c2c);
+}
+.place-inspector .place-card{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  align-items:center;
+  gap:6px 12px;
+  margin:0;
+  padding:6px 12px;
+  border:0;
+  border-radius:0;
+  background:transparent;
+}
+.place-inspector .place-card + .place-card{border-top:1px solid #3d5470}
+.city-ui.dispatch-ui .place-inspector .place-card-title,
+.challenge-ui .place-inspector .place-card-title{
+  margin:0;
+  font-size:13px;
+  font-weight:850;
+  color:#f3f6fa;
+  letter-spacing:.01em;
+}
+.place-card-stats{
+  margin:0;
+  min-width:0;
+  font-variant-numeric:tabular-nums;
+}
+.place-card-hint{grid-column:1/-1;margin:0}
+.place-inspector .direction-actions{
+  grid-column:3;
+  grid-row:1;
+  justify-content:flex-end;
+  min-width:0;
+}
+.city-ui.dispatch-ui .place-inspector p,
+.challenge-ui .place-inspector p{
+  text-align:left;
+  margin:0;
+}
+.city-ui.dispatch-ui .place-inspector .direction-actions button{
+  flex:0 1 auto;
+  width:auto;
+  max-width:100%;
+  white-space:nowrap;
+}
+.city-ui.dispatch-ui .place-inspector .place-primary{
+  background:linear-gradient(180deg,#f0c56a,#e0a83a);
+  color:#1a2436;
+  border-color:#f0d090;
+  font-weight:800;
+  box-shadow:0 2px 0 #8a6418;
+}
+.city-ui.dispatch-ui .place-inspector .place-primary:disabled{
+  opacity:.45;
+  box-shadow:none;
+}
+
+@container build-area (max-width: 640px){
+  .place-inspector .place-card{
+    grid-template-columns:auto minmax(0,1fr);
+  }
+  .place-inspector .direction-actions{
+    grid-column:1/-1;
+    grid-row:auto;
+  }
+  .city-ui.dispatch-ui .place-inspector .direction-actions button{
+    width:100%;
+    white-space:normal;
+  }
+}
+
+/* Upgrade and entrance editing are separate action groups; do not overlap them. */
+.place-inspector .place-card > .direction-actions ~ .direction-actions{
+  grid-column:1/-1;
+  grid-row:auto;
+}

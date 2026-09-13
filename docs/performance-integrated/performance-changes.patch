@@ -1,0 +1,208 @@
+--- a/src/game/GameCanvas.tsx
++++ b/src/game/GameCanvas.tsx
+@@ -8,7 +8,7 @@
+  * app before the second mount's app appears).
+  */
+ import { useEffect, useRef } from 'react';
+-import type { Application } from 'pixi.js';
++import { TexturePool, type Application } from 'pixi.js';
+ import { createPixiApp } from './pixiApp.ts';
+ import { createStage, type Stage } from './stage.ts';
+ import { createCityScene, type Scene, type CitySceneSession } from './cityScene.ts';
+@@ -52,6 +52,11 @@
+             try { scene?.destroy(); } catch { /* scene already torn down */ }
+             try { stage?.destroy(); } catch { /* stage already torn down */ }
+             if (appRef.current) {
++                // Scene teardown returns cached render textures to Pixi's shared pool.
++                // Destroy those idle targets while their renderer callbacks are live:
++                // Pixi 8.19 otherwise retains old renderers/canvases through the pool.
++                // Borrowed textures and the shared artwork Assets are not in this pool.
++                TexturePool.clear(true);
+                 appRef.current.destroy({ removeView: true }, { children: true });
+                 appRef.current = null;
+             }
+--- a/src/game/cityIncidents.ts
++++ b/src/game/cityIncidents.ts
+@@ -3,7 +3,7 @@
+ import {CITY_RULES} from './cityRules.ts';
+ /** Intersection conflicts, service dispatch, and rescue outcomes. No renderer or HUD imports. */
+ import { entrance, entrances, findPath, retarget, stations, SERVICE_OF, isBlocked, type City, type Point, type Trip } from './cityModel.ts';
+-import { commitTripRoute, startBlocked, roadIndex, bodyTile, governingControl, conflictingContact, contactAxis, signalAxis, EMERGENCY_TILES_PER_SECOND, TRAVEL_TILES_PER_SECOND, TRAFFIC_TICK, type RoadIndex } from './cityTraffic.ts';
++import { commitTripRoute, startBlocked, roadIndex, withRoadIndex, bodyTile, governingControl, conflictingContact, contactAxis, signalAxis, EMERGENCY_TILES_PER_SECOND, TRAVEL_TILES_PER_SECOND, TRAFFIC_TICK, type RoadIndex } from './cityTraffic.ts';
+ 
+ export type ServiceKind = 'ems' | 'fire' | 'police';
+ export type Incident = {
+@@ -618,18 +618,21 @@
+ 
+ /** Read-only area measurements for debugging now and a later safety overlay. Not a Flow grade. */
+ export function intersectionSafetySnapshot(city:City){
+-  const index=roadIndex(city);
+-  return [...new Set(index.areas.values())].map(area=>{
+-    const [x,y]=area.split(',').map(Number);
+-    const risk=city.risks.find(r=>index.areas.get(key(r))===area);
+-    const control=governingControl(city,index,{x,y});
+-    const encounters=(risk?.encounters??[]).filter(e=>e.at>city.elapsed-SAFETY.encounterWindowSeconds);
+-    const exposure=risk?.exposure??0;
+-    return {x,y,control:control?.kind??'unsigned',preset:control?.kind==='signal'?control.preset:null,
+-      windowSeconds:SAFETY.encounterWindowSeconds,conflictEncounters:encounters.length,
+-      conflictingVehicles:new Set(encounters.flatMap(e=>[e.firstId,e.secondId])).size,
+-      exposure,warningThreshold:SAFETY.warningExposure,crashThreshold:RISK_THRESHOLD,
+-      state:inIncidentArea(city,{x,y})?'incident':exposure>=SAFETY.warningExposure?'danger':exposure>0?'watch':'quiet'};
++  // This report is read-only; nested incident-area lookups can share its index.
++  // The scope is released before a later road/control/incident edit is observed.
++  return withRoadIndex(city,index=>{
++    return [...new Set(index.areas.values())].map(area=>{
++      const [x,y]=area.split(',').map(Number);
++      const risk=city.risks.find(r=>index.areas.get(key(r))===area);
++      const control=governingControl(city,index,{x,y});
++      const encounters=(risk?.encounters??[]).filter(e=>e.at>city.elapsed-SAFETY.encounterWindowSeconds);
++      const exposure=risk?.exposure??0;
++      return {x,y,control:control?.kind??'unsigned',preset:control?.kind==='signal'?control.preset:null,
++        windowSeconds:SAFETY.encounterWindowSeconds,conflictEncounters:encounters.length,
++        conflictingVehicles:new Set(encounters.flatMap(e=>[e.firstId,e.secondId])).size,
++        exposure,warningThreshold:SAFETY.warningExposure,crashThreshold:RISK_THRESHOLD,
++        state:inIncidentArea(city,{x,y})?'incident':exposure>=SAFETY.warningExposure?'danger':exposure>0?'watch':'quiet'};
++    });
+   });
+ }
+ 
+--- a/src/game/cityPathfinding.test.ts
++++ b/src/game/cityPathfinding.test.ts
+@@ -57,3 +57,21 @@
+  c.closures=[];
+  assert.deepEqual(findPath(c,start,end),reference(c,start,end),'scope is released after an exception');
+ });
++
++test('warm path caches observe in-place directions and roadwork changes without advancing time',async()=>{
++ const {plannedRoadPath}=await import('./cityModel.ts');
++ const c=town();c.roads=c.roads.filter(p=>p.y===0);
++ const start={x:-4,y:0},end={x:5,y:0};
++ assert.ok(findPath(c,start,end));assert.ok(findPath(c,start,end,true));
++ c.roadDirections={'0,0>1,0':'reverse'};
++ assert.equal(findPath(c,start,end),null);assert.equal(findPath(c,start,end,true),null);
++ c.roadDirections['0,0>1,0']='forward';
++ assert.ok(findPath(c,start,end));assert.ok(findPath(c,start,end,true));
++ c.wideRoadWorks=[{section:{x:0,y:0,axis:'horizontal'},remaining:3,paid:40}];
++ assert.equal(findPath(c,start,end),null);assert.equal(findPath(c,start,end,true),null);
++ assert.ok(plannedRoadPath(c,start,end));
++ c.wideRoadWorks[0].section.y=10;
++ assert.ok(findPath(c,start,end));assert.ok(findPath(c,start,end,true));
++ c.roads.reverse();
++ assert.deepEqual(findPath(c,start,end),reference(c,start,end));
++});
+--- a/src/game/cityPathfinding.ts
++++ b/src/game/cityPathfinding.ts
+@@ -27,17 +27,27 @@
+   if (prepared) return prepared;
+   // Inspect values, not array identities/counts: tools and save migration can mutate in place.
+   // Keeping this exact also notices incident creation/clearance within a simulation tick.
+-  const roadKeys = city.roads.map(key);
+   const blockedKeys = ignoreBlocked ? [] : [
+     ...roadWorkTiles(city).map(key),
+     ...(responding ? [] : city.closures.map(key)),
+     ...city.incidents.filter(i => i.status === 'active').map(key),
+   ];
+-  const signature = roadKeys.join(';') + '|' + blockedKeys.join(';') + '|' + directionSignature(city);
++  const signature = blockedKeys.join(';') + '|' + directionSignature(city);
+   let views = graphs.get(city);
+   if (!views) { views = new Map(); graphs.set(city, views); }
+   const cached = views.get(mode);
+-  if (cached?.signature === signature) { scope?.set(mode, cached); return cached; }
++  // Graph points are private copies. Comparing every ordered coordinate preserves
++  // in-place/same-length invalidation without allocating road strings on cache hits.
++  if (cached?.signature === signature && cached.points.length === city.roads.length) {
++    let sameRoads = true;
++    for (let i = 0; i < city.roads.length; i++) {
++      if (cached.points[i].x !== city.roads[i].x || cached.points[i].y !== city.roads[i].y) {
++        sameRoads = false; break;
++      }
++    }
++    if (sameRoads) { scope?.set(mode, cached); return cached; }
++  }
++  const roadKeys = city.roads.map(key);
+   const points = city.roads.map(p => ({x:p.x, y:p.y}));
+   const ids = new Map(roadKeys.map((k, i) => [k, i]));
+   const blocked = new Set(blockedKeys.flatMap(k => ids.has(k) ? [ids.get(k)!] : []));
+--- /dev/null
++++ b/src/game/citySafetySnapshot.test.ts
+@@ -0,0 +1,37 @@
++import assert from 'node:assert/strict';
++import {test} from 'node:test';
++import {createCity} from './cityModel.ts';
++import {intersectionSafetySnapshot} from './cityIncidents.ts';
++import {withRoadIndex} from './cityTraffic.ts';
++
++function town(){
++ const city=createCity();
++ city.roads=[{x:2,y:2},{x:1,y:2},{x:3,y:2},{x:2,y:1},{x:2,y:3}];
++ city.elapsed=10;
++ city.incidents=[{id:1,x:2,y:2,severity:'minor',status:'active',createdAt:1,required:['police'],completedServices:[],rescueDeadline:null,outcome:'none'}];
++ return city;
++}
++
++test('intersection report preserves state, composes with an existing scope and sees later edits',()=>{
++ const city=town(),before=JSON.stringify(city);
++ const expected=intersectionSafetySnapshot(city);
++ assert.equal(expected.length,1);assert.equal(expected[0].state,'incident');
++ assert.deepEqual(withRoadIndex(city,()=>intersectionSafetySnapshot(city)),expected);
++ assert.equal(JSON.stringify(city),before);
++ expected[0].state='quiet';assert.equal(intersectionSafetySnapshot(city)[0].state,'incident','returned report is independent');
++ city.incidents[0].status='cleared';
++ assert.equal(intersectionSafetySnapshot(city)[0].state,'quiet');
++ city.controls=[{x:2,y:2,kind:'stop',preset:'balanced'}];
++ assert.equal(intersectionSafetySnapshot(city)[0].control,'stop');
++ city.roads[0].x=12;
++ assert.deepEqual(intersectionSafetySnapshot(city),[],'same-count in-place road edits do not retain the old index');
++});
++
++test('a failed intersection report releases its read scope',()=>{
++ const city=town();const risks=city.risks;
++ Object.defineProperty(city,'risks',{configurable:true,get(){throw Error('interrupted read');}});
++ assert.throws(()=>intersectionSafetySnapshot(city),/interrupted read/);
++ Object.defineProperty(city,'risks',{configurable:true,writable:true,value:risks});
++ city.roads[0].x=12;
++ assert.deepEqual(intersectionSafetySnapshot(city),[]);
++});
+--- a/src/game/cityScene.ts
++++ b/src/game/cityScene.ts
+@@ -80,7 +80,7 @@
+     app.canvas.style.transform = 'translateZ(0)';
+     app.canvas.style.zIndex = '1';
+     const root = new Container();
+-    const ground = new Container();      // terrain + scenery, rebuilt on resize only
++    const ground = new Container();      // terrain + scenery, retained across nearby views
+     const plots = new Container();       // locked-plot overlays and for-sale signs
+     const world = new Container();       // roads, markers and buildings
+     // These layers change only through renderGround/renderWorld. Reuse their pixels between
+@@ -124,6 +124,7 @@
+     const camera: Camera = {x: 8, y: 7, zoom: 1};
+     let viewport: Viewport = {x:14,y:200,width:692,height:600};
+     let groundKey = '';
++    let groundBounds = {x0:0,y0:0,x1:0,y1:0};
+     let plotsKey = '';
+     const sandboxLand = () => session ? undefined : city.land;
+     const worldBounds = (): MapBounds => {
+@@ -281,12 +282,19 @@
+         const land = sandboxLand();
+         const a = screenToWorld(camera, viewport, viewport);
+         const b = screenToWorld(camera, viewport, {x:viewport.x+viewport.width,y:viewport.y+viewport.height});
+-        const x0 = Math.max(m.x, Math.floor(a.x)-2), y0 = Math.max(m.y, Math.floor(a.y)-2);
+-        const x1 = Math.min(m.x+m.width, Math.ceil(b.x)+2), y1 = Math.min(m.y+m.height, Math.ceil(b.y)+2);
++        let x0 = Math.max(m.x, Math.floor(a.x)-2), y0 = Math.max(m.y, Math.floor(a.y)-2);
++        let x1 = Math.min(m.x+m.width, Math.ceil(b.x)+2), y1 = Math.min(m.y+m.height, Math.ceil(b.y)+2);
+         const ownedKey = land?.owned.join('.') ?? '';
+-        const key = [m.x,m.y,m.width,m.height,x0,y0,x1,y1,ownedKey].join(',');
+-        if (key === groundKey) return;
++        const key = [m.x,m.y,m.width,m.height,city.map.x,city.map.y,city.map.width,city.map.height,
++            land?.origin.x,land?.origin.y,land?.plotSize,ownedKey].join(',');
++        if (key === groundKey && x0>=groundBounds.x0 && y0>=groundBounds.y0 && x1<=groundBounds.x1 && y1<=groundBounds.y1) return;
++        // Retain a bounded margin so small pans/zooms reuse the terrain texture.
++        // Ownership, world bounds and late artwork still invalidate it immediately.
++        // Keep the original two-tile visible margin inside this retained region.
++        x0=Math.max(m.x,x0-4); y0=Math.max(m.y,y0-4);
++        x1=Math.min(m.x+m.width,x1+4); y1=Math.min(m.y+m.height,y1+4);
+         groundKey = key;
++        groundBounds = {x0,y0,x1,y1};
+         ground.removeChildren().forEach(c => c.destroy());
+         const bed = new Graphics();
+         bed.roundRect(px(m.x) - 8, py(m.y) - 8, tile * m.width + 16, tile * m.height + 16, 10)

@@ -1,0 +1,17 @@
+✔ apartment upgrade saves both rotated entrances and refunds actual payment once (0) (9.337418ms)
+✔ apartment upgrade saves both rotated entrances and refunds actual payment once (1) (0.823422ms)
+✔ apartment upgrade saves both rotated entrances and refunds actual payment once (2) (1.628605ms)
+✔ apartment upgrade saves both rotated entrances and refunds actual payment once (3) (1.903801ms)
+✔ unaffordable, obstructed and out-of-bounds second entrances leave the town intact (0.943741ms)
+✔ upgraded access is protected from construction and malformed upgrade saves reject (1.05875ms)
+✔ active apartment journeys and emergencies prevent removal (12.404627ms)
+✔ choosing an entrance is required before the upgrade charges or changes population (0.209448ms)
+✔ all fifteen edge choices preserve the primary driveway in every rotation (11.956793ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 51.611932

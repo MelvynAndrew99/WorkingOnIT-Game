@@ -1,14 +1,14 @@
 # Land progression
 
-## Latest direction: finite map and clickable land purchases (2026-09-12)
+## Latest direction: finite map and clickable land purchases (2026-09-13)
 
-User requests a bounded sandbox and money-spending sprites on the map instead of the expansion menu. [Size and interaction discussion](BOUNDED-MAP.md) records the current 16×14 start/64×64 cap and supplied 64×44 town, with a **proposed 64×48 envelope** and 16×16 purchasable plots for new towns. Size, plot layout, prices and migration remain unselected. Current free/permit runtime below remains implemented until this redesign; the cash model must replace, not silently stack on, permit costs. Existing towns/earned land remain preserved. Discussion only.
+Implemented locally: 64×48 envelope (saved, so later updates can add land), 16×16 plots in a 4×3 grid, For sale signs on adjacent locked plots, two free unlocks then provisional cash. The H tutorial starts with four plots open (32×32) so the teaching roads fit; an empty factory town starts with one plot. The north/south/east/west expansion dialog is gone. Existing towns keep their land; unused permits become free unlocks. [Discussion](BOUNDED-MAP.md).
 
 September 9, 2026. User requested two free tutorial expansions followed by the mayor requiring missions/levels for more land, plus physically correct direction-button positions. Implemented locally; no publication.
 
 ## Rules
 
-- Each town receives two introductory free strips. Later expansion consumes one earned permit and no money. Existing map geometry is never removed, moved or charged retroactively.
+- Each town receives two introductory free plot unlocks. Later plots spend a provisional cash price shown on the For sale sign. Existing map geometry is never removed, moved or charged retroactively. Unused earned permits migrate to free unlocks.
 - Complete the land growth mission by serving6 distinct households through real shopping visits while they retain shop access. This awards Level1 and one permit automatically. Later targets9,12,... each award one more permit. Targets are lead-selected balance defaults. Ordinary mission cash claims are independent of these receipts.
 - Earlier success counts, and later road edits do not revoke a previously earned permit. A repeated visit, reload or cash claim cannot renew it. Missing historical metadata grants two introductory strips; malformed metadata preserves the city but does not refill free permits.
 - Direction preview and actual expansion preserve stable coordinates. North appears above, West left, East right and South below. Invalid/max-size attempts never spend permits.
@@ -17,8 +17,6 @@ September 9, 2026. User requested two free tutorial expansions followed by the m
 
 ## Verification
 
-Independent full model suite185/185 passes: actual6/9-household earned visits, no renewal on reload/repeat/cash claim, preserved earned permits through closures, legacy/malformed metadata, invalid directions/map boundaries, Skip, and complete H tutorial arcs including two real expansions using both rich routing fixtures and the actual900 starting funds/waivers.
-
-browser-check.mjs passes at320×640,390×900 and1440×900. It checks compass bounding boxes and actual West/East coordinates, two free strips, preserved town/funds, tutorial completion, mayor speech/acknowledgement, third-strip mission gate and reload. Screenshots compass-* and mayor-* show actual UI. An initial shared-dialog close-event race was caught and fixed by giving the mayor speech its own native dialog; the passing rerun verifies acknowledgement belongs only to that speech. Build passes with the existing bundle-size advisory.
+Land/model tests for plot ownership, two free unlocks, cash charges, H tutorial gating, Skip, and save migration pass. on-map-unlock.mjs passes at 320×640, 390×900 and 1440×900: no compass dialog, two real For sale sign taps, mayor cash briefing after the second plot. Screenshots sign-*, on-map-* and mayor-cash-* are actual UI.
 
 Codex lead integrated model/progression and mission rewards with a bounded Codex UI agent and independent test agent. No Claude/Grok implementation is claimed for this slice. Grok authored the earlier road-manager popup only. Physical-device comfort and long-term growth pacing remain untested.

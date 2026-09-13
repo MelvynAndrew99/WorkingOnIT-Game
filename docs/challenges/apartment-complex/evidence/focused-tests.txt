@@ -1,0 +1,12 @@
+✔ apartment lesson needs placement, applied joining, access and actual returns; two layouts reload and win (401.829911ms)
+✔ unjoined blocks and disconnected joined blocks do not earn an award (100.598731ms)
+✔ invalid apartment receipts and unearned completed saves are rejected (6.095531ms)
+✔ shopping before joining cannot substitute for trips from the new complex (139.856425ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 654.514227

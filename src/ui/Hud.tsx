@@ -1,8 +1,8 @@
 import VehicleDebugPanel from './VehicleDebug.tsx';
 import PauseMenu from './PauseMenu.tsx';
 import {DiagnosticLegend} from './DiagnosticViews.tsx';
-import IntersectionWarning from './IntersectionWarning.tsx';
 import CityStats from './CityStats.tsx';
+import CityPulsePanel, { CityPulseBar, TrackerChip, TrackerToggle, pulseIssuesFromStore } from './CityPulse.tsx';
 import {cityCommand} from '../game/cityControls.ts';
 /** React allocates all persistent chrome; Pixi measures only .city-map-viewport. */
 import { useEffect, useRef, useState } from 'react';
@@ -14,6 +14,7 @@ import ObjectiveBar from './ObjectiveBar.tsx';
 import { NARROW_FRAME, WIDE_FRAME, useFrameSize } from './useFrameSize.ts';
 import { store, useStore } from '../state/store.ts';
 import { flushSave } from '../state/save.ts';
+import { IconDashboard, IconDebug, IconHeatmap, IconMenu, IconPause, IconPlay } from './hudIcons.tsx';
 import './gameInterface.css';
 import './uiTopBar.css';
 import './missionCard.css';
@@ -23,11 +24,15 @@ export default function Hud() {
   const frame = useFrameSize();
   const wide = frame.width >= WIDE_FRAME || (frame.width >= 760 && frame.height < 550);
   const layout = wide ? 'wide' : frame.width < NARROW_FRAME ? 'narrow' : 'compact';
-  const [panel, setPanel] = useState<'report' | null>(null);
+  const [panel, setPanel] = useState<'report' | 'pulse' | null>(null);
   const dashboardButton = useRef<HTMLButtonElement>(null);
+  const trackerButton = useRef<HTMLButtonElement>(null);
   const openDashboard = () => { store.patch({vehicleDebugOpen:false}); setPanel('report'); };
   const closeDashboard = () => { setPanel(null); requestAnimationFrame(()=>dashboardButton.current?.focus()); };
+  const openTracker = () => { store.patch({vehicleDebugOpen:false}); setPanel('pulse'); };
+  const closeTracker = () => { setPanel(null); requestAnimationFrame(()=>trackerButton.current?.focus()); };
   const openDebug = () => { setPanel(null); store.patch({vehicleDebugOpen:true,panning:false,tool:null}); };
+  const issues = pulseIssuesFromStore(s);
   const [feedback, setFeedback] = useState('');
   const [notice, setNotice] = useState(false);
   const lastMessage = useRef(s.message);
@@ -51,32 +56,38 @@ export default function Hud() {
 
   return <TutorialGuidanceProvider wide={wide} blocked={(notice&&!s.tutorial?.currentId.startsWith('h-'))}><div className="city-ui dispatch-ui" data-layout={layout} data-short={frame.height < 550} style={{'--frame-height': `${frame.height}px`} as React.CSSProperties}>
     <header className="city-header city-top-bar" aria-label="City statistics and actions">
-      <CityStats funds={s.funds} visitors={s.demand.visits} onRoad={s.activeTrips} fatalities={s.fatalities} elapsedSeconds={s.elapsedSeconds} weatherLabel={s.weatherLabel} />
+      <CityStats funds={s.funds} visitors={s.demand.visits} onRoad={s.activeTrips} fatalities={s.fatalities} elapsedSeconds={s.elapsedSeconds} weatherLabel={s.weatherLabel} paused={s.paused} />
       <nav className="city-global-actions" aria-label="City actions">
-        <button aria-pressed={s.diagnosticView==='traffic'} onClick={()=>store.patch({diagnosticView:s.diagnosticView==='traffic'?'normal':'traffic'})}>Heatmap</button>
-        <button ref={dashboardButton} aria-expanded={panel==='report'} aria-controls="city-dashboard" onClick={()=>panel?closeDashboard():openDashboard()}>Dashboard</button>
-        <button aria-pressed={s.vehicleDebugOpen} onClick={()=>s.vehicleDebugOpen ? store.patch({vehicleDebugOpen:false}) : openDebug()}>Debug</button>
-        <button aria-label={s.paused?'Resume the city':'Pause the city'} aria-pressed={s.paused} onClick={()=>store.patch({paused:!s.paused})}>{s.paused?'Resume':'Pause'}</button>
-        <button onClick={()=>{flushSave();store.patch({phase:'menu'});}}>Menu</button>
+        <div className="hud-action-group" role="group" aria-label="Map views">
+          <button className="hud-icon-btn" title="Traffic heatmap" aria-pressed={s.diagnosticView==='traffic'} onClick={()=>store.patch({diagnosticView:s.diagnosticView==='traffic'?'normal':'traffic'})}><IconHeatmap /><span>Heatmap</span></button>
+          <button className="hud-icon-btn" title="City dashboard" ref={dashboardButton} aria-expanded={panel==='report'} aria-controls="city-dashboard" onClick={()=>panel==='report'?closeDashboard():openDashboard()}><IconDashboard /><span>Dashboard</span></button>
+          <button className="hud-icon-btn" title="Vehicle debug" aria-pressed={s.vehicleDebugOpen} onClick={()=>s.vehicleDebugOpen ? store.patch({vehicleDebugOpen:false}) : openDebug()}><IconDebug /><span>Debug</span></button>
+        </div>
+        <button className="hud-icon-btn hud-pause" aria-label={s.paused?'Resume the city':'Pause the city'} aria-pressed={s.paused} onClick={()=>store.patch({paused:!s.paused})}>{s.paused?<IconPlay />:<IconPause />}<span>{s.paused?'Resume':'Pause'}</span></button>
+        <button className="hud-icon-btn hud-menu" title="Menu" onClick={()=>{flushSave();store.patch({phase:'menu'});}}><IconMenu /><span>Menu</span></button>
       </nav>
+      <CityPulseBar pulse={s.pulse} />
     </header>
 
     <main className="city-stage" aria-label="Town map area">
       <div className="city-map-toolbar">
-        <MapControls wide={wide} />
+        <MapControls>
+          <TrackerToggle open={panel==='pulse'} count={issues.length} buttonRef={trackerButton} onToggle={()=>panel==='pulse'?closeTracker():openTracker()} />
+        </MapControls>
         <DiagnosticLegend />
-        <IntersectionWarning />
+        {panel!=='pulse' && <TrackerChip issues={issues} onOpen={issue=>{openTracker();cityCommand({type:'focus',point:{x:issue.x,y:issue.y}});}} />}
       </div>
       <div className="city-map-content">
         <div className="city-map-viewport" aria-label="Playable map" />
         <VehicleDebugPanel />
-        <CityDialogs panel={panel} close={closeDashboard} openDebug={openDebug} />
+        <CityDialogs panel={panel==='report'?'report':null} close={closeDashboard} openDebug={openDebug} />
+        <CityPulsePanel open={panel==='pulse'} onClose={closeTracker} />
       </div>
       <div className="city-feedback-region" role="status">
         <TutorialToast />
       {s.roadIssues.length>0&&!['h-home','h-store'].includes(s.tutorial?.currentId??'')&&<button className="city-warning" onClick={()=>cityCommand({type:'focus',point:s.roadIssues[0]})}>{s.roadIssues.length} Home{s.roadIssues.length===1?'':'s'} · {s.roadIssues[0].reason} · Show</button>}
       {s.incidentInfo.active > 0 && !objectiveHasCrash
-        ? <button className="city-alert" onClick={openDashboard}>
+        ? <button className="city-alert" onClick={openTracker}>
             {s.incidentInfo.active} crash{s.incidentInfo.active > 1 ? 'es' : ''} · {deadlines.length ? `${Math.max(0, Math.ceil(Math.min(...deadlines)))}s to rescue` : 'response needed'}
           </button>
         : null}

@@ -1,0 +1,15 @@
+✔ home residents physically work and return without shopping money or shopping/leisure credit (67.801393ms)
+✔ apartment residents physically work and return without shopping money or shopping/leisure credit (63.122122ms)
+✔ work reserves bounded need and an active work save cannot lose or corrupt its ledger (2.671443ms)
+✔ a chosen office side entrance provides both arrival and departure when the primary is diverted (39.045255ms)
+✔ a worker already inside the office can leave by the newly opened side door (10.447438ms)
+✔ office places cap real arriving workers and leave excess work demand pending (171.246789ms)
+✔ old towns acquire no work fields or work trips before an office exists (26.888965ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 387.985939

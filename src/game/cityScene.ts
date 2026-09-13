@@ -1,3 +1,7 @@
+import {planPrivateLanes,buildPrivateComplex} from './cityPrivateLanes.ts';
+import {apartmentComplexSummary} from './cityApartmentComplexes.ts';
+import {editBuildingEntrance,buildingEntranceEditOptions} from './cityModel.ts';
+import {lotFrame} from './cityLotArt.ts';
 import {busStopNotices,busPassengerTimes,moveBusStop} from './cityBusStops.ts';
 import {transitionVehiclePose} from './cityRoadTransitions.ts';
 import {wideRoadArt} from './cityWideRoadArt.ts';
@@ -12,23 +16,29 @@ import {flowReport} from './cityFlow.ts';
 import {withRoadPathRead} from './cityPathfinding.ts';
 import {CITY_RULES} from './cityRules.ts';
 import {cityDiagnostics} from './cityDiagnostics.ts';
-import {homeRoadIssue} from './cityVisits.ts';
+import {homeRoadIssue,residentialCarCapacity,officeVisitorCapacity} from './cityVisits.ts';
 import {incidentServices} from './cityIncidents.ts';
 import { Container, Graphics, Sprite, Text, Rectangle, type Application, type FederatedPointerEvent } from 'pixi.js';
 import type { Stage } from './stage.ts';
-import { buildingStatus, demandSummary, expandCity, footprint, entrance, place, stepCity, connectedHomes, income, routeForHome, averageTripSeconds, trafficMetrics, signalAxis, previewWideRoadPlacement, wideRoadWorkFootprint, type Point, type Building, type Tool, type City } from './cityModel.ts';
+import { buildingStatus, demandSummary, expandCity, unlockPlot, footprint, entrance, entrances, apartmentEntranceOptions, upgradeBuildingEntrance, APARTMENT_ENTRANCE_UPGRADE_COST, isResidential, place, stepCity, connectedHomes, income, routeForHome, averageTripSeconds, trafficMetrics, signalAxis, previewWideRoadPlacement, wideRoadWorkFootprint, type Point, type Building, type Tool, type City } from './cityModel.ts';
 import {
     ensureCityArt, parkTexture, frame, groundFrame, scenery, buildingPieces, roadFrame, arrowFrame,
     vehicleView, facingFor, storeStall, ROAD_BIT, SIDE_STEP,
     VEHICLE_WIDTH, VEHICLE_LANE_OFFSET, COLORS, DEPOT_LAYOUT, type Piece, type Side,
 } from './cityArt.ts';
-import { containsTile } from './cityMap.ts';
+import { containsTile, type MapBounds } from './cityMap.ts';
+import { connectedExpansionEdge, expansionSnapshot } from './cityExpansion.ts';
+import {
+    landEnvelope, plotCount, plotOwned, plotPrice, plotRect, plotIdForSignTile,
+    purchasablePlots, tileOwned,
+} from './cityLand.ts';
 import {debugVehicles, roadIndex, emergencyLaneOffset, travelLaneOffset, isEmergencyResponse, type JunctionControl} from './cityTraffic.ts';
 import {setFiretruckResponding,setPoliceResponding,setAmbulanceResponding} from '../audio/vehicles.ts';
 import {stepTrafficAudio,stopTrafficAudio} from '../audio/traffic.ts';
 import {playMinorCrash,stopCrashAudio} from '../audio/crashes.ts';
 import {playDemolition,stopConstructionAudio} from '../audio/construction.ts';
 import {incidentSummary} from './cityIncidents.ts';
+import {cityPulse} from './cityPulse.ts';
 import {BUILDING_LABELS, isBuildingTool} from '../ui/cityLabels.ts';
 import {areaTiles} from './junctionAreas.ts';
 import {roundaboutIndex} from './cityRoundabouts.ts';
@@ -70,7 +80,8 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
     app.canvas.style.transform = 'translateZ(0)';
     app.canvas.style.zIndex = '1';
     const root = new Container();
-    const ground = new Container();      // terrain + scenery, rebuilt on resize only
+    const ground = new Container();      // terrain + scenery, retained across nearby views
+    const plots = new Container();       // locked-plot overlays and for-sale signs
     const world = new Container();       // roads, markers and buildings
     // These layers change only through renderGround/renderWorld. Reuse their pixels between
     // edits instead of submitting every tree shadow, road and building piece each frame.
@@ -85,7 +96,7 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
     const statusLabels = new Map<string, Text>();
     const responderBadges = new Map<string, {container:Container; text:Text}>();
     let directionPoints: Point[] = [];
-    store.patch({directionSelection:0,transitPanel:null,transitDraft:null,busStopPanel:null,movingBusStop:null,busStopNotices:[]});
+    store.patch({apartmentComplexPanel:null,apartmentComplexDraft:null,apartmentComplexPreview:null,officePanel:null,apartmentPanel:null,apartmentEntranceDraft:null,entranceEditSlot:null,directionSelection:0,transitPanel:null,transitDraft:null,busStopPanel:null,movingBusStop:null,busStopNotices:[]});
     const transitIssueByStop=new Map<number,string>();
     let passengerTimes=busPassengerTimes(city);
     let routePreviewPaths:Point[][]=[];
@@ -100,7 +111,7 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
     // construction ghosts and emergency labels so those stay readable.
     const weatherShade = new Container();
     const weatherRain = new Container();
-    root.addChild(ground, world, weatherShade, cars, controls, weatherRain, activity, activityLabels, ghost);
+    root.addChild(ground, plots, world, weatherShade, cars, controls, weatherRain, activity, activityLabels, ghost);
     const weatherView = createCityWeatherView({ shade: weatherShade, rain: weatherRain, tileSize: TILE_SIZE });
     const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
     const onMotionPreference = () => { syncWeather(); paint(); };
@@ -113,12 +124,20 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
     const camera: Camera = {x: 8, y: 7, zoom: 1};
     let viewport: Viewport = {x:14,y:200,width:692,height:600};
     let groundKey = '';
+    let groundBounds = {x0:0,y0:0,x1:0,y1:0};
+    let plotsKey = '';
+    const sandboxLand = () => session ? undefined : city.land;
+    const worldBounds = (): MapBounds => {
+        const land = sandboxLand();
+        return land ? landEnvelope(land) : city.map;
+    };
     let renderedWideRoads=city.wideRoads;
     let controlAreas: {control:JunctionControl;tiles:Point[];members:Set<string>}[]=[];
     let controlRoads = new Set<string>();
     const pointers = new Map<number, Point>();
     let gesture = false;
     let panStart: Point | null = null;
+    let panCandidate: Point | null = null;
     let downPoint: Point | null = null;
     let hover: Point | null = null;
     let last: Point | null = null;
@@ -158,18 +177,21 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
         store.patch({
             busStopNotices:stopNotices,
             busStopPanel:(()=>{const b=city.buildings.find(b=>b.id===inspectedId&&b.kind==='busStop');if(!b)return null;const counts=waitingBusRiders(city);const linked=city.transit?.journeys.filter(j=>j.state==='waiting-out'&&j.boardStopId===b.id||j.state==='waiting-back'&&j.returnBoardStopId===b.id).length??0;return {id:b.id,rotation:b.rotation,waiting:(counts.get(b.id)??0)+linked,waitSeconds:passengerTimes.stops.get(b.id)??0,issue:transitIssueByStop.get(b.id)??''};})(),
+            apartmentComplexPanel:inspectedId===null?null:apartmentComplexSummary(city,inspectedId),
+            officePanel:(()=>{const b=city.buildings.find(b=>b.id===inspectedId&&b.kind==='office');return b?{id:b.id,entrances:b.entranceCount??1,capacity:officeVisitorCapacity(b),upgradeCost:APARTMENT_ENTRANCE_UPGRADE_COST}:null;})(),
+            apartmentPanel:(()=>{const b=city.buildings.find(b=>b.id===inspectedId&&b.kind==='apartment');return b?{id:b.id,entrances:b.entranceCount??1,residents:residentialCarCapacity(b),upgradeCost:APARTMENT_ENTRANCE_UPGRADE_COST}:null;})(),
             transitPanel:(()=>{const b=city.buildings.find(b=>b.id===inspectedId&&b.kind==='busStation');if(!b)return null;const route=city.transit?.routes.find(r=>r.stationId===b.id);return {stationId:b.id,fleet:(city.transit?.fleet??[]).filter(v=>v.stationId===b.id).map(v=>({id:v.id,parked:v.tripId===undefined,riders:busRiderCount(v),paid:v.paid})),stops:route?.stopIds??[],running:route?.running??false,blocked:route?.blocked??'',summary:transitSummary(city)};})(),
             vehicleDebug:store.get().vehicleDebugOpen?debugVehicles(city):[],
             flow: flowReport(city, inspectedRoad),
             diagnostics: cityDiagnostics(city), missions: missionSnapshot(city), tutorial: tutorialSnapshot(city),
-            roadIssues: city.buildings.filter(b=>b.kind==='home').flatMap(b=>{const reason=homeRoadIssue(city,b);return reason?[{homeId:b.id,x:b.x,y:b.y,reason}]:[]}),
+            roadIssues: city.buildings.filter(isResidential).flatMap(b=>{const reason=homeRoadIssue(city,b);return reason?[{homeId:b.id,x:b.x,y:b.y,reason}]:[]}),
             elapsedSeconds: Math.floor(city.elapsed),
             weatherLabel: weatherHudLabel(city.elapsed, store.get().weatherEnabled),
-            map: city.map, funds: city.funds, income: income(city), connected: connectedHomes(city),
-            tripSeconds: averageTripSeconds(city), homes: city.buildings.filter(b => b.kind === 'home').length,
+            map: worldBounds(), funds: city.funds, income: income(city), connected: connectedHomes(city),
+            tripSeconds: averageTripSeconds(city), homes: city.buildings.filter(isResidential).length,
             completed: city.completed, activeTrips: city.trips.filter(t=>!t.service && t.phase!=='visiting' && t.phase!=='crashed').length,
-            demand: demandSummary(city), incidentInfo: incidentSummary(city), rescued: city.rescuedCount, fatalities: city.fatalities,
-            inspected: (()=>{const b=city.buildings.find(b=>b.id===inspectedId);if(!b)return null;const status=buildingStatus(city,b),visitors=city.trips.filter(t=>!t.service&&t.storeId===b.id&&t.phase==='visiting');const next=visitors.length?Math.ceil(Math.min(...visitors.map(t=>t.visitRemaining??0))):null;return {id:b.id,name:BUILDING_LABELS[b.kind],...status,capacity:b.kind==='store'||b.kind==='park'?status.capacity:0,label:status.label+(next===0?' · Ready to leave; waiting for road access':next!==null?` · Next visit finishes in ${next}s`:'')};})(),
+            demand: demandSummary(city), pulse: cityPulse(city), incidentInfo: incidentSummary(city), rescued: city.rescuedCount, fatalities: city.fatalities,
+            inspected: (()=>{const b=city.buildings.find(b=>b.id===inspectedId);if(!b)return null;const status=buildingStatus(city,b),visitors=city.trips.filter(t=>!t.service&&t.storeId===b.id&&t.phase==='visiting');const next=visitors.length?Math.ceil(Math.min(...visitors.map(t=>t.visitRemaining??0))):null;return {id:b.id,name:BUILDING_LABELS[b.kind],...status,capacity:b.kind==='store'||b.kind==='park'||b.kind==='apartment'||b.kind==='office'?status.capacity:0,label:status.label+(next===0?' · Ready to leave; waiting for road access':next!==null?` · Next visit finishes in ${next}s`:'')};})(),
             ...trafficMetrics(city), longestStop: Math.max(0,...city.trips.filter(t=>t.phase!=='visiting'&&t.phase!=='working'&&t.phase!=='crashed').map(t=>t.hold)),
         });
     }
@@ -178,9 +200,9 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
     // Building geometry, derived from the model rather than assumed
     // -----------------------------------------------------------------------
     /** Footprint box plus the tile and face that actually touch the entrance. */
-    function shape(b: Building) {
+    function shape(b: Building, accessPoint = entrance(b)) {
         const cells = footprint(b);
-        const e = entrance(b);
+        const e = accessPoint;
         const x0 = Math.min(...cells.map(p => p.x)), y0 = Math.min(...cells.map(p => p.y));
         const w = Math.max(...cells.map(p => p.x)) - x0 + 1, h = Math.max(...cells.map(p => p.y)) - y0 + 1;
         const anchor = cells.find(p => Math.abs(p.x - e.x) + Math.abs(p.y - e.y) === 1) ?? cells[0];
@@ -192,6 +214,13 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
 
     function drawBuilding(layer: Container, b: Building, alpha?: number, tint?: number) {
         const s = shape(b);
+        if (b.kind === 'apartment'||b.kind==='office') {
+            const sprite = new Sprite(frame(lotFrame(b)));
+            sprite.position.set(px(s.x0),py(s.y0));
+            sprite.setSize(tile*s.w,tile*s.h);
+            sprite.alpha=alpha??1; sprite.tint=tint??0xffffff;
+            layer.addChild(sprite); return;
+        }
         if (b.kind === 'park') {
             const texture=parkTexture(s.side);
             if(texture){
@@ -220,7 +249,8 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
      */
     function drawAccess(layer: Container, b: Building, roads: Set<string>) {
         if(b.kind==='busStop')return; // Its boarding curb is marked inside its own square.
-        const s = shape(b);
+        for (const accessPoint of entrances(b)) {
+        const s = shape(b, accessPoint);
         const hasRoad = roads.has(`${s.entrance.x},${s.entrance.y}`);
         const linked = b.kind === 'home' ? !!routeForHome(city, b) : hasRoad;
         const colour = linked ? COLORS.connected : COLORS.needsRoad;
@@ -232,39 +262,54 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
             g.rect(px(s.entrance.x) + 1, py(s.entrance.y) + 1, tile - 2, tile - 2)
                 .stroke({ color: colour, width: Math.max(1.5, tile * .06), alpha: .9 });
         }
+        const small=city.communityRoads?.some(p=>same(p,s.entrance));
         // A dark pad keeps the marker legible on both grass and asphalt.
-        g.roundRect(px(s.entrance.x + .12), py(s.entrance.y + .12), tile * .76, tile * .76, tile * .18)
+        g.roundRect(px(s.entrance.x + (small?.26:.12)), py(s.entrance.y + (small?.26:.12)), tile * (small?.48:.76), tile * (small?.48:.76), tile * .18)
             .fill({ color: 0x14201d, alpha: hasRoad ? .42 : .3 });
         layer.addChild(g);
-        put(layer, { name: arrowFrame(towardsBuilding(s.side)), tx: .1, ty: .1, tw: .8, th: .8, tint: colour },
+        put(layer, { name: arrowFrame(towardsBuilding(s.side)), tx: small?.27:.1, ty: small?.27:.1, tw: small?.46:.8, th: small?.46:.8, tint: colour },
             s.entrance.x, s.entrance.y);
         if (b.kind === 'store' && hasRoad)
             put(layer, { name: storeStall(b.id), tx: .56, ty: .52, tw: .38, th: .38, alpha: .9 }, s.anchor.x, s.anchor.y);
+        }
     }
 
     // -----------------------------------------------------------------------
     // Layers
     // -----------------------------------------------------------------------
     function renderGround() {
-        const m = city.map;
+        const m = worldBounds();
+        const land = sandboxLand();
         const a = screenToWorld(camera, viewport, viewport);
         const b = screenToWorld(camera, viewport, {x:viewport.x+viewport.width,y:viewport.y+viewport.height});
-        const x0 = Math.max(m.x, Math.floor(a.x)-2), y0 = Math.max(m.y, Math.floor(a.y)-2);
-        const x1 = Math.min(m.x+m.width, Math.ceil(b.x)+2), y1 = Math.min(m.y+m.height, Math.ceil(b.y)+2);
-        const key = [m.x,m.y,m.width,m.height,x0,y0,x1,y1].join(',');
-        if (key === groundKey) return;
+        let x0 = Math.max(m.x, Math.floor(a.x)-2), y0 = Math.max(m.y, Math.floor(a.y)-2);
+        let x1 = Math.min(m.x+m.width, Math.ceil(b.x)+2), y1 = Math.min(m.y+m.height, Math.ceil(b.y)+2);
+        const ownedKey = land?.owned.join('.') ?? '';
+        const key = [m.x,m.y,m.width,m.height,city.map.x,city.map.y,city.map.width,city.map.height,
+            land?.origin.x,land?.origin.y,land?.plotSize,ownedKey].join(',');
+        if (key === groundKey && x0>=groundBounds.x0 && y0>=groundBounds.y0 && x1<=groundBounds.x1 && y1<=groundBounds.y1) return;
+        // Retain a bounded margin so small pans/zooms reuse the terrain texture.
+        // Ownership, world bounds and late artwork still invalidate it immediately.
+        // Keep the original two-tile visible margin inside this retained region.
+        x0=Math.max(m.x,x0-4); y0=Math.max(m.y,y0-4);
+        x1=Math.min(m.x+m.width,x1+4); y1=Math.min(m.y+m.height,y1+4);
         groundKey = key;
+        groundBounds = {x0,y0,x1,y1};
         ground.removeChildren().forEach(c => c.destroy());
         const bed = new Graphics();
+        bed.roundRect(px(m.x) - 8, py(m.y) - 8, tile * m.width + 16, tile * m.height + 16, 10)
+            .fill(0x12241f).stroke({ color: 0x8d6a32, width: 5 });
         bed.roundRect(px(m.x) - 6, py(m.y) - 6, tile * m.width + 12, tile * m.height + 12, 8)
-            .fill(COLORS.mapEdge).stroke({ color: COLORS.grassEdge, width: 3 });
+            .stroke({ color: COLORS.grassEdge, width: 3 });
         ground.addChild(bed);
-        for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) cell(ground, groundFrame(x, y), x, y);
-        // Scenery is added top row first so trees overlap the tile behind them.
         for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
+            const owned = tileOwned(land, city.map, {x, y});
+            cell(ground, groundFrame(x, y), x, y, owned ? undefined : 0x6b7d72, owned ? 1 : .55);
+        }
+        for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
+            if (land && !tileOwned(land, city.map, {x, y})) continue;
             const s = scenery(x, y);
             if (!s) continue;
-            // Grass and foliage are close in value; a contact shadow separates them.
             const shadow = new Graphics();
             shadow.ellipse(px(x + s.tx + s.tw / 2), py(y + s.ty + s.th) - tile * .1, tile * s.tw * .42, tile * .13)
                 .fill({ color: 0x1d3f30, alpha: .35 });
@@ -277,6 +322,51 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
             ground.addChild(island);
         }
         ground.updateCacheTexture();
+    }
+    function renderPlots() {
+        const land = sandboxLand();
+        if (!land) {
+            if (plots.children.length) { plots.removeChildren().forEach(c => c.destroy()); plotsKey = ''; }
+            return;
+        }
+        const edge = connectedExpansionEdge(city);
+        const open = purchasablePlots(land, edge, city.external?.gateway ?? null);
+        const teaching = city.tutorial?.status === 'active' && starterSnapshot(city)?.id === 'h-expand';
+        const key = `${land.owned.join('.')}|${open.join('.')}|${city.funds}|${land.freeUnlocks}|${camera.zoom.toFixed(3)}|${teaching}|${stage.scale()}`;
+        if (key === plotsKey) return;
+        plotsKey = key;
+        plots.removeChildren().forEach(c => c.destroy());
+        const count = plotCount(land);
+        const g = new Graphics();
+        for (let id = 0; id < count; id++) {
+            const r = plotRect(land, id);
+            const owned = plotOwned(land, id);
+            const sale = open.includes(id);
+            g.rect(px(r.x) + 1, py(r.y) + 1, tile * r.width - 2, tile * r.height - 2)
+                .stroke({ color: owned ? 0x2f5b45 : sale ? 0xf0c56a : 0x4a5c52, width: owned ? 2 : sale ? 4 : 3, alpha: owned ? .35 : .95 });
+            if (!owned) g.rect(px(r.x) + 2, py(r.y) + 2, tile * r.width - 4, tile * r.height - 4)
+                .fill({ color: sale ? 0xf0c56a : 0x0e1a16, alpha: sale ? .16 : .28 });
+        }
+        plots.addChild(g);
+        const screen = 1 / (stage.scale() * camera.zoom);
+        const font = 16 * screen;
+        for (const id of open) {
+            const r = plotRect(land, id);
+            const cx = px(r.x + r.width / 2), cy = py(r.y + r.height / 2);
+            const price = plotPrice(land, id);
+            const board = new Graphics();
+            const bw = 132 * screen, bh = 58 * screen, post = 5 * screen;
+            board.roundRect(cx - post / 2, cy + bh / 2 - 4 * screen, post, 22 * screen, 2 * screen).fill(0x6a4a2a);
+            board.roundRect(cx - bw / 2, cy - bh / 2, bw, bh, 8 * screen)
+                .fill(0xffe08a)
+                .stroke({ color: 0xfff3c0, width: (teaching ? 4 : 3) * screen });
+            plots.addChild(board);
+            const title = new Text({ text: 'FOR SALE', style: { fontFamily: 'system-ui', fontSize: font * .7, fontWeight: '800', fill: 0x6a3b10, align: 'center' } });
+            title.anchor.set(.5); title.position.set(cx, cy - 10 * screen);
+            const amount = new Text({ text: price === 0 ? 'FREE' : `$${price}`, style: { fontFamily: 'system-ui', fontSize: font, fontWeight: '800', fill: 0x3a2410, align: 'center' } });
+            amount.anchor.set(.5); amount.position.set(cx, cy + 10 * screen);
+            plots.addChild(title, amount);
+        }
     }
 
     // Arrows straddle the controlled connection, so corners and branches are unambiguous.
@@ -299,12 +389,28 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
         world.removeChildren().forEach(c => c.destroy());
         const roads = roadSet();
         const wideTiles=wideRoadTopology(city).tiles;
+        const community=new Set(city.communityRoads?.map(p=>`${p.x},${p.y}`));
         for (const p of city.roads) {
             if(wideTiles.has(`${p.x},${p.y}`))continue;
             let mask = 0;
             for (const [side, [dx, dy]] of Object.entries(SIDE_STEP))
                 if (roads.has(`${p.x + dx},${p.y + dy}`)) mask |= ROAD_BIT[side as Side];
-            cell(world, roadFrame(mask), p.x, p.y);
+            if(community.has(`${p.x},${p.y}`)) {
+                // Clear scenery, then draw unmarked narrow pavement with grass shoulders.
+                cell(world, groundFrame(p.x,p.y),p.x,p.y);
+                const lane=new Graphics();
+                const segments=[[.5,.5,.5,.5]];
+                for(const [dx,dy] of Object.values(SIDE_STEP))if(roads.has(`${p.x+dx},${p.y+dy}`))segments.push([.5,.5,.5+dx*.5,.5+dy*.5]);
+                for(const b of city.buildings)if(entrances(b).some(q=>same(p,q))){
+                    const edge=footprint(b).find(q=>Math.abs(q.x-p.x)+Math.abs(q.y-p.y)===1);
+                    if(edge)segments.push([.5,.5,.5+(edge.x-p.x)*.5,.5+(edge.y-p.y)*.5]);
+                }
+                for(const [width,color] of [[.70,0xb6beb2],[.60,0x7b8983]]) {
+                    lane.rect(px(p.x+.5-width/2),py(p.y+.5-width/2),tile*width,tile*width).fill(color);
+                    for(const [ax,ay,bx,by] of segments)lane.moveTo(px(p.x+ax),py(p.y+ay)).lineTo(px(p.x+bx),py(p.y+by)).stroke({color,width:tile*width,cap:'butt',join:'round'});
+                }
+                world.addChild(lane);
+            } else cell(world, roadFrame(mask), p.x, p.y);
         }
         world.addChild(wideRoadArt(city,tile,px,py));
         // Buildings paint over any scenery on their plot; access markers sit on
@@ -378,6 +484,19 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
         ghost.removeChildren().forEach(c => { if (c !== outline) c.destroy(); });
         ghost.addChild(outline);
         outline.clear();
+        const complexDraft=store.get().apartmentComplexDraft;
+        if(complexDraft!==null){
+            const planned=store.get().apartmentComplexPreview;
+            for(const p of planned?.lanes??[])outline.rect(px(p.x+.17),py(p.y+.17),tile*.66,tile*.66).fill({color:0x60e8ff,alpha:.4});
+            for(const b of city.buildings.filter(b=>b.id===complexDraft||b.id===planned?.targetId))for(const p of footprint(b))outline.rect(px(p.x)+1,py(p.y)+1,tile-2,tile-2).fill({color:0x60e8ff,alpha:.15});
+            return;
+        }
+        const draft=city.buildings.find(b=>b.id===store.get().apartmentEntranceDraft);
+        if(draft){
+            for(const p of (store.get().entranceEditSlot?buildingEntranceEditOptions(city,draft,store.get().entranceEditSlot!):apartmentEntranceOptions(city,draft)))outline.rect(px(p.x)+2,py(p.y)+2,tile-4,tile-4)
+                .fill({color:0x60e8ff,alpha:hover&&same(p,hover)?.5:.18}).stroke({color:0x60e8ff,width:2});
+            return;
+        }
         if(store.get().tool==='direction') {
             for(const p of directionPoints)outline.rect(px(p.x)+2,py(p.y)+2,tile-4,tile-4).fill({color:0x60e8ff,alpha:.18}).stroke({color:0x60e8ff,width:2});
             for(let i=1;i<directionPoints.length;i++){
@@ -413,7 +532,7 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
         const before = candidate.funds;
         const moved=s.movingBusStop!==null?moveBusStop(candidate,s.movingBusStop,hover.x,hover.y,s.rotation):null;
         if(!moved)placeInCity(candidate, s.tool, hover.x, hover.y, s.rotation);
-        const valid = moved?moved.ok: before !== candidate.funds || candidate.buildings.length !== city.buildings.length || candidate.roads.length !== city.roads.length || JSON.stringify(candidate.controls) !== JSON.stringify(city.controls) || JSON.stringify(candidate.closures)!==JSON.stringify(city.closures);
+        const valid = moved?moved.ok: before !== candidate.funds || candidate.buildings.length !== city.buildings.length || candidate.roads.length !== city.roads.length || JSON.stringify(candidate.controls) !== JSON.stringify(city.controls) || JSON.stringify(candidate.closures)!==JSON.stringify(city.closures) || JSON.stringify(candidate.communityRoads)!==JSON.stringify(city.communityRoads);
         const colour = s.tool === 'bulldoze' ? COLORS.remove : valid ? COLORS.valid : COLORS.invalid;
         if(s.tool==='stop' || s.tool==='signal') {
             const areas=roadIndex(city).areas;
@@ -491,7 +610,9 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
                 const scene=city.incidents.find(i=>i.id===trip.incidentId);
                 if(scene){
                     const slot=trip.service==='police'?-1:trip.service==='ems'?0:1;
-                    const vx=scene.x-a.x,vy=scene.y-a.y;
+                    const apartment=scene.buildingId===undefined?undefined:city.buildings.find(b=>b.id===scene.buildingId);
+                    const anchor=apartment?footprint(apartment).find(p=>Math.abs(p.x-a.x)+Math.abs(p.y-a.y)===1):undefined;
+                    const vx=(anchor?.x??scene.x)-a.x,vy=(anchor?.y??scene.y)-a.y;
                     x=px(a.x+.5+vx*.28-vy*slot*.25);
                     y=py(a.y+.5+vy*.28+vx*slot*.25);
                     sprite.setSize(w*.7,w*.7*sprite.texture.height/sprite.texture.width);
@@ -614,14 +735,15 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
             }
             if(b.kind==='home'){if(homeRoadIssue(city,b)&&city.buildings.some(b=>b.kind==='store')){for(const p of footprint(b))activity.rect(px(p.x)+1,py(p.y)+1,tile-2,tile-2).stroke({color:0xffb75e,width:2});label(`access-${b.id}`,'!',b.x+1,b.y-.25,0xffb75e);}continue;}
             const s=shape(b), status=buildingStatus(city,b);
-            const name=b.kind==='hospital'?'Clinic':b.kind==='fireStation'?'FIRE':b.kind==='policeStation'?'POLICE':b.kind==='park'?'PARK':'SHOP';
-            const destination = b.kind==='store'||b.kind==='park';
+            const name=b.kind==='office'?'OFFICE':b.kind==='apartment'?'APT':b.kind==='hospital'?'Clinic':b.kind==='fireStation'?'FIRE':b.kind==='policeStation'?'POLICE':b.kind==='park'?'PARK':'SHOP';
+            const destination = b.kind==='store'||b.kind==='park'||b.kind==='office';
             // Keep service names above the roof at every zoom, clear of their identity symbols.
             const labelY = destination ? s.y0+.4 : s.y0-(s.side==='N'?1:0)-12/(tile*stage.scale()*camera.zoom);
             label(`b${b.id}`,destination?`${stage.scale()*camera.zoom>=.8?`${name} `:''}${status.occupied}/${status.capacity}${status.inbound?` +${status.inbound}`:''}`:name,s.x0+s.w/2,labelY);
             // Parked visitors stay on the plot, clear of the carriageway.
-            for(let i=0;i<Math.min(b.kind==='store'||b.kind==='park'?status.occupied:0,8);i++)activity.roundRect(px(s.x0+.2+i%4*.38),py(s.y0+s.h-.35-Math.floor(i/4)*.28),tile*.25,tile*.18,2).fill(0xffd779);
+            for(let i=0;i<Math.min(b.kind==='store'||b.kind==='park'||b.kind==='office'?status.occupied:0,8);i++)activity.roundRect(px(s.x0+.2+i%4*.38),py(s.y0+s.h-.35-Math.floor(i/4)*.28),tile*.25,tile*.18,2).fill(0xffd779);
         }
+
         const roads = new Set(city.roads.map(p => `${p.x},${p.y}`));
         for(const p of city.closures) {
             if (artReady) {
@@ -656,7 +778,7 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
         }
         for(const incident of city.incidents)if(incident.status==='active') {
             activity.rect(px(incident.x+.04),py(incident.y+.04),tile*.92,tile*.92).fill({color:0xb73c2c,alpha:.25}).stroke({color:0xff8860,width:3});
-            label(`i${incident.id}`,incident.severity==='fire'&&!incident.tutorialEmsOnly?'FIRE':'CRASH',incident.x+.5,incident.y+.1,0xffc080);
+            label(`i${incident.id}`,incident.severity==='fire'&&!incident.tutorialEmsOnly?'FIRE':incident.buildingId!==undefined?(incident.severity==='serious'?'EMS':'POLICE'):'CRASH',incident.x+.5,incident.y+.1,0xffc080);
             // A fixed screen-size badge explains the actual outstanding crew, without
             // replacing the wreck or drawing a pretend responder on the road.
             const needed=incidentServices(incident).filter(kind=>!incident.completedServices.includes(kind));
@@ -703,10 +825,10 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
     }
 
     function updateCamera() {
-        clampCamera(camera, city.map);
+        clampCamera(camera, worldBounds());
         root.scale.set(camera.zoom);
         root.position.set(viewport.x+viewport.width/2-camera.x*tile*camera.zoom, viewport.y+viewport.height/2-camera.y*tile*camera.zoom);
-        renderGround(); preview(); renderActivity(); syncWeather(); paint();
+        renderGround(); renderPlots(); preview(); renderActivity(); syncWeather(); paint();
     }
     function focusTown() {
         const points = city.buildings.length ? city.buildings.map(b => ({x:b.x+1,y:b.y+1})) : city.roads;
@@ -755,13 +877,13 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
             elapsed: city.elapsed,
             enabled: store.get().weatherEnabled,
             reducedMotion: motionPreference.matches,
-            map: city.map,
+            map: worldBounds(),
             camera,
             viewport,
         });
     }
     /** Model changed: everything but the terrain has to be rebuilt. */
-    function refresh() { renderWorld(); preview(); renderCars(); renderControls(); renderActivity(); syncWeather(); paint(); }
+    function refresh() { renderWorld(); renderPlots(); preview(); renderCars(); renderControls(); renderActivity(); syncWeather(); paint(); }
 
     function screenPoint(e: FederatedPointerEvent): Point { return stage.root.toLocal(e.global); }
     function inside(p: Point): boolean { return p.x >= viewport.x && p.y >= viewport.y && p.x < viewport.x+viewport.width && p.y < viewport.y+viewport.height; }
@@ -770,7 +892,7 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
         if (!inside(p)) return null;
         const worldPoint = screenToWorld(camera,viewport,p);
         const tilePoint = {x:Math.floor(worldPoint.x),y:Math.floor(worldPoint.y)};
-        return containsTile(city.map,tilePoint) ? tilePoint : null;
+        return containsTile(worldBounds(),tilePoint) ? tilePoint : null;
     }
     function finishDirection(mode: 'forward'|'reverse'|'two-way' = store.get().directionRestore?'two-way':'forward') {
         const result=session?(session.directions?.(city,directionPoints,mode)??{ok:false,message:'One-way editing is not supplied for this lesson.'}):applyRoadDirections(city,directionPoints,mode);
@@ -781,7 +903,45 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
     }
     function build(p: Point) {
         const s = store.get();
+        const land = sandboxLand();
+        if (land && !session) {
+            const open = purchasablePlots(land, connectedExpansionEdge(city), city.external?.gateway ?? null);
+            const plotId = plotIdForSignTile(land, p, open);
+            if (plotId !== null) {
+                const message = unlockPlot(city, plotId);
+                store.patch({ message });
+                report(); flushSave(); renderGround(); updateCamera(); refresh();
+                return;
+            }
+        }
         if(session&&s.tool&&!session.allowedTools?.includes(s.tool)){store.patch({message:'Use the tools supplied for this lesson.'});return;}
+        if(s.apartmentComplexDraft!==null){
+            const target=city.buildings.find(b=>b.kind==='apartment'&&footprint(b).some(q=>same(p,q)));
+            if(!target){store.patch({message:'Select another apartment block to join.'});return;}
+            const plan=planPrivateLanes(city,s.apartmentComplexDraft,target.id);
+            store.patch({message:plan.message,apartmentComplexPreview:plan.ok?{...plan,targetId:target.id}:null});
+            if(plan.ok)requestAnimationFrame(()=>{
+                if(store.get().apartmentComplexPreview?.targetId!==target.id)return;
+                const points=[...plan.lanes,...city.buildings.filter(b=>plan.buildingIds.includes(b.id)).flatMap(footprint)];
+                const xs=points.map(p=>p.x),ys=points.map(p=>p.y);
+                camera.x=(Math.min(...xs)+Math.max(...xs)+1)/2;
+                camera.y=(Math.min(...ys)+Math.max(...ys)+1)/2;
+                camera.zoom=Math.max(.25,Math.min(camera.zoom,viewport.width/(tile*(Math.max(...xs)-Math.min(...xs)+3)),viewport.height/(tile*(Math.max(...ys)-Math.min(...ys)+3))));
+                updateCamera();
+            });
+            preview();return;
+        }
+        if(s.apartmentEntranceDraft!==null){
+            const id=s.apartmentEntranceDraft;
+            if(s.entranceEditSlot){
+                const result=editBuildingEntrance(city,id,s.entranceEditSlot,p);
+                store.patch({message:result.message,...(result.ok?{apartmentEntranceDraft:null,entranceEditSlot:null}:{})});
+                report();if(result.ok)flushSave();refresh();return;
+            }
+            const message=upgradeBuildingEntrance(city,id,p);
+            const upgraded=city.buildings.find(b=>b.id===id)?.entranceCount===2;
+            store.patch({message,...(upgraded?{apartmentEntranceDraft:null}:{})});report();flushSave();refresh();return;
+        }
         if(s.movingBusStop!==null){
             const result=moveBusStop(city,s.movingBusStop,p.x,p.y,s.rotation);
             store.patch({message:result.message,...(result.ok?{movingBusStop:null,tool:null}:{})});
@@ -816,7 +976,11 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
             if(!drawing&&directionPoints.length>2&&same(directionPoints[0],p)){finishDirection();return;}
             preview();paint();return;
         }
-        if((s.tool === 'road'||s.tool===null) && city.roads.some(q=>same(p,q))) {
+        if(s.tool===null){
+            const owner=city.apartmentComplexes?.find(g=>g.privateLanes?.some(q=>same(p,q)));
+            if(owner){inspectedId=owner.buildingIds[0];inspectedRoad=null;store.patch({message:'Private community lane · slow shared access. The complex manages this road.'});report();return;}
+        }
+        if((s.tool === 'road'&&!city.communityRoads?.some(q=>same(p,q))||s.tool===null) && city.roads.some(q=>same(p,q))) {
             inspectedId=null;inspectedRoad = {...p};
             store.patch({message:roundaboutIndex(city).byTile.has(`${p.x},${p.y}`)?'Roundabout: entering cars yield to circulating traffic.':`Road approach (${p.x}, ${p.y}) selected. ${session?'Waiting is shown above the map.':'Flow details are in the Dashboard.'}`});
             report(); return;
@@ -850,13 +1014,16 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
                 gesture = true; drawing = false; hover = null; updateCamera(); return;
             }
             if (gesture) return;
+            if (!panStart && panCandidate && Math.hypot(p.x-panCandidate.x,p.y-panCandidate.y)>8) {
+                panStart = p; panCandidate = null;
+            }
             if (panStart) {
                 panCamera(camera,viewport,p.x-panStart.x,p.y-panStart.y);
                 panStart = p; hover = null; updateCamera(); return;
             }
         }
         hover = point(e);
-        if (pointers.has(e.pointerId) && hover && last && (store.get().tool === 'road'||store.get().tool === 'wideRoad'||store.get().tool === 'direction')) {
+        if (pointers.has(e.pointerId) && hover && last && (store.get().tool === 'road'||store.get().tool === 'communityRoad'||store.get().tool === 'wideRoad'||store.get().tool === 'direction')) {
             if (!drawing && downPoint && Math.hypot(p.x-downPoint.x,p.y-downPoint.y)>8) {drawing=true;build(last);}
             if (drawing && !same(last,hover)) {
                 const cursor = {...last};
@@ -874,8 +1041,10 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
         const p=screenPoint(e);pointers.set(e.pointerId,p);
         if(pointers.size>1){gesture=true;drawing=false;hover=null;preview();paint();return;}
         downPoint=p; hover=point(e);last=hover;
-        panStart=store.get().panning || e.button===1 ? p : null;
-        if(!panStart && hover && e.pointerType!=='touch' && store.get().tool==='road'){drawing=true;build(hover);}
+        const mode=store.get();
+        panStart=mode.panning || e.button===1 || e.button===2 ? p : null;
+        panCandidate=!panStart && mode.tool===null ? p : null;
+        if(!panStart && hover && e.pointerType!=='touch' && (mode.tool==='road'||mode.tool==='communityRoad')){drawing=true;build(hover);}
         preview();paint();
     }
     function up(e?: FederatedPointerEvent) {
@@ -884,7 +1053,7 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
         }
         if(e && pointers.has(e.pointerId) && drawing && !gesture && !panStart && store.get().tool==='direction' && directionPoints.length>1)finishDirection();
         if(e)pointers.delete(e.pointerId);else pointers.clear();
-        if(!pointers.size){gesture=false;drawing=false;last=null;panStart=null;downPoint=null;}
+        if(!pointers.size){gesture=false;drawing=false;last=null;panStart=null;panCandidate=null;downPoint=null;}
         hover=null;preview();paint();
     }
     const cancel = () => up();
@@ -900,12 +1069,44 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
         zoomCamera(camera,viewport,camera.zoom*Math.exp(-e.deltaY*.0015),p);updateCamera();
     }
     app.canvas.addEventListener('wheel',wheel,{passive:false});
+    const blockMenu = (e: Event) => e.preventDefault();
+    app.canvas.addEventListener('contextmenu', blockMenu);
     const uncommand=onCityCommand(command=>{
         cancel();
         if(session && !['zoom','home','focus'].includes(command.type)) {
             const permitted=command.type==='road-direction'&&session.allowedTools?.includes('direction')
-              || ['transit','bus-stop'].includes(command.type)&&session.allowedTools?.includes('busStop');
+              || ['transit','bus-stop'].includes(command.type)&&session.allowedTools?.includes('busStop')
+              || command.type==='apartment-complex'&&session.allowedTools?.includes('apartment');
             if(!permitted)return;
+        }
+        if(command.type==='apartment-complex'){
+            if(command.apply){
+                const s=store.get();
+                if(s.apartmentComplexDraft===null||!s.apartmentComplexPreview)return;
+                const message=buildPrivateComplex(city,s.apartmentComplexDraft,s.apartmentComplexPreview.targetId,s.apartmentComplexPreview);
+                store.patch({message,apartmentComplexPreview:null,...(message.startsWith('Complex joined:')?{apartmentComplexDraft:null}:{})});
+                report();flushSave();refresh();return;
+            }
+            if(command.cancel){store.patch({apartmentComplexDraft:null,apartmentComplexPreview:null,message:'Complex join canceled.'});preview();return;}
+            if(!city.buildings.some(b=>b.id===command.id&&b.kind==='apartment'))return;
+            inspectedId=command.id;
+            store.patch({apartmentComplexDraft:command.id,apartmentComplexPreview:null,apartmentEntranceDraft:null,entranceEditSlot:null,tool:null,movingBusStop:null,transitDraft:null,vehicleDebugOpen:false,panning:false,message:'Tap a nearby apartment to preview automatic private lanes and their cost.'});report();preview();return;
+        }
+        if(command.type==='building-entrance-edit'){
+            if(command.cancel){store.patch({apartmentEntranceDraft:null,entranceEditSlot:null,message:'Entrance edit canceled.'});preview();return;}
+            const b=city.buildings.find(b=>b.id===command.id&&(b.kind==='apartment'||b.kind==='office'));if(!b)return;
+            const slot=command.slot??'primary';if(slot==='secondary'&&b.entranceCount!==2)return;
+            inspectedId=b.id;
+            store.patch({apartmentComplexDraft:null,apartmentComplexPreview:null,apartmentEntranceDraft:b.id,entranceEditSlot:slot,tool:null,movingBusStop:null,transitDraft:null,vehicleDebugOpen:false,panning:false,message:'Choose a highlighted tile to move this entrance. No charge.'});
+            report();preview();return;
+        }
+        if(command.type==='apartment-upgrade'){
+            const apartment=city.buildings.find(b=>b.id===command.id&&(b.kind==='apartment'||b.kind==='office'));if(!apartment)return;
+            if(command.cancel){store.patch({apartmentEntranceDraft:null,entranceEditSlot:null,message:'Apartment upgrade canceled.'});preview();return;}
+            if(apartment.entranceCount===2)return;
+            inspectedId=apartment.id;
+            store.patch({apartmentComplexDraft:null,apartmentComplexPreview:null,apartmentEntranceDraft:apartment.id,entranceEditSlot:null,tool:null,movingBusStop:null,transitDraft:null,vehicleDebugOpen:false,panning:false,message:'Choose a highlighted edge tile. The upgrade is paid only after you choose.'});
+            report();preview();return;
         }
         if(command.type==='bus-stop'){
             if(command.action==='close'){inspectedId=null;store.patch({movingBusStop:null,tool:null});report();preview();return;}
@@ -958,6 +1159,22 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
             const message=allowed?connectExternalCity(city,command.point):'Build a home and store, or skip the tutorial, before connecting.';
             if(city.external?.gateway&&t?.status!=='complete')tutorialAction(city,'skip');
             store.patch({message});report();flushSave();refresh();
+        }
+        if(command.type==='open-expansion'){
+            const land=sandboxLand();
+            const open=land?purchasablePlots(land,connectedExpansionEdge(city),city.external?.gateway??null):[];
+            if(open.length&&land){
+                const r=plotRect(land,open[0]);
+                camera.x=r.x+r.width/2;camera.y=r.y+r.height/2;
+                camera.zoom=Math.max(camera.zoom,0.55);
+                store.patch({message:'Tap the For sale sign to open that land. Panning does not buy it.'});
+            } else store.patch({message:expansionSnapshot(city).lockedReason || 'No neighbouring plots are for sale.'});
+            updateCamera();return;
+        }
+        if(command.type==='unlock-plot'){
+            const message=unlockPlot(city,command.id);
+            store.patch({message});report();flushSave();
+            renderGround();updateCamera();return;
         }
         if(command.type==='expand'){
             const message=expandCity(city,command.direction);
@@ -1042,6 +1259,7 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
             window.removeEventListener('pointerup', outsideUp);
             window.removeEventListener('pointercancel', cancel);
             app.canvas.removeEventListener('wheel', wheel);
+            app.canvas.removeEventListener('contextmenu', blockMenu);
             uncommand();
             app.ticker.remove(tick);
             motionPreference.removeEventListener('change', onMotionPreference);

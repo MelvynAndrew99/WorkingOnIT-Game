@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
-.intersection-warning{flex-shrink:0;margin:0;padding:6px 10px;border-left:4px solid #ffc563;background:#452c1e;color:#ffe1a3;font-size:17.6px;line-height:1.25;pointer-events:none}
+.intersection-warning{flex-shrink:0;margin:0;padding:6px 10px;border-left:4px solid #ffc563;background:#452c1e;color:#ffe1a3;font-size:17.6px;line-height:1.25;text-align:left}
+button.intersection-warning{pointer-events:auto;width:auto;min-height:44px;border-radius:12px;border:1px solid #c4893a}
 
 @theme {
     /* ADAPT: game palette — these become Tailwind utilities (bg-primary,

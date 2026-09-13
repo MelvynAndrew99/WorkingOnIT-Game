@@ -1,3 +1,6 @@
+import ApartmentComplexPanel from './ApartmentComplexPanel.tsx';
+import OfficePanel from './OfficePanel.tsx';
+import ApartmentPanel from './ApartmentPanel.tsx';
 import TransitPanel from './TransitPanel.tsx';
 import { cityCommand } from '../game/cityControls.ts';
 import { useEffect } from 'react';
@@ -8,6 +11,7 @@ import { store, useStore, selectConstructionTool } from '../state/store.ts';
 import { isBuildingTool } from './cityLabels.ts';
 import './buildPalette.css';
 import {useTutorialGuidance} from './TutorialGuidance.tsx';
+import { IconRotate } from './hudIcons.tsx';
 
 type Category = 'roads' | 'places' | 'services';
 type Entry = { tool: Tool; label: string; name?: string; note: string; key?: string };
@@ -22,6 +26,8 @@ const GROUPS: { id: Category; label: string; entries: Entry[] }[] = [
     ] },
     { id: 'places', label: 'Places', entries: [
         { tool: 'home', label: 'Home', key: '1', note: 'Households travel to shops and parks.' },
+        { tool: 'apartment', label: 'Apartment', note: 'Four residents share one entrance. Join nearby blocks to automatically build slow private lanes and share road access.' },
+        { tool: 'office', label: 'Office', note: 'Residents drive here for work. Upgrade for more work spaces and a chosen second entrance.' },
         { tool: 'store', label: 'Store', key: '2', note: 'Shopping visits pay when they finish.' },
         { tool: 'park', label: 'Park', note: 'Recreation visits support household income.' },
         { tool: 'bulldoze', label: 'Clear', name: 'Remove, full refund', key: '4', note: 'Refunds what you paid. Tap a building or road you placed.' },
@@ -35,13 +41,16 @@ const GROUPS: { id: Category; label: string; entries: Entry[] }[] = [
     ] },
 ];
 /** Small code-native symbols stay legible independently of building artwork. */
-function ToolIcon({tool,locked}:{tool:Tool;locked:boolean}) {
+export function ToolIcon({tool,locked}:{tool:Tool;locked:boolean}) {
     const paths:Partial<Record<Tool,React.ReactNode>> = {
         busStation:<><rect x="2" y="3" width="20" height="18"/><path d="M2 9h20M6 13v5m6-5v5m6-5v5"/></>,
         busStop:<><rect x="6" y="2" width="12" height="12" rx="2"/><path d="M12 14v8M9 5h6v5H9z"/></>,
         direction:<><path d="M3 12h18m-7-7 7 7-7 7" /></>,
         wideRoad:<><path d="M3 2v20M21 2v20M11 2v20m2-20v20M7 2v4m0 4v4m0 4v4M17 2v4m0 4v4m0 4v4" /></>,
         road:<><path d="M5 2v20M19 2v20M12 2v4m0 4v4m0 4v4" /></>,
+        office:<><rect x="3" y="3" width="18" height="19"/><path d="M7 7h2m6 0h2M7 11h2m6 0h2M7 15h2m6 0h2M10 22v-4h4v4"/></>,
+        communityRoad:<><path d="M5 2v20M19 2v20M12 3v3m0 4v3m0 4v3"/><path d="m2 5 3-3 3 3"/></>,
+        apartment:<><rect x="4" y="2" width="16" height="20"/><path d="M8 6h2m4 0h2M8 10h2m4 0h2M8 14h2m4 0h2M10 22v-4h4v4"/></>,
         home:<><path d="m3 11 9-8 9 8M5 10v11h14V10M10 21v-7h4v7" /></>,
         store:<><path d="M3 9h18l-2-6H5L3 9Zm2 0v12h14V9M9 21v-7h6v7M3 9v3h18V9" /></>,
         park:<><path d="m12 2-7 9h4l-5 6h7v5h2v-5h7l-5-6h4L12 2Z" /></>,
@@ -60,7 +69,7 @@ function ToolIcon({tool,locked}:{tool:Tool;locked:boolean}) {
 const FACING = ['south', 'west', 'north', 'east'];
 const fullName = (e: Entry): string => e.name ?? (isBuildingTool(e.tool) ? LABELS[e.tool] : e.label);
 /** Tools the economy charges for. Closures and removal have no price. */
-const PRICED = new Set<Tool>(['stop', 'signal', 'road', 'wideRoad', 'home', 'store', 'park', 'hospital', 'fireStation', 'policeStation', 'busStation', 'busStop']);
+const PRICED = new Set<Tool>(['office','communityRoad','apartment','stop', 'signal', 'road', 'wideRoad', 'home', 'store', 'park', 'hospital', 'fireStation', 'policeStation', 'busStation', 'busStop']);
 const priceOf = (prices: Record<PricedTool, number>, tool: Tool): number | null =>
     PRICED.has(tool) ? prices[tool as PricedTool] : null;
 
@@ -97,20 +106,27 @@ export default function BuildPalette() {
             : `${fullName(e)} (${priceLabel(e)}). ${e.note}`);
     }
     return <div className="build-palette" role="group" aria-label="Build and traffic tools">
-        {!s.transitPanel && !s.busStopPanel && <div className="build-categories" role="group" aria-label="Construction categories">
-            {GROUPS.map(g => <button key={g.id} type="button" className="build-category"
-                aria-label={g.label} data-tutorial-target={guide.categoryTarget===g.id}
-                aria-describedby={guide.categoryTarget===g.id?'tutorial-locator-instruction':undefined}
-                aria-pressed={category === g.id} aria-controls={`shelf-${g.id}`}
-                onClick={() => setCategory(g.id)}>{g.label}</button>)}
+        {(s.apartmentPanel || s.apartmentComplexPanel || s.officePanel) && <div className="place-inspector">
+            {s.apartmentComplexDraft===null&&<ApartmentPanel />}
+            <ApartmentComplexPanel />
+            <OfficePanel />
         </div>}
-        {!s.transitPanel && !s.busStopPanel && isBuildingTool(s.tool) && <button type="button" className="build-rotate" title="Rotate the footprint and entrance; artwork stays upright. Desktop shortcut: R."
-            aria-label={`Rotate new buildings, entrance now facing ${FACING[s.rotation]}`}
-            onClick={() => {
-                const rotation = (s.rotation + 1) % 4;
-                store.patch({ rotation, message: `Entrance faces ${FACING[rotation]}. The footprint and entrance rotate; artwork stays upright.` });
-            }}><strong><span aria-hidden="true">↻ </span>Rotate <kbd>R</kbd></strong><em>Entrance: {FACING[s.rotation]}</em></button>}
-        {!s.transitPanel && !s.busStopPanel && s.tool==='wideRoad' && <button type="button" className="build-rotate wide-road-rotate" aria-label="Rotate 4-lane road" onClick={()=>store.patch({rotation:(s.rotation+1)%4, message:'4-lane road: rotate to fit, then place the highlighted two-tile footprint.'})}><strong>↻ Rotate <kbd>R</kbd></strong><em>{s.rotation%2?'North–south':'East–west'}</em></button>}
+        {!s.transitPanel && !s.busStopPanel && <div className="build-toolbar">
+            <div className="build-categories" role="group" aria-label="Construction categories">
+                {GROUPS.map(g => <button key={g.id} type="button" className="build-category"
+                    aria-label={g.label} data-tutorial-target={guide.categoryTarget===g.id}
+                    aria-describedby={guide.categoryTarget===g.id?'tutorial-locator-instruction':undefined}
+                    aria-pressed={category === g.id} aria-controls={`shelf-${g.id}`}
+                    onClick={() => setCategory(g.id)}>{g.label}</button>)}
+            </div>
+            {isBuildingTool(s.tool) && <button type="button" className="build-rotate" title="Rotate the footprint and entrance; artwork stays upright. Desktop shortcut: R."
+                aria-label={`Rotate new buildings, entrance now facing ${FACING[s.rotation]}`}
+                onClick={() => {
+                    const rotation = (s.rotation + 1) % 4;
+                    store.patch({ rotation, message: `Entrance faces ${FACING[rotation]}. The footprint and entrance rotate; artwork stays upright.` });
+                }}><IconRotate /><strong>Rotate <kbd>R</kbd></strong><em>Entrance: {FACING[s.rotation]}</em></button>}
+            {s.tool==='wideRoad' && <button type="button" className="build-rotate wide-road-rotate" aria-label="Rotate 4-lane road" onClick={()=>store.patch({rotation:(s.rotation+1)%4, message:'4-lane road: rotate to fit, then place the highlighted two-tile footprint.'})}><IconRotate /><strong>Rotate <kbd>R</kbd></strong><em>{s.rotation%2?'North–south':'East–west'}</em></button>}
+        </div>}
         {s.tool==='direction' && <div className="direction-editor" role="group" aria-label="Road direction editor">
             <p>Drag in travel order, or tap roads then Finish. Tap the first road to close a loop.</p>
             <div className="direction-actions">
@@ -123,7 +139,7 @@ export default function BuildPalette() {
         <TransitPanel />
         {!s.transitPanel && !s.busStopPanel && <div className="build-groups">
             {GROUPS.map(g => <section key={g.id} className="build-group" data-active={category === g.id}>
-                <div className="build-group-heading"><h3 className="build-group-label">{g.label}</h3>{g.id==='roads'&&s.tool==='wideRoad'&&<button type="button" className="build-heading-rotate" aria-label="Rotate 4-lane road" onClick={()=>store.patch({rotation:(s.rotation+1)%4,message:'4-lane road: rotate to fit, then place the highlighted two-tile footprint.'})}>↻ Rotate <span>{s.rotation%2?'North–south':'East–west'}</span></button>}</div>
+                <div className="build-group-heading"><h3 className="build-group-label">{g.label}</h3></div>
                 <div id={`shelf-${g.id}`} className="build-shelf" role="group" aria-label={`${g.label} tools`}
                     >
                     {g.entries.map(e => {

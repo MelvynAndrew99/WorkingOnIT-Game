@@ -1,12 +1,15 @@
+import { communityEdgeSpeed } from './cityCommunityRoads.ts';
 import {allowsRoadStep, directionSignature, type RoadDirections} from './cityDirections.ts';
 /** Estimated route costs. Movement remains the authority for admission. */
-import {blockedTiles, type City, type Point, type Trip} from './cityModel.ts';
+import {blockedTiles, entrances, type City, type Point, type Trip} from './cityModel.ts';
 import {bodyTile, roadIndex, governingControl, TRAVEL_TILES_PER_SECOND, EMERGENCY_TILES_PER_SECOND, STOP_DWELL, type RoadIndex} from './cityTraffic.ts';
 import {CITY_RULES} from './cityRules.ts';
 const key = (p: Point) => `${p.x},${p.y}`;
 const edge = (a: Point, b: Point) => `${key(a)}>${key(b)}`;
 const neighbours = (p: Point) => [{x:p.x+1,y:p.y},{x:p.x,y:p.y+1},{x:p.x-1,y:p.y},{x:p.x,y:p.y-1}];
 export type RoutingSnapshot = {
+  communityRoads?: ReadonlySet<string>;
+  apartmentEntrances?: ReadonlyMap<number, readonly Point[]>;
   roadDirections?: RoadDirections;
   wideRoads?: City['wideRoads'];
   roadPoints?: Point[];
@@ -40,9 +43,11 @@ export function routingSnapshot(city: City, index: RoadIndex = roadIndex(city), 
     if(!response&&c&&area) controls.set(area,c.kind==='stop'?STOP_DWELL:CITY_RULES.routing.signalEstimateSeconds);
   }
   const blocked=blockedTiles(city,response);
-  return {at:city.elapsed, revision:(response?'response|':'ordinary|')+[...index.roads].sort().join(';')+'|'+[...blocked].sort().join(';')+'|'+JSON.stringify(city.controls)+'|'+directionSignature(city),
+  return {at:city.elapsed, revision:(response?'response|':'ordinary|')+[...index.roads].sort().join(';')+'|'+[...blocked].sort().join(';')+'|'+JSON.stringify(city.controls)+'|'+directionSignature(city)+(index.communityRoads?.size ? '|community:'+ [...index.communityRoads].sort().join(';') : ''),
     ...(city.roadDirections?{roadDirections:{...city.roadDirections}}:{}),
     ...(city.wideRoads ? {wideRoads:city.wideRoads.map(s=>({...s})), roadPoints:city.roads.map(p=>({...p}))} : {}),
+    ...(response ? {apartmentEntrances:new Map(city.buildings.filter(b=>b.kind==='apartment'||b.kind==='office').map(b=>[b.id,entrances(b)]))} : {}),
+    ...(index.communityRoads?.size ? {communityRoads:new Set(index.communityRoads)} : {}),
     roads:new Set(index.roads),blocked,areas:new Map(index.areas),controls,queues};
 }
 export type RouteCost = {travel:number; queue:number; control:number; total:number};
@@ -51,7 +56,7 @@ function edgeCost(s:RoutingSnapshot,a:Point,b:Point,speed:number,excludeId?:numb
   const control=area!==undefined&&s.areas.get(key(a))!==area ? s.controls.get(area)??0 : 0;
   const measured=Math.max(0,...(s.queues.get(edge(a,b))??[]).filter(o=>o.id!==excludeId).map(o=>o.seconds));
   // A measured hold already includes control waiting. Charge only the excess.
-  const queue=Math.max(0,measured-control), travel=1/speed;
+  const queue=Math.max(0,measured-control), travel=1/communityEdgeSpeed(s.communityRoads,a,b,speed);
   return {travel,queue,control,total:travel+queue+control};
 }
 export function routeCost(s:RoutingSnapshot,path:Point[],speed=TRAVEL_TILES_PER_SECOND,excludeId?:number):RouteCost {
@@ -99,10 +104,11 @@ export function civilianRoute(city:City,start:Point,goal:Point,trip?:Trip):Point
 
 /** Same graph, with active-response diversion/control exceptions. Occupancy is
  * observed as delay, never permission to enter a lane or pass a queue. */
-export function responseRoute(s:RoutingSnapshot,start:Point,scene:Point,excludeId?:number,avoid?:Set<string>) {
+export function responseRoute(s:RoutingSnapshot,start:Point,scene:Point & {buildingId?:number},excludeId?:number,avoid?:Set<string>) {
   const view=avoid ? {...s,blocked:new Set([...s.blocked,...avoid])} : s;
   let best:ReturnType<typeof weightedRoute>=null;
-  for(const goal of neighbours(scene).sort((a,b)=>a.y-b.y||a.x-b.x)) {
+  const access=scene.buildingId === undefined ? neighbours(scene) : [...(s.apartmentEntrances?.get(scene.buildingId) ?? [])];
+  for(const goal of access.sort((a,b)=>a.y-b.y||a.x-b.x)) {
     const candidate=weightedRoute(view,start,goal,EMERGENCY_TILES_PER_SECOND,excludeId);
     if(candidate && (!best || candidate.cost.total<best.cost.total-1e-9))best=candidate;
   }

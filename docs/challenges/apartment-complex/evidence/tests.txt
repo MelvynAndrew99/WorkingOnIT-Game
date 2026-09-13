@@ -1,0 +1,14 @@
+✔ src/game/apartmentChallenge.test.ts (924.628141ms)
+✔ src/game/campaignIdle.test.ts (24678.855544ms)
+✔ src/game/campaignLessons.test.ts (5829.516663ms)
+✔ src/game/challengeLessons.test.ts (671.729668ms)
+✔ src/game/cityPrivateLanes.test.ts (391.151469ms)
+✔ src/game/jamCampaign.test.ts (11541.559312ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 24694.208374

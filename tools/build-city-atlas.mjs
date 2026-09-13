@@ -320,7 +320,21 @@ for (const side of DIRS) {
 // ---------------------------------------------------------------------------
 // Pack: shelf-fit into a power-of-two-width sheet, 1px transparent gutter.
 // ---------------------------------------------------------------------------
-const GUTTER = 1, SHEET_W = 256;
+// Claude-authored, user-approved lots. Copy pixels unchanged from the source sheets.
+for (const [kind, folder] of [['office', 'offices'], ['apartment', 'housing/residential-apartment']]) {
+    const dir = path.join(ROOT, 'docs/artwork', folder);
+    const manifest = JSON.parse(fs.readFileSync(path.join(dir, `${kind}-sheet.json`), 'utf8'));
+    const img = read(path.join(dir, manifest.sheet));
+    if (Object.keys(manifest.frames).length !== 64) throw new Error(`Incomplete ${kind} sprites`);
+    for (const [name, f] of Object.entries(manifest.frames)) {
+        if (f.w !== 64 || f.h !== 64 || f.x < 0 || f.y < 0 || f.x + f.w > img.width || f.y + f.h > img.height)
+            throw new Error(`Invalid lot frame: ${name}`);
+        const buf = [];
+        for (let y = 0; y < f.h; y++) for (let x = 0; x < f.w; x++) buf.push(get(img, f.x + x, f.y + y));
+        sprites.set(name, {w:f.w, h:f.h, buf});
+    }
+}
+const GUTTER = 1, SHEET_W = 512;
 const names = [...sprites.keys()].sort((a, b) => sprites.get(b).h - sprites.get(a).h || a.localeCompare(b));
 const frames = {};
 let cx = GUTTER, cy = GUTTER, rowH = 0;

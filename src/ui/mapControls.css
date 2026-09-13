@@ -1,20 +1,138 @@
-/* Camera rail on the map edge, plus the expansion dialog it opens. */
-.map-rail{display:flex;flex-direction:column;gap:5px}
-.city-ui.dispatch-ui .map-rail button{width:100%;padding:4px 2px;background:#101c2de8;border-color:#3f5471;line-height:1.1}
-.city-ui.dispatch-ui .map-rail button[aria-pressed=true]{background:var(--cyan,#42d9e8);color:#101c2d;border-color:#9df0f8;font-weight:750}
-.dispatch-ui[data-layout=wide] .map-rail button{padding:6px 8px}
+/* Compact camera cluster — chips, not a stretched full-width toolbar. */
 
-.expansion-dialog{pointer-events:auto;margin:auto;max-width:min(380px,calc(100% - 24px));max-height:90dvh;overflow:auto;touch-action:pan-y;line-height:1.35}
-.expansion-dialog h2{font-size:23px;font-weight:800}
-.expansion-dialog p{margin:10px 0}
-.expansion-preview{width:100%;height:105px;border-radius:7px}
-.expansion-directions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-areas:". north ." "west . east" ". south .";gap:5px}
-.city-ui.dispatch-ui .expansion-directions button{flex:1;padding:8px 4px}
-.city-ui.dispatch-ui .expansion-dialog>button{width:100%;min-height:44px;margin-top:8px}
+.map-rail {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+  width: auto;
+  flex: 0 0 auto;
+}
 
-.expansion-north{grid-area:north}.expansion-west{grid-area:west}.expansion-east{grid-area:east}.expansion-south{grid-area:south}
-.city-ui.dispatch-ui .expansion-directions button{min-height:44px}
-.expansion-dialog blockquote{margin:12px 0;padding:10px 12px;border-left:4px solid #f5d66f;background:#1b2b43;border-radius:4px;color:#fff0bf}
-.expansion-speaker{color:#f5d66f;font-weight:800;text-transform:uppercase;font-size:12px;letter-spacing:.08em}
-.city-ui.dispatch-ui .map-rail button.expansion-target{outline:3px solid #ffe179;outline-offset:2px;background:#f5d66f;color:#101c2d;font-weight:800}
-.expansion-allowance{color:#ffe179}
+.city-ui.dispatch-ui .map-rail button,
+.challenge-ui .map-rail button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: auto;
+  flex: 0 0 auto;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 6px 10px;
+  background: #152033e8;
+  border: 1px solid #3d5470;
+  border-radius: 12px;
+  line-height: 1.1;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.city-ui.dispatch-ui .map-rail button .hud-icon,
+.challenge-ui .map-rail button .hud-icon {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+.city-ui.dispatch-ui .map-rail .hud-icon-btn,
+.challenge-ui .map-rail .hud-icon-btn {
+  position: relative;
+}
+
+.city-ui.dispatch-ui .map-rail button[aria-expanded=true],
+.city-ui.dispatch-ui .map-rail button[aria-pressed=true],
+.challenge-ui .map-rail button[aria-pressed=true] {
+  background: var(--cyan, #5bc4d4);
+  color: #101c2d;
+  border-color: #9de8f0;
+  font-weight: 800;
+}
+
+.dispatch-ui:not([data-layout=wide]) .map-rail button span,
+.challenge-ui .map-rail button span {
+  font-size: 12px;
+}
+
+.expansion-dialog {
+  pointer-events: auto;
+  margin: auto;
+  max-width: min(380px, calc(100% - 24px));
+  max-height: 90dvh;
+  overflow: auto;
+  touch-action: pan-y;
+  line-height: 1.35;
+  border-radius: 20px;
+}
+
+.expansion-dialog h2 {
+  font-size: 22px;
+  font-weight: 850;
+  letter-spacing: -0.03em;
+}
+
+.expansion-dialog p {
+  margin: 10px 0;
+}
+
+.expansion-preview {
+  width: 100%;
+  height: 105px;
+  border-radius: 10px;
+}
+
+.expansion-directions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-areas: ". north ." "west . east" ". south .";
+  gap: 6px;
+}
+
+.city-ui.dispatch-ui .expansion-directions button {
+  flex: 1;
+  padding: 8px 4px;
+  min-height: 44px;
+  border-radius: 12px;
+}
+
+.city-ui.dispatch-ui .expansion-dialog > button {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 8px;
+  border-radius: 12px;
+}
+
+.expansion-north { grid-area: north; }
+.expansion-west { grid-area: west; }
+.expansion-east { grid-area: east; }
+.expansion-south { grid-area: south; }
+
+.expansion-dialog blockquote {
+  margin: 12px 0;
+  padding: 10px 12px;
+  border-left: 4px solid #f0c56a;
+  background: #1b2b43;
+  border-radius: 8px;
+  color: #fff0bf;
+}
+
+.expansion-speaker {
+  color: #f0c56a;
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+}
+
+.city-ui.dispatch-ui .map-rail button.expansion-target {
+  outline: 3px solid #f0c56a;
+  outline-offset: 2px;
+  background: #f0c56a;
+  color: #101c2d;
+  font-weight: 800;
+}
+
+.expansion-allowance {
+  color: #f0c56a;
+}

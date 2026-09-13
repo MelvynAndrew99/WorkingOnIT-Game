@@ -1,0 +1,14 @@
+✔ joins and merges connected blocks with canonical IDs while leaving individual buildings and journeys intact (10.063551ms)
+✔ joining requires an unbroken community road connection at enabled entrances and rejects invalid selections without mutation (1.02077ms)
+✔ saved complex persists across road severance and reports restored access after reconnecting (2.01549ms)
+✔ aggregate residents follow individual upgrades and removal preserves remaining members with canonical ID (1.555234ms)
+✔ parser rejects duplicate, absent and non-apartment members and noncanonical saved IDs (1.499125ms)
+✔ a chosen upgraded entrance can join a community network when the primary entrance cannot (1.571416ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 26.685858

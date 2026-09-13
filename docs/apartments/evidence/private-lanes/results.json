@@ -1,0 +1,22 @@
+[
+  {
+    "width": 1440,
+    "previewBeforePayment": true,
+    "escapeCancels": true,
+    "automaticLanes": 7,
+    "sharedPublicApproach": true,
+    "managed": true,
+    "reload": true,
+    "errors": []
+  },
+  {
+    "width": 390,
+    "previewBeforePayment": true,
+    "escapeCancels": true,
+    "automaticLanes": 7,
+    "sharedPublicApproach": true,
+    "managed": true,
+    "reload": true,
+    "errors": []
+  }
+]

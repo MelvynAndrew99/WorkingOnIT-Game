@@ -1,3 +1,11 @@
+## Title screen: Missions first, bigger Sandbox, W-ON-IT radio (2026-09-13)
+
+User direction before jam submission: the main screen should feel mobile. **Missions sit on top** because players solve them first; **Sandbox sits under it but is the larger card**, since it is what brings people back. Missions shows the next level and awards; Sandbox shows the saved town's buildings, trips and funds.
+
+The radio must **feel like a radio station** and make the menu fun to be in. Implemented locally: W-ON-IT City Radio receiver with power, amber LCD, a draggable FM dial with generated static between stations, SEEK and numbered presets, and a DJ quip from The Man per song. His title caption reacts to the radio. **What a Jam!** is re-encoded at 128kbps and plays only a 20-second preview until the Level 25 award is saved, then plays in full. Game themes play free. Songs rolled on to after a full song skip locked ones. Future songs sold by in-game purchase have an unlock type but no purchase flow or entitlement check.
+
+Layout follow-up (same day): the radio is a **reusable component** for later in-game placement (not placed in game yet). It shows as a mini now-playing bar with power and next-station, docked under the menu buttons (sticky at the bottom on phones), and expands into the full receiver with a scrollable station list instead of fixed presets, because more Suno songs are coming. Working ON IT! stays on the station; Tranquil City is removed from the radio (it remains the gameplay music) and Busy Junction may be retired. **Room For Us** (98.7) and **Fill It Up!** (95.5, chorus preview from 0:50) are added as game-credits unlocks with a 20-second previews; the credits purchase itself is not implemented. The menu column is wider and returning towns show stats as chips so the whole menu fits a 1440×900 screen. [Adding songs](../public/audio/radio/README.md). No publication.
+
 ## Jam campaign complete locally: 25 beginner jobs (2026-09-13)
 
 User selects simple, fun Levels 1–25 for the jam, increasing combined skills through a sequentially unlocked campaign; harder optimization and new interactive objects are for later. [Current mission order and delivery](challenges/jam-25/README.md) replaces staged apartment slots with ordinary-home road/income/access lessons, introduces the neighborhood-off-an-avenue Divert rescue with a second-entrance budget, and implements the open-ended Level 25 finale. Awards follow stable IDs across reordering. The free song entitlement is saved on finale completion, but its recording is not installed. No house-art edits, global economy rebalance, performance tests or publication in this mission work.
@@ -50,9 +58,9 @@ The user defers economy balancing until **after the game jam**. The MVP fun is s
 
 The user reports the game is **almost at 100 players after five days**. Record it as an approximate reported milestone, not verified retention or concurrent usage. No analytics, runtime rebalance or publication in this update.
 
-## Bounded sandbox and on-map land buying (2026-09-12 discussion)
+## Bounded sandbox and on-map land buying (2026-09-13)
 
-User wants expansion to stop at a finite boundary and clickable land sprites to spend money/open land, replacing the expansion menu. Less menu navigation and clearer spatial actions are the purpose. [Discussion](land-progression/BOUNDED-MAP.md) proposes 64×48 tiles, compared with the supplied 64×44 town and current 64×64 cap. A 4×3 arrangement of 16×16 plots, one initially open, is a proposal for new towns; size/layout/prices remain unselected. Preserve existing towns and outside-city edge access; plan the transition from free/permit expansion to cash without double charging or losing earned land. No runtime edits in this discussion.
+The sandbox envelope is 64×48 tiles, saved on the city so a later update can grow it. New land is a 4×3 grid of 16×16 plots. Adjacent locked plots show a For sale sign; tap the sign to open that plot. The first two unlocks are free, then a provisional cash price. The compass expansion menu is removed. The H-road tutorial starts with four plots because the teaching roads do not fit on one 16×16 cell. Existing towns keep their land; unused permits become free unlocks. [Discussion](land-progression/BOUNDED-MAP.md).
 
 ## Bus ridership and occupancy markers delivered locally (September 11, 2026)
 

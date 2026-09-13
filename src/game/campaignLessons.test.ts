@@ -66,7 +66,7 @@ test('bus setup and boarding cannot award returns, and passenger receipts surviv
  assert.equal(r.busServed?.length,4);assert.equal(r.earned,true);
 });
 test('fixed set pieces cannot fund solutions; newly placed destinations refund once and no outside tools work',()=>{
- for(const d of playable){const r=createChallenge(d.id),home=r.city.buildings.find(b=>b.kind==='home')!,funds=r.city.funds;
+ for(const d of playable){const r=createChallenge(d.id),home=r.city.buildings.find(b=>b.kind==='home')??r.city.buildings[0],funds=r.city.funds;
   const before=JSON.stringify(r.city);challengePlace(r.city,'bulldoze',home.x,home.y,0,r.id);challengePlace(r.city,'home',0,0,0,r.id);
   assert.equal(JSON.stringify(r.city),before);assert.equal(r.city.funds,funds);
  }

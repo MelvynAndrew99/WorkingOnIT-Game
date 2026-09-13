@@ -1,0 +1,144 @@
+✖ FLOW-01: road bottleneck and two real solutions from the same queued demand (1487.195276ms)
+✔ FLOW-01: a preplanned good layout qualifies without a forced jam or rising demand (436.150385ms)
+✔ FLOW-01: full queued-save reload, pause, receipts and later recovery preserve the town (503.664818ms)
+✔ FLOW-01: completed shopping without a route home is not a returned journey (61.311551ms)
+✔ FLOW-01: full reachable stores, disconnected routes and traffic are distinct (61.531433ms)
+✔ FLOW-01: averages cannot conceal a disconnected household; demolition retains the fixed target (70.188107ms)
+✔ FLOW-01: legacy and malformed attribution preserve saves without inventing local service (37.111828ms)
+✔ FLOW-01: leisure and outside completions never masquerade as household shopping returns (59.0763ms)
+✔ FLOW-01: bounded history expires quietly and unknown samples cannot earn a grade (10.955854ms)
+✔ FLOW-01: long leisure journeys cannot starve shopping, including after reload (46.431615ms)
+✖ Level 2 stays quiet and serves all three households over ten simulated minutes (543.923326ms)
+✔ usage makes an unsigned crossing dangerous, while a stop remains sufficient at moderate demand (965.703919ms)
+✔ heavier conflicting traffic overloads stops; lights or separate routes serve the same 18 homes (4631.275168ms)
+✖ a long shared green exposes heavy opposing turns; a shorter phase safely serves every household (986.432337ms)
+✔ stationary waiting and ordinary red lights never turn stored exposure into an accident (8.349558ms)
+✔ opposing through traffic and right turns do not create a failed-left-turn hazard (0.585309ms)
+✔ a full warning cannot crash stationary cars or overlap an uninvolved vehicle at contact (0.626864ms)
+✔ multi-tile intersections share one meter and one encounter per tick (0.945411ms)
+✖ saved warning, encounter window and frame chunking preserve the same later collision (789.598686ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 15
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 10878.260564
+
+✖ failing tests:
+
+test at ../../../../../tmp/integrated-model-pristine/src/game/cityFlow.test.ts:26:1
+✖ FLOW-01: road bottleneck and two real solutions from the same queued demand (1487.195276ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(improved.returns > baseline.returns * 1.4)
+  
+      at TestContext.<anonymous> (file:///tmp/integrated-model-pristine/src/game/cityFlow.test.ts:58:12)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.start (node:internal/test_runner/test:1242:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at ../../../../../tmp/integrated-model-pristine/src/game/cityIntersectionSafety.test.ts:24:1
+✖ Level 2 stays quiet and serves all three households over ten simulated minutes (543.923326ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 49.32499999999798
+  - undefined
+  
+      at TestContext.<anonymous> (file:///tmp/integrated-model-pristine/src/game/cityIntersectionSafety.test.ts:26:39)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 49.32499999999798,
+    expected: undefined,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ../../../../../tmp/integrated-model-pristine/src/game/cityIntersectionSafety.test.ts:49:1
+✖ a long shared green exposes heavy opposing turns; a shorter phase safely serves every household (986.432337ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///tmp/integrated-model-pristine/src/game/cityIntersectionSafety.test.ts:51:41)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ../../../../../tmp/integrated-model-pristine/src/game/cityIntersectionSafety.test.ts:115:1
+✖ saved warning, encounter window and frame chunking preserve the same later collision (789.598686ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    {
+      accidentCount: 1,
+      buildings: [
+        {
+          id: 1,
+  ...
+        envelopeWidth: 64,
+  +     freeUnlocks: 7,
+  -     freeUnlocks: 2,
+        origin: {
+  +       x: -24,
+  +       y: -24
+  -       x: 0,
+  -       y: 0
+        },
+        owned: [
+          0,
+  +       1,
+  +       2,
+  +       4,
+  +       5,
+  +       6,
+  +       8,
+  +       9,
+  +       10
+        ],
+        plotSize: 16,
+        purchased: 0,
+        version: 1
+      },
+  
+      at TestContext.<anonymous> (file:///tmp/integrated-model-pristine/src/game/cityIntersectionSafety.test.ts:123:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [Object],
+    expected: [Object],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

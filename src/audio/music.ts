@@ -4,7 +4,7 @@ export const MUSIC_TRACK='audio/music/tranquil-city.mp3';
 export const MENU_TRACK='audio/music/TitleTheme.mp3';
 export const PAUSE_TRACK='audio/music/pause-menu.mp3';
 const SETTINGS_KEY='working-on-it:music';
-let volume=.3, muted=false, sleeping=false;
+let volume=.3, muted=false, sleeping=false, radioHold=false;
 try {
  const saved=JSON.parse(localStorage.getItem(SETTINGS_KEY)??'null');
  if(typeof saved?.volume==='number'&&Number.isFinite(saved.volume))volume=Math.min(1,Math.max(0,saved.volume));
@@ -58,8 +58,8 @@ function silence():void {
 }
 function sync():void {
  const next=tracks.find(t=>t.active());
- // Mute, hidden tabs and host sleep stop immediately, even midway through a fade.
- if(!audible()||!next){silence();return;}
+ // Mute, hidden tabs, host sleep and the radio desk stop immediately, even midway through a fade.
+ if(radioHold||!audible()||!next){silence();return;}
  applyMix();
  const el=next.el;
  if(!el||next.failed)return;
@@ -108,6 +108,8 @@ export function setMusicVolume(value:number):void {
 }
 export function setMusicMuted(value:boolean):void {muted=value;saveSettings();sync();}
 export function setMusicSleeping(value:boolean):void {sleeping=value;sync();}
+/** City Radio owns the speakers while a clip is playing. */
+export function setRadioHold(value:boolean):void {radioHold=value;sync();}
 function saveSettings():void {
  try {localStorage.setItem(SETTINGS_KEY,JSON.stringify({volume,muted}));}catch{ /* Session settings still work. */ }
 }

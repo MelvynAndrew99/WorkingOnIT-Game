@@ -1,3 +1,4 @@
+import {buildPrivateComplex} from '../cityPrivateLanes.ts';
 import {solveEmergency} from './emergencySolutions.ts';
 /** Reviewable player operations, used by simulation and browser checks. */
 import {challengePlace,challengeDirections,stepChallenge,type ChallengeRun} from '../cityChallenges.ts';
@@ -19,6 +20,14 @@ export function solveCampaign(run:ChallengeRun,alternative=false){
   if(alternative){for(let x=15;x<=19;x++)road(x,15);}
   break;
  case 'another-front-door':{
+  if(run.revision===3){
+   const offset=alternative?3:0;
+   for(const x of [2+offset,8+offset])put('apartment',x,2);
+   const blocks=c.buildings.filter(b=>b.kind==='apartment');
+   const result=buildPrivateComplex(c,blocks[0].id,blocks[1].id);if(!result.startsWith('Complex joined'))throw Error(result);
+   for(let y=7;y<12;y++)road(2+offset,y);
+   break;
+  }
   const x=alternative?18:16;
   for(let n=16;n<=x;n++)road(n,5);
   for(let y=6;y<=11;y++)road(x,y);

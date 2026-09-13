@@ -1,5 +1,6 @@
 import {loadChallenges,flushChallenges} from './state/challenges.ts';
 import {initMusic,setMusicSleeping} from './audio/music.ts';
+import {setRadioSleeping} from './audio/radio.ts';
 import {initVehicleAudio,setVehicleAudioSleeping} from './audio/vehicles.ts';
 import {initTrafficAudio,setTrafficAudioSleeping} from './audio/traffic.ts';
 import {initCrashAudio,setCrashAudioSleeping} from './audio/crashes.ts';
@@ -81,8 +82,8 @@ async function boot() {
     registerLifecycles({
         onPause: () => store.patch({ paused: true }),
         onResume: () => store.patch({ paused: false }),
-        onSleep: () => {setMusicSleeping(true);setVehicleAudioSleeping(true);setTrafficAudioSleeping(true);setCrashAudioSleeping(true);setConstructionAudioSleeping(true);setWeatherAudioSleeping(true);persistActiveGame();},
-        onAwake: () => {setMusicSleeping(false);setVehicleAudioSleeping(false);setTrafficAudioSleeping(false);setCrashAudioSleeping(false);setConstructionAudioSleeping(false);setWeatherAudioSleeping(false);},
+        onSleep: () => {setMusicSleeping(true);setRadioSleeping(true);setVehicleAudioSleeping(true);setTrafficAudioSleeping(true);setCrashAudioSleeping(true);setConstructionAudioSleeping(true);setWeatherAudioSleeping(true);persistActiveGame();},
+        onAwake: () => {setMusicSleeping(false);setRadioSleeping(false);setVehicleAudioSleeping(false);setTrafficAudioSleeping(false);setCrashAudioSleeping(false);setConstructionAudioSleeping(false);setWeatherAudioSleeping(false);},
         onQuit: () => persistActiveGame(), // treat onSleep as the reliable one
     });
 
