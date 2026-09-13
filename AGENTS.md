@@ -1,4 +1,90 @@
+## All 25 beginner jam missions (2026-09-13)
+
+User also requires sequential locks: Level 1 begins open; each later mission requires the preceding mission's permanent award. Locked briefings explain the prerequisite and disable Play; the state selection API enforces it too. Wins unlock the next job immediately, and retries/reloads keep earned unlocks. No fabricated prior awards or active-save edits.
+
+User requests filling the missing levels for the final jam day, ordering by increasing combined skills, and keeping Levels 1–25 simple/fun. Harder optimization and new interactive objects are for after the jam. Implemented home-based replacements for staged slots: four-lane connection (10), shopping-funded park (11), second neighborhood entrance (14); reordered the earlier connection/control lessons by prerequisites while keeping stable save/award IDs. Level 19 now has a two-lane neighborhood off a four-lane avenue, $3,200 for a second entrance/police connection, explicit Divert/real clearance/reopen/fresh-journey stages. Its old revision 3 attempt is archived on selection; revision 4 is the new map. Level 25 is an open-ended two-scene finale accepting different legal permanent designs, with a saved free What A Jam entitlement. Song audio itself is not installed. [Delivery, order and verification](docs/challenges/jam-25/README.md). No publication, active-save edits, house-art changes or performance tests.
+
+This supersedes earlier staged-slot/finale-design-only statuses and first-14 ordering. Emergency budgets remain forgiving; only the dedicated income lesson earns shopping money. Historical apartment plans remain post-jam possibilities, not dependencies for these levels.
+
+## Missions 15–24 implemented locally (2026-09-12)
+
+The requested emergency sequence is now playable: police access (15), Police placement (16), Clinic placement (17), Fire placement (18), a civilian detour before response (19), legal one-way access (20), the complete Divert/two-way/clear/original-direction/reopen/recovery lesson (21), paired placement (22), all-service fire recovery (23), and two-scene district recovery (24). Budgets remain forgiving. Real dispatch, legal arrival and completed incident work are recorded across reload; later recovery requires new returns from every home. Level 15 keeps its stable ID and award, archiving the old bus-composite attempt on selection. Levels 1–14 are preserved; apartments and Level 25/reward remain staged. [Per-level handoffs and verification](docs/challenges/levels-15-24/README.md). No publication, active-player-save edits or performance tests.
+
+This delivery supersedes design-only/current-bus-Level15 statements below for Levels 15–24; historical requests and Level 25 constraints remain recorded.
+
+## Level 25: open-ended multipart finale (2026-09-12 refinement)
+
+User selects **Level25** as a multipart challenge that leaves the solution to the player's creativity. Combine the learned emergency-service placement, traffic management and recovery skills in a readable beginner finale with forgiving funds and room to experiment. Present the required outcomes as clear stages, while allowing players to plan ahead and satisfy them through their own designs.
+
+Author stages around usable access for the required services, actual responder arrival and incident clearance, then restored civilian journeys with emergency access maintained. Exact incidents, stage targets and map remain to author. Accept different legal road layouts, service locations, detours and combinations of learned controls whenever they achieve those outcomes. Do not require a particular tile layout, building location, road type or prescribed sequence of tool clicks in this finale. The earlier temporary-two-way puzzle is a focused teaching example, not a mandatory solution for Level25. Do not force players to undo a successful permanent redesign merely to match the starting layout.
+
+Verify multiple materially different reference solutions before shipping, retain progress evidence across reload, and make each remaining objective visible. Completion still grants **What A Jam** free as the game-jam reward. Design recorded only; no playable Level25, reward implementation, save edits or publication in this update.
+
+## Emergency building placement lessons (2026-09-12 refinement)
+
+User confirms that Levels **15–25** should include placing **clinics, fire stations and police stations**, alongside detours and temporary road conversions. Introduce one service-placement/access problem at a time, then combine services and traffic management in later staged puzzles. Keep budgets forgiving and provide enough room and funds for the required building and usable access roads.
+
+Make placement an explicit objective when it is the taught action, followed by actual dispatch, legal responder arrival and the required incident service/clearance. A building placed on the map alone does not win. Teach that station location and connected approaches matter: civilian queues must not block services, and crews still obey one-way and physical traffic rules. Use incidents with the appropriate required crews; preplace supporting services in introductory lessons so one new building remains the clear task. Later puzzles may require placing multiple services, diverting civilian traffic, clearing the incident and restoring normal road operation.
+
+Exact level assignments, maps and budgets remain to author. This records the requested progression; no playable mission or shared responder-rule changes are made here.
+
+## Temporary two-way emergency access mission (2026-09-12 refinement)
+
+User specifies the full recovery sequence for a forgiving Level15–25 lesson:
+
+1. Place **Divert** on the relevant one-way approach to stop new civilian arrivals. Let occupied/committed road space clear before editing.
+2. Convert the needed street to **two-way** while the diversion remains active.
+3. The responder must physically reach the accident via legal access, and the required crews must actually finish clearing it. Existing responding-service access through civilian Divert remains applicable; never grant a wrong-way exception or bypass occupied road space.
+4. After the accident is cleared and the road is safe to edit, restore the street’s **original one-way direction**.
+5. Toggle **Divert off** to reopen civilian traffic, and observe traffic resume legally.
+
+Expose these as successive objectives. Neither conversion alone nor responder arrival alone completes the whole mission. Preserve the original direction, the incident identity and actual completion evidence across reload; restoration must match the original flow, not just any one-way setting. Player-facing guidance should distinguish waiting for cars to clear from a missing legal route. Maintain forgiving funds and accessible fixes. Exact level, map, roster and resumed-traffic target remain to author.
+
+This supersedes the earlier shortened idea that ended at police arrival, including reopening the converted street before the rescue. The new sequence keeps the civilian diversion during the response and removes it after restoring one-way flow. Documentation only; no runtime mission or traffic-rule changes, save edits or publication.
+
+## Forgiving emergency lessons: Levels 15–25 (latest correction, 2026-09-12)
+
+User clarifies that **Levels15–25 remain forgiving** and focus on managing traffic and accidents with emergency responders: build/use detours, keep civilian queues from blocking services, and maintain usable responder access. The challenge comes from road/access decisions and observing real recovery, not increasingly restrictive budgets. This supersedes the previous “budget precision from15” interpretation and moves the emergency phase’s start from16 to15. Earlier positive feedback about Level15’s budget does not authorize tightening allowances.
+
+Keep readable causes, affordable fixes, creative alternatives and actual responder arrival/service as evidence of success. Responders retain the shared road/occupancy rules, including one-way directions; a detour alone does not clear a crash. Specific maps, responder rosters and budgets remain to author. The current local Level15 is still the bus/shopping/park composite and needs revision for this newly clarified role. Documentation only here: no runtime map/budget changes, save edits, performance testing or publication.
+
+## Inspect cursor and toggle construction tools (2026-09-12)
+
+User requests a default inspect/select cursor, particularly for editing and moving bus stops, and clicking an already-selected construction tool again to deselect it. Challenges now enter/reset with no construction tool. Sandbox/challenge palettes expose Inspect and toggle active tools off; shortcuts toggle too, Escape returns to inspection/cancels pending moves or direction/route drafts. Inspect clicks select roads/buildings/stops without construction; selecting a bus stop exposes its existing Move stop action. Changes are UI/input only; no save migration, automatic movement, publication or performance tests.
+
+## Level 13: make buying the bus explicit (2026-09-12)
+
+User found the empty bus stops confusing and requests bus purchase as a mission objective. Level13 now separately shows Buy a bus ($400 at the depot), Choose both stops, and Start service/Play, with a prominent next-step prompt. Briefing explains passengers appear once service and traffic are running. This is mission/UI clarification, not authorization to alter passenger generation or remove the separate shopping-return requirement. No publication.
+
+## Beginner missions 6–15 (2026-09-12)
+
+User authorizes creating missions while away, with optional Grok restricted to ideas/gameplay balancing. Latest clarification: chess.com-like beginner puzzles, single clear tasks first and multiple transparent stages later; connect buildings/roads, extend networks, introduce Stops/Lights, one-way roads, roundabouts and buses using existing set pieces. First25 remain beginner-oriented; expand beyond25 after the jam. User explicitly selects staging apartment lessons until the later building work and permits skipping missing-building slots.
+
+Delivered local content adds Level5 continuity plus playable6–9,12,13,15;10/11/14 have visible staged briefings and authored building-dependent plans. Original1–4 IDs/maps/progress stay intact; Next skips staged slots. New jobs use real per-home shopping/leisure returns, directed access/rings and per-home completed representative bus outings, with fixed budgets and no new failure countdown. Representative passengers do not imply fewer cars. [Delivery, staged designs and verification](docs/challenges/levels-6-15/README.md). No publication, active-save changes, apartment mechanics, economy rebalance or performance testing.
+
 # Project instructions: city building and traffic optimization
+
+## Economy balancing after the jam / current MVP (2026-09-12)
+
+User explicitly defers economy balancing until after the game jam; added to [BACKLOG](docs/BACKLOG.md), including prices/refunds, income/rewards, land purchases/progression and building/transit financial balance. Current fun/MVP is seeing roads, traffic and crashes and solving the resulting problems. Preserve readable causes/effective fixes; this is not a request to increase accidents again or cancel mission/building/map-interaction plans. Values stay provisional; full economy tuning need not block on-map land interaction work. User reports **almost100 players after five days**, approximate reported adoption, not exact/concurrent count or retention evidence. Documentation only; no runtime rebalance, analytics, active-save edits or publication.
+
+## Finite sandbox size and clickable land purchases requested (2026-09-12)
+
+User wants a finite map that stops expanding, extendable deliberately in later updates, and map sprites that spend money to open land instead of the expansion menu. Favor fewer menus and spatial interaction. Current code starts16×14/caps64×64; latest supplied town64×44. Lead proposes64×48 and a4×3 layout of16×16 purchasable plots for new towns, one initially open; **size/layout/prices not selected**. [Design discussion](docs/land-progression/BOUNDED-MAP.md). Cash buying supersedes the future permit-menu direction but is not implemented; tutorial/free-land treatment, earned-permit credit and legacy ownership migration remain unresolved. Preserve built land, existing larger towns, world coordinates and outside-city fixed edge. Nonrectangular plot ownership needs explicit saved state, not just a menu swap. Discussion/docs only; no runtime, art, active-save changes, performance measurements or publication.
+
+## Apartment/busy-store access and useful transit lessons (2026-09-12 refinement)
+
+User wants apartment lessons with **more than one car per building / multiple active journeys**, and the same concentrated-traffic/access planning at a busy store. Teach optimization around **Levels 10–15**: existing wider four-lane roads (“double roads”), multiple usable entrances/exits and alternate access roads, balanced shopping/leisure provision, and a bus stop/service that is genuinely useful for those building journeys. A crash blocking an apartment/store's sole approach can motivate another road/entrance; road count alone is not success and wider pavement on the same blocked approach need not help. Detailed emergency lessons remain16–25. This refines the prior optional apartment-versus-neighborhood wording: apartment multi-car demand is requested; single-entry neighborhoods remain a related layout idea. Exact footprints, demand/capacities, entrance rules and bus/car substitution remain unselected. Current representative bus riders do not remove cars; actual bus benefit is an implementation dependency, not an existing proven effect. User explicitly requests mission documentation now and building mechanics later today. Updated mission requirements/PLAN/DESIGN only; no runtime implementation, performance testing, active-save edits or publication.
+
+## Campaign phases, remaining building idea and free song reward (2026-09-12)
+
+User selects Levels **1–15 for road building and balancing stores and parks**: single roads, connecting roads, Stop signs, traffic lights and managing those systems. Levels **16–25 teach emergency response and safer road updates**, including the stuck-police-car access lesson below. Beating **Level 25 grants What A Jam free as a game-jam perk**. This supersedes the first-ten road-only sequence and the undecided ending/hours-played trigger for this song; broader radio remains separate. Apartments **or** single-entry neighborhoods are a possible remaining civic-planning addition, with shopping/leisure provision; choice, footprint, household demand and access mechanics remain open. User feels that addition plus existing road systems should suffice for authoring these levels. The sandbox remains for open-ended creation and problem solving. More frequent accidents are reported as making the optimization loop feel promising/fun, not a request for another frequency increase or a measured balance result. Updated [mission requirements](docs/challenges/MISSIONS.md), [challenge plan](docs/challenges/PLAN.md) and [design](docs/DESIGN.md). Documentation only; no runtime level/building/reward changes, active-save edits or publication.
+
+## Roundabout patrol deadlock corrected locally (2026-09-12)
+
+User supplied another full town and clarified: explain realistic traffic puzzles, but remove artificial game-logic deadlocks that undermine roundabouts. Patrol 21548's radius-selected U-turn at (8,4) held both exit lanes while yielding to circulating car 21515, whose reserved ring tile blocked reentry. New patrols avoid optional turnarounds immediately outside rings. Old stalled patrols physically back to center and return through another legal approach, with a strictly saved `patrolReturningHome` flag preserving patrol identity and lifting only the optional patrol radius. All one-way directions, occupancy and road gates remain. Original car home in 4.425s, police in 18.625s, all eight original queued trips finish by 75.325s; no new crashes in 120 simulated seconds. Original save/reload/continuous-motion/no-alternative/corruption/reassignment coverage, full 53 model test files and build pass. [Debugging record](docs/transit-and-one-way/roundabout-jam/README.md). Local only; no active player-save edits, new UI warning, browser/performance testing or publication.
+
+User also confirms emergency vehicles should respect road rules including one-way directions. Record the mission idea as **help a stuck police car reach the crash**: block the relevant one-way road, safely convert it to two-way and reopen it; success requires actual police arrival. [Mission requirements](docs/challenges/MISSIONS.md) updated; exact map/level/budget/criteria remain unselected, no playable mission edits.
 
 ## Bus stop skipping, relocation and passenger times delivered locally (2026-09-12)
 

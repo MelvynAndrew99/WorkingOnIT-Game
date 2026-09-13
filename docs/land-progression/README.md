@@ -1,5 +1,9 @@
 # Land progression
 
+## Latest direction: finite map and clickable land purchases (2026-09-12)
+
+User requests a bounded sandbox and money-spending sprites on the map instead of the expansion menu. [Size and interaction discussion](BOUNDED-MAP.md) records the current 16×14 start/64×64 cap and supplied 64×44 town, with a **proposed 64×48 envelope** and 16×16 purchasable plots for new towns. Size, plot layout, prices and migration remain unselected. Current free/permit runtime below remains implemented until this redesign; the cash model must replace, not silently stack on, permit costs. Existing towns/earned land remain preserved. Discussion only.
+
 September 9, 2026. User requested two free tutorial expansions followed by the mayor requiring missions/levels for more land, plus physically correct direction-button positions. Implemented locally; no publication.
 
 ## Rules

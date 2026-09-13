@@ -1,6 +1,6 @@
 import RundotGameAPI from '@series-inc/rundot-game-sdk/api';
 import {sdkReady} from '../sdk/runSdk.ts';
-import {createChallenge, parseChallenge, CHALLENGES, type ChallengeId, type ChallengeRun} from '../game/cityChallenges.ts';
+import {createChallenge, parseChallenge, challengeUnlockedBy, challengePrerequisite, CHALLENGES, type ChallengeId, type ChallengeRun} from '../game/cityChallenges.ts';
 
 const KEY='working-on-it:challenges:v1';
 let runs:Partial<Record<ChallengeId,ChallengeRun>>={}, stars:Partial<Record<ChallengeId,boolean>>={};
@@ -24,9 +24,14 @@ export async function loadChallenges() {
   if(saved){runs=saved.runs;stars=saved.stars;archivedRuns=saved.archivedRuns;updatedAt=saved.updatedAt;}
 }
 export const challengeHasStar=(id:ChallengeId=selected)=>stars[id]===true||!!runs[id]?.earned;
+export const challengeUnlocked=(id:ChallengeId)=>challengeUnlockedBy(id,challengeHasStar);
+/** Permanent free-song entitlement follows the finale award, even after a retry. */
+export const hasJamSongReward=()=>challengeHasStar('what-a-jam');
 export const hasChallengeRun=(id:ChallengeId=selected)=>!!runs[id];
-export function selectChallenge(id:ChallengeId){selected=id;
-  if(id==='neighborhood-roads'&&runs[id]&&runs[id]!.revision!==2){stars[id]=challengeHasStar(id);archivedRuns[id]=runs[id];runs[id]=createChallenge(id);flushChallenges();}
+export function selectChallenge(id:ChallengeId){
+  if(!challengeUnlocked(id))throw Error(`Complete ${challengePrerequisite(id)?.title??'the previous mission'} first.`);
+  selected=id;
+  if(runs[id]&&((id==='neighborhood-roads'&&runs[id]!.revision!==2)||(id==='a-town-that-works'&&runs[id]!.revision!==3)||(id==='past-the-wreck'&&runs[id]!.revision!==4))){stars[id]=challengeHasStar(id);archivedRuns[id]=runs[id];runs[id]=createChallenge(id);flushChallenges();}
   return getChallengeRun();}
 export function getChallengeRun() {return runs[selected]??=createChallenge(selected);}
 export function retryChallenge() {stars[selected]=challengeHasStar();runs[selected]=createChallenge(selected);flushChallenges();return runs[selected]!;}

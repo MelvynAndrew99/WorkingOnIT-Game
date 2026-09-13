@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { store, useStore } from '../state/store.ts';
+import { store, useStore, selectConstructionTool } from '../state/store.ts';
 import { getSave, flushSave } from '../state/save.ts';
 import { expandedMap, type ExpansionDirection } from '../game/cityMap.ts';
 import { cityCommand, onCityCommand } from '../game/cityControls.ts';
@@ -58,6 +58,7 @@ export default function MapControls({ wide }: { wide: boolean }) {
     };
     return <>
         <div className="map-rail" role="group" aria-label="Map camera and expansion">
+            <button aria-pressed={state.tool===null&&!panning&&state.movingBusStop===null&&state.transitDraft===null} onClick={()=>selectConstructionTool(null)}>Inspect</button>
             <button aria-pressed={panning} title="Drag the map instead of building"
                 aria-label={panning ? 'Pan mode on' : 'Pan mode off'}
                 onClick={() => store.patch({ panning: !panning })}>{wide ? 'Pan map' : 'Pan'}</button>

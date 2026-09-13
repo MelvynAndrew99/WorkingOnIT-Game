@@ -1,0 +1,181 @@
+{
+  "id": "one-way-home",
+  "revision": 2,
+  "city": {
+    "version": 2,
+    "expansion": {
+      "version": 1,
+      "used": 0,
+      "levels": 0,
+      "briefingSeen": false
+    },
+    "tutorial": {
+      "version": 1,
+      "status": "complete",
+      "completed": [],
+      "assisted": [],
+      "observedServices": [],
+      "accidentSeen": false,
+      "noticedIncident": false
+    },
+    "external": {
+      "version": 1,
+      "gateway": null,
+      "arrivalClock": 0,
+      "arrivals": 0,
+      "completed": 0
+    },
+    "missions": {
+      "version": 1,
+      "hidden": false,
+      "completed": [],
+      "claimed": [],
+      "shoppers": [],
+      "parkVisitors": []
+    },
+    "economy": {
+      "version": 1,
+      "waived": [],
+      "stallLesson": "first-visit",
+      "stallAt": 0,
+      "stallMark": 0
+    },
+    "map": {
+      "x": 0,
+      "y": 0,
+      "width": 16,
+      "height": 14
+    },
+    "roads": [
+      {
+        "x": 2,
+        "y": 6
+      },
+      {
+        "x": 3,
+        "y": 6
+      },
+      {
+        "x": 4,
+        "y": 6
+      },
+      {
+        "x": 5,
+        "y": 6
+      },
+      {
+        "x": 6,
+        "y": 6
+      },
+      {
+        "x": 7,
+        "y": 6
+      },
+      {
+        "x": 8,
+        "y": 6
+      },
+      {
+        "x": 9,
+        "y": 6
+      },
+      {
+        "x": 10,
+        "y": 6
+      },
+      {
+        "x": 11,
+        "y": 6
+      },
+      {
+        "x": 12,
+        "y": 6
+      },
+      {
+        "x": 13,
+        "y": 6
+      }
+    ],
+    "buildings": [
+      {
+        "id": 1,
+        "kind": "home",
+        "x": 2,
+        "y": 4,
+        "rotation": 0,
+        "paid": 0
+      },
+      {
+        "id": 2,
+        "kind": "home",
+        "x": 4,
+        "y": 4,
+        "rotation": 0,
+        "paid": 0
+      },
+      {
+        "id": 3,
+        "kind": "home",
+        "x": 6,
+        "y": 4,
+        "rotation": 0,
+        "paid": 0
+      },
+      {
+        "id": 4,
+        "kind": "store",
+        "x": 10,
+        "y": 4,
+        "rotation": 0,
+        "paid": 0
+      }
+    ],
+    "trips": [],
+    "controls": [],
+    "history": [],
+    "households": [],
+    "incidents": [],
+    "risks": [],
+    "closures": [],
+    "funds": 500,
+    "elapsed": 0,
+    "completed": 0,
+    "nextId": 5,
+    "accidentCount": 0,
+    "rescuedCount": 0,
+    "fatalities": 0,
+    "incomeClock": 0,
+    "spawnClock": 0,
+    "tickClock": 0,
+    "roadPaid": {
+      "2,6": 0,
+      "3,6": 0,
+      "4,6": 0,
+      "5,6": 0,
+      "6,6": 0,
+      "7,6": 0,
+      "8,6": 0,
+      "9,6": 0,
+      "10,6": 0,
+      "11,6": 0,
+      "12,6": 0,
+      "13,6": 0
+    },
+    "roadDirections": {
+      "2,6>3,6": "forward",
+      "3,6>4,6": "forward",
+      "4,6>5,6": "forward",
+      "5,6>6,6": "forward",
+      "6,6>7,6": "forward",
+      "7,6>8,6": "forward",
+      "8,6>9,6": "forward",
+      "9,6>10,6": "forward",
+      "10,6>11,6": "forward",
+      "11,6>12,6": "forward",
+      "12,6>13,6": "forward"
+    }
+  },
+  "earned": false,
+  "accumulator": 0,
+  "checkedAt": 0
+}

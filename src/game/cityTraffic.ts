@@ -228,6 +228,9 @@ const blocksWholeTile = (t: Trip) => phaseOf(t) === 'working' || phaseOf(t) === 
 
 /** Occupancy: tile -> the slots currently held on it, by vehicle. */
 type Grid = Map<string, Map<number, Slot[]>>;
+/** Vehicles by id, so an admission check can read the leader it would be following. */
+type TripIndex = Map<number, Trip>;
+const tripIndex = (city: City): TripIndex => new Map(city.trips.map(t => [t.id, t]));
 function claim(grid: Grid, slots: Slot[], id: number): void {
   for (const s of slots) {
     let m = grid.get(s.tile);
@@ -314,6 +317,30 @@ export function signalAxis(city: City, control: JunctionControl): Axis | 'red' {
 }
 
 /**
+ * The green that has just ended, while its all-red clearance is still running.
+ * Only a driver who was already rolling on that approach can carry on through it.
+ */
+export function clearingAxis(city: City, control: JunctionControl): Axis | null {
+  if (!control || control.kind !== 'signal') return null;
+  const t = TIMING[control.preset] ?? TIMING.balanced;
+  const cycle = t.ns + t.ew + 2 * t.clear;
+  const now = Math.round(Math.max(0, city.elapsed) / TRAFFIC_TICK) * TRAFFIC_TICK;
+  const phase = now % cycle;
+  if (phase >= t.ns && phase < t.ns + t.clear) return 'ns';
+  if (phase >= t.ns + t.clear + t.ew) return 'ew';
+  return null;
+}
+
+/**
+ * Provisional: a fixed share of ordinary drivers are chancers who take the change rather than
+ * the brakes. The share comes from the vehicle id, so a reloaded save replays the same drivers.
+ * Buses and responders keep to the signal.
+ */
+export const RED_RUNNER_SHARE = 4;
+export const runsRedLights = (t: Trip) => !t.service && t.busId === undefined
+  && (Math.imul(t.id, 2654435761) >>> 24) % RED_RUNNER_SHARE === 0;
+
+/**
  * The east-west vehicle a north-south driver is yielding to, or null when the gap is acceptable.
  * The same pair is what an uncontrolled junction accumulates collision risk from.
  */
@@ -357,6 +384,10 @@ function gated(city: City, index: RoadIndex, g: Grid, trip: Trip, k: number): bo
   const responding = !!trip.service && phaseOf(trip) === 'outbound';
   if (control?.kind === 'signal') {
     if (signalAxis(city, control) === approach) return true;
+    // An aggressive driver still rolling at the line takes the change instead of the brakes.
+    // The clearance is all-red, so the cross traffic it beats has not been released yet.
+    if (!responding && trip.hold === 0 && runsRedLights(trip)
+      && clearingAxis(city, control) === approach) return true;
     return responding && junctionClear(index, g, trip, k);
   }
   if (control?.kind === 'stop') {
@@ -373,7 +404,34 @@ function gated(city: City, index: RoadIndex, g: Grid, trip: Trip, k: number): bo
 function unusable(city: City, index: RoadIndex, p: Point, responding = false): boolean {
   return !index.roads.has(tileKey(p)) || isBlocked(city, p, responding);
 }
-function allowed(city: City, index: RoadIndex, grid: Grid, trip: Trip, k: number): boolean {
+/**
+ * Entering a junction reserves its exit tile too, so nothing ever stops inside the box. Taken
+ * literally that reservation costs two tiles of headway: a queue discharges one vehicle per two
+ * tile lengths and every driver behind is stopped dead between crossings. A leader still rolling
+ * out of the exit tile is different: it gives that tile up before the follower can reach it, so
+ * the follower may commit to the junction now and keep the platoon moving at road speed.
+ * A stopped leader, a crossing movement, a wide-junction reservation or a responder's exclusive
+ * claim all still hold the follower at the line.
+ */
+function clearingAhead(index: RoadIndex, byId: TripIndex | undefined, g: Grid, trip: Trip, slot: Slot, arrival: number): boolean {
+  if (!byId || slot.exclusive || slot.area || isEmergencyResponse(trip)) return false;
+  const occupants = g.get(slot.tile);
+  if (!occupants) return false;
+  for (const [owner, slots] of occupants) {
+    if (owner === trip.id || slots.every(other => compatible(slot, other))) continue;
+    const other = byId.get(owner);
+    if (!other || other.hold > 0 || !driving(other) || other.emergencyPass || other.laneChange) return false;
+    const j = bodyTile(other);
+    if (tileKey(other.path[j]) !== slot.tile || j >= other.path.length - 1) return false;
+    // Only a leader taking the same movement out of the tile is certainly on its way out of it.
+    const leader = slotAt(index, other.path, j, other.trafficLane ?? 0);
+    if (leader.exclusive || leader.enter !== slot.enter || leader.exit !== slot.exit) return false;
+    if ((j + 0.5 - other.progress) / stepOf(other) > arrival) return false;
+  }
+  return true;
+}
+
+function allowed(city: City, index: RoadIndex, grid: Grid, trip: Trip, k: number, byId?: TripIndex): boolean {
   const path = trip.path;
   if (unusable(city, index, path[k + 1], isEmergencyResponse(trip))
     || !allowsRoadStep(city,path[k],path[k+1],index.roads)) return false;
@@ -387,8 +445,12 @@ function allowed(city: City, index: RoadIndex, grid: Grid, trip: Trip, k: number
     const slot = slotAt(index, path, i, trip.trafficLane??0);
     if(trip.trafficLane && !secondLaneAvailable(index,path,i))return false;
     // Starting scene work claims both lanes; reserve that space before arrival.
-    if (!vacant(grid, isEmergencyResponse(trip) && i===path.length-1
-      ? {...slot, exclusive:true} : slot, trip.id)) return false;
+    const required = isEmergencyResponse(trip) && i===path.length-1 ? {...slot, exclusive:true} : slot;
+    if (vacant(grid, required, trip.id)) continue;
+    // Only the tile past the junction run may be claimed from a leader who is leaving it.
+    if (i === end && i > k + 1 && !index.junctions.has(tileKey(path[i]))
+      && clearingAhead(index, byId, grid, trip, required, (i - 0.5 - trip.progress) / stepOf(trip))) continue;
+    return false;
   }
   return true;
 }
@@ -445,7 +507,7 @@ export function isYielding(city: City, trip: Trip, preparedIndex?: RoadIndex): b
     // that traffic; active passing reservations retain priority above.
     if (responder.hold >= REPLAN_PATIENCE && rk + 1 < responder.path.length
       && !index.junctions.has(tileKey(responder.path[rk]))
-      && !allowed(city,index,grid(city,index).grid,responder,rk)) continue;
+      && !allowed(city,index,grid(city,index).grid,responder,rk,tripIndex(city))) continue;
     // Yielding must not freeze the vehicle whose occupied space the responder needs.
     // The ordinary movement gate still checks lanes, controls and a clear junction exit.
     if(rk+1<responder.path.length){
@@ -666,6 +728,23 @@ function replan(city: City, index: RoadIndex): Set<number> {
     const k = cellIndex(trip.progress, last);
     const safe = trip.progress <= k + 1e-9;
     const stalled = trip.hold >= REPLAN_PATIENCE - 1e-9;
+    // Old patrols may be turning across a roundabout exit while yielding to its
+    // circulating queue. Abandon that optional patrol, then physically return
+    // by another approach. The patrol radius must not imprison the return trip.
+    if(trip.patrol && !trip.patrolReturningHome && stalled && trip.hold>=CITY_RULES.routing.civilianReplanSeconds
+      && !index.roundabouts?.byTile.has(tileKey(trip.path[k]))
+      && index.roundabouts?.byTile.has(tileKey(trip.path[k+1]))
+      && slotAt(index,trip.path,k).exclusive) {
+      const candidate:Trip={...trip,patrolReturningHome:true};
+      const avoid=new Set([tileKey(trip.path[k+1])]);
+      if(retarget(city,candidate,trip.path[k],avoid)&&candidate.phase!=='waiting') {
+        if(!safe) {
+          trip.progress=round6(Math.max(k,trip.progress-stepOf(trip)));
+          reversing.add(trip.id);continue;
+        }
+        if(commitTripRoute(city,index,trip,candidate))continue;
+      }
+    }
     if (!safe && !stalled) continue;
     let ahead = false;
     for (let i = k + 1; i <= last && !ahead; i++) {
@@ -884,6 +963,7 @@ export function trafficTick(city: City, index: RoadIndex): void {
   const rank = (t: Trip) => (index.roundabouts?.byTile.has(tileKey(t.path[bodyTile(t)]))?2:0)
     + (t.service && phaseOf(t) === 'outbound' ? 1 : 0);
   const order = [...city.trips].sort((a, b) => rank(b) - rank(a) || b.hold - a.hold || a.id - b.id);
+  const byId = tripIndex(city);
   const done: Trip[] = [];
   for (const trip of order) {
     if(reversing.has(trip.id))continue;
@@ -908,7 +988,7 @@ export function trafficTick(city: City, index: RoadIndex): void {
     if (k < last && trip.progress <= k + 1e-9 && (unusable(city, index, trip.path[k + 1], isEmergencyResponse(trip))
       || !allowsRoadStep(city,trip.path[k],trip.path[k+1],index.roads))) next = Math.min(next, k);
     else if (next > edge + 1e-9) {
-      if (allowed(city, index, g, trip, k)) {
+      if (allowed(city, index, g, trip, k, byId)) {
         release(g, held.get(trip.id) ?? [], trip.id);
         const slots = tripSlots(index,trip,k+1).map(slot =>
           isEmergencyResponse(trip) && slot.tile===tileKey(trip.path[last]) ? {...slot,exclusive:true} : slot);

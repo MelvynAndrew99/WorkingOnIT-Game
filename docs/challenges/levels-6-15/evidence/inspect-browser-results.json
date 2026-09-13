@@ -1,0 +1,20 @@
+[
+  {
+    "name": "desktop",
+    "defaultInspect": true,
+    "toggleInChallengeAndSandbox": true,
+    "emptyLandUnchanged": true,
+    "stopMovePreservesIdAndFunds": true,
+    "escapeCancelsMove": true,
+    "resetInspect": true
+  },
+  {
+    "name": "narrow",
+    "defaultInspect": true,
+    "toggleInChallengeAndSandbox": true,
+    "emptyLandUnchanged": true,
+    "stopMovePreservesIdAndFunds": true,
+    "escapeCancelsMove": true,
+    "resetInspect": true
+  }
+]

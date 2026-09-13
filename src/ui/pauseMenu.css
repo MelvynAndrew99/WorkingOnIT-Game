@@ -1,10 +1,48 @@
 /* Native modal blocks map clicks/shortcuts and contains keyboard focus. */
-.city-ui.dispatch-ui .pause-menu{position:fixed;inset:0;margin:auto;width:min(320px,calc(100vw - 40px));max-height:calc(100dvh - 40px);overflow:auto;box-sizing:border-box;padding:28px 24px;border:1px solid #476177;border-radius:16px;background:#102333;color:#f5f7fc;text-align:center;box-shadow:0 20px 70px #0008;pointer-events:auto}
-.pause-menu::backdrop{background:rgba(3,10,18,.72)}
-.pause-menu h2{margin:0;font-size:32px;line-height:1.2;font-weight:800}
-.pause-menu p{margin:10px 0 24px;font-size:17px;color:#b9cbd6}
-.pause-weather{display:flex;align-items:center;justify-content:center;gap:10px;min-height:44px;margin:0 0 16px;color:#f5f7fc;font-size:17px}
-.pause-weather input{width:22px;height:22px;accent-color:#ffd22e}
-.pause-menu-actions{display:grid;gap:12px}
-.city-ui.dispatch-ui .pause-menu button{width:100%;min-height:48px;padding:12px;font-size:18px}
-.city-ui.dispatch-ui .pause-menu .pause-resume{background:#ffd22e;color:#102333;border-color:#ffe477;font-weight:800}
+.city-ui.dispatch-ui .pause-menu{
+  position:fixed;
+  inset:0;
+  z-index:20;
+  pointer-events:auto;
+  text-align:left;
+  width:min(460px,calc(100vw - 24px));
+}
+.pause-menu-actions{display:grid;gap:10px}
+.city-ui.dispatch-ui .pause-menu p{margin:0;color:var(--menu-hint);text-align:left;font-size:1.1rem}
+.city-ui.dispatch-ui .pause-menu .menu-lede{margin-top:8px;color:var(--menu-muted)}
+.city-ui.dispatch-ui .pause-menu h2,.city-ui.dispatch-ui .pause-menu h3{color:inherit}
+.city-ui.dispatch-ui .pause-menu .menu-x{
+  width:44px;
+  min-width:44px;
+  height:44px;
+  padding:0;
+  background:var(--menu-surface);
+  color:var(--menu-text);
+  border:1px solid var(--menu-border);
+}
+.city-ui.dispatch-ui .pause-menu .pause-resume{
+  width:100%;
+  min-height:48px;
+  padding:12px;
+  font-size:1.15rem;
+  font-weight:800;
+  background:linear-gradient(180deg,#f0c56a,#e0a83a);
+  color:#1a2436;
+  border:1px solid #f0d090;
+  border-bottom:4px solid #b07a22;
+  border-radius:14px;
+}
+.city-ui.dispatch-ui .pause-menu .pause-leave{
+  width:100%;
+  min-height:48px;
+  padding:12px;
+  font-size:1.1rem;
+  font-weight:800;
+  background:#152033;
+  color:#f3f6fa;
+  border:1px solid #3d5470;
+  border-radius:12px;
+}
+@media(hover:hover) and (pointer:fine){
+  .city-ui.dispatch-ui .pause-menu .pause-leave:hover,.city-ui.dispatch-ui .pause-menu .menu-x:hover{background:#1e2e46}
+}

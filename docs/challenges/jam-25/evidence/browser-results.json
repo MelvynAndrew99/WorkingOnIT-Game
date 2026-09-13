@@ -1,0 +1,36 @@
+[
+  {
+    "name": "desktop",
+    "sequentialLocks": true,
+    "lockedBriefing": true,
+    "stateSelectionGuard": true,
+    "realWinUnlocksNext": true,
+    "retryAndReloadKeepUnlock": true,
+    "wideRoadPointerPlacement": true,
+    "divertPointerToggle": true,
+    "incomeCopy": true,
+    "oldRescueArchived": true,
+    "allAddedLevelsComplete": true,
+    "finaleRewardPersistent": true,
+    "allCompleteRoute": true,
+    "sandboxUnchanged": true,
+    "errors": []
+  },
+  {
+    "name": "narrow",
+    "sequentialLocks": true,
+    "lockedBriefing": true,
+    "stateSelectionGuard": true,
+    "realWinUnlocksNext": true,
+    "retryAndReloadKeepUnlock": true,
+    "wideRoadPointerPlacement": true,
+    "divertPointerToggle": true,
+    "incomeCopy": true,
+    "oldRescueArchived": true,
+    "allAddedLevelsComplete": true,
+    "finaleRewardPersistent": true,
+    "allCompleteRoute": true,
+    "sandboxUnchanged": true,
+    "errors": []
+  }
+]

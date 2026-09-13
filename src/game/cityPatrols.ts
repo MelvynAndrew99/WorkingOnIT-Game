@@ -1,4 +1,5 @@
 import {allowsRoadStep} from './cityDirections.ts';
+import {roundaboutIndex} from './cityRoundabouts.ts';
 /** Local road patrols: no artwork, money, or incident creation. */
 import {entrance,isBlocked,findPath,type City,type Building,type Point,type Trip} from './cityModel.ts';
 import {roadIndex,startBlocked,TRAVEL_TILES_PER_SECOND} from './cityTraffic.ts';
@@ -8,6 +9,7 @@ export function insidePatrol(station:Building,p:Point):boolean {
  const c=entrance(station);return (p.x-c.x)**2+(p.y-c.y)**2<=CITY_RULES.policePatrol.radiusTiles**2;
 }
 export function patrolAvoid(city:City,trip:Trip):Set<string> {
+ if(trip.patrolReturningHome)return new Set();
  const station=city.buildings.find(b=>b.id===trip.stationId);
  return new Set(city.roads.filter(p=>!station||!insidePatrol(station,p)).map(key));
 }
@@ -28,8 +30,15 @@ export function patrolRoute(city:City,station:Building):Point[]|null {
  const distance=(p:Point)=>(p.x-start.x)**2+(p.y-start.y)**2;
  const avoid=(city.roadDirections||city.wideRoads) ? new Set(city.roads.filter(p=>!roads.has(key(p))).map(key)) : undefined;
  const returns=new Map<string,Point[]>();
+ const roundabouts=roundaboutIndex(city);
  const eligible=(city.roadDirections||city.wideRoads) ? queue.slice(1).filter(p=>{
-  const back=findPath(city,p,start,false,avoid);if(!back)return false;returns.set(key(p),back);return true;
+  const back=findPath(city,p,start,false,avoid);if(!back)return false;
+  // An optional turnaround immediately outside a ring can hold its exit while
+  // yielding to the very car that needs that exit. Choose another patrol endpoint.
+  const before=previous.get(key(p));
+  if(before&&back[1]&&key(before)===key(back[1])&&roundabouts.byTile.has(key(before))
+    &&!roundabouts.byTile.has(key(p)))return false;
+  returns.set(key(p),back);return true;
  }) : queue.slice(1);
  if(!eligible.length)return null;
  const far=eligible.sort((a,b)=>distance(b)-distance(a));

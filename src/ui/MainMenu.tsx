@@ -5,7 +5,15 @@ import { useEffect, useRef, useState } from 'react';
 import { writeWeatherPreference, weatherHudLabel } from '../game/cityWeather.ts';
 import { store, type DisplayMode } from '../state/store.ts';
 import { getSave, startNewCity, flushSave } from '../state/save.ts';
+import {IconMusic,IconSpeaker,MenuToggle,VolumeMixer} from './menuControls.tsx';
+import './menuPanel.css';
 import './titleScreen.css';
+
+const DISPLAY_OPTIONS: {value: DisplayMode; label: string; choice: string}[] = [
+    {value: 'auto', label: 'Automatic (match the screen)', choice: 'Auto'},
+    {value: 'wide', label: 'Desktop (wide view)', choice: 'Desktop'},
+    {value: 'portrait', label: 'Mobile (portrait view)', choice: 'Mobile'},
+];
 
 export default function MainMenu() {
     const city = getSave().city;
@@ -13,11 +21,6 @@ export default function MainMenu() {
     const hasTown = !untouchedStarter && (city.buildings.length > 0 || city.roads.length > 0 || city.elapsed > 0);
     const [panel, setPanel] = useState<'new' | 'settings' | null>(null);
     const [artAvailable, setArtAvailable] = useState(true);
-    const [displayMode,setDisplayMode] = useState<DisplayMode>(store.get().displayMode);
-    const [music,setMusic]=useState(musicSettings);
-    const [effects,setEffects]=useState(effectsSettings);
-    const [showTips, setShowTips] = useState(store.get().showTips);
-    const [weatherEnabled, setWeatherEnabled] = useState(store.get().weatherEnabled);
     const dialog = useRef<HTMLDialogElement>(null);
     useEffect(() => {
         if (panel) dialog.current?.showModal();
@@ -26,6 +29,13 @@ export default function MainMenu() {
     const resetTools = () => store.patch({ tool: null, rotation: 0, panning: false, toolSelection: store.get().toolSelection + 1 });
     const play = () => { if (!hasTown) resetTools(); store.patch({ phase: 'playing', paused: false }); };
     const newGame = () => { startNewCity(); resetTools(); setPanel(null); play(); };
+    const skipTutorial = () => {
+        if (!window.confirm('Skip the tutorial and connect automatically to outside traffic? A free access road may be added.')) return;
+        finishTutorialAndConnect(city);
+        flushSave();
+        setPanel(null);
+        play();
+    };
     return <main className="title-screen" aria-label="Working ON IT! title screen">
         <div className="title-composition">
             <header className="title-brand">
@@ -56,49 +66,139 @@ export default function MainMenu() {
             </nav>
             <footer className="title-footer"><span aria-hidden="true" className="title-stripes" /><span>A better commute starts with you.</span></footer>
         </div>
-        <dialog ref={dialog} className="title-dialog" onCancel={() => setPanel(null)} onClose={() => setPanel(null)} aria-labelledby="title-dialog-heading">
-            {panel === 'new' ? <>
-                <h2 id="title-dialog-heading">Start a new city?</h2>
-                <p>This replaces your current town. Your existing roads, buildings, and funds will be reset.</p>
-                <button className="commute-button" onClick={newGame}>Start new city</button>
-                <button className="title-dialog-close" onClick={() => setPanel(null)}>Keep current city</button>
-            </> : <>
-                <h2 id="title-dialog-heading">Settings</h2>
-                <label><input type="checkbox" checked={!music.muted} onChange={e=>{setMusicMuted(!e.target.checked);setMusic(musicSettings());}} /> Background music</label>
-                <label className="display-mode-setting">Music volume · {Math.round(music.volume*100)}%
-                    <input aria-label="Music volume" type="range" min="0" max="100" step="1" value={Math.round(music.volume*100)} onChange={e=>{setMusicVolume(Number(e.target.value)/100);setMusic(musicSettings());}} />
-                </label>
-                <p>Tranquil City · Loops throughout Challenges and while your city is running.</p>
-                <label><input type="checkbox" checked={!effects.muted} onChange={e=>{setEffectsMuted(!e.target.checked);setEffects(effectsSettings());}} /> Sound effects</label>
-                <label className="display-mode-setting">Effects volume · {Math.round(effects.volume*100)}%
-                    <input aria-label="Effects volume" type="range" min="0" max="100" step="1" value={Math.round(effects.volume*100)} onChange={e=>{setEffectsVolume(Number(e.target.value)/100);setEffects(effectsSettings());}} />
-                </label>
-                <label className="display-mode-setting">Game display
-                    <select value={displayMode} onChange={e=>{
-                        const value=e.target.value as DisplayMode;setDisplayMode(value);store.patch({displayMode:value});
-                        try { localStorage.setItem('working-on-it:display-mode',value); } catch { /* session preference still works */ }
-                    }}>
-                        <option value="auto">Automatic (match the screen)</option>
-                        <option value="wide">Desktop (wide view)</option>
-                        <option value="portrait">Mobile (portrait view)</option>
-                    </select>
-                </label>
-                <p>Automatic uses a wide view in larger landscape windows and portrait on smaller screens. This changes your view, not your town.</p>
-                <label><input type="checkbox" checked={weatherEnabled} onChange={e => {
-                    const value = e.target.checked; setWeatherEnabled(value); writeWeatherPreference(value);
-                    store.patch({ weatherEnabled: value, weatherLabel: weatherHudLabel(getSave().city.elapsed, value) });
-                }} /> Weather</label>
-                <p>Slow visual cycle of clear, cloudy and rain over the town map. Atmosphere only; traffic is unchanged. Reduced-motion systems keep shading without falling rain.</p>
-                <label><input type="checkbox" checked={showTips} onChange={e => {
-                    const value = e.target.checked; setShowTips(value); store.patch({ showTips: value });
-                    try { localStorage.setItem('working-on-it:show-tips', String(value)); } catch { /* settings remain usable in memory */ }
-                }} /> Show gameplay control tips</label>
-                <p>Place homes and stores. Connect their entrance markers with roads. Drag to draw roads, or use keys 1–6 to choose a tool and R to rotate.</p>
-                <p>Unsigned intersections give east–west traffic priority; north–south drivers wait for a gap. Use All-way stop or Traffic lights to share access. Adjoining junction tiles share one controller. Tap lights again to favor north/south or east/west. Watch waiting cars and completed trips to judge your changes.</p>
-                <p>Removing construction refunds what you paid. Free construction refunds $0. Your town saves automatically.</p>
-                {city.tutorial?.status!=='skipped'&&city.tutorial?.status!=='complete'&&<button className="tutorial-skip" onClick={()=>{if(!window.confirm('Skip the tutorial and connect automatically to outside traffic? A free access road may be added.'))return;finishTutorialAndConnect(city);flushSave();setPanel(null);play();}}>Skip tutorial</button>}
-                <button className="title-dialog-close" onClick={() => setPanel(null)}>Done</button>
-            </>}
+        <dialog ref={dialog} className="title-dialog menu-dialog" onCancel={() => setPanel(null)} onClose={() => setPanel(null)} aria-labelledby="title-dialog-heading">
+            {panel === 'new' ? (
+                <NewCityPanel onConfirm={newGame} onCancel={() => setPanel(null)} />
+            ) : panel === 'settings' ? (
+                <SettingsPanel
+                    onClose={() => setPanel(null)}
+                    onSkipTutorial={skipTutorial}
+                    canSkip={city.tutorial?.status!=='skipped'&&city.tutorial?.status!=='complete'}
+                />
+            ) : null}
         </dialog>
     </main>;
+}
+
+function NewCityPanel({onConfirm, onCancel}:{onConfirm:()=>void; onCancel:()=>void}) {
+    return <>
+        <header className="menu-head">
+            <p className="menu-kicker">City works</p>
+            <div className="menu-head-row">
+                <h2 id="title-dialog-heading">Start a new city?</h2>
+                <button type="button" className="menu-x" aria-label="Keep current city" onClick={onCancel}>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+                </button>
+            </div>
+        </header>
+        <div className="menu-body">
+            <p className="menu-lede">This replaces your current town. Your existing roads, buildings, and funds will be reset.</p>
+        </div>
+        <footer className="menu-foot">
+            <button className="commute-button" onClick={onConfirm}>Start new city</button>
+            <button className="title-dialog-close" onClick={onCancel}>Keep current city</button>
+        </footer>
+    </>;
+}
+
+function SettingsPanel({onClose, onSkipTutorial, canSkip}:{onClose:()=>void; onSkipTutorial:()=>void; canSkip:boolean}) {
+    const [displayMode, setDisplayMode] = useState<DisplayMode>(store.get().displayMode);
+    const [music, setMusic] = useState(musicSettings);
+    const [effects, setEffects] = useState(effectsSettings);
+    const [showTips, setShowTips] = useState(store.get().showTips);
+    const [weatherEnabled, setWeatherEnabled] = useState(store.get().weatherEnabled);
+    const persistDisplay = (value: DisplayMode) => {
+        setDisplayMode(value);
+        store.patch({displayMode: value});
+        try { localStorage.setItem('working-on-it:display-mode', value); } catch { /* session preference still works */ }
+    };
+    return <>
+        <header className="menu-head">
+            <p className="menu-kicker">City works</p>
+            <div className="menu-head-row">
+                <h2 id="title-dialog-heading">Settings</h2>
+                <button type="button" className="menu-x" aria-label="Close settings" onClick={onClose}>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+                </button>
+            </div>
+            <p className="menu-lede">Audio, display, and on-map help.</p>
+        </header>
+        <div className="menu-body">
+            <section className="menu-card" aria-labelledby="settings-audio-heading">
+                <h3 id="settings-audio-heading">Audio</h3>
+                <VolumeMixer
+                    icon={<IconMusic />}
+                    label="Background music"
+                    volumeLabel="Music volume"
+                    hint="Tranquil City loops during Challenges and city play."
+                    muted={music.muted}
+                    volume={music.volume}
+                    onMuted={value => { setMusicMuted(value); setMusic(musicSettings()); }}
+                    onVolume={value => { setMusicVolume(value); setMusic(musicSettings()); }}
+                />
+                <VolumeMixer
+                    icon={<IconSpeaker />}
+                    label="Sound effects"
+                    volumeLabel="Effects volume"
+                    muted={effects.muted}
+                    volume={effects.volume}
+                    onMuted={value => { setEffectsMuted(value); setEffects(effectsSettings()); }}
+                    onVolume={value => { setEffectsVolume(value); setEffects(effectsSettings()); }}
+                />
+            </section>
+            <section className="menu-card" aria-labelledby="settings-display-heading">
+                <h3 id="settings-display-heading">Display</h3>
+                <div className="menu-choice">
+                    <p className="menu-choice-label">Game display</p>
+                    <div className="menu-segments">
+                        {DISPLAY_OPTIONS.map(option => (
+                            <label key={option.value} className={displayMode===option.value ? 'is-on' : undefined}>
+                                <input type="radio" name="game-display" value={option.value} checked={displayMode===option.value} onChange={() => persistDisplay(option.value)} />
+                                <span>{option.choice}</span>
+                            </label>
+                        ))}
+                    </div>
+                    <label className="display-mode-setting menu-combobox-backup">Game display
+                        <select tabIndex={-1} value={displayMode} onChange={e => persistDisplay(e.target.value as DisplayMode)}>
+                            {DISPLAY_OPTIONS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+                        </select>
+                    </label>
+                </div>
+                <p className="menu-hint">This changes your view, not your town.</p>
+                <MenuToggle
+                    label="Weather"
+                    hint="Clear, cloudy, and rain over the map. Atmosphere only. Traffic is unchanged."
+                    checked={weatherEnabled}
+                    onChange={value => {
+                        setWeatherEnabled(value);
+                        writeWeatherPreference(value);
+                        store.patch({ weatherEnabled: value, weatherLabel: weatherHudLabel(getSave().city.elapsed, value) });
+                    }}
+                />
+            </section>
+            <section className="menu-card" aria-labelledby="settings-help-heading">
+                <h3 id="settings-help-heading">On-map help</h3>
+                <MenuToggle
+                    label="Show gameplay control tips"
+                    hint="Yellow callouts for homes, stores, and tools while you play."
+                    checked={showTips}
+                    onChange={value => {
+                        setShowTips(value);
+                        store.patch({ showTips: value });
+                        try { localStorage.setItem('working-on-it:show-tips', String(value)); } catch { /* settings remain usable in memory */ }
+                    }}
+                />
+                <details className="menu-guide">
+                    <summary>How the roads work</summary>
+                    <p>Place homes and stores. Connect their entrance markers with roads. Drag to draw roads, or use keys 1-6 to choose a tool and R to rotate.</p>
+                    <p>Unsigned intersections give east-west traffic priority. North-south drivers wait for a gap. Use All-way stop or Traffic lights to share access. Adjoining junction tiles share one controller. Tap lights again to favor north/south or east/west. Watch waiting cars and completed trips to judge your changes.</p>
+                    <p>Removing construction refunds what you paid. Free construction refunds $0. Your town saves automatically.</p>
+                </details>
+                {canSkip && <button className="tutorial-skip" onClick={onSkipTutorial}>Skip tutorial</button>}
+            </section>
+        </div>
+        <footer className="menu-foot">
+            <button className="commute-button" onClick={onClose}>Done</button>
+        </footer>
+    </>;
 }

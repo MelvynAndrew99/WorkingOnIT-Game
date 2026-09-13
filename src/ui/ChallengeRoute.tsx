@@ -1,6 +1,6 @@
 import {useEffect,useRef,useState,type CSSProperties,type PointerEvent} from 'react';
-import {CHALLENGES,type ChallengeId} from '../game/cityChallenges.ts';
-import {challengeHasStar,hasChallengeRun} from '../state/challenges.ts';
+import {CHALLENGES,challengeAvailable,type ChallengeId} from '../game/cityChallenges.ts';
+import {challengeHasStar,challengeUnlocked,hasChallengeRun,hasJamSongReward} from '../state/challenges.ts';
 import {store} from '../state/store.ts';
 import {AwardRibbon} from './ChallengeAwards.tsx';
 import './challengeRoute.css';
@@ -30,10 +30,10 @@ let previousSuggested:number|null=null;
 export default function ChallengeRoute({select}:{select:(id:ChallengeId)=>void}){
   const scroll=useRef<HTMLDivElement>(null),board=useRef<HTMLDivElement>(null),traveller=useRef<HTMLImageElement>(null);
   const drag=useRef<{x:number;y:number;left:number;top:number}|null>(null);
-  const [notice,setNotice]=useState('Levels 1–4 ready. Level 5 is in the works.');
+  const [notice,setNotice]=useState('Beat each job to open the next. 25 beginner missions, one step at a time.');
   const awards=CHALLENGES.filter(d=>challengeHasStar(d.id)).length;
-  const first=CHALLENGES.findIndex(d=>!challengeHasStar(d.id));
-  const suggested=first<0?CHALLENGES.length+1:first+1;
+  const first=CHALLENGES.findIndex(d=>challengeAvailable(d.id)&&challengeUnlocked(d.id)&&!challengeHasStar(d.id));
+  const suggested=first<0?CHALLENGES.length:first+1;
   const target=sites[suggested-1],definition=CHALLENGES[suggested-1];
   const markerTop=(p:typeof target)=>p.y>HEIGHT*.9?p.y-112:p.y+36;
   function centerCurrent(){const host=scroll.current,city=board.current;if(host&&city){const bounds=city.getBoundingClientRect(),view=host.getBoundingClientRect();host.scrollTo({left:bounds.left-view.left+host.scrollLeft+target.x-host.clientWidth/2,top:bounds.top-view.top+host.scrollTop+target.y-host.clientHeight*.45});}}
@@ -53,7 +53,7 @@ export default function ChallengeRoute({select}:{select:(id:ChallengeId)=>void})
     <header className="journey-header">
       <button onClick={()=>store.patch({phase:'menu'})} className="journey-back" aria-label="Main menu">‹ <span>Menu</span></button>
       <div className="journey-brand">WORKING <strong>ON IT!</strong></div>
-      <div className="journey-awards" aria-label={`${awards} completion awards`}><AwardRibbon/> <strong>{awards}</strong><small>/ {CHALLENGES.length}</small></div>
+      <div className="journey-awards" aria-label={`${awards} completion awards`}><AwardRibbon/> <strong>{awards}</strong><small>/ {CHALLENGES.filter(d=>challengeAvailable(d.id)).length}</small></div>
       <button className="journey-sandbox" onClick={()=>store.patch({phase:'playing',paused:false,tool:null,panning:false,rotation:0})}>Sandbox ↗</button>
     </header>
     <div className="journey-mapbar"><span><strong>ONE TOWN. 25 JOBS.</strong><small>Fix the commute. Take the credit.</small></span><button onClick={centerCurrent}>Find The Man <span aria-hidden="true">↗</span></button></div>
@@ -62,20 +62,20 @@ export default function ChallengeRoute({select}:{select:(id:ChallengeId)=>void})
         <img src="images/challenges/starter-town.png" className="commute-art" alt="" draggable={false}/>
         <svg className="journey-road" viewBox={`0 0 ${WIDTH} ${HEIGHT}`} aria-hidden="true"><path d={route} className="journey-road-shadow"/><path d={route} className="journey-road-dots"/></svg>
         <ol className="journey-levels" aria-label="Challenge levels">
-          {sites.map(point=>{const level=CHALLENGES[point.number-1],earned=!!level&&challengeHasStar(level.id),active=point.number===suggested;
-            return <li key={point.number} className={`journey-stop${active?' is-current':''}${earned?' is-complete':''}${!level?' is-upcoming':''}`} style={{left:point.x,top:point.y} as CSSProperties}>
-              <button className="journey-node" aria-label={`Level ${point.number}${earned?', completed':!level?', coming soon':', playable'}`} aria-disabled={!level} aria-current={active?'step':undefined} onClick={()=>{if(level)select(level.id);else setNotice(`Level ${point.number}: survey crew still out. Coming soon.`);}}>
+          {sites.map(point=>{const level=CHALLENGES[point.number-1],available=!!level&&challengeAvailable(level.id)&&challengeUnlocked(level.id),earned=!!level&&challengeHasStar(level.id),active=point.number===suggested;
+            return <li key={point.number} className={`journey-stop${active?' is-current':''}${earned?' is-complete':''}${!available?' is-upcoming':''}`} style={{left:point.x,top:point.y} as CSSProperties}>
+              <button className="journey-node" aria-label={`Level ${point.number}${!available?', locked':earned?', completed':', playable'}`} aria-disabled={!level} aria-current={active?'step':undefined} onClick={()=>{if(level)select(level.id);else setNotice(`Level ${point.number}: survey crew still out. Coming soon.`);}}>
                 <span className="node-face">{earned?<img src="images/challenges/the-man-portrait.png" alt="" draggable={false}/>:<span className="node-number">{point.number}</span>}</span>
                 {earned&&<AwardRibbon className="node-ribbon" number={point.number}/>}
               </button>
-              {!level&&point.number===5&&<span className="node-coming">IN THE WORKS</span>}
+              {level&&!available&&<span className="node-coming">LOCKED</span>}
             </li>;
           })}
         </ol>
         <img ref={traveller} src="images/challenges/the-man-walker.png" className="route-traveller" alt={`The Man at level ${suggested}`} style={{left:target.x,top:markerTop(target)}} draggable={false}/>
         <div className={`journey-current${target.x>WIDTH*.7?' is-left':''}`} style={{left:target.x+(target.x>WIDTH*.7?-34:34),top:markerTop(target)+29}}>{definition?<button className="journey-continue" onClick={()=>select(definition.id)}>{hasChallengeRun(definition.id)?'Continue':'Work this site'} →</button>:<span className="journey-frontier">Crews assembling…</span>}</div>
         {hints.map(hint=><button className="map-hint" key={hint.landmark} style={{left:hint.x,top:hint.y}} aria-label={`${hint.landmark}: hear The Man and the crew`} onClick={()=>setNotice(`${hint.quote} ${hint.reply}`)}><span>{hint.landmark}</span><strong aria-hidden="true">“…”</strong></button>)}
-        <div className="map-workzone"><i aria-hidden="true"/><strong>More work. Same town.</strong><span>Levels 5–25 are planned sites.</span></div>
+        <div className="map-workzone"><i aria-hidden="true"/><strong>{first<0?'Jam campaign complete!':'25 jobs. Your town.'}</strong><span>{hasJamSongReward()?'What A Jam · free song reward earned.': 'Learn one thing, try it out, then put your skills together.'}</span></div>
       </div>
     </div>
     <footer className="journey-footer"><span role="status">{notice}</span><small>Drag the map to explore · Ribbons mark completed jobs</small></footer>

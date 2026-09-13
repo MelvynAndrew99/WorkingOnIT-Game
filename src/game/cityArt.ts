@@ -7,7 +7,8 @@
  * coordinates. Scene code asks for pieces in TILE units and places them.
  *
  * Art: Kenney "Roguelike Modern City" (CC0), with approved service-building
- * compositions (docs/artwork/service-buildings/). The untouched pack and
+ * compositions (docs/artwork/service-buildings/), baked home lots
+ * (docs/artwork/housing/), bus stops and depots (docs/artwork/transit/). The untouched pack and
  * its licence stay in src/assets/source/kenny/, alongside the RPG Urban Pack,
  * which is present but unused. See docs/ASSET-MAPPING.md.
  */
@@ -126,24 +127,17 @@ type WallFamily = 'brick' | 'stone' | 'sand';
 interface Skin {
     roof: RoofFamily;
     wall: WallFamily;
-    /** Store dressing; homes leave these unset. */
     awning?: 'awningGreen' | 'awningOrange';
     sign?: 'signBar' | 'signDots';
 }
 /** Deterministic variety: the same building always looks the same. */
-const HOME_SKINS: Skin[] = [
-    { roof: 'red', wall: 'sand' },
-    { roof: 'tan', wall: 'brick' },
-    { roof: 'red', wall: 'stone' },
-    { roof: 'tan', wall: 'sand' },
-];
 const STORE_SKINS: Skin[] = [
     { roof: 'grey', wall: 'stone', awning: 'awningGreen', sign: 'signBar' },
     { roof: 'pale', wall: 'sand', awning: 'awningOrange', sign: 'signDots' },
     { roof: 'grey', wall: 'sand', awning: 'awningOrange', sign: 'signBar' },
 ];
-const skinFor = (kind: 'home' | 'store', id: number): Skin =>
-    kind === 'home' ? HOME_SKINS[id % HOME_SKINS.length] : STORE_SKINS[id % STORE_SKINS.length];
+/** House styles baked by docs/artwork/housing/generate.mjs (cottage, bungalow, townhouse, garage). */
+const HOME_STYLES = 4;
 
 const roofSlice = (i: number, w: number, j: number, rows: number): string => {
     // The wall hides the roof's bottom edge, so a single roof row uses the top slices.
@@ -163,21 +157,29 @@ const roofSlice = (i: number, w: number, j: number, rows: number): string => {
  * appears ONLY when that access is on the south face — a door on any other
  * wall would advertise an entrance the simulation does not have.
  *
+ * Homes are whole baked lots instead: an upright house set back on its own
+ * lawn, with a garden path that leaves the lot at the real entrance tile, so
+ * rows of homes read as separate houses rather than one continuous block.
+ *
  * @param w,h footprint size in tiles, already rotated by the model
  * @param access tile offset inside the footprint that touches the entrance
  * @param side which face of that tile the entrance sits against
  */
 export function buildingPieces(
-    kind: 'home' | 'store' | 'hospital' | 'fireStation' | 'policeStation', id: number, w: number, h: number,
+    kind: 'home' | 'store' | 'busStop' | 'busStation' | 'hospital' | 'fireStation' | 'policeStation', id: number, w: number, h: number,
     access: { x: number; y: number }, side: Side,
 ): Piece[] {
-    if (kind !== 'home' && kind !== 'store') {
+    // Bus stops bake their shelter, sign and painted boarding curb against the entrance side.
+    if (kind === 'busStop') return [{ name: `busStop_${side}` as FrameName, tx: 0, ty: 0, tw: w, th: h }];
+    if (kind === 'busStation') return [{ name: `busStation_${side}` as FrameName, tx: 0, ty: 0, tw: w, th: h }];
+    if (kind === 'home') return [{ name: `home_${id % HOME_STYLES}_${side}` as FrameName, tx: 0, ty: 0, tw: w, th: h }];
+    if (kind !== 'store') {
         return [
             { name: `building_${kind}_${side}`, tx: 0, ty: 0, tw: w, th: h },
             entranceApron(access, side),
         ];
     }
-    const skin = skinFor(kind, id);
+    const skin = STORE_SKINS[id % STORE_SKINS.length];
     const pieces: Piece[] = [];
     const roofRows = Math.max(1, h - 1);
     const wallRow = h - 1;
@@ -190,23 +192,16 @@ export function buildingPieces(
     }
 
     const doorHere = side === 'S' && access.y === wallRow;
-    if (kind === 'store') {
-        // Shopfront glazing across the facade, with the awning tucked under the roof.
-        for (let i = 0; i < w; i++) {
-            if (doorHere && i === access.x) continue;
-            const glass: FrameName = w === 1 ? 'shopGlass' : i === 0 ? 'shopGlassL' : i === w - 1 ? 'shopGlassR' : 'shopGlass';
-            pieces.push({ name: glass, tx: i, ty: wallRow, tw: 1, th: 1 });
-        }
-        if (skin.awning) for (let i = 0; i < w; i++)
-            pieces.push({ name: skin.awning, tx: i, ty: wallRow - 0.34, tw: 1, th: 0.42 });
-        if (skin.sign && wallRow >= 1) pieces.push({ name: skin.sign, tx: w / 2 - 0.7, ty: wallRow - 0.86, tw: 1.4, th: 0.4 });
-    } else {
-        for (let i = 0; i < w; i++) {
-            if (doorHere && i === access.x) continue;
-            pieces.push({ name: 'windowHome', tx: i + 0.22, ty: wallRow + 0.16, tw: 0.56, th: 0.62 });
-        }
+    // Shopfront glazing across the facade, with the awning tucked under the roof.
+    for (let i = 0; i < w; i++) {
+        if (doorHere && i === access.x) continue;
+        const glass: FrameName = w === 1 ? 'shopGlass' : i === 0 ? 'shopGlassL' : i === w - 1 ? 'shopGlassR' : 'shopGlass';
+        pieces.push({ name: glass, tx: i, ty: wallRow, tw: 1, th: 1 });
     }
-    if (doorHere) pieces.push({ name: kind === 'store' ? 'doorStore' : 'doorHome', tx: access.x + 0.16, ty: wallRow + 0.06, tw: 0.68, th: 0.94 });
+    if (skin.awning) for (let i = 0; i < w; i++)
+        pieces.push({ name: skin.awning, tx: i, ty: wallRow - 0.34, tw: 1, th: 0.42 });
+    if (skin.sign && wallRow >= 1) pieces.push({ name: skin.sign, tx: w / 2 - 0.7, ty: wallRow - 0.86, tw: 1.4, th: 0.4 });
+    if (doorHere) pieces.push({ name: 'doorStore', tx: access.x + 0.16, ty: wallRow + 0.06, tw: 0.68, th: 0.94 });
 
     // Paved apron on the plot, flush with the face the entrance touches, so the
     // way out of the building is visible even when there is no door on it.
@@ -224,6 +219,19 @@ function entranceApron(access: { x: number; y: number }, side: Side): Piece {
     const [ax, ay, aw, ah] = apron[side];
     return { name: 'plot', tx: ax, ty: ay, tw: aw, th: ah };
 }
+
+/**
+ * Where the baked depot art puts its two parking bays (bus centres) and its rider platform
+ * (top-left of the marker grid), in tiles from the 3×3 lot corner, per entrance side.
+ * Must match LAYOUT in docs/artwork/transit/bus-depot/generate.mjs (16 px per tile).
+ */
+const px16 = (v: number) => v / 16;
+export const DEPOT_LAYOUT: Record<Side, { bays: [number, number][]; riders: [number, number] }> = {
+    S: { bays: [[px16(12), px16(25.5)], [px16(36), px16(25.5)]], riders: [px16(2), px16(37)] },
+    N: { bays: [[px16(12), px16(23.5)], [px16(36), px16(23.5)]], riders: [px16(2), px16(4)] },
+    W: { bays: [[px16(12), px16(39.5)], [px16(36), px16(39.5)]], riders: [px16(32), px16(20)] },
+    E: { bays: [[px16(12), px16(39.5)], [px16(36), px16(39.5)]], riders: [px16(3), px16(20)] },
+};
 
 /** Small dressing placed on the pavement outside a store's entrance. */
 export function storeStall(id: number): FrameName {

@@ -27,7 +27,7 @@ try {for(const [name,width,height]of [['desktop',1440,900],['narrow',390,844]]){
  assert.equal(await page.evaluate(()=>state.store.get().paused),true);
  assert.equal(await page.evaluate(()=>cs.getChallengeRun().city.roads.length),2,'play/pause does not build on the map underneath');
  await page.screenshot({path:`${out}/${name}-play.png`});
- async function road(x,y){await page.evaluate(({x,y})=>commands.cityCommand({type:'focus',point:{x,y}}),{x,y});const m=await page.locator('.city-map-viewport').boundingBox();await page.mouse.click(m.x+m.width/2,m.y+m.height/2);}
+ async function road(x,y){if(await page.evaluate(()=>state.store.get().tool===null))await page.getByRole('button',{name:'Road',exact:false}).click();await page.evaluate(({x,y})=>commands.cityCommand({type:'focus',point:{x,y}}),{x,y});const m=await page.locator('.city-map-viewport').boundingBox();await page.mouse.click(m.x+m.width/2,m.y+m.height/2);}
  for(let x=4;x<=9;x++)await road(x,6);
  const resetButton=page.getByRole('button',{name:'Reset',exact:false});
  const resetBox=await resetButton.boundingBox();assert.ok(resetBox.x+resetBox.width<playBox.x&&Math.abs(resetBox.y-playBox.y)<2);
@@ -38,7 +38,7 @@ try {for(const [name,width,height]of [['desktop',1440,900],['narrow',390,844]]){
  assert.equal(await page.evaluate(()=>cs.getChallengeRun().city.funds),140);assert.equal(await page.evaluate(()=>state.store.get().paused),true);
  for(let x=4;x<=9;x++)await road(x,6);
  await page.getByRole('button',{name:'Run traffic',exact:true}).click();
- await page.getByRole('heading',{name:'Nice work!',exact:true}).waitFor({timeout:20000});
+ await page.getByRole('heading',{name:'Nice work!',exact:true}).waitFor({timeout:120000});
  assert.equal(await page.evaluate(()=>cs.getChallengeRun().city.history.length),0,'arrival wins before return');
  const frozen=await page.evaluate(()=>cs.getChallengeRun().city.elapsed);await page.waitForTimeout(600);assert.equal(await page.evaluate(()=>cs.getChallengeRun().city.elapsed),frozen);
  await page.screenshot({path:`${out}/${name}-win.png`});

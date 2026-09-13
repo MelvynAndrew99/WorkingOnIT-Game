@@ -30,13 +30,15 @@ test('disconnected stations do not spawn and radius excludes distant roads',()=>
  city.roads=city.roads.filter(p=>p.x!==entrance(station).x);
  assert.equal(patrolRoute(city,station),null);stepPolicePatrols(city);assert.equal(city.trips.length,0);
 });
-test('the same patrol car takes a distant call, clears it and returns to patrol',()=>{
+for(const returningHome of [false,true])test(`the same patrol car takes a distant call, clears it and returns to patrol (interrupted return: ${returningHome})`,()=>{
  const city=fixture();stepCity(city,1);const car=city.trips[0],id=car.id;
+ if(returningHome)car.patrolReturningHome=true;
  const incident={id:city.nextId++,x:14,y:3,severity:'minor' as const,status:'active' as const,createdAt:city.elapsed,
  required:['police' as const],completedServices:[],rescueDeadline:null,outcome:'none' as const};
  city.incidents.push(incident);city.accidentCount++;
  stepCity(city,.1);assert.equal(city.trips[0].id,id);assert.equal(city.trips.length,1);
  assert.equal(car.patrol,undefined);assert.equal(car.incidentId,incident.id);assert.ok(isEmergencyResponse(car));
+ assert.equal(car.patrolReturningHome,undefined);
  assert.ok(car.path.some(p=>!insidePatrol(city.buildings[0],p)));reload(city);
  for(let n=0;n<1000&&incident.status==='active';n++)stepCity(city,.1);
  assert.equal(incident.status,'cleared');

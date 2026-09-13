@@ -1,3 +1,26 @@
+## Post-jam: expand beyond the beginner campaign (2026-09-13)
+
+- [ ] Add more demanding traffic-optimization missions beyond the first 25, using the jam campaign as a simple, fun introduction.
+- [ ] Add further interactive objects and their focused lessons after the jam, rather than making the beginner campaign wait for those mechanics.
+- [ ] Install the selected What A Jam recording and expose playback for the saved free Level 25 song entitlement. The current repository contains its creative brief/lyrics, not the selected recording.
+
+## Post-jam: balance the economy (user decision, 2026-09-12)
+
+- [ ] Balance the economy **after the game jam ends**. Review construction/building prices and refunds, income/rewards, land purchase prices and progression, and the financial relationships among apartments, stores, parks and transit. Values remain provisional until that pass; do not introduce new fares/upkeep merely because they are candidates for review.
+- [ ] Include the proposed on-map cash land purchases in that balancing pass. Full economic tuning is not a prerequisite for discussing or implementing clearer land interactions; any interim price needs to be explicitly provisional. Preserve already earned land, money and progression when changing rules.
+
+## Bus stop label overlap (user deferred, 2026-09-13)
+
+User will fix this later; not a priority today. Observed in play after the bus stop art revision ([artwork](artwork/transit/bus-stop/README.md)).
+
+- [ ] A bus dwelling at a stop draws its occupancy label (for example "3/8 · 70s") over the stop's boarding curb and yellow waiting-rider markers. Keep the bus label clear of the curb side, for example on the road side of the bus.
+- [ ] The stop's wait timer ("48s") and the dwelling bus's timer sit a few pixels apart, so it is unclear which belongs to which. Separating the labels above should resolve most of this.
+- [ ] Minor: from the fifth waiting rider, the second marker row lands on the shelter bench and reads as a blob. Consider a tighter single row along the curb for up to about six riders.
+
+**Jam MVP:** the user finds fun in watching roads, traffic and crashes and solving the resulting problems. Prioritize that visible traffic/crash/optimization loop and readable cause/effect. This does not request another accident-frequency increase or cancel the recorded mission, apartment/store and on-map interaction plans. Economy tuning is deferred, not removed from the project.
+
+**Reported milestone:** after five days, the game is approaching **100 players** (user report, September 12). Keep “almost 100” approximate; it is not an exact count, a concurrent-player count or a retention measurement. This update adds no analytics or publication work.
+
 ## Bus ridership and occupancy markers delivered locally (September 11, 2026)
 
 The agreed representative home/shop/park rules now generate shared saved stop queues, physical eight-seat loads, destination stays and return trips. Bus stops/depot use the existing yellow visitor-dot style. Legacy passengers finish intact; representative riders do not mint existing household/mission rewards or remove cars. [Delivery and checks](transit-and-one-way/bus-economics/IMPLEMENTED.md). No publication or performance testing; gateway abstraction and eventual real household/economy coupling remain follow-ons. This supersedes older bus-pending notes below.
@@ -24,9 +47,9 @@ Today's user-prioritized shared danger mechanics are delivered locally: heavier 
 
 User explicitly wants mechanics balancing across missions and sandbox while preserving the current Level 3. Installed Grok's completed [review and Codex handoff](traffic-safety-balance/README.md) recommend local conflicting-arrival danger, effective controls, and incident-based police/EMS/fire rosters including real pile-ups. Prototype actual failed-yield contact alongside area-level exposure/decay; do not turn compliant waiting or bad Flow labels into crashes. Severity and pile-up reachability, physical responder access and save compatibility require verification. Numbers remain provisional. Five existing lesson tests pass; no runtime rebalance or publication in this assignment pass.
 
-## First 25 missions: latest direction for the next discussion
+## First 25 missions: current direction (2026-09-12)
 
-The first ten missions will focus on placing roads, connecting homes to stores and reducing commute time across different intersection layouts. This supersedes the planned early crash/control lesson order, but does not change published maps or saved progress yet. [Mission requirements: Levels 1–25](challenges/MISSIONS.md) records the confirmed direction and a proposed sequence expanding into congestion, destination capacity, crashes, emergency access and diversion. Individual maps, targets, budgets, star criteria and later-level ordering await discussion/playtesting. The user reports 46 unique players and hopes short challenges encourage return visits; retention is a hypothesis, not a measured result. Documentation only in this pass; no implementation, publication or agent discussion scheduled automatically.
+[Mission requirements](challenges/MISSIONS.md): Levels1–15 teach roads and balanced store/park service, with apartment/busy-store multi-car demand, multiple entrances and useful buses around10–15. Levels16–25 teach emergency access and safer roads. Beating25 earns What A Jam free as a jam perk. Exact maps and building/reward mechanics remain to be authored; existing playable levels and saves remain unchanged. The sandbox continues as the open-ended place to create and solve problems.
 
 
 ## Challenge route and revised lessons delivered

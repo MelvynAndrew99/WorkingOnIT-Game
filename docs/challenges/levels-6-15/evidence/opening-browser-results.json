@@ -1,0 +1,24 @@
+[
+  {
+    "name": "desktop",
+    "arrivalSeconds": 7.500000000000039,
+    "nextAndRetry": true,
+    "threeSavedStars": true,
+    "realCollision": true,
+    "realControl": true,
+    "sandboxUnchanged": true,
+    "legacyLayoutArchived": true,
+    "legacyStarsPreserved": true
+  },
+  {
+    "name": "narrow",
+    "arrivalSeconds": 7.500000000000039,
+    "nextAndRetry": true,
+    "threeSavedStars": true,
+    "realCollision": true,
+    "realControl": true,
+    "sandboxUnchanged": true,
+    "legacyLayoutArchived": true,
+    "legacyStarsPreserved": true
+  }
+]

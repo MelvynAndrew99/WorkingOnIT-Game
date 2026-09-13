@@ -359,7 +359,7 @@ function dispatch(city: City): void {
         if(!from)continue;
         const access=accessTiles(city,incident).find(p=>!!findPath(city,from,p,true));
         if(!access)continue;
-        const candidate:Trip={...patrol,patrol:undefined,phase:'outbound',resume:undefined,incidentId:incident.id,target:copy(access),speed:EMERGENCY_TILES_PER_SECOND};
+        const candidate:Trip={...patrol,patrol:undefined,patrolReturningHome:undefined,phase:'outbound',resume:undefined,incidentId:incident.id,target:copy(access),speed:EMERGENCY_TILES_PER_SECOND};
         if(retarget(city,candidate,from)&&candidate.phase==='outbound'&&commitTripRoute(city,roadIndex(city),patrol,candidate)){
           if(patrol.progress>=patrol.path.length-1)arriveResponse(city,patrol);
           reassigned=true;break;

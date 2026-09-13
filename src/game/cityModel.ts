@@ -68,6 +68,8 @@ export type Trip = {
   /** Local service observation only; absent in older saves. */
   startedAt?: number; visitedAt?: number;
   patrol?: true;
+  /** An interrupted patrol is driving home; its optional patrol radius no longer limits routing. */
+  patrolReturningHome?: true;
   /** This real crew was replaced and must return without doing scene work. */
   responseCancelled?: true;
   sceneParked?: true;
@@ -628,6 +630,7 @@ function parseTrip(city: City, raw: Trip, nextId: number): Trip | null {
   if(raw.busId!==undefined){if(!integer(raw.busId)||raw.busId<1||raw.busId>=nextId)return null;trip.busId=raw.busId;}
   if(raw.nextRouteQueryAt!==undefined){if(!finite(raw.nextRouteQueryAt))return null;trip.nextRouteQueryAt=raw.nextRouteQueryAt;}
   if(raw.patrol!==undefined){if(raw.patrol!==true||raw.service!=='police'||raw.incidentId!==undefined)return null;trip.patrol=true;}
+  if(raw.patrolReturningHome!==undefined){if(raw.patrolReturningHome!==true||!trip.patrol)return null;trip.patrolReturningHome=true;}
   if(raw.sceneParked!==undefined){if(raw.sceneParked!==true||!raw.service||raw.phase!=='working'||raw.responseCancelled||raw.patrol)return null;trip.sceneParked=true;}
   if(raw.responseCancelled!==undefined){if(raw.responseCancelled!==true||!raw.service||raw.patrol||raw.incidentId===undefined)return null;trip.responseCancelled=true;}
   if (raw.phase !== undefined) { if (!PHASES.includes(raw.phase)) return null; trip.phase = raw.phase; }

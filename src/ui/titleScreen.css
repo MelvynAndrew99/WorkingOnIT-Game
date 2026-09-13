@@ -1,8 +1,28 @@
 @font-face{font-family:"Kalam Note";src:url("/fonts/kalam/Kalam-Regular.ttf") format("truetype");font-style:normal;font-weight:400;font-display:swap}
 .commute-button{display:flex;align-items:center;justify-content:center;gap:5%;width:100%;min-height:44px;padding:9px 12px;border:1px solid #ffe4a0;border-bottom:4px solid #ce954e;border-radius:14px;background:linear-gradient(110deg,#ffde75,#ffd15b);color:#064947;font-size:clamp(17.6px,5.4cqw,32px);font-weight:900;line-height:1.2;cursor:pointer}
 .commute-button span{font-size:1.4em;line-height:1}
-.title-dialog{margin:auto;max-width:min(420px,calc(100% - 28px));max-height:85dvh;overflow-y:auto;touch-action:pan-y;border:1px solid #83afa0;border-radius:16px;padding:24px;background:#164d43;color:#fff1cf;font-size:1.1rem;line-height:1.5}
-.title-dialog::backdrop{background:#071e1bd9}.title-dialog h2{font-size:1.6rem;font-weight:800;margin-bottom:14px}.title-dialog p{margin:14px 0}.title-dialog label{display:flex;align-items:center;gap:12px;min-height:44px}.title-dialog input{width:22px;height:22px;accent-color:#ffd46b}.title-dialog .commute-button{font-size:1.1rem}.title-dialog-close{width:100%;min-height:44px;margin-top:12px;border:1px solid #83afa0;border-radius:8px;padding:8px}
+.title-dialog-close{
+  width:100%;
+  min-height:48px;
+  border:1px solid #83afa0;
+  border-radius:12px;
+  padding:10px 12px;
+  background:#123833;
+  color:#fff4d4;
+  font:inherit;
+  font-weight:800;
+}
+.menu-combobox-backup{
+  position:absolute;
+  width:1px;
+  height:1px;
+  padding:0;
+  margin:-1px;
+  overflow:hidden;
+  clip:rect(0,0,0,0);
+  white-space:nowrap;
+  border:0;
+}
 .hide-gameplay-tips .city-controls>p{visibility:hidden}
 
 
@@ -37,8 +57,11 @@
 .title-utilities{display:flex;gap:12px;margin-top:4px}.title-utilities .title-road-button{flex:1;min-width:0;min-height:62px;gap:9px;justify-content:center;padding:10px 12px;font-size:18px;font-weight:850;background:linear-gradient(120deg,#ffe7a5,#e6c575);border-color:#ffedb0;border-bottom-color:#9f8042}.title-utility-icon{display:grid;place-items:center;width:29px;height:29px;flex-shrink:0;border:2px solid #355346;border-radius:5px;font-size:21px;line-height:1}
 .title-footer{grid-column:1/-1;grid-row:3;z-index:2;align-self:end;display:flex;align-items:center;gap:14px;color:#bad0bd;font-size:12px;letter-spacing:.03em;padding-top:30px}.title-stripes{width:60px;height:9px;background:repeating-linear-gradient(120deg,#e5ba58 0 7px,transparent 7px 13px)}
 .title-screen button:focus-visible{outline:3px solid #fff4ca;outline-offset:4px}.title-screen button:active{transform:translateY(3px)}
-.title-screen .tutorial-skip{width:100%;min-height:44px;padding:10px;border:1px solid #83afa0;border-radius:8px;margin-top:14px}
-@media(hover:hover) and (pointer:fine){.title-road-button:hover{transform:translateY(-3px);filter:brightness(1.07);box-shadow:0 9px 0 #072f2c,0 14px 25px #082e2a55}.title-dialog-close:hover,.title-screen .tutorial-skip:hover{background:#306456}}
+.title-screen .tutorial-skip{width:100%;min-height:48px;padding:10px 12px;border:1px solid #83afa0;border-radius:12px;background:#123833;color:#fff4d4;font:inherit;font-weight:800}
+@media(hover:hover) and (pointer:fine){
+  .title-road-button:hover{transform:translateY(-3px);filter:brightness(1.07);box-shadow:0 9px 0 #072f2c,0 14px 25px #082e2a55}
+  .title-dialog-close:hover,.title-screen .tutorial-skip:hover,.title-screen .menu-x:hover{background:#24685a}
+}
 @media(max-width:760px){
  .title-composition{display:flex;flex-direction:column;padding:25px 24px 18px;min-height:100%;gap:0}
  .title-brand{align-self:stretch;padding:0;z-index:2;flex-shrink:0}.title-kicker{font-size:9px;letter-spacing:.14em;margin-bottom:18px}.title-brand h1{font-size:clamp(42px,12.7vw,76px);margin-bottom:14px}.title-brand h1>span{display:inline;font-size:1em;margin-left:.2em}.title-brand>p{font-size:15px}

@@ -4,7 +4,7 @@ import {store,useStore} from '../state/store.ts';
 /** Fleet and ordered map taps share one compact inspector, with no route menus. */
 export default function TransitPanel(){
     const s=useStore(), panel=s.transitPanel;
-    if(s.phase==='challenge')return null;
+
     if(s.busStopPanel){const stop=s.busStopPanel;return <div className="direction-editor transit-editor" role="group" aria-label="Bus stop">
         <p><strong>Bus stop</strong> · {stop.waiting} waiting · Longest wait {stop.waitSeconds}s</p>
         {stop.issue&&<p>This bus stop cannot be served. {stop.issue} Buses skip it until access is restored.</p>}

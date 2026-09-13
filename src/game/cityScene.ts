@@ -20,13 +20,14 @@ import { buildingStatus, demandSummary, expandCity, footprint, entrance, place, 
 import {
     ensureCityArt, parkTexture, frame, groundFrame, scenery, buildingPieces, roadFrame, arrowFrame,
     vehicleView, facingFor, storeStall, ROAD_BIT, SIDE_STEP,
-    VEHICLE_WIDTH, VEHICLE_LANE_OFFSET, COLORS, type Piece, type Side,
+    VEHICLE_WIDTH, VEHICLE_LANE_OFFSET, COLORS, DEPOT_LAYOUT, type Piece, type Side,
 } from './cityArt.ts';
 import { containsTile } from './cityMap.ts';
 import {debugVehicles, roadIndex, emergencyLaneOffset, travelLaneOffset, isEmergencyResponse, type JunctionControl} from './cityTraffic.ts';
-import {setFiretruckResponding,setPoliceResponding} from '../audio/vehicles.ts';
+import {setFiretruckResponding,setPoliceResponding,setAmbulanceResponding} from '../audio/vehicles.ts';
 import {stepTrafficAudio,stopTrafficAudio} from '../audio/traffic.ts';
 import {playMinorCrash,stopCrashAudio} from '../audio/crashes.ts';
+import {playDemolition,stopConstructionAudio} from '../audio/construction.ts';
 import {incidentSummary} from './cityIncidents.ts';
 import {BUILDING_LABELS, isBuildingTool} from '../ui/cityLabels.ts';
 import {areaTiles} from './junctionAreas.ts';
@@ -38,8 +39,9 @@ import { tutorialSnapshot, tutorialAction } from './cityTutorial.ts';
 import {starterSnapshot, starterBypassTiles, starterDiversionPoint} from './cityStarterTutorial.ts';
 import { externalNeedsRoad, finishTutorialAndConnect, connectExternalCity } from './cityExternal.ts';
 import { missionSnapshot, refreshMissions } from './cityMissions.ts';
-import { store } from '../state/store.ts';
-import { weatherHudLabel } from './cityWeather.ts';
+import { store, selectConstructionTool } from '../state/store.ts';
+import { weatherHudLabel, weatherSnapshot } from './cityWeather.ts';
+import {setRainIntensity,stopWeatherAudio} from '../audio/weather.ts';
 import { createCityWeatherView } from './cityWeatherView.ts';
 export interface Scene { destroy(): void }
 
@@ -53,6 +55,10 @@ export interface CitySceneSession {
     save: () => void;
     step: (seconds: number) => void;
     place: typeof place;
+    allowedTools?: readonly Tool[];
+    reservedTiles?: readonly Point[];
+    fitTown?: boolean;
+    directions?: typeof applyRoadDirections;
 }
 export function createCityScene(app: Application, stage: Stage, session?: CitySceneSession): Scene {
     const city = session?.city ?? getSave().city;
@@ -186,24 +192,6 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
 
     function drawBuilding(layer: Container, b: Building, alpha?: number, tint?: number) {
         const s = shape(b);
-        if(b.kind==='busStation'||b.kind==='busStop') {
-            for(const p of s.cells)cell(layer,'plot',p.x,p.y,tint,alpha);
-            const g=new Graphics();g.alpha=alpha??1;
-            if(b.kind==='busStation'){
-                // Existing Kenney architecture forms a modest office; bays remain empty static geometry.
-                for(const piece of buildingPieces('store',0,3,2,{x:1,y:1},'S'))put(layer,{...piece,th:piece.th*.55,ty:piece.ty*.55,tint:tint??piece.tint,alpha},s.x0,s.y0);
-                for(let i=0;i<2;i++)g.rect(px(s.x0+.25+i*1.35),py(s.y0+1.6),tile*1.1,tile*.85).stroke({color:0xf8efd4,width:2});
-            }else{
-                g.rect(px(s.x0+.12),py(s.y0+.15),tile*.65,tile*.24).fill(0x54857d);
-            }
-            g.roundRect(px(s.x0+.3),py(s.y0+.3),tile*.4,tile*.4,2).fill(tint??0x46c4b7).stroke({color:0xf8efd4,width:1});
-            g.rect(px(s.x0+.38),py(s.y0+.37),tile*.24,tile*.15).fill(0x193947);
-            g.circle(px(s.x0+.4),py(s.y0+.61),tile*.035).fill(0x193947).circle(px(s.x0+.6),py(s.y0+.61),tile*.035).fill(0x193947);
-            // Mark actual frontage inside the lot, never a second flow arrow on the road.
-            const x=s.anchor.x+.5,y=s.anchor.y+.5,dx=s.entrance.x-s.anchor.x,dy=s.entrance.y-s.anchor.y;
-            g.moveTo(px(x+dx*.42-dy*.32),py(y+dy*.42+dx*.32)).lineTo(px(x+dx*.42+dy*.32),py(y+dy*.42-dx*.32)).stroke({color:0x46c4b7,width:4});
-            layer.addChild(g);return;
-        }
         if (b.kind === 'park') {
             const texture=parkTexture(s.side);
             if(texture){
@@ -220,7 +208,8 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
                 put(layer,{name:'tree_green',tx,ty,tw:.85,th:.95,tint,alpha},s.x0,s.y0);
             return;
         }
-        for (const p of s.cells) cell(layer, 'plot', p.x, p.y, tint, alpha);
+        if (b.kind !== 'home' && b.kind !== 'busStop' && b.kind !== 'busStation') for (const p of s.cells) cell(layer, 'plot', p.x, p.y, tint, alpha);
+        // Home lots, bus stops and depots bake their own ground, so only other buildings get plain paving.
         for (const piece of buildingPieces(b.kind, b.id, s.w, s.h, s.access, s.side))
             put(layer, { ...piece, tint: tint ?? piece.tint, alpha: alpha ?? piece.alpha }, s.x0, s.y0);
     }
@@ -281,6 +270,11 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
                 .fill({ color: 0x1d3f30, alpha: .35 });
             ground.addChild(shadow);
             put(ground, s, x, y);
+        }
+        for(const p of session?.reservedTiles??[]){
+            const island=new Graphics().roundRect(px(p.x)+3,py(p.y)+3,tile-6,tile-6,6)
+              .fill(0x386d46).stroke({color:0xf4df99,width:3});
+            ground.addChild(island);
         }
         ground.updateCacheTexture();
     }
@@ -518,7 +512,8 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
                 if(!sprite){sprite=new Sprite(frame('bus_E'));sprite.anchor.set(.5);cars.addChild(sprite);parkedBodies.set(bus.id,sprite);}
                 sprite.texture=frame('bus_E');const w=VEHICLE_WIDTH.E*tile;
                 sprite.setSize(w,w*sprite.texture.height/sprite.texture.width);
-                sprite.position.set(px(station.x+.8+bay*1.35),py(station.y+2.02));
+                const lot=shape(station),[bx,by]=DEPOT_LAYOUT[lot.side].bays[bay]??DEPOT_LAYOUT[lot.side].bays[0];
+                sprite.position.set(px(lot.x0+bx),py(lot.y0+by));
             }
         }
         for(const [id,g] of parkedBodies)if(!parked.has(id)){g.destroy();parkedBodies.delete(id);}
@@ -607,10 +602,14 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
                 label(`transit-${b.id}`,`${waiting?`${passengerTimes.stops.get(b.id)??0}s`:b.kind==='busStation'?'BUS DEPOT':'BUS'}${transitIssueByStop.has(b.id)?' !':''}`,b.x+.5,b.y-.2,transitIssueByStop.has(b.id)?0xffb75e:0x74fff0);
                 // Match the existing yellow visitor markers, contained inside the stop plot.
                 const depot=b.kind==='busStation',s=shape(b);
-                for(let i=0;i<Math.min(waiting,8);i++)activity.roundRect(
-                    px(s.x0+(depot?.2:.08)+i%4*(depot?.38:.22)),
-                    py(s.y0+s.h-(depot?.35:.22)-Math.floor(i/4)*(depot?.28:.24)),
-                    tile*(depot?.25:.18),tile*.18,2).fill(0xffd779);
+                for(let i=0;i<Math.min(waiting,8);i++){
+                    // Depot riders wait on the painted platform baked into the depot art.
+                    if(depot){const [rx,ry]=DEPOT_LAYOUT[s.side].riders;activity.roundRect(px(s.x0+rx+i%4*.22),py(s.y0+ry+Math.floor(i/4)*.25),tile*.18,tile*.18,2).fill(0xffd779);continue;}
+                    // Stop riders queue along the painted boarding curb, whichever side it faces.
+                    const along=.08+i%4*.22,depth=.04+Math.floor(i/4)*.24,far=1-.18-depth;
+                    const [mx,my]=s.side==='S'?[along,far]:s.side==='N'?[along,depth]:s.side==='E'?[far,along]:[depth,along];
+                    activity.roundRect(px(s.x0+mx),py(s.y0+my),tile*.18,tile*.18,2).fill(0xffd779);
+                }
                 continue;
             }
             if(b.kind==='home'){if(homeRoadIssue(city,b)&&city.buildings.some(b=>b.kind==='store')){for(const p of footprint(b))activity.rect(px(p.x)+1,py(p.y)+1,tile-2,tile-2).stroke({color:0xffb75e,width:2});label(`access-${b.id}`,'!',b.x+1,b.y-.25,0xffb75e);}continue;}
@@ -714,6 +713,15 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
         camera.x = points.length ? points.reduce((n,p) => n+p.x,0)/points.length : 8;
         camera.y = points.length ? points.reduce((n,p) => n+p.y,0)/points.length : 7;
         camera.zoom = city.tutorial?.hRoad && !city.buildings.length ? .5 : 1;
+        if(session?.fitTown){
+            const cells=[...city.roads,...city.buildings.flatMap(footprint)];
+            if(cells.length){
+                const left=Math.min(...cells.map(p=>p.x)),right=Math.max(...cells.map(p=>p.x))+1;
+                const top=Math.min(...cells.map(p=>p.y)),bottom=Math.max(...cells.map(p=>p.y))+1;
+                camera.x=(left+right)/2;camera.y=(top+bottom)/2;
+                camera.zoom=Math.max(.5,Math.min(1,viewport.width/(tile*(right-left+2)),viewport.height/(tile*(bottom-top+2))));
+            }
+        }
         hover = null; updateCamera();
     }
     function layout() {
@@ -742,6 +750,7 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
      */
     function paint() { if (!app.ticker.started && !root.destroyed) app.render(); }
     function syncWeather() {
+        setRainIntensity(store.get().weatherEnabled?weatherSnapshot(city.elapsed).rainIntensity:0);
         weatherView.sync({
             elapsed: city.elapsed,
             enabled: store.get().weatherEnabled,
@@ -764,7 +773,7 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
         return containsTile(city.map,tilePoint) ? tilePoint : null;
     }
     function finishDirection(mode: 'forward'|'reverse'|'two-way' = store.get().directionRestore?'two-way':'forward') {
-        const result=applyRoadDirections(city,directionPoints,mode);
+        const result=session?(session.directions?.(city,directionPoints,mode)??{ok:false,message:'One-way editing is not supplied for this lesson.'}):applyRoadDirections(city,directionPoints,mode);
         const ringReady=result.ok&&directionPoints.some(p=>roundaboutIndex(city).byTile.has(`${p.x},${p.y}`));
         if(result.ok)directionPoints=[];
         store.patch({directionSelection:directionPoints.length,message:result.message+(ringReady?' Roundabout: entering cars yield to circulating traffic.':'')});
@@ -772,6 +781,7 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
     }
     function build(p: Point) {
         const s = store.get();
+        if(session&&s.tool&&!session.allowedTools?.includes(s.tool)){store.patch({message:'Use the tools supplied for this lesson.'});return;}
         if(s.movingBusStop!==null){
             const result=moveBusStop(city,s.movingBusStop,p.x,p.y,s.rotation);
             store.patch({message:result.message,...(result.ok?{movingBusStop:null,tool:null}:{})});
@@ -791,7 +801,7 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
             report();return;
         }
         if(s.tool==='direction') {
-            if(session || !starterToolAllowed(city,'direction')){store.patch({message:'One-way editing is not available in this lesson.'});return;}
+            if(session&&!session.allowedTools?.includes('direction') || !starterToolAllowed(city,'direction')){store.patch({message:'One-way editing is not available in this lesson.'});return;}
             if(!city.roads.some(q=>same(p,q))){store.patch({message:'Select existing road squares for a one-way route.'});return;}
             const tail=directionPoints.at(-1);
             if(tail&&same(tail,p)){if(!drawing&&directionPoints.length>1)finishDirection();return;}
@@ -806,8 +816,8 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
             if(!drawing&&directionPoints.length>2&&same(directionPoints[0],p)){finishDirection();return;}
             preview();paint();return;
         }
-        if(s.tool === 'road' && city.roads.some(q=>same(p,q))) {
-            inspectedRoad = {...p};
+        if((s.tool === 'road'||s.tool===null) && city.roads.some(q=>same(p,q))) {
+            inspectedId=null;inspectedRoad = {...p};
             store.patch({message:roundaboutIndex(city).byTile.has(`${p.x},${p.y}`)?'Roundabout: entering cars yield to circulating traffic.':`Road approach (${p.x}, ${p.y}) selected. ${session?'Waiting is shown above the map.':'Flow details are in the Dashboard.'}`});
             report(); return;
         }
@@ -815,12 +825,14 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
         if(depot&&s.tool!=='bulldoze'&&s.tool!=='wideRoad'){inspectedId=depot.id;store.patch({tool:null,message:'Choose stops in order, buy a bus, then start service.'});report();return;}
         const busStop=city.buildings.find(b=>b.kind==='busStop'&&footprint(b).some(q=>same(p,q)));
         if(busStop&&s.tool!=='bulldoze'&&s.tool!=='wideRoad'){inspectedId=busStop.id;store.patch({tool:null});const issue=busStopIssue(city,busStop);store.patch({message:`Bus stop ${busStop.id}: ${issue??`boards ${['west','north','east','south'][busStop.rotation]}bound traffic. Riders walk along connected sidewalks.`}`});report();return;}
-        if(s.tool===null){store.patch({message:'Select a building or road tool from the menu first.'});return;}
-        if(isBuildingTool(s.tool)) {
+        if(s.tool===null||isBuildingTool(s.tool)) {
             const existing=city.buildings.find(b=>footprint(b).some(q=>same(p,q)));
             if(existing){inspectedId=existing.id;const status=buildingStatus(city,existing);store.patch({message:`${BUILDING_LABELS[existing.kind]}: ${status.label}.${session?'':' Open Dashboard for details.'}`});report();return;}
         }
+        if(s.tool===null){inspectedId=null;inspectedRoad=null;store.patch({message:'Inspect mode. Select a road, building or bus stop.'});report();return;}
+        const buildingsBefore=city.buildings.length;
         const message = placeInCity(city, s.tool, p.x, p.y, s.rotation);
+        if(s.tool==='bulldoze'&&city.buildings.length<buildingsBefore)playDemolition();
         store.patch({ message }); report(); flushSave(); refresh();
     }
     const midpoint = (points: Point[]) => ({x:(points[0].x+points[1].x)/2,y:(points[0].y+points[1].y)/2});
@@ -890,7 +902,11 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
     app.canvas.addEventListener('wheel',wheel,{passive:false});
     const uncommand=onCityCommand(command=>{
         cancel();
-        if(session && !['zoom','home','focus'].includes(command.type)) return;
+        if(session && !['zoom','home','focus'].includes(command.type)) {
+            const permitted=command.type==='road-direction'&&session.allowedTools?.includes('direction')
+              || ['transit','bus-stop'].includes(command.type)&&session.allowedTools?.includes('busStop');
+            if(!permitted)return;
+        }
         if(command.type==='bus-stop'){
             if(command.action==='close'){inspectedId=null;store.patch({movingBusStop:null,tool:null});report();preview();return;}
             if(command.action==='cancel'){store.patch({movingBusStop:null,tool:null,message:'Stop move canceled.'});report();preview();return;}
@@ -954,10 +970,8 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
         if (document.querySelector('dialog[open]')) return;
         if (e.repeat || e.ctrlKey || e.metaKey || e.altKey || (e.target instanceof HTMLElement && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName))) return;
         const shortcuts: Record<string, Tool> = { '1': 'home', '2': 'store', '3': 'road', '4': 'bulldoze', '5': 'stop', '6': 'signal', '7': 'closure', '8':'direction', '9':'wideRoad' };
-        if (shortcuts[e.key] && (!session || shortcuts[e.key]!=='direction') && starterToolAllowed(city,shortcuts[e.key])) store.patch({ tool: shortcuts[e.key], panning: false });
-        if(e.key==='Escape'&&store.get().movingBusStop!==null){store.patch({movingBusStop:null,tool:null,message:'Stop move canceled.'});preview();}
-        if(e.key==='Escape'&&store.get().transitDraft!==null)store.patch({transitDraft:null,message:'Route draft canceled.'});
-        if(e.key==='Escape'&&store.get().tool==='direction'){directionPoints=[];store.patch({directionSelection:0,message:'Direction edit canceled.'});}
+        if (shortcuts[e.key] && (!session || session.allowedTools?.includes(shortcuts[e.key])) && starterToolAllowed(city,shortcuts[e.key])) selectConstructionTool(shortcuts[e.key]);
+        if(e.key==='Escape'){selectConstructionTool(null);directionPoints=[];store.patch({directionSelection:0});preview();}
         if (e.key.toLowerCase() === 'r') store.patch({ rotation: (store.get().rotation + 1) % 4 });
         if (e.code === 'Space' && !(e.target instanceof HTMLButtonElement)) { e.preventDefault(); store.patch({ paused: !store.get().paused }); }
     }
@@ -975,6 +989,7 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
         syncWeather();
         setFiretruckResponding(city.trips.some(t=>t.service==='fire'&&!t.patrol&&!t.responseCancelled&&isEmergencyResponse(t)));
         setPoliceResponding(city.trips.some(t=>t.service==='police'&&!t.patrol&&!t.responseCancelled&&isEmergencyResponse(t)));
+        setAmbulanceResponding(city.trips.some(t=>t.service==='ems'&&!t.patrol&&!t.responseCancelled&&isEmergencyResponse(t)));
         stepTrafficAudio(dt,city.trips.filter(t=>!t.service&&t.path.length&&(!t.phase||t.phase==='legacy'||t.phase==='outbound'||t.phase==='returning')).length);
         if(city.tutorial?.status==='active'&&!city.tutorial.hRoad&&!noticed&&city.tutorial.noticedIncident){
             store.patch({tutorialNotice:true,message:'A crash needs attention. Traffic is running; build another route and keep emergency access open.'});
@@ -1016,8 +1031,11 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
         destroy() {
             setFiretruckResponding(false);
             setPoliceResponding(false);
+            setAmbulanceResponding(false);
             stopTrafficAudio();
             stopCrashAudio();
+            stopConstructionAudio();
+            stopWeatherAudio();
             flushSave(); observer.disconnect(); unsub(); unresize();
             window.removeEventListener('keydown', keyboard);
             window.removeEventListener('blur', cancel);

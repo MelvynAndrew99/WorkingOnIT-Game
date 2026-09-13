@@ -1,17 +1,16 @@
 /** Background pass-bys: a few overlapping clips while civilian cars are driving. */
+import {sfxVolume,type SfxSource} from './mix.ts';
 import {store} from '../state/store.ts';
-import {effectsSettings} from './vehicles.ts';
-// Gains even out measured loudness (-17.3 to -22.7 LUFS) so no clip stands out.
-const CLIPS:[string,number][]=[
- ['audio/vehicles/CarPassBy_BW.62241.mp3',.54],
- ['audio/vehicles/CarPassBy_S011TM.11.mp3',.92],
- ['audio/vehicles/CarPassBy_S011TM.17.mp3',.8],
- ['audio/vehicles/CarPassBy_S011TM.18.mp3',1],
+import {effectsSettings,subscribeEffects} from './vehicles.ts';
+const CLIPS:SfxSource[]=[
+ 'audio/vehicles/CarPassBy_BW.62241.mp3',
+ 'audio/vehicles/CarPassBy_S011TM.11.mp3',
+ 'audio/vehicles/CarPassBy_S011TM.17.mp3',
+ 'audio/vehicles/CarPassBy_S011TM.18.mp3',
 ];
-/** Keeps traffic under the sirens: a share of the effects volume. */
-const MIX=.5, MAX_LAYERS=3;
-type Layer={src:string;gain:number;level:number;el:HTMLAudioElement|null;active:boolean;failed:boolean};
-const layers:Layer[]=CLIPS.map(([src,gain])=>({src,gain,level:1,el:null,active:false,failed:false}));
+const MAX_LAYERS=3;
+type Layer={src:SfxSource;level:number;el:HTMLAudioElement|null;active:boolean;failed:boolean};
+const layers:Layer[]=CLIPS.map(src=>({src,level:1,el:null,active:false,failed:false}));
 let sleeping=false, cooldown=2, last=-1;
 function allowed():boolean {
  const {volume,muted}=effectsSettings(), s=store.get();
@@ -22,7 +21,7 @@ function sync():void {
  for(const l of layers){
   const el=l.el;
   if(!el||!l.active)continue;
-  el.volume=Math.min(1,volume*MIX*l.gain*l.level);
+  el.volume=sfxVolume(l.src,volume,l.level);
   if(!ok)el.pause();
   else if(el.paused)el.play().catch(()=>{l.active=false;});
  }
@@ -35,7 +34,7 @@ export function initTrafficAudio():void {
   el.addEventListener('error',()=>{l.failed=true;l.active=false;console.warn(`[audio] Traffic clip unavailable (${l.src}); gameplay continues.`);});
   l.el=el;
  }
- store.subscribe(sync);
+ store.subscribe(sync);subscribeEffects(sync);
  document.addEventListener('visibilitychange',sync);
 }
 /** Called each simulation frame with the number of civilian cars on the road. */

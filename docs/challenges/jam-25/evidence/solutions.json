@@ -1,0 +1,346 @@
+[
+  {
+    "level": 10,
+    "id": "apartment-avenue",
+    "alternative": false,
+    "seconds": 33.24999999999896,
+    "budgetLeft": 760,
+    "shoppingIncome": 0,
+    "accidents": 0,
+    "fatalities": 0,
+    "stages": [
+      {
+        "label": "Join the avenue with a usable four-lane connection",
+        "done": true
+      },
+      {
+        "label": "Shopping returns using your new four-lane road: 4/4",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 10,
+    "id": "apartment-avenue",
+    "alternative": true,
+    "seconds": 33.24999999999896,
+    "budgetLeft": 660,
+    "shoppingIncome": 0,
+    "accidents": 0,
+    "fatalities": 0,
+    "stages": [
+      {
+        "label": "Join the avenue with a usable four-lane connection",
+        "done": true
+      },
+      {
+        "label": "Shopping returns using your new four-lane road: 4/4",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 11,
+    "id": "keep-another-way",
+    "alternative": false,
+    "seconds": 39.99999999999851,
+    "budgetLeft": 300,
+    "shoppingIncome": 500,
+    "accidents": 0,
+    "fatalities": 0,
+    "stages": [
+      {
+        "label": "Earn shopping income: $500 / $300",
+        "done": true
+      },
+      {
+        "label": "Shopping round trips: 4/4",
+        "done": true
+      },
+      {
+        "label": "Park round trips: 4/4",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 11,
+    "id": "keep-another-way",
+    "alternative": true,
+    "seconds": 42.99999999999834,
+    "budgetLeft": 300,
+    "shoppingIncome": 500,
+    "accidents": 0,
+    "fatalities": 0,
+    "stages": [
+      {
+        "label": "Earn shopping income: $500 / $300",
+        "done": true
+      },
+      {
+        "label": "Shopping round trips: 4/4",
+        "done": true
+      },
+      {
+        "label": "Park round trips: 4/4",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 14,
+    "id": "another-front-door",
+    "alternative": false,
+    "seconds": 49.27499999999798,
+    "budgetLeft": 1005,
+    "shoppingIncome": 0,
+    "accidents": 0,
+    "fatalities": 0,
+    "stages": [
+      {
+        "label": "Keep the original entrance and build another usable connection",
+        "done": true
+      },
+      {
+        "label": "Shopping returns through the new entrance: 4/4",
+        "done": true
+      },
+      {
+        "label": "Reopen the original entrance: toggle Divert off",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 14,
+    "id": "another-front-door",
+    "alternative": true,
+    "seconds": 49.27499999999798,
+    "budgetLeft": 965,
+    "shoppingIncome": 0,
+    "accidents": 0,
+    "fatalities": 0,
+    "stages": [
+      {
+        "label": "Keep the original entrance and build another usable connection",
+        "done": true
+      },
+      {
+        "label": "Shopping returns through the new entrance: 4/4",
+        "done": true
+      },
+      {
+        "label": "Reopen the original entrance: toggle Divert off",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 19,
+    "id": "past-the-wreck",
+    "alternative": false,
+    "seconds": 115.72500000000834,
+    "budgetLeft": 2730,
+    "shoppingIncome": 0,
+    "accidents": 1,
+    "fatalities": 0,
+    "stages": [
+      {
+        "label": "Build a usable second entrance; keep the original road",
+        "done": true
+      },
+      {
+        "label": "Select Divert → tap the old approach (8,10); let cars clear",
+        "done": true
+      },
+      {
+        "label": "Scene (13,5): crews dispatched 1/1",
+        "done": true
+      },
+      {
+        "label": "Scene (13,5): crews arrived 1/1",
+        "done": true
+      },
+      {
+        "label": "Scene (13,5): finish clearance",
+        "done": true
+      },
+      {
+        "label": "Clear the crash with Divert on and the second entrance usable",
+        "done": true
+      },
+      {
+        "label": "After clearance, tap Divert at (8,10) again to reopen",
+        "done": true
+      },
+      {
+        "label": "New shopping returns after recovery: 4/4",
+        "done": true
+      },
+      {
+        "label": "Keep legal service access available",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 19,
+    "id": "past-the-wreck",
+    "alternative": true,
+    "seconds": 107.35000000000652,
+    "budgetLeft": 2770,
+    "shoppingIncome": 0,
+    "accidents": 1,
+    "fatalities": 0,
+    "stages": [
+      {
+        "label": "Build a usable second entrance; keep the original road",
+        "done": true
+      },
+      {
+        "label": "Select Divert → tap the old approach (8,10); let cars clear",
+        "done": true
+      },
+      {
+        "label": "Scene (13,5): crews dispatched 1/1",
+        "done": true
+      },
+      {
+        "label": "Scene (13,5): crews arrived 1/1",
+        "done": true
+      },
+      {
+        "label": "Scene (13,5): finish clearance",
+        "done": true
+      },
+      {
+        "label": "Clear the crash with Divert on and the second entrance usable",
+        "done": true
+      },
+      {
+        "label": "After clearance, tap Divert at (8,10) again to reopen",
+        "done": true
+      },
+      {
+        "label": "New shopping returns after recovery: 4/4",
+        "done": true
+      },
+      {
+        "label": "Keep legal service access available",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 25,
+    "id": "what-a-jam",
+    "alternative": false,
+    "seconds": 94.25000000000362,
+    "budgetLeft": 7370,
+    "shoppingIncome": 0,
+    "accidents": 2,
+    "fatalities": 0,
+    "stages": [
+      {
+        "label": "Place Police with connected access",
+        "done": true
+      },
+      {
+        "label": "Place Clinic with connected access",
+        "done": true
+      },
+      {
+        "label": "Place Fire with connected access",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews dispatched 1/1",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews arrived 1/1",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): finish clearance",
+        "done": true
+      },
+      {
+        "label": "Scene (22,11): crews dispatched 3/3",
+        "done": true
+      },
+      {
+        "label": "Scene (22,11): crews arrived 3/3",
+        "done": true
+      },
+      {
+        "label": "Scene (22,11): finish clearance",
+        "done": true
+      },
+      {
+        "label": "New shopping returns after recovery: 4/4",
+        "done": true
+      },
+      {
+        "label": "Keep legal service access available",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 25,
+    "id": "what-a-jam",
+    "alternative": true,
+    "seconds": 163.52500000001876,
+    "budgetLeft": 7170,
+    "shoppingIncome": 0,
+    "accidents": 2,
+    "fatalities": 0,
+    "stages": [
+      {
+        "label": "Place Police with connected access",
+        "done": true
+      },
+      {
+        "label": "Place Clinic with connected access",
+        "done": true
+      },
+      {
+        "label": "Place Fire with connected access",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews dispatched 1/1",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews arrived 1/1",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): finish clearance",
+        "done": true
+      },
+      {
+        "label": "Scene (22,11): crews dispatched 3/3",
+        "done": true
+      },
+      {
+        "label": "Scene (22,11): crews arrived 3/3",
+        "done": true
+      },
+      {
+        "label": "Scene (22,11): finish clearance",
+        "done": true
+      },
+      {
+        "label": "New shopping returns after recovery: 4/4",
+        "done": true
+      },
+      {
+        "label": "Keep legal service access available",
+        "done": true
+      }
+    ]
+  }
+]

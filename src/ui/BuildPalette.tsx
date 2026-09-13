@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { LABELS, toolPrices, type PricedTool, type Tool } from '../game/cityModel.ts';
 import { starterToolAllowed } from '../game/cityStarterTutorial.ts';
 import { getSave } from '../state/save.ts';
-import { store, useStore } from '../state/store.ts';
+import { store, useStore, selectConstructionTool } from '../state/store.ts';
 import { isBuildingTool } from './cityLabels.ts';
 import './buildPalette.css';
 import {useTutorialGuidance} from './TutorialGuidance.tsx';
@@ -92,10 +92,9 @@ export default function BuildPalette() {
     function select(e: Entry) {
         if (!starterToolAllowed(city, e.tool)) return;
         const cost = priceOf(prices, e.tool);
-        store.patch({ tool: e.tool, panning: false, transitDraft:null,
-            message: cost !== null && cost > s.funds
-                ? `${fullName(e)} costs $${cost}. You have $${s.funds.toLocaleString()} right now.`
-                : `${fullName(e)} (${priceLabel(e)}). ${e.note}` });
+        selectConstructionTool(e.tool, cost !== null && cost > s.funds
+            ? `${fullName(e)} costs $${cost}. You have $${s.funds.toLocaleString()} right now.`
+            : `${fullName(e)} (${priceLabel(e)}). ${e.note}`);
     }
     return <div className="build-palette" role="group" aria-label="Build and traffic tools">
         {!s.transitPanel && !s.busStopPanel && <div className="build-categories" role="group" aria-label="Construction categories">

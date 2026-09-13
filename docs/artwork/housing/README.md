@@ -27,3 +27,17 @@ Authored locally by Codex using the existing Kenney atlas and native pixel-compo
 - Audit existing one-home/household assumptions and save parsing before adding apartment residents. Representative bus demand currently keys by home building and caps two outstanding round trips per home; apartment demand requires an explicit resident-aware rule. Existing abstract bus riders must not silently imply fewer cars.
 
 Candidate only: no runtime edits, save changes, mission changes, performance tests or publication. Artwork adoption awaits user selection under AGENTS.md's historical artwork and approval boundaries.
+
+## Integrated home lots (2026-09-13)
+
+User asked to fix how homes look when grouped, ahead of single-entry neighborhoods, so they match the service-building artwork. This adopts the study's panel 2 direction in the runtime. **User approved the integrated home lots on 2026-09-13.** The previous composition is in git history.
+
+![Before and after](neighborhood.png) · [All styles and sides](all-sides.png)
+
+- Four house styles, chosen by building id as before: red cottage (sand walls, chimney, flower bed), tan bungalow (brick, porch canopy), slate townhouse (stone, two floors, mailbox), teal house with garage. Each is set back on its own lawn with a shadow and a low front hedge, so neighbours stay visually separate.
+- One 32×32 native sprite per style and entrance side (`home-{style}-{south,west,north,east}.png`). Houses stay upright; the garden path always leaves the lot at the tile the simulation entrance uses (S bottom-left, W top-left, N top-right, E bottom-right), wrapping around the house when needed. The front door stays on the upright facade and is always connected to that path.
+- Footprints, entrances, routing, saves and household demand are unchanged. `cityScene.ts` no longer paves home plots; the sprite supplies its own lawn and path.
+
+Provenance: [generate.mjs](generate.mjs), authored by Claude Code. Grass and wall textures are sampled from the Kenney Roguelike Modern City frames in the runtime atlas (CC0); roofs, windows, doors, paths and gardens are drawn in code. No image-generation service was used. Regenerate with `nix develop -c node docs/artwork/housing/generate.mjs`, then `nix develop -c node tools/build-city-atlas.mjs`.
+
+Verification: typecheck and production build pass. [browser-check.mjs](browser-check.mjs) places 16 homes in all four orientations back to back on shared streets, checks every home frame loads at 32×32 with no page errors, and saved `in-game-390.png`, `in-game-1440.png` and `in-game-1440-zoom.png`. `npm test` has three failures (FLOW-01 bottleneck, Level 2 quiet, long shared green); none of the test files import the renderer or atlas, so they come from the uncommitted simulation changes already in the tree. Physical-device readability is unmeasured. Stores still use the tile composition.

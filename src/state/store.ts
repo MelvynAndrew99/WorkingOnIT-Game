@@ -91,3 +91,12 @@ export const store = {
 export function useStore<T = AppState>(selector: (s: AppState) => T = (s) => s as unknown as T): T {
     return useSyncExternalStore(store.subscribe, () => selector(state));
 }
+
+/** A second click releases the construction tool; null is read-only map inspection. */
+export function selectConstructionTool(tool:Tool|null,message?:string):void {
+    const current=store.get();
+    const next=tool!==null&&current.tool===tool&&!current.panning?null:tool;
+    store.patch({tool:next,panning:false,transitDraft:null,movingBusStop:null,vehicleDebugOpen:false,
+        toolSelection:current.toolSelection+1,
+        message:next===null?'Inspect mode. Select a road, building or bus stop.':message??'Select a location on the map.'});
+}

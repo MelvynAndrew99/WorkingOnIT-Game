@@ -1,3 +1,17 @@
+## All 25 jam missions and sequential unlocks delivered (2026-09-13)
+
+[Current implementation and evidence](jam-25/README.md): filled the three apartment-dependent gaps with existing-home lessons, reordered earlier jobs by prerequisites, added the budgeted neighborhood/Divert rescue at 19 and an open-ended finale at 25. The previous mission's award unlocks each next job; retries/reloads preserve awards. All mission checks and desktop/narrow UI checks pass; the full model suite retains the same two pre-existing failing files. Song reward entitlement is saved, with its recording still absent. This supersedes older staged/finale-unimplemented notes below. Local only.
+
+## Missions 15–24 implemented locally (2026-09-12)
+
+The requested emergency sequence is now playable: police access (15), Police placement (16), Clinic placement (17), Fire placement (18), a civilian detour before response (19), legal one-way access (20), the complete Divert/two-way/clear/original-direction/reopen/recovery lesson (21), paired placement (22), all-service fire recovery (23), and two-scene district recovery (24). Budgets remain forgiving. Real dispatch, legal arrival and completed incident work are recorded across reload; later recovery requires new returns from every home. Level 15 keeps its stable ID and award, archiving the old bus-composite attempt on selection. Levels 1–14 are preserved; apartments and Level 25/reward remain staged. [Per-level handoffs and verification](levels-15-24/README.md). No publication, active-player-save edits or performance tests.
+
+This delivery supersedes design-only/current-bus-Level15 statements below for Levels 15–24; historical requests and Level 25 constraints remain recorded.
+
+## Beginner missions 6–15 delivered locally (2026-09-12)
+
+New playable5–9,12,13,15 cover extended streets, Stops, Lights, one-way return roads, roundabouts, shops/parks, bus setup and a mixed-service finale. Per user clarification, apartment-dependent10/11/14 remain visibly staged with design briefs; Next skips them. Original1–4 are preserved. [Delivery, maps, reference operations and evidence](levels-6-15/README.md). No publication or performance testing.
+
 ## Sparse starter-town backdrop (latest)
 
 User approved the one-town progression design and asked actual Grok about starting less dense. Grok recommended a sparse1–25town and preserving the approved dense city for later. Implemented a new referenced backdrop with modest buildings, open lots, gravel/dirt scenery and the exaggerated repair plaque; adjusted decorative site/character coordinates to its streets. Portraits, ribbons, mission rules and saves remain. Desktop/narrow artwork and full progression checks plus build pass. [Delivery](starter-town/README.md). No publication or future-city unlock implementation.
