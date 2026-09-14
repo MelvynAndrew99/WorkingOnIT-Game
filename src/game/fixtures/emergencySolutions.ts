@@ -8,14 +8,23 @@ export function solveEmergency(run:ChallengeRun,alternative=false,checkpoint:(ru
  const put=(t:Tool,x:number,y:number,r=0)=>{const result=challengePlace(c,t,x,y,r,run.id);if(/Not enough|cannot|occupied|Keep|outside|Wait/.test(result))throw Error(`${t} ${x},${y}: ${result}`);};
  const road=(x:number,y:number)=>{if(!c.roads.some(p=>p.x===x&&p.y===y))put('road',x,y);};
  const wait=(predicate:()=>boolean)=>{for(let i=0;i<2400&&!predicate();i++)stepChallenge(run,.25);if(!predicate())throw Error(`Waiting in ${run.id}: ${JSON.stringify(run.emergency)}`);};
- if(run.id==='past-the-wreck'&&run.revision===4){
-  const x=alternative?12:10;
-  for(let y=6;y<=11;y++)road(x,y);
-  for(let n=x;n<=21;n++)road(n,9);
-  put('signal',x,12);put('signal',x,9);
-  put('closure',8,10);observeEmergency(run);checkpoint(run);
-  wait(()=>run.emergency!.neighborhoodCleared!==undefined);checkpoint(run);
-  put('closure',8,10);observeEmergency(run);checkpoint(run);
+ if(run.id==='temporary-two-way'&&run.revision===4){
+  if(alternative){
+   // A permanent western connection preserves every original one-way arrow.
+   for(let y=8;y<=11;y++)road(11,y);
+   for(let x=11;x<=18;x++)road(x,11);
+   put('signal',11,8);put('signal',18,11);
+  }else{
+   const result=challengeDirections(c,recoveryStreet,'two-way',run.id);
+   if(!result.ok)throw Error(result.message);
+  }
+  observeEmergency(run);checkpoint(run);return;
+ }
+ if(run.id==='past-the-wreck'&&run.revision===5){
+  // The detour and police access are supplied; the player only reopens after rescue.
+  checkpoint(run);
+  wait(()=>run.emergency!.clearedAt!==undefined);checkpoint(run);
+  put('closure',8,10);checkpoint(run);
   return;
  }
  // Different service sites and a northern/southern civilian bypass, not just a timing variation.

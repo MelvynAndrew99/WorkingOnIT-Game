@@ -1,0 +1,22 @@
+[
+  {
+    "width": 1440,
+    "oldAttemptArchived": false,
+    "earnedAwardPreserved": false,
+    "actualTwoWayPointerEdit": true,
+    "reload": true,
+    "realRescueAndRecovery": true,
+    "winUnlocks22": true,
+    "errors": []
+  },
+  {
+    "width": 390,
+    "oldAttemptArchived": true,
+    "earnedAwardPreserved": true,
+    "actualTwoWayPointerEdit": true,
+    "reload": true,
+    "realRescueAndRecovery": true,
+    "winUnlocks22": true,
+    "errors": []
+  }
+]

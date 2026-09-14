@@ -1,3 +1,5 @@
+> **2026-09-14 design correction:** Missions are simple road puzzles, not step-by-step tutorials. Show the problem and success outcomes; let players work out the road changes. Accept different working layouts and keep permanent improvements. Do not reveal the solution through required tool sequences or coordinates. This takes precedence over conflicting historical plans below. [Level 21 revision](one-way-rescue/README.md).
+
 ## All 25 jam slots filled and ordered (2026-09-13)
 
 Sequential progression is required and implemented: only Level 1 starts open; every later job requires the previous mission's permanent award. Locked briefings remain inspectable but cannot start. Retrying an earned job keeps its award and subsequent unlock. Existing awards remain attached to their stable IDs.

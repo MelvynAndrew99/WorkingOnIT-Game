@@ -1,3 +1,13 @@
+## Post-jam: beginner puzzle difficulty and Level 4 layout (2026-09-14)
+
+- [ ] Redesign Level 4 so its starting traffic creates a road problem that needs solving. Today it can finish untouched if the explicit Stops requirement is removed; retain that known limitation for the jam instead of inventing traffic failures.
+- [ ] Revisit the early difficulty progression: Level 2 has a 45-second deadline, and Level 7 uses sustained throughput/wait targets that are more involved than the adjacent connection puzzles. Make topic progression arise from map constraints and growing traffic needs rather than arbitrary tool gates. [Levels 1–10 review](challenges/beginner-puzzle-review/README.md).
+
+## Post-jam: refine road-puzzle design (2026-09-14)
+
+- [ ] Revisit mission variety, map layouts and difficulty after the jam. The user prioritizes participating and a playable submission over perfecting all 25 designs now.
+- [ ] Keep missions outcome-based: a visible road problem with room for the player to discover a working layout. Avoid tutorial-like tool sequences and solution spoilers. Levels 20/21 still share a one-way rescue theme; refine their distinction and the service-placement/access mix in 22–25 during that later design pass. [Jam review](challenges/jam-puzzle-review/README.md).
+
 ## Post-jam: expand beyond the beginner campaign (2026-09-13)
 
 - [ ] Add more demanding traffic-optimization missions beyond the first 25, using the jam campaign as a simple, fun introduction.

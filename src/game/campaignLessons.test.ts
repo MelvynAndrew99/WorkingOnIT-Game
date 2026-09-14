@@ -31,7 +31,7 @@ test('every new lesson preserves pause, mid-journey reload and frame-independent
   assert.deepEqual(b.city,a.city,d.id);assert.deepEqual(challengeStages(b),challengeStages(a));assert.equal(b.finishedAt,a.finishedAt);
  }
 });
-test('one-way lesson protects the main street and requires a directed usable return, not decorative arrows',()=>{
+test('one-way puzzle protects the inherited street but accepts a working return without prescribed arrows',()=>{
  const r=createChallenge('one-way-home'),saved=JSON.stringify(r.city);
  const main=Array.from({length:12},(_,i)=>({x:i+2,y:6}));
  assert.equal(challengeDirections(r.city,main,'two-way',r.id).ok,false);
@@ -39,17 +39,17 @@ test('one-way lesson protects the main street and requires a directed usable ret
  challengePlace(r.city,'bulldoze',5,6,0,r.id);assert.equal(JSON.stringify(r.city),saved);
  solveCampaign(r);const edges=r.city.roadDirections!;
  for(const key of Object.keys(edges))if(key.includes(',10'))delete edges[key];
- stepChallenge(r,120);assert.equal(r.earned,false,'two-way return with a few arrows is not the taught one-way street');
+ stepChallenge(r,120);assert.equal(r.earned,true,'a legal working return counts without directing every new road');
 });
 test('park stages cannot be satisfied by shopping or a disconnected park; earlier work counts',()=>{
  const r=createChallenge('shops-and-strolls');stepChallenge(r,80);assert.equal(r.served?.length,6);assert.equal(r.earned,false);
  challengePlace(r.city,'park',8,8,2,r.id);stepChallenge(r,80);assert.equal(r.earned,false);assert.equal(r.leisureServed?.length,0);
  challengePlace(r.city,'road',9,7,0,r.id);challengePlace(r.city,'signal',9,6,0,r.id);stepChallenge(r,100);assert.equal(r.earned,true);
 });
-test('a missing loop cannot receive the roundabout award; the center island is protected',()=>{
+test('the island stays protected and a safe two-way connection also solves the puzzle',()=>{
  const r=createChallenge('around-the-island');const n=r.city.roads.length;
  challengePlace(r.city,'road',8,6,0,r.id);assert.equal(r.city.roads.length,n);
- solveCampaign(r);delete r.city.roadDirections;stepChallenge(r,90);assert.equal(r.earned,false);
+ solveCampaign(r);delete r.city.roadDirections;stepChallenge(r,90);assert.equal(r.earned,true);assert.equal(r.city.accidentCount,0);
 });
 test('bus setup and boarding cannot award returns, and passenger receipts survive an onboard reload',()=>{
  let r=createChallenge('first-bus-service');const c=r.city,depot=c.buildings.find(b=>b.kind==='busStation')!,stops=c.buildings.filter(b=>b.kind==='busStop');
@@ -73,3 +73,5 @@ test('fixed set pieces cannot fund solutions; newly placed destinations refund o
  const r=createChallenge('shops-and-strolls');challengePlace(r.city,'park',8,7,2,r.id);assert.equal(r.city.funds,900);
  challengePlace(r.city,'bulldoze',8,7,0,r.id);assert.equal(r.city.funds,1200);challengePlace(r.city,'bulldoze',8,7,0,r.id);assert.equal(r.city.funds,1200);
 });
+
+test('the busy crossing accepts stop control when it safely serves all homes',()=>{const r=createChallenge('green-for-the-queue');challengePlace(r.city,'stop',8,6,0,r.id);stepChallenge(r,180);assert.ok(r.earned);assert.equal(r.city.accidentCount,0);assert.equal(r.served?.length,9);});

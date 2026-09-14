@@ -3,11 +3,12 @@ import {useEffect, useMemo, useRef, useState} from 'react';
 import {store, useStore, selectConstructionTool} from '../state/store.ts';
 import {flushChallenges, getChallengeRun, hasChallengeRun, challengeUnlocked, retryChallenge, selectChallenge} from '../state/challenges.ts';
 import {challengePlace, challengeStages, challengeDirections, challengeAvailable, challengeHasIncome, jamRewardEarned, nextChallenge, challengeSnapshot, challengeProgress, CHALLENGES, challengeDefinition, challengeTools, type ChallengeId, stepChallenge} from '../game/cityChallenges.ts';
+import {isRoadPuzzle} from '../game/fixtures/emergencyTown.ts';
 import {cityCommand} from '../game/cityControls.ts';
 import GameCanvas from '../game/GameCanvas.tsx';
 import IntersectionWarning from './IntersectionWarning.tsx';
 import type {CitySceneSession} from '../game/cityScene.ts';
-import type {Tool} from '../game/cityModel.ts';
+import {entrance,type Tool} from '../game/cityModel.ts';
 import {constructionPriceForCity} from '../game/cityEconomy.ts';
 import './challenges.css';
 import './buildPalette.css';
@@ -73,9 +74,9 @@ export function ChallengeGame() {
   const s=useStore();
   const session=useMemo<CitySceneSession>(()=>{
     const run=getChallengeRun();
-    return {city:run.city,allowedTools:challengeTools(run.id),fitTown:!['first-road','neighborhood-roads','safe-crossing','shopping-flow'].includes(run.id),reservedTiles:run.id==='around-the-island'?[{x:8,y:6}]:[],directions:(city,points,mode)=>challengeDirections(city,points,mode,run.id),save:flushChallenges,step:dt=>{stepChallenge(run,dt*speedRef.current);if(run.earned||run.failed){flushChallenges();store.patch({paused:true});}},place:(city,tool,x,y,rotation)=>challengePlace(city,tool,x,y,rotation,run.id)};
+    return {city:run.city,isRoadPuzzle:isRoadPuzzle(run.id),mapHint:()=>{if(run.id!=='past-the-wreck'||run.revision!==5)return;const point=run.city.closures[0];return point?{point,label:run.emergency!.scenes.every(scene=>scene.cleared)?'REMOVE DIVERT':'DIVERT · KEEP UNTIL CLEAR'}:undefined;},allowedTools:challengeTools(run.id),fitTown:!['first-road','neighborhood-roads','safe-crossing','shopping-flow'].includes(run.id),reservedTiles:run.id==='around-the-island'?[{x:8,y:6}]:[],directions:(city,points,mode)=>challengeDirections(city,points,mode,run.id),save:flushChallenges,step:dt=>{stepChallenge(run,dt*speedRef.current);if(run.earned||run.failed){flushChallenges();store.patch({paused:true});}},place:(city,tool,x,y,rotation)=>challengePlace(city,tool,x,y,rotation,run.id)};
   },[attempt]);
-  const run=getChallengeRun(), flow=challengeSnapshot(run), progress=challengeProgress(run), definition=challengeDefinition(run.id),stages=challengeStages(run);
+  const run=getChallengeRun(),simpleObjectives=run.id==='past-the-wreck'||isRoadPuzzle(run.id), flow=challengeSnapshot(run), progress=challengeProgress(run), definition=challengeDefinition(run.id),stages=challengeStages(run);
   const leave=(phase:'challenges'|'menu')=>{flushChallenges();store.patch({phase,paused:false,tool:null});};
   const reset=()=>{retryChallenge();setResetOpen(false);changeSpeed(1);store.patch({paused:true,tool:null,panning:false,rotation:0,directionRestore:false,directionSelection:0,transitDraft:null,transitPanel:null,busStopPanel:null,movingBusStop:null,toolSelection:s.toolSelection+1,message:'Fresh attempt. Plan, then run traffic.'});setAttempt(n=>n+1);};
   const confirmReset=()=>{resetWasPaused.current=store.get().paused;store.patch({paused:true});setResetOpen(true);};
@@ -95,7 +96,7 @@ export function ChallengeGame() {
           <button aria-pressed={s.diagnosticView==='traffic'} onClick={()=>store.patch({diagnosticView:s.diagnosticView==='traffic'?'capacity':'traffic'})}>{s.diagnosticView==='traffic'?'Visitors':'Traffic'}</button>
           <button onClick={()=>store.patch({rotation:(s.rotation+1)%4})}><IconRotate /><span>Rotate</span></button>
         </nav>
-        <p className="challenge-map-note">{run.id==='safe-crossing'?'Missing junction roads. Manage the crossing before running traffic.':run.id!=='shopping-flow'?definition.lesson:s.flow?.selectedRoad?`Approach ${s.flow.selectedRoad.x},${s.flow.selectedRoad.y}: ${s.flow.selectedRoad.waiting} waiting · longest stop ${s.flow.selectedRoad.longestStop.toFixed(1)}s`:'Amber marks stopped cars. Shop labels show parked + arriving / capacity.'}</p>
+        <p className="challenge-map-note">{run.id!=='shopping-flow'?definition.lesson:s.flow?.selectedRoad?`Approach ${s.flow.selectedRoad.x},${s.flow.selectedRoad.y}: ${s.flow.selectedRoad.waiting} waiting · longest stop ${s.flow.selectedRoad.longestStop.toFixed(1)}s`:'Amber marks stopped cars. Shop labels show parked + arriving / capacity.'}</p>
         <IntersectionWarning />
         <div className="city-map-viewport" aria-label="Playable challenge map">
           <div className="challenge-gameplay" role="group" aria-label="Challenge gameplay">
@@ -109,14 +110,14 @@ export function ChallengeGame() {
           </div>
         </div>
       </main>
-      <footer className={`city-controls${run.emergency?' emergency-controls':''}`}>
+      <footer className={`city-controls${run.emergency?' emergency-controls':''}${run.id==='past-the-wreck'?' simple-rescue':''}${isRoadPuzzle(run.id)?' road-puzzle':''}`}>
         <section className="challenge-objective" aria-label="Challenge objective">
           {!stages.length&&<p><strong>{run.id==='first-road'?'Goal: reach the store':run.id==='shopping-flow'?`${flow.qualifiedHomes}/9 homes served twice`:`${progress.served}/${progress.total} households home`}</strong></p>}
-          {stages.some(stage=>!stage.done)&&<p className="challenge-current"><strong>Next: {stages.find(stage=>!stage.done)!.label}</strong></p>}
-          <p>{definition.goal}</p>
-          {run.emergency&&<div className="challenge-actions"><button onClick={()=>cityCommand({type:'focus',point:run.emergency!.scenes.find(scene=>!scene.cleared)??run.emergency!.scenes[0]})}>Show scene</button>{(run.id==='temporary-two-way'||run.id==='past-the-wreck'&&run.revision===4)&&<button onClick={()=>cityCommand({type:'focus',point:run.id==='temporary-two-way'?{x:14,y:8}:{x:8,y:10}})}>Show Divert approach</button>}</div>}
-          <ol className="challenge-stages">{stages.map((stage,i)=><li key={stage.label} aria-current={!stage.done&&stages.findIndex(s=>!s.done)===i?'step':undefined}>{stage.done?'✓':`${i+1}.`} {stage.label}</li>)}</ol>
-          <p className="challenge-counts">{run.id==='neighborhood-roads'?`${Math.max(0,45-progress.seconds).toFixed(1)}s left (game time)`:`${progress.seconds.toFixed(1)}s game time`} {run.id==='another-front-door'?'':` · ${flow.visits} visits · ${flow.returns} returns · ${flow.waitingVehicles} waiting`}</p>
+          {stages.some(stage=>!stage.done)&&<p className="challenge-current"><strong>{isRoadPuzzle(run.id)?'Goal: ':'Next: '}{stages.find(stage=>!stage.done)!.label}</strong></p>}
+          {(!simpleObjectives||details||run.id==='shopping-flow')&&<p>{definition.goal}</p>}
+          {run.emergency&&<div className="challenge-actions">{run.emergency.scenes.length>1?run.emergency.scenes.map((scene,index)=><button key={scene.id} onClick={()=>cityCommand({type:'focus',point:scene})}>{index===0?'Show crash':'Show fire'}</button>):<button onClick={()=>cityCommand({type:'focus',point:run.emergency!.scenes[0]})}>{run.emergency.scenes[0].required.includes('fire')?'Show fire':simpleObjectives?'Show crash':'Show scene'}</button>}{['past-the-wreck','another-approach','temporary-two-way'].includes(run.id)&&run.city.buildings.some(b=>b.kind==='policeStation')&&<button onClick={()=>{const police=run.city.buildings.find(b=>b.kind==='policeStation');if(police)cityCommand({type:'focus',point:entrance(police)});}}>Show police</button>}{run.id==='past-the-wreck'&&run.city.closures.length>0&&<button onClick={()=>{selectConstructionTool('closure','Tap the highlighted Divert tile after the crash clears to reopen the road.');cityCommand({type:'focus',point:run.city.closures[0]});}}>Show Divert</button>}{(run.id==='temporary-two-way'||run.id==='another-approach'||run.id==='what-a-jam')&&<button onClick={()=>cityCommand({type:'focus',point:{x:16,y:8}})}>Show one-way</button>}</div>}
+          {(!simpleObjectives||details)&&<ol className="challenge-stages">{stages.map((stage,i)=><li key={stage.label} aria-current={!stage.done&&stages.findIndex(s=>!s.done)===i?'step':undefined}>{stage.done?'✓':`${i+1}.`} {stage.label}</li>)}</ol>}
+          {(!simpleObjectives||details||run.id==='neighborhood-roads')&&<p className="challenge-counts">{run.id==='neighborhood-roads'?`${Math.max(0,45-progress.seconds).toFixed(1)}s left (game time)`:`${progress.seconds.toFixed(1)}s game time`} {run.id==='another-front-door'?'':` · ${flow.visits} visits · ${flow.returns} returns · ${flow.waitingVehicles} waiting`}</p>}
           <div className="challenge-actions"><button aria-expanded={details} onClick={()=>setDetails(!details)}>{details?'Less':'Rules & details'}</button></div>
           {details&&<div className="challenge-details"><p>{definition.rules}</p>{run.id==='shopping-flow'&&<p>Latest 60 simulated seconds: every household needs two shopping returns, usable routes, no stop over 20 seconds and no unfinished trip over 60 seconds. Keep that service steady for 15 simulated seconds to earn one permanent star. This observation window is not a deadline.</p>}<p>{moneyRules(run.id)} You can retry with the starting budget.</p>{run.id!=='another-front-door'&&<><p>{flow.pendingNeeds} open needs · {flow.homesWithoutReturn} homes without a return · {flow.accessLimitedHomes} missing routes · {flow.capacityLimitedHomes} waiting for destination space · {flow.spareDestinationSlots} unused visitor slots across shops.</p><p>Longest current stop: {Math.ceil(flow.longestStop)}s. Longest unfinished journey: {Math.ceil(Math.max(0,...flow.homes.map(h=>h.journeySeconds??0)))}s. Road tool selects an existing approach; other tools edit it. Lights cycle timing presets when tapped again.</p></>}</div>}
         </section>

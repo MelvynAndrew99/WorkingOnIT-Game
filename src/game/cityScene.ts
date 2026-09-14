@@ -67,7 +67,9 @@ export interface CitySceneSession {
     place: typeof place;
     allowedTools?: readonly Tool[];
     reservedTiles?: readonly Point[];
+    mapHint?: () => {point:Point;label:string}|undefined;
     fitTown?: boolean;
+    isRoadPuzzle?: boolean;
     directions?: typeof applyRoadDirections;
 }
 export function createCityScene(app: Application, stage: Stage, session?: CitySceneSession): Scene {
@@ -701,6 +703,8 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
                 label(`capacity-${d.id}`,`${d.occupied} parked + ${d.inbound} arriving / ${d.capacity}`,d.x+1.5,d.y+.65,color);
             }
         }
+        const hint=session?.mapHint?.();
+        if(hint){const p=hint.point;activity.rect(px(p.x)+1,py(p.y)+1,tile-2,tile-2).fill({color:0xffd22e,alpha:.22}).stroke({color:0xffd22e,width:3});label('challenge-hint',hint.label,p.x+.5,p.y-.35,0xffd22e);}
         const guide=city.tutorial?.status==='active'?starterSnapshot(city):null;
         const bypass=starterBypassTiles(city);
         for(const p of bypass)activity.rect(px(p.x)+2,py(p.y)+2,tile-4,tile-4).fill({color:0xffd22e,alpha:.18}).stroke({color:0xffd22e,width:2});
@@ -805,7 +809,7 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
                 badge.text.text=trip?.phase==='working'?`${serviceName} on scene`
                     :trip?.phase==='waiting'||(trip&&trip.hold>=3)?`${serviceName} waiting`
                     :trip?`${serviceName} en route`
-                    :!city.buildings.some(b=>b.kind===stationKind)?`Build ${kind==='ems'?'Clinic':serviceName}`
+                    :!city.buildings.some(b=>b.kind===stationKind)?(session?.isRoadPuzzle?`${serviceName} needed`:`Build ${kind==='ems'?'Clinic':serviceName}`)
                     :`${serviceName} needed`;
                 badge.container.scale.set(1/screenScale);
                 badge.container.position.set(px(incident.x+.5),py(incident.y)-(64+(needed.length-1-row)*35)/screenScale);

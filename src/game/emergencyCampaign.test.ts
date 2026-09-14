@@ -29,13 +29,13 @@ test('placing a disconnected clinic never substitutes for actual EMS arrival',()
  assert.equal(r.earned,false);assert.ok(!r.emergency!.scenes[0].arrived.includes('ems'));assert.equal(challengeStages(r)[0].done,false);
 });
 test('one-way directions and occupied-road reservations remain authoritative',()=>{
- const r=createChallenge('temporary-two-way');assert.ok(r.city.trips.length>0,'starts with real civilian traffic');
+ const r=createChallenge('temporary-two-way');stepChallenge(r,4.5);assert.ok(r.city.trips.length>0,'starts with real civilian traffic');
  const before=copy(r.city.roadDirections);assert.equal(challengeDirections(r.city,recoveryStreet,'two-way',r.id).ok,false);assert.deepEqual(r.city.roadDirections,before);
  stepChallenge(r,10);assert.equal(r.emergency!.scenes[0].arrived.length,0,'police cannot travel west against the eastbound street');
  assert.equal(r.earned,false);
 });
 test('temporary recovery receipts enforce ordering, original flow and post-reopening returns',()=>{
- const r=createChallenge('temporary-two-way'),snapshots:ReturnType<typeof createChallenge>[]=[];
+ const r=createChallenge('temporary-two-way'),snapshots:ReturnType<typeof createChallenge>[]=[];r.revision=3;
  solveEmergency(r,false,s=>snapshots.push(copy(s)));
  assert.ok(snapshots.length>=5);
  assert.equal(snapshots[0].emergency!.converted,undefined);
@@ -58,4 +58,24 @@ test('Level 15 legacy bus run remains parseable for archive; Level 25 is the pla
  const old=JSON.parse(readFileSync(new URL('../../docs/challenges/levels-6-15/evidence/a-town-that-works.json',import.meta.url),'utf8'));const legacy={...old,earned:true};
  const parsed=parseChallenge(legacy);assert.ok(parsed);assert.equal(parsed.earned,true);assert.equal(parsed.revision,2);assert.equal(parsed.emergency,undefined);assert.deepEqual(parsed.city,parseCity(old.city));assert.deepEqual(parsed.city.roads,old.city.roads);assert.deepEqual(parsed.city.buildings,old.city.buildings);
  assert.equal(CHALLENGES.length,25);assert.equal(CHALLENGES[14].id,'a-town-that-works');assert.equal(createChallenge('a-town-that-works').revision,3);assert.equal(CHALLENGES[24].id,'what-a-jam');
+});
+
+test('Level 21 accepts permanent two-way conversion or a bypass with the original arrows',()=>{
+ for(const alternative of [false,true]){
+  const r=createChallenge('temporary-two-way'),original=copy(r.city.roadDirections);
+  assert.equal(r.revision,4);assert.equal(challengeStages(r)[0].done,false);
+  solveEmergency(r,alternative);
+  assert.ok(challengeStages(r)[0].done);assert.equal(r.earned,false);
+  const saved=parseChallenge(copy(r));assert.ok(saved);stepChallenge(saved,180);
+  assert.ok(saved.earned);assert.equal(saved.city.closures.length,0);
+  assert.equal(saved.emergency!.restored,undefined);assert.equal(saved.emergency!.reopened,undefined);
+  if(alternative)assert.deepEqual(saved.city.roadDirections,original);
+  else assert.notDeepEqual(saved.city.roadDirections,original);
+  assert.ok(saved.emergency!.scenes[0].completed.includes('police'));
+  assert.ok(saved.emergency!.recovered.length>0);
+ }
+});
+test('old Level 21 remains readable with its original completion evidence',()=>{
+ const raw=JSON.parse(readFileSync(new URL('../../docs/challenges/levels-15-24/evidence/temporary-two-way.json',import.meta.url),'utf8'));
+ const saved=parseChallenge(raw);assert.ok(saved);assert.equal(saved.revision,3);assert.deepEqual(saved.emergency,raw.emergency);
 });

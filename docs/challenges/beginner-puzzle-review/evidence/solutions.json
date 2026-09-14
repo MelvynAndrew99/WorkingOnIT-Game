@@ -1,0 +1,260 @@
+[
+  {
+    "level": 1,
+    "id": "first-road",
+    "alternative": false,
+    "funds": 20,
+    "finishedAt": 7.500000000000039,
+    "stages": [
+      {
+        "label": "The car reaches the store",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 1,
+    "id": "first-road",
+    "alternative": true,
+    "funds": 20,
+    "finishedAt": 7.500000000000039,
+    "stages": [
+      {
+        "label": "The car reaches the store",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 2,
+    "id": "neighborhood-roads",
+    "alternative": false,
+    "funds": 140,
+    "finishedAt": 23.524999999999586,
+    "stages": [
+      {
+        "label": "Households home from shopping: 3/3",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 2,
+    "id": "neighborhood-roads",
+    "alternative": true,
+    "funds": 180,
+    "finishedAt": 23.524999999999586,
+    "stages": [
+      {
+        "label": "Households home from shopping: 3/3",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 3,
+    "id": "shared-streets",
+    "alternative": false,
+    "funds": 260,
+    "finishedAt": 19.999999999999787,
+    "stages": [
+      {
+        "label": "Shopping round trips: 4/4",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 3,
+    "id": "shared-streets",
+    "alternative": true,
+    "funds": 280,
+    "finishedAt": 19.999999999999787,
+    "stages": [
+      {
+        "label": "Shopping round trips: 4/4",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 4,
+    "id": "stop-and-share",
+    "alternative": false,
+    "funds": 155,
+    "finishedAt": 32.04999999999903,
+    "stages": [
+      {
+        "label": "The crossing has stop control",
+        "done": true
+      },
+      {
+        "label": "Shopping round trips: 5/5",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 4,
+    "id": "stop-and-share",
+    "alternative": true,
+    "funds": 155,
+    "finishedAt": 32.04999999999903,
+    "stages": [
+      {
+        "label": "The crossing has stop control",
+        "done": true
+      },
+      {
+        "label": "Shopping round trips: 5/5",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 5,
+    "id": "safe-crossing",
+    "alternative": false,
+    "funds": 75,
+    "finishedAt": 31.19999999999908,
+    "stages": [
+      {
+        "label": "Households home from shopping: 10/10",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 5,
+    "id": "safe-crossing",
+    "alternative": true,
+    "funds": 25,
+    "finishedAt": 39.32499999999862,
+    "stages": [
+      {
+        "label": "Households home from shopping: 10/10",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 6,
+    "id": "green-for-the-queue",
+    "alternative": false,
+    "funds": 225,
+    "finishedAt": 37.72499999999871,
+    "stages": [
+      {
+        "label": "Shopping round trips: 9/9",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 6,
+    "id": "green-for-the-queue",
+    "alternative": true,
+    "funds": 275,
+    "finishedAt": 29.499999999999247,
+    "stages": [
+      {
+        "label": "Shopping round trips: 9/9",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 7,
+    "id": "shopping-flow",
+    "alternative": false,
+    "funds": 1200,
+    "finishedAt": 145.0000000000055,
+    "stages": []
+  },
+  {
+    "level": 7,
+    "id": "shopping-flow",
+    "alternative": true,
+    "funds": 320,
+    "finishedAt": 167.00000000001035,
+    "stages": []
+  },
+  {
+    "level": 8,
+    "id": "one-way-home",
+    "alternative": false,
+    "funds": 140,
+    "finishedAt": 25.499999999999474,
+    "stages": [
+      {
+        "label": "Shopping round trips: 3/3",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 8,
+    "id": "one-way-home",
+    "alternative": true,
+    "funds": 180,
+    "finishedAt": 24.89999999999951,
+    "stages": [
+      {
+        "label": "Shopping round trips: 3/3",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 9,
+    "id": "around-the-island",
+    "alternative": false,
+    "funds": 80,
+    "finishedAt": 24.824999999999513,
+    "stages": [
+      {
+        "label": "Shopping round trips: 4/4",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 9,
+    "id": "around-the-island",
+    "alternative": true,
+    "funds": 80,
+    "finishedAt": 22.524999999999643,
+    "stages": [
+      {
+        "label": "Shopping round trips: 4/4",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 10,
+    "id": "apartment-avenue",
+    "alternative": false,
+    "funds": 760,
+    "finishedAt": 33.24999999999896,
+    "stages": [
+      {
+        "label": "Shopping round trips: 4/4",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 10,
+    "id": "apartment-avenue",
+    "alternative": true,
+    "funds": 880,
+    "finishedAt": 35.74999999999882,
+    "stages": [
+      {
+        "label": "Shopping round trips: 4/4",
+        "done": true
+      }
+    ]
+  }
+]

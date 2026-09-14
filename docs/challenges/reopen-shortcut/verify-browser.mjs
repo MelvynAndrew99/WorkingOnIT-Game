@@ -1,0 +1,36 @@
+import assert from 'node:assert/strict';
+import {mkdirSync,writeFileSync} from 'node:fs';
+import {chromium} from '/home/phil/.npm/_npx/c828ed9cb5b1a5eb/node_modules/playwright/index.mjs';
+const out=process.env.MISSION19_EVIDENCE??'/tmp/mission19-evidence';mkdirSync(out,{recursive:true});
+const browser=await chromium.launch({headless:true,executablePath:'/nix/store/50ayz35y5c2ham6qsfwn1yaxznhijykl-chromium-151.0.7922.108/bin/chromium',args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+const results=[];
+try{for(const width of [1440,390]){
+ const context=await browser.newContext({viewport:{width,height:900}}),page=await context.newPage(),errors=[];
+ page.on('pageerror',e=>errors.push(e.message));
+ await context.route('**/*',r=>new URL(r.request().url()).hostname==='127.0.0.1'?r.continue():r.abort());
+ await page.addInitScript(()=>{window.gameModule=path=>import(performance.getEntriesByType('resource').map(e=>e.name).filter(n=>new URL(n).pathname===path).at(-1)??path);});
+ await page.goto(process.env.MISSION19_URL??'http://127.0.0.1:5295');await page.getByRole('button',{name:/^Missions,/}).click();
+ await page.evaluate(async()=>{const m=await window.gameModule('/src/game/cityChallenges.ts');localStorage.setItem('working-on-it:challenges:v1',JSON.stringify({runs:{},stars:Object.fromEntries(m.CHALLENGES.slice(0,18).map(d=>[d.id,true])),updatedAt:1}));});
+ await page.reload();
+ const enter=async()=>{await page.getByRole('button',{name:/^Missions,/}).click();await page.getByRole('button',{name:/^Level 19, (playable|completed)$/}).click();await page.getByRole('button',{name:/^(Play|Continue) level/}).click();await page.locator('canvas').waitFor();};
+ await enter();await page.waitForTimeout(500);
+ const snapshot=()=>page.evaluate(async()=>structuredClone((await window.gameModule('/src/state/challenges.ts')).getChallengeRun()));
+ const clickCenter=async()=>{await page.waitForTimeout(200);const b=await page.locator('.city-map-viewport').boundingBox();assert.ok(b.height>60);await page.mouse.click(b.x+b.width/2,b.y+b.height/2);};
+ assert.equal((await snapshot()).city.closures.length,1);
+ assert.match(await page.locator('.challenge-current').innerText(),/Press Play/);
+ assert.doesNotMatch(await page.locator('.challenge-objective').innerText(),/\(8,\s*10\)|second entrance/);
+ await page.getByRole('button',{name:'Show Divert',exact:true}).click();
+ assert.equal(await page.evaluate(async()=>(await window.gameModule('/src/state/store.ts')).store.get().tool),'closure');
+ await clickCenter();assert.equal((await snapshot()).city.closures.length,1);
+ await page.screenshot({path:`${out}/before-${width}.png`});
+ await page.evaluate(async()=>{const c=await window.gameModule('/src/state/challenges.ts'),m=await window.gameModule('/src/game/cityChallenges.ts');m.stepChallenge(c.getChallengeRun(),90);c.flushChallenges();(await window.gameModule('/src/state/store.ts')).store.patch({});});
+ assert.ok((await snapshot()).emergency.scenes[0].cleared);assert.equal((await snapshot()).earned,false);
+ await page.reload();await enter();assert.ok((await snapshot()).emergency.scenes[0].cleared);
+ await page.getByRole('button',{name:'Show Divert',exact:true}).click();await page.waitForTimeout(300);await page.screenshot({path:`${out}/ready-${width}.png`});
+ await clickCenter();assert.equal((await snapshot()).city.closures.length,0);
+ await page.evaluate(async()=>{const c=await window.gameModule('/src/state/challenges.ts'),m=await window.gameModule('/src/game/cityChallenges.ts');m.stepChallenge(c.getChallengeRun(),180);c.flushChallenges();(await window.gameModule('/src/state/store.ts')).store.patch({});});
+ await page.getByRole('heading',{name:'Nice work!',exact:true}).waitFor();
+ assert.ok((await snapshot()).earned);assert.ok(await page.evaluate(async()=>(await window.gameModule('/src/state/challenges.ts')).challengeUnlocked('another-approach')));
+ await page.screenshot({path:`${out}/complete-${width}.png`});assert.deepEqual(errors,[]);
+ results.push({width,preplacedDiversion:true,earlyRemovalExplained:true,realClearance:true,reload:true,pointerRemoval:true,winUnlocks20:true,errors});await context.close();
+}writeFileSync(`${out}/results.json`,JSON.stringify(results,null,2));console.log(results);}finally{await browser.close();}
