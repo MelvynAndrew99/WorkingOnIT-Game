@@ -9,7 +9,11 @@
 2. Add an entry to `RADIO_TRACKS` in `src/audio/radio.ts`: a unique `frequency` (88.0 to 108.0, at least 1 MHz from its neighbours), a one-line DJ quip from The Man, and an `unlock` rule.
 3. The station list is sorted by frequency and scrolls inside the receiver, so any number of songs fits. To retire a song, delete its entry.
 
-## Unlock rules
+## Jam release: all songs free (2026-09-13)
+
+Every station plays the full song, including What a Jam! and Fill It Up!, without credits or mission completion. Lock icons, preview notices and unlock prompts are hidden, and automatic playback includes all six songs. A shared `JAM_RADIO_FREE` access override applies to both audio and UI. Existing unlock metadata and saved awards remain available for the future credits update; this change does not grant fabricated awards or spend credits.
+
+## Future unlock rules (inactive during the jam release)
 
 - `{kind:'free'}`: always plays in full.
 - `{kind:'mission', challengeId, label}`: full song once that mission's award is saved. **What a Jam!** uses `what-a-jam` (Level 25).
@@ -49,3 +53,21 @@ Each channel now has a distinct station name shown in the mini player, receiver 
 | 98.7 | The Rock | Too Busy to Work |
 | 101.5 | UK Hits | Fill It Up! |
 | 105.7 | Classic FM | Busy Junction |
+
+## Complete bitrate audit (2026-09-13)
+
+ffprobe verifies all six current radio recordings have exactly one MP3 audio stream at **128,000 bits/second**, with no embedded image/video streams.
+
+| Song | Bytes | MB (decimal) |
+| --- | ---: | ---: |
+| Working ON IT! | 1,728,722 | 1.73 |
+| What a Jam! | 2,705,123 | 2.71 |
+| We Got Pizza, We Got Praise | 2,873,512 | 2.87 |
+| Too Busy to Work | 3,503,660 | 3.50 |
+| Fill It Up! | 2,713,483 | 2.71 |
+| Busy Junction | 518,312 | 0.52 |
+| Total | 14,042,812 | 14.04 |
+
+No re-encoding was needed for this audit. Radio uses one audio element with preload=none and assigns a source when a song starts; it does not preload the whole station catalog. Theme/pause audio is also shared with the background music system.
+
+Jam access verification: production build/typecheck and radio regression command pass. Fresh isolated Chromium sessions at 1440px and 390px play all six songs from the beginning in full, with no lock icons or preview/unlock prompts. No active-save edits or publication.

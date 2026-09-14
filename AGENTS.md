@@ -1,3 +1,7 @@
+## All radio songs free for the jam (2026-09-13)
+
+User unlocks every radio song for the jam and defers credit-based unlocking to the next update. Shared radio access now allows full playback and automatic progression through every track, including What a Jam! and Fill It Up!, with no preview/lock prompts. Existing unlock metadata and saved mission awards are preserved for later; no credit system, award grants, active-save edits or publication. This supersedes earlier active radio locks for the jam release. See public/audio/radio/README.md.
+
 ## Approved realistic radio branding (2026-09-13)
 
 User rejects the playful station names and approves: 92.3 The Mix, 95.5 Now FM, 97.1 Country, 98.7 The Rock, 101.5 UK Hits, 105.7 Classic FM. User identifies 101.5 as UK pop, 105.7 as classical/non-lyrical and 95.5 as modern. Applied to the existing station-name displays; song order, audio and unlock rules preserved. Supersedes the W-ON-IT FM/Gridlock/Pizza Party/Breakroom/Full Tank/Junction station names. Local only; publication remains user-managed.

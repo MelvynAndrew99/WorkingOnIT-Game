@@ -5,6 +5,8 @@
  */
 import {musicSettings, setRadioHold} from './music.ts';
 
+/** Jam release: every song is available in full. Revisit with the credits update. */
+export const JAM_RADIO_FREE = true;
 export const PREVIEW_SECONDS = 20;
 export const DIAL_MIN = 88;
 export const DIAL_MAX = 108;
@@ -70,10 +72,11 @@ export interface RadioState {
 }
 
 type AccessCheck = (track: RadioTrack) => boolean;
-let hasAccess: AccessCheck = track => track.unlock.kind === 'free';
+let entitlementAccess: AccessCheck = track => track.unlock.kind === 'free';
+const hasAccess: AccessCheck = track => JAM_RADIO_FREE || entitlementAccess(track);
 /** The UI supplies saved entitlements (mission awards, later purchases). */
 export function setRadioAccess(check: AccessCheck) {
-    hasAccess = check;
+    entitlementAccess = check;
     emit();
 }
 export const radioTrackUnlocked = (track: RadioTrack) => hasAccess(track);

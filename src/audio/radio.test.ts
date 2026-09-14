@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {RADIO_TRACKS, PREVIEW_SECONDS, TUNE_WINDOW, clipWindow, formatRadioTime, nearestStation, radioState, seekRadio, tune, radioStations, seekStation, stationAt, staticLevel} from './radio.ts';
+import {RADIO_TRACKS, PREVIEW_SECONDS, TUNE_WINDOW, clipWindow, formatRadioTime, nearestStation, radioTrackUnlocked, setRadioAccess, radioState, seekRadio, tune, radioStations, seekStation, stationAt, staticLevel} from './radio.ts';
 
 const jam = RADIO_TRACKS.find(track => track.id === 'what-a-jam')!;
 
-test('What a Jam is locked behind the Level 25 finale; themes are free', () => {
+test('catalog retains future mission and purchase unlock metadata', () => {
     assert.deepEqual(jam.unlock, {kind: 'mission', challengeId: 'what-a-jam', label: jam.unlock.kind === 'mission' ? jam.unlock.label : ''});
     assert.equal(jam.src, 'audio/radio/what-a-jam.mp3');
     for (const track of RADIO_TRACKS.filter(t => !['what-a-jam', 'fill-it-up'].includes(t.id))) assert.equal(track.unlock.kind, 'free');
@@ -67,6 +67,21 @@ test('SEEK wraps the band, and the station rolls on through unlocked songs only'
     const freeOnly = seekStation(92.3, 1, stations, t => t.unlock.kind === 'free');
     assert.equal(freeOnly?.id, 'we-got-pizza-we-got-praise', 'skips the locked What a Jam preview');
     assert.equal(seekStation(92.3, 1)?.id, 'what-a-jam');
+});
+
+
+test('jam release gives full playback and automatic progression through every song without entitlements', () => {
+    setRadioAccess(() => false);
+    try {
+        for (const track of radioStations()) {
+            assert.equal(radioTrackUnlocked(track), true);
+            assert.deepEqual(clipWindow(track, 180, radioTrackUnlocked(track)), {start: 0, end: 180, length: 180});
+        }
+        assert.equal(seekStation(92.3, 1, radioStations(), radioTrackUnlocked)?.id, 'what-a-jam');
+        assert.equal(seekStation(98.7, 1, radioStations(), radioTrackUnlocked)?.id, 'fill-it-up');
+    } finally {
+        setRadioAccess(track => track.unlock.kind === 'free');
+    }
 });
 
 test('clock labels', () => {
