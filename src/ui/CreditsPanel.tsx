@@ -20,8 +20,8 @@ export default function CreditsPanel({onClose}: {onClose: () => void}) {
         </header>
         <div className="menu-body" tabIndex={0} role="region" aria-label="Game credits">
             <section className="menu-card">
-                <h3>Human creative direction</h3>
-                <p className="menu-hint">The creator shaped the vision, directed the tools, playtested the results, and decided what belonged in the game.</p>
+                <h3>Design &amp; creative direction</h3>
+                <p className="menu-hint">Melvyn Andrew shaped the vision, directed the tools, playtested the results, and decided what belonged in the game.</p>
                 <p className="menu-hint">The Man takes the credit. Here’s who helped do the work.</p>
             </section>
             {CONTRIBUTORS.map(([name, contribution]) => <section className="menu-card" key={name}>

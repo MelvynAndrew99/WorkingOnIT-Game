@@ -6,9 +6,9 @@ From idea to a playable jam game in roughly seven days. Open **Credits** on the 
 
 The Man might take all the credit in the game. Here is how the work was actually shared.
 
-## Creative direction
+## Design & creative direction — Melvyn Andrew
 
-The game's creator brought the vision, selected and developed ideas, directed the tools, played the results, and decided what belonged in the game. Working ON IT! grew through that cycle of experimentation, feedback, and revision.
+Melvyn Andrew brought the vision, selected and developed ideas, directed the tools, played the results, and decided what belonged in the game. Working ON IT! grew through that cycle of experimentation, feedback, and revision.
 
 ## AI-assisted contributions
 
