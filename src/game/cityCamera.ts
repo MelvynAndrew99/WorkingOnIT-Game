@@ -5,7 +5,7 @@ export type Point = { x: number; y: number };
 export type Camera = Point & { zoom: number };
 export type Viewport = Point & { width: number; height: number };
 export const TILE_SIZE = 48;
-export const MIN_ZOOM = 0.5;
+export const MIN_ZOOM = 0.25;
 export const MAX_ZOOM = 3;
 
 export function screenToWorld(camera: Camera, viewport: Viewport, point: Point): Point {

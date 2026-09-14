@@ -1,0 +1,12 @@
+{
+  "src/game/cityDirections.ts": "39558c5c0ee7676e0248df0e9b51f06c96c259fa587680068940c384ad6fab65",
+  "src/game/cityDirectionEdits.ts": "196b1a21612a6803f4215c2975e3cc322ef6900ba3d61daa377d2571b221592a",
+  "src/game/cityTraffic.ts": "5bec09f4755d09a7db14360738e7a43a663e196da3c0e036234bcadbe5d7ff48",
+  "src/game/cityModel.ts": "c5f687e40bd6a46495152a867fa2ebd25207d0c5d8d8dc6c496152c9ddd316bd",
+  "src/game/cityScene.ts": "edbf0651b710cfb4a94230f40c872f8e76c2fcd958509e1d6cd720ecdf769833",
+  "src/state/save.ts": "64e635be7ac2071ce44814d3eb4eebe24e5e96d7955ebe1f7916af52429db337",
+  "src/ui/BuildPalette.tsx": "eef1139ebb3e363cf49a160f754bf0967dc2d98d953ff80599ccc1eaf6ef1178",
+  "productionEntryFiles": {
+    "dist/assets/index-DxFEWH8f.js": "5bb9ec59cee28728cecc7fc485210f3b43c65c644f85cf514daed4d6c76df272"
+  }
+}

@@ -1,9 +1,9 @@
 /* Normal flow above the objective: the existing camera bounds measure this space. */
-.tutorial-locator{display:flex;align-items:center;gap:8px;border:2px solid #ffd22e;border-radius:10px;background:#ffd22e;color:#102033;padding:7px 8px;pointer-events:auto;box-shadow:0 3px 12px #0005;min-width:0}
+.tutorial-locator{display:flex;align-items:center;gap:8px;border:1px solid #f0d090;border-radius:14px;background:linear-gradient(180deg,#f0c56a,#e0a83a);color:#1a2436;padding:7px 10px;pointer-events:auto;box-shadow:0 2px 0 #8a6418,0 8px 18px #0005;min-width:0}
 .tutorial-locator-copy{flex:1;min-width:0;font-size:17.6px;line-height:1.2}
 .tutorial-locator-copy strong{display:block;font-size:17.6px;font-weight:850}
 .city-ui.dispatch-ui .tutorial-locator p{margin:2px 0 0;color:#102033;font-size:17.6px;line-height:1.2;text-align:left}
-.city-ui.dispatch-ui .tutorial-locator-close{flex:0 0 44px;width:44px;height:44px;padding:0;background:#102033;color:#ffd22e;border:1px solid #102033;font-size:25px;line-height:1}
+.city-ui.dispatch-ui .tutorial-locator-close{flex:0 0 44px;width:44px;height:44px;padding:0;background:#1a2436;color:#f0c56a;border:1px solid #1a2436;font-size:25px;line-height:1;border-radius:12px}
 /* Yellow locator differs from the cyan selected-tool fill. Marker is not color-only. */
 .city-ui.dispatch-ui .build-palette button[data-tutorial-target=true]{position:relative;outline:3px solid #ffd22e;outline-offset:1px;z-index:1;animation:tutorial-locator-pulse 1.6s ease-in-out infinite}
 .city-ui.dispatch-ui .build-palette button[data-tutorial-target=true]::before{content:'▼';position:absolute;top:-13px;left:50%;transform:translateX(-50%);color:#ffd22e;font-size:17.6px;line-height:1;text-shadow:0 1px 3px #102033;pointer-events:none}

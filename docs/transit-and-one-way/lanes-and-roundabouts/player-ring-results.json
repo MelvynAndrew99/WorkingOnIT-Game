@@ -1,0 +1,80 @@
+{
+  "initial": {
+    "elapsed": 10043.815000007851,
+    "completed": 10565,
+    "accidents": 12,
+    "trips": 39
+  },
+  "ready": true,
+  "center": {
+    "x": 10,
+    "y": 4
+  },
+  "events": [
+    {
+      "afterSeconds": 14,
+      "action": "All future ring tiles and center physically clear"
+    },
+    {
+      "action": "remove existing center signal",
+      "result": "Traffic light removed. Bulldoze again to remove the road."
+    },
+    {
+      "action": "remove center road",
+      "result": "Removed. Full $0 refund."
+    },
+    {
+      "action": "build 9,3",
+      "result": "Road built. Unsigned junctions give E/W traffic priority."
+    },
+    {
+      "action": "build 11,3",
+      "result": "Road built. Unsigned junctions give E/W traffic priority."
+    },
+    {
+      "action": "build 11,5",
+      "result": "Road built. Unsigned junctions give E/W traffic priority."
+    },
+    {
+      "action": "build 9,5",
+      "result": "Road built. Unsigned junctions give E/W traffic priority."
+    },
+    {
+      "action": "clockwise direction",
+      "ok": true,
+      "message": "One-way set: 8 connections. Keep routes home open."
+    },
+    {
+      "action": "120-second observation",
+      "completed": 83,
+      "newAccidents": 0,
+      "returningHouseholds": [
+        342,
+        194,
+        390,
+        346,
+        17,
+        13,
+        500,
+        1,
+        16,
+        7418,
+        35,
+        382,
+        12,
+        5208,
+        518,
+        416,
+        5271,
+        5241,
+        5201,
+        7416,
+        507
+      ],
+      "households": 37,
+      "newIncidents": []
+    }
+  ],
+  "noDemandOrVehicleDeletion": true,
+  "buildingGeometryPreserved": true
+}

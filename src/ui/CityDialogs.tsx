@@ -1,16 +1,28 @@
 import { useEffect, useRef } from 'react';
+import DiagnosticViews from './DiagnosticViews.tsx';
+import FlowFeedback, { readFlow } from './FlowFeedback.tsx';
 import { useStore } from '../state/store.ts';
 import './cityDialogs.css';
 
-/**
- * Dense reference reading, on request only. Every building it used to duplicate is
- * now one tap away in the dock, so this is purely the city report.
- */
-export default function CityDialogs({ panel, close }: { panel: 'report' | null; close: () => void }) {
-  const ref = useRef<HTMLDialogElement>(null), s = useStore();
-  useEffect(() => { if (panel) ref.current?.showModal(); else ref.current?.close(); }, [panel]);
-  return <dialog ref={ref} className="city-dialog" onCancel={close} onClose={close} aria-labelledby="city-dialog-title">
-    <div className="city-dialog-heading"><h2 id="city-dialog-title">City report</h2><button onClick={close} aria-label="Close city report">Close</button></div>
+/** Existing report content, now a reserved nonmodal Dashboard. */
+export default function CityDialogs({ panel, close, openDebug }: { panel: 'report' | null; close: () => void; openDebug: () => void }) {
+  const heading = useRef<HTMLHeadingElement>(null), s = useStore();
+  useEffect(() => { if (panel) heading.current?.focus(); }, [panel]);
+  if (!panel) return null;
+  return <section className="city-dashboard" id="city-dashboard" aria-labelledby="city-dashboard-title" onKeyDown={e=>{if(e.key==='Escape'){e.stopPropagation();close();}}}>
+    <div className="dashboard-heading"><h2 ref={heading} tabIndex={-1} id="city-dashboard-title">Dashboard</h2><button onClick={close} aria-label="Close Dashboard"><span aria-hidden="true">×</span></button></div>
+    {/* Current service leads the report, whether or not the job has been earned. */}
+    <FlowFeedback flow={readFlow(s)} place="dashboard" />
+    <section aria-label="Map views"><h3>Map views</h3><DiagnosticViews onDebug={openDebug} /></section>
+    <section className="dashboard-definitions" aria-label="Statistics definitions">
+      <h3>What the numbers mean</h3>
+      <p>Visitors: people currently parked for shopping or leisure, excluding reserved arriving spaces.</p>
+      <p>On Road: active civilian journeys, including waiting drivers. Excludes parked visits, crashed vehicles and emergency crews.</p>
+      <p>Time: saved simulation elapsed time. Pause freezes it. Weather is a visual cycle of clear, cloudy and rain driven by that clock; it does not change traffic.</p>
+      <p>Fatalities: total lives lost in this city.</p>
+      <p>Trips: civilian journeys that reached home. Last 60s is completed trips in that window of city time. Wait is their average delay. Shop, Work and Park count those recent purposes. Bus counts completed rides.</p>
+      <p>Tracker keeps failed-yield warnings, crashes, unserved homes and bus stops visible until they are fixed or the crossing stays quiet. Tap an item to centre the map.</p>
+    </section>
     <div className="city-report-grid">
       <section><h3>Visits and income</h3>
         <p>${s.funds.toLocaleString()} available · ${s.income} recurring income / 10s</p>
@@ -22,7 +34,8 @@ export default function CityDialogs({ panel, close }: { panel: 'report' | null; 
       {s.inspected && <section><h3>{s.inspected.name}</h3><p>{s.inspected.label}</p>{s.inspected.capacity > 0 && <p>{s.inspected.occupied}/{s.inspected.capacity} spaces occupied · {s.inspected.inbound} arriving</p>}</section>}
       <section><h3>Traffic and emergency response</h3>
         {s.incidentInfo.active > 0 && <p><strong>Manager:</strong> “Loop a road around that mess. Keep them driving while we get the crews in. A very visible recovery, thanks to my leadership.”</p>}
-        <p>{s.waiting} waiting now · {s.throughput} trips / last 60s</p>
+        <p>{s.waiting} waiting now · {s.throughput} trips / last 60s · {s.pulse.trips} journeys home</p>
+        <p>Last 60s: {s.pulse.shopping.recent} shopping · {s.pulse.work.recent} work · {s.pulse.leisure.recent} park · {s.pulse.bus.completed} bus rides all-time</p>
         <p>Mean completed-trip wait: {s.throughput ? `${s.averageWait.toFixed(1)}s` : '—'} · Longest current stop: {s.longestStop.toFixed(1)}s</p>
         <p>{s.tripSeconds === null ? 'Connect homes to stores to start trips.' : `Free-flow driving route: ${s.tripSeconds.toFixed(1)}s, excluding queues and visits.`}</p>
         <p>{s.incidentInfo.warning || 'No current junction warnings.'}</p>
@@ -30,10 +43,10 @@ export default function CityDialogs({ panel, close }: { panel: 'report' | null; 
         {s.incidentInfo.details.map(i => <article className="incident-detail" key={i.id}><strong>{i.label}</strong><p>{i.needs}</p>{i.deadlineSeconds !== null && <p>Rescue deadline: {Math.max(0, Math.ceil(i.deadlineSeconds))}s</p>}</article>)}
       </section>
       <section><h3>How crossings and crews behave</h3>
-        <p>Stop signs and traffic lights prevent conflicting entries. At unsigned crossings, sustained conflict creates an accident warning. Build a detour or use Road closure to divert new entries. Emergency crews travel from their actual stations and need a usable route to the scene.</p>
+        <p>Repeated conflicting arrivals make an unsigned crossing dangerous. Stops suit moderate traffic; busy stops can need lights or another route. Signals separate crossing traffic, but heavy opposing turns sharing green can need different timing or separate routes. Watch the junction warning. Emergency crews travel from their actual stations and need a usable route to the scene.</p>
         <p>Responding crews can cross red lights when the junction is clear. Traffic yields, and crews can pass queues in a clear opposing lane on straight roads with space to merge back. Blocked lanes still delay a rescue. Returning crews follow normal traffic rules.</p>
       </section>
     </div>
     <p>{s.paused ? 'Paused: visit and rescue timers are frozen.' : 'The city continues running while this report is open. Use Pause before planning a longer repair.'}</p>
-  </dialog>;
+  </section>;
 }

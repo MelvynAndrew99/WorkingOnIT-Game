@@ -1,0 +1,362 @@
+[
+  {
+    "tag": "before",
+    "width": 1440,
+    "samples": [
+      {
+        "cycle": 0,
+        "gameplayHeap": {
+          "usedSize": 12472968,
+          "totalSize": 14499840,
+          "embedderHeapUsedSize": 2428456,
+          "backingStorageSize": 4075013
+        },
+        "heap": {
+          "usedSize": 9524160,
+          "totalSize": 10985472,
+          "embedderHeapUsedSize": 3044296,
+          "backingStorageSize": 4677498
+        },
+        "dom": {
+          "documents": 2,
+          "nodes": 771,
+          "jsEventListeners": 279
+        },
+        "canvases": 0
+      },
+      {
+        "cycle": 1,
+        "gameplayHeap": {
+          "usedSize": 13463180,
+          "totalSize": 15548416,
+          "embedderHeapUsedSize": 2976328,
+          "backingStorageSize": 6239811
+        },
+        "heap": {
+          "usedSize": 10464796,
+          "totalSize": 12296192,
+          "embedderHeapUsedSize": 3388144,
+          "backingStorageSize": 6123904
+        },
+        "dom": {
+          "documents": 2,
+          "nodes": 1286,
+          "jsEventListeners": 333
+        },
+        "canvases": 0
+      },
+      {
+        "cycle": 2,
+        "gameplayHeap": {
+          "usedSize": 13950728,
+          "totalSize": 15286272,
+          "embedderHeapUsedSize": 3203632,
+          "backingStorageSize": 7267178
+        },
+        "heap": {
+          "usedSize": 11043300,
+          "totalSize": 12558336,
+          "embedderHeapUsedSize": 3413920,
+          "backingStorageSize": 7151270
+        },
+        "dom": {
+          "documents": 2,
+          "nodes": 1801,
+          "jsEventListeners": 387
+        },
+        "canvases": 0
+      },
+      {
+        "cycle": 3,
+        "gameplayHeap": {
+          "usedSize": 14480620,
+          "totalSize": 15548416,
+          "embedderHeapUsedSize": 3393712,
+          "backingStorageSize": 8337558
+        },
+        "heap": {
+          "usedSize": 11489660,
+          "totalSize": 12820480,
+          "embedderHeapUsedSize": 3680328,
+          "backingStorageSize": 8287834
+        },
+        "dom": {
+          "documents": 2,
+          "nodes": 2318,
+          "jsEventListeners": 441
+        },
+        "canvases": 0
+      }
+    ]
+  },
+  {
+    "tag": "after",
+    "width": 1440,
+    "samples": [
+      {
+        "cycle": 0,
+        "gameplayHeap": {
+          "usedSize": 17270208,
+          "totalSize": 18694144,
+          "embedderHeapUsedSize": 2421552,
+          "backingStorageSize": 4553733
+        },
+        "heap": {
+          "usedSize": 10126300,
+          "totalSize": 11771904,
+          "embedderHeapUsedSize": 2999352,
+          "backingStorageSize": 4791373
+        },
+        "dom": {
+          "documents": 2,
+          "nodes": 771,
+          "jsEventListeners": 279
+        },
+        "canvases": 0
+      },
+      {
+        "cycle": 1,
+        "gameplayHeap": {
+          "usedSize": 18857032,
+          "totalSize": 20529152,
+          "embedderHeapUsedSize": 2948592,
+          "backingStorageSize": 6422006
+        },
+        "heap": {
+          "usedSize": 11642716,
+          "totalSize": 14655488,
+          "embedderHeapUsedSize": 3395200,
+          "backingStorageSize": 6306108
+        },
+        "dom": {
+          "documents": 2,
+          "nodes": 1286,
+          "jsEventListeners": 333
+        },
+        "canvases": 0
+      },
+      {
+        "cycle": 2,
+        "gameplayHeap": {
+          "usedSize": 19317292,
+          "totalSize": 20267008,
+          "embedderHeapUsedSize": 3160992,
+          "backingStorageSize": 6679474
+        },
+        "heap": {
+          "usedSize": 12158164,
+          "totalSize": 14655488,
+          "embedderHeapUsedSize": 3387888,
+          "backingStorageSize": 6563566
+        },
+        "dom": {
+          "documents": 2,
+          "nodes": 1801,
+          "jsEventListeners": 387
+        },
+        "canvases": 0
+      },
+      {
+        "cycle": 3,
+        "gameplayHeap": {
+          "usedSize": 19764160,
+          "totalSize": 21315584,
+          "embedderHeapUsedSize": 3384024,
+          "backingStorageSize": 7363418
+        },
+        "heap": {
+          "usedSize": 12534236,
+          "totalSize": 14393344,
+          "embedderHeapUsedSize": 3566520,
+          "backingStorageSize": 7335767
+        },
+        "dom": {
+          "documents": 2,
+          "nodes": 2318,
+          "jsEventListeners": 441
+        },
+        "canvases": 0
+      }
+    ]
+  },
+  {
+    "tag": "before",
+    "width": 390,
+    "samples": [
+      {
+        "cycle": 0,
+        "gameplayHeap": {
+          "usedSize": 11598800,
+          "totalSize": 13606912,
+          "embedderHeapUsedSize": 2418088,
+          "backingStorageSize": 3560749
+        },
+        "heap": {
+          "usedSize": 9463176,
+          "totalSize": 11247616,
+          "embedderHeapUsedSize": 3136720,
+          "backingStorageSize": 3798309
+        },
+        "dom": {
+          "documents": 2,
+          "nodes": 774,
+          "jsEventListeners": 279
+        },
+        "canvases": 0
+      },
+      {
+        "cycle": 1,
+        "gameplayHeap": {
+          "usedSize": 12553208,
+          "totalSize": 14131200,
+          "embedderHeapUsedSize": 2965000,
+          "backingStorageSize": 4944260
+        },
+        "heap": {
+          "usedSize": 10344160,
+          "totalSize": 12034048,
+          "embedderHeapUsedSize": 3369608,
+          "backingStorageSize": 4873371
+        },
+        "dom": {
+          "documents": 2,
+          "nodes": 1289,
+          "jsEventListeners": 333
+        },
+        "canvases": 0
+      },
+      {
+        "cycle": 2,
+        "gameplayHeap": {
+          "usedSize": 13025776,
+          "totalSize": 15704064,
+          "embedderHeapUsedSize": 3200640,
+          "backingStorageSize": 5872108
+        },
+        "heap": {
+          "usedSize": 10868524,
+          "totalSize": 13082624,
+          "embedderHeapUsedSize": 3490488,
+          "backingStorageSize": 5734078
+        },
+        "dom": {
+          "documents": 2,
+          "nodes": 1804,
+          "jsEventListeners": 387
+        },
+        "canvases": 0
+      },
+      {
+        "cycle": 3,
+        "gameplayHeap": {
+          "usedSize": 15541748,
+          "totalSize": 19636224,
+          "embedderHeapUsedSize": 3670680,
+          "backingStorageSize": 6981823
+        },
+        "heap": {
+          "usedSize": 11308380,
+          "totalSize": 12820480,
+          "embedderHeapUsedSize": 3565744,
+          "backingStorageSize": 6925116
+        },
+        "dom": {
+          "documents": 2,
+          "nodes": 2321,
+          "jsEventListeners": 441
+        },
+        "canvases": 0
+      }
+    ]
+  },
+  {
+    "tag": "after",
+    "width": 390,
+    "samples": [
+      {
+        "cycle": 0,
+        "gameplayHeap": {
+          "usedSize": 16592216,
+          "totalSize": 19374080,
+          "embedderHeapUsedSize": 2441352,
+          "backingStorageSize": 3691790
+        },
+        "heap": {
+          "usedSize": 10071836,
+          "totalSize": 12820480,
+          "embedderHeapUsedSize": 3126016,
+          "backingStorageSize": 3929430
+        },
+        "dom": {
+          "documents": 2,
+          "nodes": 774,
+          "jsEventListeners": 279
+        },
+        "canvases": 0
+      },
+      {
+        "cycle": 1,
+        "gameplayHeap": {
+          "usedSize": 18158084,
+          "totalSize": 20160512,
+          "embedderHeapUsedSize": 2994720,
+          "backingStorageSize": 5223737
+        },
+        "heap": {
+          "usedSize": 11596600,
+          "totalSize": 13606912,
+          "embedderHeapUsedSize": 3414424,
+          "backingStorageSize": 5195773
+        },
+        "dom": {
+          "documents": 2,
+          "nodes": 1289,
+          "jsEventListeners": 333
+        },
+        "canvases": 0
+      },
+      {
+        "cycle": 2,
+        "gameplayHeap": {
+          "usedSize": 19284516,
+          "totalSize": 20946944,
+          "embedderHeapUsedSize": 3233416,
+          "backingStorageSize": 6247812
+        },
+        "heap": {
+          "usedSize": 12765112,
+          "totalSize": 14655488,
+          "embedderHeapUsedSize": 3447696,
+          "backingStorageSize": 6220244
+        },
+        "dom": {
+          "documents": 2,
+          "nodes": 1804,
+          "jsEventListeners": 387
+        },
+        "canvases": 0
+      },
+      {
+        "cycle": 3,
+        "gameplayHeap": {
+          "usedSize": 21555912,
+          "totalSize": 25927680,
+          "embedderHeapUsedSize": 3704240,
+          "backingStorageSize": 6358319
+        },
+        "heap": {
+          "usedSize": 13079076,
+          "totalSize": 15441920,
+          "embedderHeapUsedSize": 3719312,
+          "backingStorageSize": 6287711
+        },
+        "dom": {
+          "documents": 2,
+          "nodes": 2321,
+          "jsEventListeners": 441
+        },
+        "canvases": 0
+      }
+    ]
+  }
+]

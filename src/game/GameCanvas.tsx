@@ -8,13 +8,13 @@
  * app before the second mount's app appears).
  */
 import { useEffect, useRef } from 'react';
-import type { Application } from 'pixi.js';
+import { TexturePool, type Application } from 'pixi.js';
 import { createPixiApp } from './pixiApp.ts';
 import { createStage, type Stage } from './stage.ts';
-import { createCityScene, type Scene } from './cityScene.ts';
+import { createCityScene, type Scene, type CitySceneSession } from './cityScene.ts';
 import { store, useStore } from '../state/store.ts';
 
-export default function GameCanvas() {
+export default function GameCanvas({session}: {session?:CitySceneSession}) {
     const hostRef = useRef<HTMLDivElement | null>(null);
     const appRef = useRef<Application | null>(null);
     const paused = useStore((s) => s.paused);
@@ -42,7 +42,7 @@ export default function GameCanvas() {
             // pixels, so layout is proportional on every device (stage.ts).
             stage = createStage(app);
             // ADAPT: replace the demo scene with the real game scene.
-            scene = createCityScene(app, stage);
+            scene = createCityScene(app, stage, session);
             // Respect a pause that landed while the canvas was initializing.
             if (store.get().paused) app.ticker.stop();
         })();
@@ -52,11 +52,16 @@ export default function GameCanvas() {
             try { scene?.destroy(); } catch { /* scene already torn down */ }
             try { stage?.destroy(); } catch { /* stage already torn down */ }
             if (appRef.current) {
+                // Scene teardown returns cached render textures to Pixi's shared pool.
+                // Destroy those idle targets while their renderer callbacks are live:
+                // Pixi 8.19 otherwise retains old renderers/canvases through the pool.
+                // Borrowed textures and the shared artwork Assets are not in this pool.
+                TexturePool.clear(true);
                 appRef.current.destroy({ removeView: true }, { children: true });
                 appRef.current = null;
             }
         };
-    }, []);
+    }, [session]);
 
     // Host lifecycle pause/resume → freeze/unfreeze the whole ticker.
     useEffect(() => {

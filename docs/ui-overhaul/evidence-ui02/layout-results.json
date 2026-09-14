@@ -1,0 +1,330 @@
+[
+  {
+    "name": "phone",
+    "label": "tutorial",
+    "rects": {
+      ".city-header": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 190.6875
+      },
+      ".city-map-viewport": {
+        "x": 8,
+        "y": 242.6875,
+        "width": 374,
+        "height": 188.65625
+      },
+      ".city-controls": {
+        "x": 0,
+        "y": 483.34375,
+        "width": 390,
+        "height": 360.65625
+      },
+      ".city-mission-region": {
+        "x": 8,
+        "y": 492.34375,
+        "width": 374,
+        "height": 209.65625
+      },
+      ".city-build-region": {
+        "x": 8,
+        "y": 710,
+        "width": 374,
+        "height": 126
+      }
+    },
+    "layout": "compact",
+    "scroll": false
+  },
+  {
+    "name": "phone",
+    "label": "dashboard",
+    "rects": {
+      ".city-header": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 190.6875
+      },
+      ".city-map-viewport": {
+        "x": 8,
+        "y": 242.6875,
+        "width": 192.625,
+        "height": 232.96875
+      },
+      ".city-controls": {
+        "x": 0,
+        "y": 527.65625,
+        "width": 390,
+        "height": 316.34375
+      },
+      ".city-mission-region": {
+        "x": 8,
+        "y": 536.65625,
+        "width": 374,
+        "height": 139.4375
+      },
+      ".city-build-region": {
+        "x": 8,
+        "y": 684.09375,
+        "width": 374,
+        "height": 151.90625
+      },
+      ".city-dashboard": {
+        "x": 208.625,
+        "y": 242.6875,
+        "width": 173.359375,
+        "height": 232.96875
+      }
+    },
+    "layout": "compact",
+    "scroll": false
+  },
+  {
+    "name": "phone",
+    "label": "debug",
+    "rects": {
+      ".city-header": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 190.6875
+      },
+      ".city-map-viewport": {
+        "x": 8,
+        "y": 242.6875,
+        "width": 192.625,
+        "height": 258.875
+      },
+      ".city-controls": {
+        "x": 0,
+        "y": 553.5625,
+        "width": 390,
+        "height": 290.4375
+      },
+      ".city-mission-region": {
+        "x": 8,
+        "y": 562.5625,
+        "width": 374,
+        "height": 139.4375
+      },
+      ".city-build-region": {
+        "x": 8,
+        "y": 710,
+        "width": 374,
+        "height": 126
+      },
+      ".vehicle-debug": {
+        "x": 208.625,
+        "y": 242.6875,
+        "width": 173.359375,
+        "height": 258.875
+      }
+    },
+    "layout": "compact",
+    "scroll": false
+  },
+  {
+    "name": "phone",
+    "label": "built",
+    "rects": {
+      ".city-header": {
+        "x": 0,
+        "y": 0,
+        "width": 382,
+        "height": 190.6875
+      },
+      ".city-map-viewport": {
+        "x": 8,
+        "y": 290.6875,
+        "width": 366,
+        "height": 196.96875
+      },
+      ".city-controls": {
+        "x": 0,
+        "y": 539.65625,
+        "width": 382,
+        "height": 316.34375
+      },
+      ".city-mission-region": {
+        "x": 8,
+        "y": 548.65625,
+        "width": 366,
+        "height": 139.4375
+      },
+      ".city-build-region": {
+        "x": 8,
+        "y": 696.09375,
+        "width": 366,
+        "height": 151.90625
+      }
+    },
+    "layout": "compact",
+    "scroll": false
+  },
+  {
+    "name": "desktop",
+    "label": "tutorial",
+    "rects": {
+      ".city-header": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 65.984375
+      },
+      ".city-map-viewport": {
+        "x": 8,
+        "y": 117.984375,
+        "width": 1424,
+        "height": 406.015625
+      },
+      ".city-controls": {
+        "x": 0,
+        "y": 576,
+        "width": 1440,
+        "height": 324
+      },
+      ".city-mission-region": {
+        "x": 12,
+        "y": 585,
+        "width": 469.328125,
+        "height": 307
+      },
+      ".city-build-region": {
+        "x": 489.328125,
+        "y": 585,
+        "width": 938.671875,
+        "height": 307
+      }
+    },
+    "layout": "wide",
+    "scroll": false
+  },
+  {
+    "name": "desktop",
+    "label": "dashboard",
+    "rects": {
+      ".city-header": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 65.984375
+      },
+      ".city-map-viewport": {
+        "x": 8,
+        "y": 117.984375,
+        "width": 1016,
+        "height": 406.015625
+      },
+      ".city-controls": {
+        "x": 0,
+        "y": 576,
+        "width": 1440,
+        "height": 324
+      },
+      ".city-mission-region": {
+        "x": 12,
+        "y": 585,
+        "width": 469.328125,
+        "height": 307
+      },
+      ".city-build-region": {
+        "x": 489.328125,
+        "y": 585,
+        "width": 938.671875,
+        "height": 307
+      },
+      ".city-dashboard": {
+        "x": 1032,
+        "y": 117.984375,
+        "width": 400,
+        "height": 406.015625
+      }
+    },
+    "layout": "wide",
+    "scroll": false
+  },
+  {
+    "name": "desktop",
+    "label": "debug",
+    "rects": {
+      ".city-header": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 65.984375
+      },
+      ".city-map-viewport": {
+        "x": 8,
+        "y": 117.984375,
+        "width": 1056,
+        "height": 406.015625
+      },
+      ".city-controls": {
+        "x": 0,
+        "y": 576,
+        "width": 1440,
+        "height": 324
+      },
+      ".city-mission-region": {
+        "x": 12,
+        "y": 585,
+        "width": 469.328125,
+        "height": 307
+      },
+      ".city-build-region": {
+        "x": 489.328125,
+        "y": 585,
+        "width": 938.671875,
+        "height": 307
+      },
+      ".vehicle-debug": {
+        "x": 1072,
+        "y": 117.984375,
+        "width": 360,
+        "height": 406.015625
+      }
+    },
+    "layout": "wide",
+    "scroll": false
+  },
+  {
+    "name": "desktop",
+    "label": "built",
+    "rects": {
+      ".city-header": {
+        "x": 0,
+        "y": 0,
+        "width": 1432,
+        "height": 65.984375
+      },
+      ".city-map-viewport": {
+        "x": 8,
+        "y": 165.984375,
+        "width": 1416,
+        "height": 365.703125
+      },
+      ".city-controls": {
+        "x": 0,
+        "y": 583.6875,
+        "width": 1432,
+        "height": 328.3125
+      },
+      ".city-mission-region": {
+        "x": 12,
+        "y": 592.6875,
+        "width": 466.65625,
+        "height": 311.3125
+      },
+      ".city-build-region": {
+        "x": 486.65625,
+        "y": 592.6875,
+        "width": 933.34375,
+        "height": 311.3125
+      }
+    },
+    "layout": "wide",
+    "scroll": false
+  }
+]

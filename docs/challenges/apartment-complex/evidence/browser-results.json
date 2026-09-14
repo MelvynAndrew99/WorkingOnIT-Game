@@ -1,0 +1,23 @@
+[
+  {
+    "width": 1440,
+    "pointerPlacement": true,
+    "pointerJoin": true,
+    "pointerConnection": true,
+    "reload": true,
+    "earned": true,
+    "funds": 760,
+    "errors": []
+  },
+  {
+    "width": 390,
+    "pointerPlacement": true,
+    "pointerJoin": true,
+    "pointerConnection": true,
+    "reload": true,
+    "earned": true,
+    "legacyAwardPreserved": true,
+    "funds": 760,
+    "errors": []
+  }
+]

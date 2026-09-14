@@ -1,0 +1,44 @@
+
+> working-on-it@1.0.0 test
+> node --experimental-strip-types --test src/game/*.test.ts
+
+✔ src/game/challengeLessons.test.ts (1412.75834ms)
+✔ src/game/cityBackup.test.ts (695.692928ms)
+✔ src/game/cityCamera.test.ts (195.887955ms)
+✔ src/game/cityChallenges.test.ts (4900.711554ms)
+✔ src/game/cityDiagnostics.test.ts (596.202537ms)
+✔ src/game/cityEconomy.test.ts (953.382002ms)
+✔ src/game/cityEconomySafety.test.ts (340.965306ms)
+✔ src/game/cityEmergencyRecovery.test.ts (2628.927133ms)
+✔ src/game/cityEmergencyRouting.test.ts (1693.923ms)
+✔ src/game/cityEmergencySafety.test.ts (929.100255ms)
+✔ src/game/cityExpansion.test.ts (922.942329ms)
+✔ src/game/cityExternal.test.ts (2637.369764ms)
+✔ src/game/cityFlow.test.ts (3762.836349ms)
+✔ src/game/cityFlowProgress.test.ts (2866.615107ms)
+✔ src/game/cityGridlock.test.ts (621.182664ms)
+✔ src/game/cityIncidents.test.ts (2840.602862ms)
+✔ src/game/cityIntersectionSafety.test.ts (8135.970472ms)
+✔ src/game/cityMissions.test.ts (2620.34758ms)
+✔ src/game/cityModel.test.ts (1250.247809ms)
+✔ src/game/cityPathfinding.test.ts (889.653085ms)
+✔ src/game/cityPatrols.test.ts (636.649591ms)
+✔ src/game/cityResponderJam.test.ts (2717.863376ms)
+✔ src/game/cityRouting.test.ts (744.799063ms)
+✔ src/game/citySafety.test.ts (790.955679ms)
+✔ src/game/citySceneParking.test.ts (935.962123ms)
+✔ src/game/cityStarterTutorial.test.ts (2616.333265ms)
+✔ src/game/cityTraffic.integration.test.ts (4856.91012ms)
+✔ src/game/cityTraffic.test.ts (5026.165748ms)
+✔ src/game/cityTutorial.integration.test.ts (4655.622125ms)
+✔ src/game/cityTutorial.test.ts (546.513414ms)
+✔ src/game/cityVehicleDebug.test.ts (412.095056ms)
+✔ src/game/cityVisits.test.ts (2211.996978ms)
+ℹ tests 32
+ℹ suites 0
+ℹ pass 32
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8241.633874

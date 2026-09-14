@@ -1,0 +1,32 @@
+[
+  {
+    "label": "ring",
+    "width": 1440,
+    "frames": 191,
+    "wallMs": 12042.199999999255,
+    "fps": 15.86088920629219,
+    "p50": 66.60000000000036,
+    "p95": 66.70000000000073,
+    "p99": 66.80000000000018,
+    "over33": 191,
+    "simulationAdvanced": true,
+    "geometryPreserved": true,
+    "errors": [],
+    "failed": []
+  },
+  {
+    "label": "ring",
+    "width": 390,
+    "frames": 714,
+    "wallMs": 12009.099999997765,
+    "fps": 59.45491335738172,
+    "p50": 16.69999999999891,
+    "p95": 16.799999999999272,
+    "p99": 16.80000000000109,
+    "over33": 0,
+    "simulationAdvanced": true,
+    "geometryPreserved": true,
+    "errors": [],
+    "failed": []
+  }
+]

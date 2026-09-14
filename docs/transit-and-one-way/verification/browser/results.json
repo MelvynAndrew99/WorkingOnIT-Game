@@ -1,0 +1,26 @@
+[
+  {
+    "width": 1440,
+    "ringBuiltByPointer": true,
+    "preview": true,
+    "applyReverseRestore": true,
+    "undoCancel": true,
+    "zoom": true,
+    "reload": true,
+    "errors": []
+  },
+  {
+    "width": 390,
+    "ringBuiltByPointer": true,
+    "preview": true,
+    "applyReverseRestore": true,
+    "undoCancel": true,
+    "zoom": true,
+    "reload": true,
+    "errors": []
+  },
+  {
+    "corruptDirectionsProtected": true,
+    "download": true
+  }
+]

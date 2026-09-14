@@ -1,0 +1,72 @@
+[
+  {
+    "cycle": 0,
+    "heap": {
+      "usedSize": 7857152,
+      "totalSize": 9437184,
+      "embedderHeapUsedSize": 2360984,
+      "backingStorageSize": 2432010
+    },
+    "dom": {
+      "documents": 2,
+      "nodes": 755,
+      "jsEventListeners": 266
+    }
+  },
+  {
+    "cycle": 1,
+    "heap": {
+      "usedSize": 8899456,
+      "totalSize": 11272192,
+      "embedderHeapUsedSize": 2459928,
+      "backingStorageSize": 3038938
+    },
+    "dom": {
+      "documents": 2,
+      "nodes": 1261,
+      "jsEventListeners": 320
+    }
+  },
+  {
+    "cycle": 2,
+    "heap": {
+      "usedSize": 9587020,
+      "totalSize": 11010048,
+      "embedderHeapUsedSize": 2652328,
+      "backingStorageSize": 3312205
+    },
+    "dom": {
+      "documents": 2,
+      "nodes": 1767,
+      "jsEventListeners": 374
+    }
+  },
+  {
+    "cycle": 3,
+    "heap": {
+      "usedSize": 9934588,
+      "totalSize": 11796480,
+      "embedderHeapUsedSize": 2841112,
+      "backingStorageSize": 3595082
+    },
+    "dom": {
+      "documents": 2,
+      "nodes": 2273,
+      "jsEventListeners": 428
+    }
+  },
+  {
+    "cycle": 4,
+    "heap": {
+      "usedSize": 10351152,
+      "totalSize": 11796480,
+      "embedderHeapUsedSize": 2956664,
+      "backingStorageSize": 3884907
+    },
+    "dom": {
+      "documents": 2,
+      "nodes": 2779,
+      "jsEventListeners": 482
+    }
+  }
+]

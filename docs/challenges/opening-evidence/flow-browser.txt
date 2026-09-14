@@ -1,0 +1,20 @@
+warning: Git tree '/home/phil/Code/jams/AI-Overlord' is dirty
+Context Collapse environment ready: node, npm, rundot
+[
+  {
+    name: 'desktop',
+    map: { x: 8, y: 134.109375, width: 1424, height: 450.890625 },
+    sandboxUnchanged: true,
+    starSurvivesReloadAndRetry: true,
+    actualLightClick: true,
+    errors: []
+  },
+  {
+    name: 'narrow',
+    map: { x: 8, y: 286.078125, width: 374, height: 178.125 },
+    sandboxUnchanged: true,
+    starSurvivesReloadAndRetry: true,
+    actualLightClick: true,
+    errors: []
+  }
+]

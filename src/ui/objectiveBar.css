@@ -1,54 +1,80 @@
-/* The single "what now" surface. Compact frames get one row above the dock;
-   wide frames get the same content stacked in the left rail with its explanation
-   already open. Selectors are qualified past the inherited .city-controls/.city-ui
-   defaults in styles/app.css. */
-.objective-bar{border:2px solid var(--cyan,#42d9e8);border-radius:12px;background:#101c2d;color:#f6f8ff;padding:7px 9px;font-size:17.6px;line-height:1.2;pointer-events:auto;min-width:0}
-.objective-row{display:flex;align-items:center;gap:8px;min-width:0}
-.objective-text{flex:1;min-width:0}
-.objective-bar .objective-eyebrow{margin:0;color:var(--cyan,#42d9e8);font-size:17.6px;line-height:1.15;font-weight:700;text-align:left}
-.objective-bar .objective-instruction{margin:1px 0 0;color:#f6f8ff;font-size:17.6px;line-height:1.2;text-align:left}
-.objective-bar .objective-title{margin:2px 0 0;font-size:21px;font-weight:800;line-height:1.15}
-.objective-bar .objective-note{margin:3px 0 0;color:var(--yellow,#ffd22e);font-size:17.6px;line-height:1.2;text-align:left}
-.objective-buttons{display:flex;flex:none;gap:6px}
-.city-ui.dispatch-ui .objective-bar button{min-width:44px;line-height:1.1;padding:5px 9px}
-/* The text block is flex:1 1 0, so the buttons keep their natural width and the
-   instruction takes what is left. The cap stops a long label starving it. */
-.city-ui.dispatch-ui .objective-primary{max-width:8.5em;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;background:var(--yellow,#ffd22e);color:#101c2d;border-color:var(--yellow,#ffd22e);font-weight:800}
-.city-ui.dispatch-ui .objective-primary[aria-pressed=true]{background:var(--cyan,#42d9e8);border-color:#9df0f8}
-.city-ui.dispatch-ui .objective-more{padding-inline:6px;background:transparent;border-color:#5d738f}
+/* Compact current-task card. Wide layouts use a horizontal strip above tools. */
 
-.objective-bar[data-urgent=true]{border-color:var(--yellow,#ffd22e)}
-.objective-bar[data-urgent=true] .objective-eyebrow{color:var(--yellow,#ffd22e)}
+.objective-bar{
+  border:1px solid #3d5470;
+  border-radius:16px;
+  background:linear-gradient(180deg,#1a2b42,#121c2c);
+  color:#f6f8ff;
+  padding:10px 12px;
+  font-size:14px;
+  line-height:1.25;
+  pointer-events:auto;
+  min-width:0;
+  box-shadow:inset 0 1px 0 #ffffff14;
+}
+.objective-row{display:flex;align-items:center;gap:10px;min-width:0}
+.objective-text{flex:1;min-width:0}
+.objective-bar .objective-eyebrow{
+  margin:0;
+  color:var(--hud-kicker,#d4c19a);
+  font-size:11px;
+  line-height:1.15;
+  font-weight:800;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  text-align:left;
+}
+.objective-bar .objective-instruction{margin:2px 0 0;color:#e8eef6;font-size:14px;line-height:1.3;text-align:left}
+.objective-bar .objective-title{margin:2px 0 0;font-size:18px;font-weight:850;line-height:1.15;letter-spacing:-.02em}
+.objective-bar .objective-note{margin:3px 0 0;color:var(--cyan,#5bc4d4);font-size:13px;line-height:1.25;text-align:left}
+.objective-buttons{display:flex;flex:none;gap:6px}
+.city-ui.dispatch-ui .objective-bar button{min-width:44px;line-height:1.1;padding:6px 10px;border-radius:12px}
+.city-ui.dispatch-ui .objective-primary{
+  max-width:11em;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+  background:linear-gradient(180deg,#f0c56a,#e0a83a);
+  color:#1a2436;
+  border-color:#f0d090;
+  font-weight:800;
+  box-shadow:0 2px 0 #8a6418;
+}
+.city-ui.dispatch-ui .objective-primary[aria-pressed=true]{
+  background:var(--cyan,#5bc4d4);
+  border-color:#9de8f0;
+  color:#102536;
+  box-shadow:none;
+}
+.city-ui.dispatch-ui .objective-more{padding-inline:10px;background:transparent;border-color:#5d738f}
+
+.objective-bar[data-urgent=true]{border-color:var(--yellow,#f0c56a)}
+.objective-bar[data-urgent=true] .objective-eyebrow{color:var(--yellow,#f0c56a)}
 .objective-bar[data-urgent=true] .objective-instruction{color:#fff0a7}
 
-.objective-detail{margin-top:8px;padding-top:8px;border-top:1px solid #526984;max-height:min(240px,32dvh);overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y}
-.objective-bar .objective-detail h3{margin:0 0 6px;font-size:17.6px;font-weight:800}
-.objective-bar .objective-detail p{margin:0 0 10px;color:#dfe7f3;font-size:17.6px;line-height:1.3;text-align:left}
+.objective-detail{margin-top:8px;padding-top:8px;border-top:1px solid #3d5470;max-height:min(240px,32dvh);overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y}
+.objective-bar .objective-detail h3{margin:0 0 6px;font-size:14px;font-weight:800}
+.objective-bar .objective-detail p{margin:0 0 10px;color:#dfe7f3;font-size:14px;line-height:1.35;text-align:left}
 .objective-extras{display:flex;flex-wrap:wrap;gap:6px}
 .city-ui.dispatch-ui .objective-extras button{flex:1 1 auto}
 .city-ui.dispatch-ui .objective-exit{border-color:#8fa4bf;color:#ffd7cd}
 
-/* Narrow frame: beside two buttons the text column collapses to ~70px and a claim
-   instruction wraps into a seven-line ribbon. Stacking is shorter overall. */
 .dispatch-ui[data-layout=narrow] .objective-row{flex-direction:column;align-items:stretch;gap:6px}
 .dispatch-ui[data-layout=narrow] .objective-buttons{flex:none}
 .city-ui.dispatch-ui[data-layout=narrow] .objective-primary{flex:1;max-width:none}
 
-/* Wide rail: stack, always explained, no More control. */
-.objective-bar[data-wide=true]{padding:12px}
-.objective-bar[data-wide=true] .objective-row{flex-direction:column;align-items:stretch;gap:10px}
-.objective-bar[data-wide=true] .objective-instruction{margin-top:4px;line-height:1.3}
-.city-ui.dispatch-ui .objective-bar[data-wide=true] .objective-primary{flex:1;max-width:none}
-.objective-bar[data-wide=true] .objective-detail{max-height:none;overflow:visible}
+.objective-bar[data-wide=true]{padding:10px 12px}
+.objective-bar[data-wide=true] .objective-row{flex-direction:row;align-items:center;gap:12px;flex-wrap:wrap}
+.objective-bar[data-wide=true] .objective-text{flex:1 1 240px}
+.objective-bar[data-wide=true] .objective-instruction{margin-top:2px;line-height:1.3}
+.city-ui.dispatch-ui .objective-bar[data-wide=true] .objective-primary{flex:0 0 auto;max-width:none}
+.objective-bar[data-wide=true] .objective-detail{max-height:min(200px,28dvh);overflow:auto}
 
-/* The guided starter has three actions. Keep its text full-width on every phone,
-   including medium frames that do not use the narrow layout classification. */
 .objective-bar[data-starter=true][data-wide=false] .objective-row{flex-direction:column;align-items:stretch;gap:6px}
 .objective-bar[data-starter=true][data-wide=false] .objective-buttons{flex:none;flex-wrap:wrap}
 .city-ui.dispatch-ui .objective-bar[data-starter=true][data-wide=false] .objective-primary{flex:1;max-width:none}
 .city-ui.dispatch-ui .objective-bar[data-starter=true][data-wide=false] .objective-more{max-width:11em;white-space:normal}
 
-/* Pause remains actionable without consuming the phone's map area. */
-.objective-pause-status{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:5px;color:var(--yellow,#ffd22e);font-size:14px;line-height:1.15}
+.objective-pause-status{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:5px;color:var(--yellow,#f0c56a);font-size:13px;line-height:1.15}
 .objective-pause-status span{flex:1;min-width:0}
 .city-ui.dispatch-ui .objective-pause-status button{flex:0 0 auto;max-width:none;min-height:44px;font-size:14px;padding:4px 6px}

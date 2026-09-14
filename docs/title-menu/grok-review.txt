@@ -1,0 +1,16 @@
+The split is right: one loud resume/start path, Challenges as a second door, utilities demoted, skip off the title. The layout will fail if the two gold signs read as twins, if city/commute language mixes, or if the tagline and Challenges line sell a loop the first session does not pay.
+
+**1. Give the primary sign exclusive weight.**  
+On desktop, one full gold road-sign for Start/Continue. Challenges should be a smaller plaque, outline sign, or listed row under it—not a second matching shield. A subtitle makes Challenges taller and more interesting than the main CTA; if both signs are gold and the same size, first-timers will hesitate and returning players will mis-tap. Settings and New city stay in a quiet utility row, never gold, never in the sign family.
+
+**2. Lock personality in the left column; let the art be the punchline.**  
+Treat **Working ON IT!** plus **Fix the commute. Take the credit.** as one lockup, then the signs. The hi-vis manager should be *taking credit*—clipboard, thumbs-up at a jam, posing for a camera—not generic city-builder wallpaper. Gold DOT chrome is official; the joke is municipal spin. If the art is only “traffic + worker,” the screen reads as a sober traffic sim and the tagline feels bolted on. On mobile, compact lockup → buttons → scene (or scene as background). Do not stack logo / big illustration / buttons if the CTAs drop below the fold.
+
+**3. One empty-save door; three ranked doors once a town exists.**  
+Empty save: only **Start your city** and Settings. After a town exists: **Continue commute** (primary), Challenges (secondary), **New city** (utility, confirm-to-reset). Hide New city until a town exists—that is correct. Do not show a disabled Start next to Continue. Align the metaphor: either both lines are commute (**Start the commute** / **Continue commute**) or both are city (**Start your city** / **Back to your city**). Mixed labels make Continue feel like a different mode. Under Continue, one status crumb (town name, time of day, or “12 jammed junctions”) so returning players know they are resuming, not starting over.
+
+**4. Skip belongs in Settings, but rename it for both audiences.**  
+Moving skip off the title is right: first-timers should not one-tap past onboarding. In Settings, do not keep the label **Skip tutorial**. Use **Show tutorial** / **Replay onboarding** (off by default after completion). First-timers who open Settings will not skip by accident; returning players can get the tutorial back without hunting a vanished title control. If the tutorial is long, offer **Skip** only *inside* the tutorial, not as a title twin of Start.
+
+**5. Promise only what the first session and Challenges actually pay.**  
+**Take the credit** must show up as a beat—briefing, headline, blame-shift, photo-op—or cut it and keep **Fix the commute.** Otherwise the title oversells satire the loop does not deliver. **Small maps. Big traffic ideas.** is a good Challenges line only if those maps are short, authored traffic puzzles. If they are ranked scenarios, weekly modifiers, or miniature cities, say that instead. Do not let “ideas” sound like a sandbox if the player is solving a fixed jam. Primary copy should stay operational (**Start** / **Continue**); flavor lives in the lockup and the Challenges subtitle, and both must match the first ten minutes of play.

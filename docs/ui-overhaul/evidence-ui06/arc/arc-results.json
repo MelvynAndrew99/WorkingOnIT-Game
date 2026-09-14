@@ -1,0 +1,1044 @@
+[
+  {
+    "name": "narrow",
+    "label": "home-ready",
+    "map": {
+      "x": 8,
+      "y": 218.9375,
+      "width": 374,
+      "height": 174.953125
+    },
+    "mission": {
+      "x": 12,
+      "y": 470.890625,
+      "width": 366,
+      "height": 177.109375
+    },
+    "build": {
+      "x": 8,
+      "y": 660,
+      "width": 374,
+      "height": 176
+    },
+    "feedback": {
+      "x": 8,
+      "y": 397.890625,
+      "width": 374,
+      "height": 56
+    },
+    "actions": {
+      "x": 22,
+      "y": 594,
+      "width": 346,
+      "height": 44
+    },
+    "stage": 0,
+    "funds": 900,
+    "elapsed": 1.883300000000003,
+    "completed": 0,
+    "externalTrips": 0,
+    "briefingSeen": false,
+    "incidents": [],
+    "roads": 43,
+    "buildings": 0
+  },
+  {
+    "name": "narrow",
+    "label": "first-customer",
+    "map": {
+      "x": 8,
+      "y": 218.9375,
+      "width": 374,
+      "height": 174.953125
+    },
+    "mission": {
+      "x": 12,
+      "y": 470.890625,
+      "width": 366,
+      "height": 177.109375
+    },
+    "build": {
+      "x": 8,
+      "y": 660,
+      "width": 374,
+      "height": 176
+    },
+    "feedback": {
+      "x": 8,
+      "y": 397.890625,
+      "width": 374,
+      "height": 56
+    },
+    "actions": {
+      "x": 22,
+      "y": 594,
+      "width": 346,
+      "height": 44
+    },
+    "stage": 3,
+    "funds": 420,
+    "elapsed": 18.466400000000032,
+    "completed": 0,
+    "externalTrips": 0,
+    "briefingSeen": false,
+    "incidents": [],
+    "roads": 43,
+    "buildings": 2
+  },
+  {
+    "name": "narrow",
+    "label": "crash",
+    "map": {
+      "x": 8,
+      "y": 218.9375,
+      "width": 374,
+      "height": 169.265625
+    },
+    "mission": {
+      "x": 12,
+      "y": 465.203125,
+      "width": 366,
+      "height": 182.796875
+    },
+    "build": {
+      "x": 8,
+      "y": 660,
+      "width": 374,
+      "height": 176
+    },
+    "feedback": {
+      "x": 8,
+      "y": 392.203125,
+      "width": 374,
+      "height": 56
+    },
+    "actions": {
+      "x": 22,
+      "y": 594,
+      "width": 346,
+      "height": 44
+    },
+    "stage": 5,
+    "funds": 355,
+    "elapsed": 75.63280000000044,
+    "completed": 7,
+    "externalTrips": 0,
+    "briefingSeen": false,
+    "incidents": [
+      {
+        "id": 15,
+        "x": 10,
+        "y": 10,
+        "severity": "serious",
+        "status": "active",
+        "createdAt": 74.775,
+        "cause": "impaired-driving",
+        "required": [
+          "police",
+          "ems"
+        ],
+        "completedServices": [],
+        "rescueDeadline": 165.625,
+        "outcome": "pending",
+        "tutorialEmsOnly": true
+      }
+    ],
+    "roads": 43,
+    "buildings": 5
+  },
+  {
+    "name": "narrow",
+    "label": "bypass",
+    "map": {
+      "x": 8,
+      "y": 218.9375,
+      "width": 374,
+      "height": 222.953125
+    },
+    "mission": {
+      "x": 12,
+      "y": 518.890625,
+      "width": 366,
+      "height": 177.109375
+    },
+    "build": {
+      "x": 8,
+      "y": 708,
+      "width": 374,
+      "height": 128
+    },
+    "feedback": {
+      "x": 8,
+      "y": 445.890625,
+      "width": 374,
+      "height": 56
+    },
+    "actions": {
+      "x": 22,
+      "y": 642,
+      "width": 346,
+      "height": 44
+    },
+    "stage": 7,
+    "funds": 480,
+    "elapsed": 128.33210000000778,
+    "completed": 7,
+    "externalTrips": 0,
+    "briefingSeen": false,
+    "incidents": [
+      {
+        "id": 15,
+        "x": 10,
+        "y": 10,
+        "severity": "serious",
+        "status": "active",
+        "createdAt": 74.775,
+        "cause": "impaired-driving",
+        "tutorialEmsOnly": true,
+        "required": [
+          "police",
+          "ems"
+        ],
+        "completedServices": [],
+        "rescueDeadline": 218.325,
+        "outcome": "pending"
+      }
+    ],
+    "roads": 53,
+    "buildings": 5
+  },
+  {
+    "name": "narrow",
+    "label": "clinic",
+    "map": {
+      "x": 8,
+      "y": 218.9375,
+      "width": 374,
+      "height": 174.953125
+    },
+    "mission": {
+      "x": 12,
+      "y": 470.890625,
+      "width": 366,
+      "height": 177.109375
+    },
+    "build": {
+      "x": 8,
+      "y": 660,
+      "width": 374,
+      "height": 176
+    },
+    "feedback": {
+      "x": 8,
+      "y": 397.890625,
+      "width": 374,
+      "height": 56
+    },
+    "actions": {
+      "x": 22,
+      "y": 594,
+      "width": 346,
+      "height": 44
+    },
+    "stage": 7,
+    "funds": 10,
+    "elapsed": 172.9652000000164,
+    "completed": 9,
+    "externalTrips": 0,
+    "briefingSeen": false,
+    "incidents": [
+      {
+        "id": 15,
+        "x": 10,
+        "y": 10,
+        "severity": "serious",
+        "status": "active",
+        "createdAt": 74.775,
+        "cause": "impaired-driving",
+        "tutorialEmsOnly": true,
+        "required": [
+          "police",
+          "ems"
+        ],
+        "completedServices": [],
+        "rescueDeadline": 261.6,
+        "outcome": "pending"
+      }
+    ],
+    "roads": 53,
+    "buildings": 6
+  },
+  {
+    "name": "narrow",
+    "label": "rescued",
+    "map": {
+      "x": 8,
+      "y": 218.9375,
+      "width": 374,
+      "height": 169.265625
+    },
+    "mission": {
+      "x": 12,
+      "y": 465.203125,
+      "width": 366,
+      "height": 182.796875
+    },
+    "build": {
+      "x": 8,
+      "y": 660,
+      "width": 374,
+      "height": 176
+    },
+    "feedback": {
+      "x": 8,
+      "y": 392.203125,
+      "width": 374,
+      "height": 56
+    },
+    "actions": {
+      "x": 22,
+      "y": 594,
+      "width": 346,
+      "height": 44
+    },
+    "stage": 8,
+    "funds": 130,
+    "elapsed": 182.86510000001846,
+    "completed": 10,
+    "externalTrips": 0,
+    "briefingSeen": false,
+    "incidents": [
+      {
+        "id": 15,
+        "x": 10,
+        "y": 10,
+        "severity": "serious",
+        "status": "cleared",
+        "createdAt": 74.775,
+        "cause": "impaired-driving",
+        "tutorialEmsOnly": true,
+        "required": [
+          "police",
+          "ems"
+        ],
+        "completedServices": [
+          "ems"
+        ],
+        "rescueDeadline": 261.6,
+        "outcome": "rescued"
+      }
+    ],
+    "roads": 53,
+    "buildings": 6
+  },
+  {
+    "name": "narrow",
+    "label": "control",
+    "map": {
+      "x": 8,
+      "y": 218.9375,
+      "width": 374,
+      "height": 222.953125
+    },
+    "mission": {
+      "x": 12,
+      "y": 518.890625,
+      "width": 366,
+      "height": 177.109375
+    },
+    "build": {
+      "x": 8,
+      "y": 708,
+      "width": 374,
+      "height": 128
+    },
+    "feedback": {
+      "x": 8,
+      "y": 445.890625,
+      "width": 374,
+      "height": 56
+    },
+    "actions": {
+      "x": 22,
+      "y": 642,
+      "width": 346,
+      "height": 44
+    },
+    "stage": 9,
+    "funds": 105,
+    "elapsed": 185.93170000001936,
+    "completed": 10,
+    "externalTrips": 0,
+    "briefingSeen": false,
+    "incidents": [
+      {
+        "id": 15,
+        "x": 10,
+        "y": 10,
+        "severity": "serious",
+        "status": "cleared",
+        "createdAt": 74.775,
+        "cause": "impaired-driving",
+        "tutorialEmsOnly": true,
+        "required": [
+          "police",
+          "ems"
+        ],
+        "completedServices": [
+          "ems"
+        ],
+        "rescueDeadline": 261.6,
+        "outcome": "rescued"
+      }
+    ],
+    "roads": 53,
+    "buildings": 6
+  },
+  {
+    "name": "narrow",
+    "label": "expanded",
+    "map": {
+      "x": 8,
+      "y": 218.9375,
+      "width": 374,
+      "height": 218.265625
+    },
+    "mission": {
+      "x": 12,
+      "y": 514.203125,
+      "width": 366,
+      "height": 181.796875
+    },
+    "build": {
+      "x": 8,
+      "y": 708,
+      "width": 374,
+      "height": 128
+    },
+    "feedback": {
+      "x": 8,
+      "y": 441.203125,
+      "width": 374,
+      "height": 56
+    },
+    "actions": {
+      "x": 22,
+      "y": 637.3125,
+      "width": 346,
+      "height": 48.6875
+    },
+    "stage": 10,
+    "funds": 105,
+    "elapsed": 189.88160000001955,
+    "completed": 10,
+    "externalTrips": 0,
+    "briefingSeen": true,
+    "incidents": [
+      {
+        "id": 15,
+        "x": 10,
+        "y": 10,
+        "severity": "serious",
+        "status": "cleared",
+        "createdAt": 74.775,
+        "cause": "impaired-driving",
+        "tutorialEmsOnly": true,
+        "required": [
+          "police",
+          "ems"
+        ],
+        "completedServices": [
+          "ems"
+        ],
+        "rescueDeadline": 261.6,
+        "outcome": "rescued"
+      }
+    ],
+    "roads": 53,
+    "buildings": 6
+  },
+  {
+    "name": "narrow",
+    "label": "connected",
+    "map": {
+      "x": 8,
+      "y": 218.9375,
+      "width": 374,
+      "height": 222.953125
+    },
+    "mission": {
+      "x": 12,
+      "y": 518.890625,
+      "width": 366,
+      "height": 177.109375
+    },
+    "build": {
+      "x": 8,
+      "y": 708,
+      "width": 374,
+      "height": 128
+    },
+    "feedback": {
+      "x": 8,
+      "y": 445.890625,
+      "width": 374,
+      "height": 56
+    },
+    "actions": {
+      "x": 22,
+      "y": 642,
+      "width": 346,
+      "height": 44
+    },
+    "stage": 10,
+    "funds": 745,
+    "elapsed": 202.29810000002206,
+    "completed": 11,
+    "externalTrips": 1,
+    "briefingSeen": true,
+    "incidents": [
+      {
+        "id": 15,
+        "x": 10,
+        "y": 10,
+        "severity": "serious",
+        "status": "cleared",
+        "createdAt": 74.775,
+        "cause": "impaired-driving",
+        "tutorialEmsOnly": true,
+        "required": [
+          "police",
+          "ems"
+        ],
+        "completedServices": [
+          "ems"
+        ],
+        "rescueDeadline": 261.6,
+        "outcome": "rescued"
+      }
+    ],
+    "roads": 55,
+    "buildings": 6
+  },
+  {
+    "name": "desktop",
+    "label": "home-ready",
+    "map": {
+      "x": 8,
+      "y": 117.984375,
+      "width": 1424,
+      "height": 434.796875
+    },
+    "mission": {
+      "x": 16,
+      "y": 629.78125,
+      "width": 461.328125,
+      "height": 258.21875
+    },
+    "build": {
+      "x": 489.328125,
+      "y": 625.78125,
+      "width": 938.671875,
+      "height": 266.21875
+    },
+    "feedback": {
+      "x": 8,
+      "y": 556.78125,
+      "width": 1424,
+      "height": 56
+    },
+    "actions": {
+      "x": 26,
+      "y": 834,
+      "width": 441.328125,
+      "height": 44
+    },
+    "stage": 0,
+    "funds": 900,
+    "elapsed": 2.5163999999999955,
+    "completed": 0,
+    "externalTrips": 0,
+    "briefingSeen": false,
+    "incidents": [],
+    "roads": 43,
+    "buildings": 0
+  },
+  {
+    "name": "desktop",
+    "label": "first-customer",
+    "map": {
+      "x": 8,
+      "y": 117.984375,
+      "width": 1424,
+      "height": 434.796875
+    },
+    "mission": {
+      "x": 16,
+      "y": 629.78125,
+      "width": 461.328125,
+      "height": 258.21875
+    },
+    "build": {
+      "x": 489.328125,
+      "y": 625.78125,
+      "width": 938.671875,
+      "height": 266.21875
+    },
+    "feedback": {
+      "x": 8,
+      "y": 556.78125,
+      "width": 1424,
+      "height": 56
+    },
+    "actions": {
+      "x": 26,
+      "y": 834,
+      "width": 441.328125,
+      "height": 44
+    },
+    "stage": 3,
+    "funds": 440,
+    "elapsed": 22.61619999999984,
+    "completed": 0,
+    "externalTrips": 0,
+    "briefingSeen": false,
+    "incidents": [],
+    "roads": 43,
+    "buildings": 2
+  },
+  {
+    "name": "desktop",
+    "label": "crash",
+    "map": {
+      "x": 8,
+      "y": 117.984375,
+      "width": 1424,
+      "height": 434.796875
+    },
+    "mission": {
+      "x": 16,
+      "y": 629.78125,
+      "width": 461.328125,
+      "height": 258.21875
+    },
+    "build": {
+      "x": 489.328125,
+      "y": 625.78125,
+      "width": 938.671875,
+      "height": 266.21875
+    },
+    "feedback": {
+      "x": 8,
+      "y": 556.78125,
+      "width": 1424,
+      "height": 56
+    },
+    "actions": {
+      "x": 26,
+      "y": 834,
+      "width": 441.328125,
+      "height": 44
+    },
+    "stage": 5,
+    "funds": 405,
+    "elapsed": 82.19930000000099,
+    "completed": 7,
+    "externalTrips": 0,
+    "briefingSeen": false,
+    "incidents": [
+      {
+        "id": 15,
+        "x": 10,
+        "y": 10,
+        "severity": "serious",
+        "status": "active",
+        "createdAt": 81.275,
+        "cause": "impaired-driving",
+        "required": [
+          "police",
+          "ems"
+        ],
+        "completedServices": [],
+        "rescueDeadline": 172.175,
+        "outcome": "pending",
+        "tutorialEmsOnly": true
+      }
+    ],
+    "roads": 43,
+    "buildings": 5
+  },
+  {
+    "name": "desktop",
+    "label": "bypass",
+    "map": {
+      "x": 8,
+      "y": 117.984375,
+      "width": 1424,
+      "height": 486.796875
+    },
+    "mission": {
+      "x": 16,
+      "y": 681.78125,
+      "width": 461.328125,
+      "height": 206.21875
+    },
+    "build": {
+      "x": 489.328125,
+      "y": 677.78125,
+      "width": 938.671875,
+      "height": 214.21875
+    },
+    "feedback": {
+      "x": 8,
+      "y": 608.78125,
+      "width": 1424,
+      "height": 56
+    },
+    "actions": {
+      "x": 26,
+      "y": 834,
+      "width": 441.328125,
+      "height": 44
+    },
+    "stage": 7,
+    "funds": 530,
+    "elapsed": 135.49830000001037,
+    "completed": 7,
+    "externalTrips": 0,
+    "briefingSeen": false,
+    "incidents": [
+      {
+        "id": 15,
+        "x": 10,
+        "y": 10,
+        "severity": "serious",
+        "status": "active",
+        "createdAt": 81.275,
+        "cause": "impaired-driving",
+        "tutorialEmsOnly": true,
+        "required": [
+          "police",
+          "ems"
+        ],
+        "completedServices": [],
+        "rescueDeadline": 225.475,
+        "outcome": "pending"
+      }
+    ],
+    "roads": 53,
+    "buildings": 5
+  },
+  {
+    "name": "desktop",
+    "label": "clinic",
+    "map": {
+      "x": 8,
+      "y": 117.984375,
+      "width": 1424,
+      "height": 434.796875
+    },
+    "mission": {
+      "x": 16,
+      "y": 629.78125,
+      "width": 461.328125,
+      "height": 258.21875
+    },
+    "build": {
+      "x": 489.328125,
+      "y": 625.78125,
+      "width": 938.671875,
+      "height": 266.21875
+    },
+    "feedback": {
+      "x": 8,
+      "y": 556.78125,
+      "width": 1424,
+      "height": 56
+    },
+    "actions": {
+      "x": 26,
+      "y": 834,
+      "width": 441.328125,
+      "height": 44
+    },
+    "stage": 7,
+    "funds": 10,
+    "elapsed": 172.83150000001774,
+    "completed": 9,
+    "externalTrips": 0,
+    "briefingSeen": false,
+    "incidents": [
+      {
+        "id": 15,
+        "x": 10,
+        "y": 10,
+        "severity": "serious",
+        "status": "active",
+        "createdAt": 81.275,
+        "cause": "impaired-driving",
+        "tutorialEmsOnly": true,
+        "required": [
+          "police",
+          "ems"
+        ],
+        "completedServices": [],
+        "rescueDeadline": 261.55,
+        "outcome": "pending"
+      }
+    ],
+    "roads": 53,
+    "buildings": 6
+  },
+  {
+    "name": "desktop",
+    "label": "rescued",
+    "map": {
+      "x": 8,
+      "y": 117.984375,
+      "width": 1424,
+      "height": 434.796875
+    },
+    "mission": {
+      "x": 16,
+      "y": 629.78125,
+      "width": 461.328125,
+      "height": 258.21875
+    },
+    "build": {
+      "x": 489.328125,
+      "y": 625.78125,
+      "width": 938.671875,
+      "height": 266.21875
+    },
+    "feedback": {
+      "x": 8,
+      "y": 556.78125,
+      "width": 1424,
+      "height": 56
+    },
+    "actions": {
+      "x": 26,
+      "y": 834,
+      "width": 441.328125,
+      "height": 44
+    },
+    "stage": 8,
+    "funds": 30,
+    "elapsed": 183.9314000000197,
+    "completed": 10,
+    "externalTrips": 0,
+    "briefingSeen": false,
+    "incidents": [
+      {
+        "id": 15,
+        "x": 10,
+        "y": 10,
+        "severity": "serious",
+        "status": "cleared",
+        "createdAt": 81.275,
+        "cause": "impaired-driving",
+        "tutorialEmsOnly": true,
+        "required": [
+          "police",
+          "ems"
+        ],
+        "completedServices": [
+          "ems"
+        ],
+        "rescueDeadline": 261.55,
+        "outcome": "rescued"
+      }
+    ],
+    "roads": 53,
+    "buildings": 6
+  },
+  {
+    "name": "desktop",
+    "label": "control",
+    "map": {
+      "x": 8,
+      "y": 117.984375,
+      "width": 1424,
+      "height": 486.796875
+    },
+    "mission": {
+      "x": 16,
+      "y": 681.78125,
+      "width": 461.328125,
+      "height": 206.21875
+    },
+    "build": {
+      "x": 489.328125,
+      "y": 677.78125,
+      "width": 938.671875,
+      "height": 214.21875
+    },
+    "feedback": {
+      "x": 8,
+      "y": 608.78125,
+      "width": 1424,
+      "height": 56
+    },
+    "actions": {
+      "x": 26,
+      "y": 834,
+      "width": 441.328125,
+      "height": 44
+    },
+    "stage": 9,
+    "funds": 5,
+    "elapsed": 187.6812000000204,
+    "completed": 10,
+    "externalTrips": 0,
+    "briefingSeen": false,
+    "incidents": [
+      {
+        "id": 15,
+        "x": 10,
+        "y": 10,
+        "severity": "serious",
+        "status": "cleared",
+        "createdAt": 81.275,
+        "cause": "impaired-driving",
+        "tutorialEmsOnly": true,
+        "required": [
+          "police",
+          "ems"
+        ],
+        "completedServices": [
+          "ems"
+        ],
+        "rescueDeadline": 261.55,
+        "outcome": "rescued"
+      }
+    ],
+    "roads": 53,
+    "buildings": 6
+  },
+  {
+    "name": "desktop",
+    "label": "expanded",
+    "map": {
+      "x": 8,
+      "y": 117.984375,
+      "width": 1424,
+      "height": 486.796875
+    },
+    "mission": {
+      "x": 16,
+      "y": 681.78125,
+      "width": 461.328125,
+      "height": 206.21875
+    },
+    "build": {
+      "x": 489.328125,
+      "y": 677.78125,
+      "width": 938.671875,
+      "height": 214.21875
+    },
+    "feedback": {
+      "x": 8,
+      "y": 608.78125,
+      "width": 1424,
+      "height": 56
+    },
+    "actions": {
+      "x": 26,
+      "y": 834,
+      "width": 441.328125,
+      "height": 44
+    },
+    "stage": 10,
+    "funds": 125,
+    "elapsed": 194.39750000002167,
+    "completed": 10,
+    "externalTrips": 0,
+    "briefingSeen": true,
+    "incidents": [
+      {
+        "id": 15,
+        "x": 10,
+        "y": 10,
+        "severity": "serious",
+        "status": "cleared",
+        "createdAt": 81.275,
+        "cause": "impaired-driving",
+        "tutorialEmsOnly": true,
+        "required": [
+          "police",
+          "ems"
+        ],
+        "completedServices": [
+          "ems"
+        ],
+        "rescueDeadline": 261.55,
+        "outcome": "rescued"
+      }
+    ],
+    "roads": 53,
+    "buildings": 6
+  },
+  {
+    "name": "desktop",
+    "label": "connected",
+    "map": {
+      "x": 8,
+      "y": 117.984375,
+      "width": 1424,
+      "height": 486.796875
+    },
+    "mission": {
+      "x": 16,
+      "y": 681.78125,
+      "width": 461.328125,
+      "height": 206.21875
+    },
+    "build": {
+      "x": 489.328125,
+      "y": 677.78125,
+      "width": 938.671875,
+      "height": 214.21875
+    },
+    "feedback": {
+      "x": 8,
+      "y": 608.78125,
+      "width": 1424,
+      "height": 56
+    },
+    "actions": {
+      "x": 26,
+      "y": 834,
+      "width": 441.328125,
+      "height": 44
+    },
+    "stage": 10,
+    "funds": 645,
+    "elapsed": 209.18080000002436,
+    "completed": 12,
+    "externalTrips": 1,
+    "briefingSeen": true,
+    "incidents": [
+      {
+        "id": 15,
+        "x": 10,
+        "y": 10,
+        "severity": "serious",
+        "status": "cleared",
+        "createdAt": 81.275,
+        "cause": "impaired-driving",
+        "tutorialEmsOnly": true,
+        "required": [
+          "police",
+          "ems"
+        ],
+        "completedServices": [
+          "ems"
+        ],
+        "rescueDeadline": 261.55,
+        "outcome": "rescued"
+      }
+    ],
+    "roads": 55,
+    "buildings": 6
+  }
+]

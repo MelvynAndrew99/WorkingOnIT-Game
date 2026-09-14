@@ -1,0 +1,16 @@
+[
+  {
+    "width": 1440,
+    "cases": 7,
+    "vehicleSamples": 9,
+    "reload": true,
+    "errors": []
+  },
+  {
+    "width": 390,
+    "cases": 7,
+    "vehicleSamples": 9,
+    "reload": true,
+    "errors": []
+  }
+]

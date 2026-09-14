@@ -132,57 +132,58 @@ test('a shared entrance has zero driving distance and completes without dividing
   stepCity(c, 5.1); assert.equal(c.completed, 1);
 });
 
-test('land expands on every edge without translating existing construction or trips', async () => {
-  const { expandCity } = await import('./cityModel.ts');
+test('unlocking neighbouring plots does not translate existing construction or trips', async () => {
+  const { unlockPlot } = await import('./cityModel.ts');
   const c = connectedCity(); stepCity(c, 5);
-  c.expansion!.levels = 2; // Earned permit fixture: isolate all-edge geometry.
   const before = structuredClone(c);
-  for (const edge of ['north', 'east', 'south', 'west'] as const) expandCity(c, edge);
-  assert.deepEqual(c.map, { x: -8, y: -8, width: 32, height: 30 });
+  assert.match(unlockPlot(c, 1), /New land opened|free plot/);
+  assert.match(unlockPlot(c, 4), /New land opened|Further plots|free plot/);
   assert.deepEqual(c.roads, before.roads); assert.deepEqual(c.buildings, before.buildings);
   assert.deepEqual(c.trips, before.trips); assert.equal(c.funds, before.funds);
   assert.equal(connectedHomes(c), 1); assert.equal(c.elapsed, before.elapsed);
+  assert.ok(c.land!.owned.includes(1) && c.land!.owned.includes(4));
   assert.deepEqual(parseCity(JSON.parse(JSON.stringify(c))), c);
 });
 
-test('new land accepts construction and routes across old edges, including negative coordinates', async () => {
-  const { expandCity } = await import('./cityModel.ts');
-  const c = createCity(); c.funds = 10000; // This fixture exercises geometry and save boundaries.
-  place(c, 'home', -5, 2); assert.equal(c.buildings.length, 0);
-  expandCity(c, 'west');
-  place(c, 'home', -5, 2); place(c, 'store', 2, 2);
-  for (let x = -5; x <= 3; x++) place(c, 'road', x, 4);
+test('new land accepts construction and routes across the old plot edge', async () => {
+  const { unlockPlot } = await import('./cityModel.ts');
+  const c = createCity(); c.funds = 10000; c.tutorial!.status = 'skipped';
+  place(c, 'home', 18, 2); assert.equal(c.buildings.length, 0);
+  unlockPlot(c, 1);
+  place(c, 'home', 18, 2); place(c, 'store', 2, 2);
+  for (let x = 3; x <= 18; x++) place(c, 'road', x, 4);
   assert.equal(connectedHomes(c), 1);
-  assert.equal(findPath(c, { x: -5, y: 4 }, { x: 3, y: 4 })?.length, 9);
+  assert.equal(findPath(c, { x: 18, y: 4 }, { x: 3, y: 4 })?.length, 16);
   stepCity(c, 5); assert.equal(c.trips.length, 1);
   assert.deepEqual(parseCity(JSON.parse(JSON.stringify(c))), c);
   const before = JSON.stringify(c);
-  place(c, 'home', -8, 6, 1); // Its entrance would lie beyond the new west edge.
+  place(c, 'home', 36, 6, 1);
   assert.equal(JSON.stringify(c), before);
-  place(c, 'home', -8, 8, 0); // No road reaches this one, so it never has a car out.
+  place(c, 'home', 20, 8, 0);
   assert.equal(c.buildings.length, 3);
-  place(c, 'bulldoze', -7, 9); // Removal works from a non-anchor tile at negative coordinates.
+  place(c, 'bulldoze', 21, 9);
   assert.equal(c.buildings.length, 2);
-  assert.equal(place(c, 'bulldoze', -4, 3), 'This home has a car out. Wait for it to get back.');
+  assert.equal(place(c, 'bulldoze', 19, 3), 'This home has a car out. Wait for it to get back.');
   assert.equal(c.trips.length, 1);
 });
 
-test('expansion is bounded, rejected expansion is inert, and former fixed limits are removed', async () => {
-  const { expandCity } = await import('./cityModel.ts');
+test('the envelope is finite; extra unlocks are inert and construction stays on owned plots', async () => {
+  const { unlockPlot } = await import('./cityModel.ts');
   const c = createCity();
-  c.expansion!.levels = 20; // Earned permit fixture: isolate maximum map geometry.
-  for (let i = 0; i < 10; i++) { expandCity(c, 'east'); expandCity(c, 'south'); }
-  assert.deepEqual(c.map, { x: 0, y: 0, width: 64, height: 64 });
-  const before = JSON.stringify(c);
-  for (const edge of ['north', 'east', 'south', 'west'] as const) expandCity(c, edge);
-  assert.equal(JSON.stringify(c), before);
+  c.tutorial!.status = 'skipped';
   c.funds = 20000;
+  for (let id = 1; id < 12; id++) unlockPlot(c, id);
+  assert.deepEqual(c.map, { x: 0, y: 0, width: 64, height: 48 });
+  assert.equal(c.land!.owned.length, 12);
+  const before = JSON.stringify(c);
+  for (const id of [0, 11, 12, -1]) unlockPlot(c, id);
+  assert.equal(JSON.stringify(c), before);
   for (let y = 0; y < 8; y++) for (let x = 0; x < 40; x++) place(c, 'road', x, y);
   assert.equal(c.roads.length, 320);
   assert.equal(findPath(c, { x: 0, y: 0 }, { x: 39, y: 7 })?.length, 47);
   assert.deepEqual(parseCity(JSON.parse(JSON.stringify(c))), c);
-  place(c, 'home', 61, 60); assert.equal(c.buildings.length, 1);
-  place(c, 'home', 63, 60); assert.equal(c.buildings.length, 1);
+  place(c, 'home', 61, 44); assert.equal(c.buildings.length, 1);
+  place(c, 'home', 63, 46); assert.equal(c.buildings.length, 1);
 });
 
 test('legacy map saves migrate, while malformed or shrunken map saves are rejected', () => {
@@ -209,7 +210,7 @@ test('recorded zero payment survives reload and cannot mint money', () => {
 });
 
 test('catalog has modest control costs and a new town cannot buy the full service set', () => {
-  assert.deepEqual(COSTS, { road: 20, stop:25, signal:75, home: 200, store: 400, park: 300, hospital: 800, fireStation: 700, policeStation: 600 });
+  assert.deepEqual(COSTS, { office:600, communityRoad:20, apartment:800, busStation:1000,busStop:50,road: 20, wideRoad:40, stop:25, signal:75, home: 200, store: 400, park: 300, hospital: 800, fireStation: 700, policeStation: 600 });
   const serviceCost = COSTS.hospital + COSTS.fireStation + COSTS.policeStation;
   assert.ok(STARTING_FUNDS < serviceCost);
   assert.ok(STARTING_FUNDS >= COSTS.home + COSTS.store + 7 * COSTS.road);

@@ -1,0 +1,54 @@
+[2m2026-09-11T03:05:08.852171Z[0m [33m WARN[0m extract_initial_tokens: no totalTokens found in updates tail, token tracking will rely on conversation estimate until first model response [3mpath[0m[2m=[0m/home/phil/.grok/sessions/%2Ftmp%2Fchallenge-map-grok/01a08e5b-37e6-72c1-a992-d708f5fc180d/updates.jsonl
+# Commute Map — production layout
+
+One continuous **top-down modern town** for sites **1–25**, same golden-hour world as the title: grey asphalt, double yellows, white crosswalks, cream/grey flat roofs, leafy sidewalks, ordinary shops, downtown silhouettes on the horizon. **No district bands, no palette swaps, no second theme.** Landmarks are scenery on one commute, not UI chapters.
+
+**Play rules (unchanged):** IDs `1–4` always selectable; real save receipts only. **5–25 never launch** (5 is the authored frontier). Suggested stop = first unfinished among 1–4; if all four are done, The Man stands at **5**. Sandbox stays in the header. Briefings keep real objectives. Numbers remain in `aria-label` + briefing (and a tiny tag).
+
+## Viewport
+**390×844:** compact sticky bar (~48px). Map is a **pannable 2D city** (touch-drag + scroll); do **not** use a vertical node list. Default camera frames the suggested pad with ~80px of street around it.  
+**1440×900:** same art, wider crop (more blocks visible), still **centered on the suggested pad**.  
+Pads **52px**, hit **44px+**, ~100–130px path spacing so a **face reads**. `prefers-reduced-motion`: no path walk, camera jump.
+
+**Header (not a banner):** Main Menu · wordmark **Working ON IT!** · **Sandbox** · ribbon tally (count of completed 1–4 only). No stars, lives, or fake locks.
+
+## City geography (one route)
+Paint **one town**, path following real streets:
+
+- **SW start:** corner **COFFEE**, residential side streets, morning queue. Pads **1–4** here (only live jobs).
+- **Works yard:** cones, direction board, modest plaque on a tiny curb cut. Pad **5** = survey/construction, not playable.
+- **School run + park:** crosswalk, playground, arterial. **6–12** along the loop (upcoming).
+- **Canal bridge + supermarket:** same town, small parking apron. **13–18**.
+- **Clinic approach / downtown edge:** hospital bay, civic roof in the distance (aspiration, not a new biome). **19–25**.
+
+Landmarks stay in the mural; **live pads and the connecting route sit in a quiet ~64px road corridor** with no baked numerals, buttons, or character.
+
+## Pads, path, The Man
+**Native DOM buttons** on a **code-native path** snapped to painted lanes.
+
+| State | Pad | Marker |
+|---|---|---|
+| Upcoming 5–25 | Painted asphalt disc, muted number, optional cone. `aria-disabled`. Tap: “Survey crew still out.” **Never Play.** | — |
+| Playable 1–4, not current | Cream number on asphalt, thin gold ring | — |
+| **Current** | Same + short idle (none if reduced-motion) | **The Man** (full figure from title: vest, teal tie, clipboard, **no hardhat**) stands on the path at that pad |
+| **Completed** | Number **replaced by his portrait** (grin + chin, cropped like a DKC head icon). **Rosette ribbon** (teal/gold) on the **corner**, not a star | He has **walked the path** to the next suggested pad |
+
+Tiny **number on the ribbon tail** (10–11px) for replay; screen readers still hear “Site 3, completed.” Click 1–4 → existing briefing → Play/Continue.
+
+After a real completion, animate him **along the connecting street** to the next stop (skip if reduced-motion).
+
+## Art brief (one plate)
+Top-down of the **title town** at golden hour: commute queue, coffee corner, trees, cones, cream/grey roofs, distant downtown. **Not isometric diorama, not jungle, not candy, not five murals.** Canvas ~**1600×2400**. Leave the arterial **clear of people/UI/text** for live pads. Same character as title for portrait + walker. Export without labels.
+
+---
+
+## Map hints (flavor only; not objectives)
+
+1. **Coffee curb:** “If this queue vanished, who would need me?” *Crew: they still need the crosswalk.*
+2. **Cul-de-sac:** “Every home deserves a grand destination!” *…and a way back. Outbound-only is a trap.*
+3. **Park cut-through:** “A shortcut of genius.” *Fence says no. Access has to exist, not just look shorter.*
+4. **School crossing:** “Signals are how I settle arguments.” *They sequence conflicts; they are not a personality.*
+5. **Supermarket apron:** “Retail glory!” *If the lot is smaller than the queue, the queue becomes the lot.*
+6. **Canal bridge:** “I dedicated this modest span to myself.” *Plaque bigger than the improvement. Traffic didn’t clap.*
+7. **Clinic bay:** “A detour is basically a rescue.” *It isn’t. Emergencies need a clear in, not a scenic around.*
+8. **Works yard (5):** “City Hall can wait—I'm already the MAN.” *Sign lost AGER. Crews are still surveying.*

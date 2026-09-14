@@ -56,16 +56,21 @@ function reload(city: City): City {
   return restored;
 }
 
-test('actual crossing claims warn before threshold, accumulate once per tick, then crash only the pair', () => {
+test('distinct crossing encounters warn before threshold; repeated waiting claims cannot create crashes', () => {
   const city = crossingCity();
   assert.equal(claim(city), false);
-  assert.match(incidentSummary(city).warning, /failed-yield risk/i);
+  assert.equal(incidentSummary(city).warning, '', 'an isolated encounter is not a danger warning');
   const exposure = city.risks[0].exposure;
   recordConflict(city, contact, city.trips[1].id, city.trips[0].id, TRAFFIC_TICK);
   assert.equal(city.risks[0].exposure, exposure, 'reversed duplicate report cannot double exposure');
-  for (let tick = 1; tick < RISK_THRESHOLD / TRAFFIC_TICK - 1; tick++) assert.equal(claim(city), false);
+  for (let tick = 1; tick < RISK_THRESHOLD / TRAFFIC_TICK; tick++) assert.equal(claim(city), false);
+  assert.equal(city.risks[0].exposure,exposure,'same pair is one encounter, regardless of waiting ticks');
   assert.equal(city.incidents.length, 0);
-  assert.equal(claim(city), true);
+  city.trips[1].id=city.nextId++;assert.equal(claim(city),false);
+  assert.match(incidentSummary(city).warning, /failed-yield risk/i);
+  city.trips[1].id=city.nextId++;assert.equal(claim(city),false);
+  city.trips[1].id=city.nextId++;
+  assert.equal(claim(city,3), true);
   assert.equal(city.accidentCount, 1); assert.equal(city.incidents[0].severity, 'minor');
   assert.deepEqual(city.trips.map(t => [t.phase, t.path, t.progress]), [['crashed', [contact], 0], ['crashed', [contact], 0]]);
   assert.equal(city.completed, 0); assert.equal(city.risks.length, 0);
@@ -88,7 +93,7 @@ for (const control of ['stop', 'signal'] as const) test(`${control} cancels an e
   const city = crossingCity(); claim(city, 3);
   place(city, control, contact.x, contact.y);
   assert.equal(claim(city, 10), false);
-  assert.equal(city.risks.length, 0); assert.equal(incidentSummary(city).warning, ''); assert.equal(city.accidentCount, 0);
+  assert.ok(city.risks.every(r=>r.exposure===0)); assert.equal(incidentSummary(city).warning, ''); assert.equal(city.accidentCount, 0);
 });
 
 test('dispatch begins at each actual station entrance and defers an occupied same-lane entrance', () => {
@@ -218,7 +223,7 @@ test('response parser validates actual work positions, response endpoints, retur
 });
 
 test('crashed civilians must reference the incident at their own contact tile', () => {
-  const city = crossingCity(); claim(city, RISK_THRESHOLD);
+  const city = crossingCity();for(let n=0;n<4;n++){city.trips[1].id=city.nextId++;claim(city,n===3?3:TRAFFIC_TICK);}
   seedIncident(city, 'minor', 4, 5);
   assert.ok(parseCity(city), 'two distinct seeded incident records are valid before reference corruption');
   city.trips[0].incidentId = city.incidents[1].id;
@@ -234,18 +239,18 @@ test('a responder with a severed return route waits physically and resumes after
   const access = { ...responder.path.at(-1)! };
   place(city, 'closure', 8, 5);
   stepCity(city, WORK_SECONDS.police + 1);
-  assert.equal(responder.phase, 'waiting'); assert.equal(responder.resume, 'returning');
+  assert.equal(responder.phase, 'working'); assert.equal(responder.sceneParked,true);assert.equal(responder.workRemaining,0);
   assert.deepEqual(responder.path[bodyTile(responder)], access, 'waiting responder stays on its actual access tile');
-  assert.deepEqual(responder.target, entrance(city.buildings.find(b => b.id === responder.stationId)!));
-  const restored = reload(city); assert.equal(restored.trips[0].phase, 'waiting');
+  assert.deepEqual(responder.target, access);
+  const restored = reload(city); assert.equal(restored.trips[0].sceneParked,true);
   place(restored, 'closure', 8, 5); stepCity(restored, 20);
-  assert.equal(restored.trips.length, 0); assert.equal(restored.incidents[0].status, 'cleared');
+  assert.equal(restored.trips.filter(t=>!t.patrol).length, 0); assert.equal(restored.incidents[0].status, 'cleared');
 });
 
 test('cooled conflict risk expires and a quiet junction never finishes an old warning as an accident', () => {
   const city = crossingCity(); claim(city, RISK_THRESHOLD - TRAFFIC_TICK);
   city.trips = [];
-  city.elapsed += 2; stepIncidents(city, TRAFFIC_TICK);
+  city.elapsed += 15; stepIncidents(city, 15);
   assert.equal(city.risks.length, 0); assert.equal(city.accidentCount, 0);
   assert.equal(incidentSummary(city).warning, '');
 });
@@ -278,7 +283,7 @@ test('ordinary moving traffic warns then crashes from zero exposure; stops and l
   for (const kind of ['stop', 'signal'] as const) {
     const controlled = competingTown(); place(controlled, kind, 8, 6);
     stepCity(controlled, 60);
-    assert.equal(controlled.accidentCount, 0); assert.deepEqual(controlled.risks, []);
+    assert.equal(controlled.accidentCount, 0); assert.equal(incidentSummary(controlled).warning, '');
     assert.ok(controlled.completed > 0, `${kind} safely serves the actual demand`);
   }
 });

@@ -1,0 +1,52 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+const {chromium}=await import(process.env.PLAYWRIGHT_MODULE);
+const out=process.env.CAMPAIGN_EVIDENCE??'/tmp/campaign-browser';await fs.mkdir(out,{recursive:true});
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH,args:['--no-sandbox']});
+const results=[];
+try{for(const [name,width,height]of [['desktop',1440,900],['narrow',390,844]]){
+ const context=await browser.newContext({viewport:{width,height}}),page=await context.newPage(),errors=[];
+ page.on('pageerror',e=>errors.push(e.message));await context.route('**/*',r=>new URL(r.request().url()).hostname==='127.0.0.1'?r.continue():r.abort());
+ await page.goto('http://127.0.0.1:5192');await page.getByRole('button',{name:'Challenges',exact:true}).click();
+ await page.evaluate(async()=>{const urls=performance.getEntriesByType('resource').map(e=>e.name);window.state=await import(urls.filter(n=>n.includes('/src/state/store.ts')).at(-1));window.cs=await import(urls.filter(n=>n.includes('/src/state/challenges.ts')).at(-1));window.model=await import('/src/game/cityChallenges.ts');window.commands=await import('/src/game/cityControls.ts');window.solutions=await import('/src/game/fixtures/campaignSolutions.ts');const save=await import(urls.filter(n=>n.includes('/src/state/save.ts')).at(-1));save.flushSave();});
+ const sandbox=await page.evaluate(()=>localStorage.getItem('city-workshop:city:v1'));
+ const go=async(n)=>{await page.getByRole('button',{name:`Level ${n}, playable`,exact:true}).click();await page.getByRole('button',{name:'Play level',exact:false}).click();await page.locator('canvas').waitFor();await page.waitForTimeout(350);};
+ const tap=async(x,y)=>{await page.evaluate(({x,y})=>commands.cityCommand({type:'focus',point:{x,y}}),{x,y});await page.waitForTimeout(30);const b=await page.locator('.city-map-viewport').boundingBox();await page.mouse.click(b.x+b.width/2,b.y+b.height/2);};
+ await page.getByRole('button',{name:'Level 10, coming soon',exact:true}).click();await page.getByRole('heading',{name:'Apartment avenue',exact:true}).waitFor();assert.equal(await page.getByRole('button',{name:'In preparation',exact:false}).isDisabled(),true);await page.getByRole('button',{name:'Close level briefing'}).click();
+ await go(8);assert.equal(await page.evaluate(()=>state.store.get().paused),true);
+ await page.getByRole('button',{name:'Road',exact:false}).click();
+ // Build the actual return street through pointer construction.
+ for(let y=7;y<=10;y++)await tap(13,y);for(let x=12;x>=2;x--)await tap(x,10);for(let y=9;y>=7;y--)await tap(2,y);
+ await page.getByRole('button',{name:'One-way',exact:false}).click();
+ const path=[];for(let y=6;y<=10;y++)path.push([13,y]);for(let x=12;x>=2;x--)path.push([x,10]);for(let y=9;y>=6;y--)path.push([2,y]);
+ for(const [x,y]of path)await tap(x,y);await page.getByRole('button',{name:'Finish',exact:true}).click();
+ assert.ok(await page.evaluate(()=>Object.keys(cs.getChallengeRun().city.roadDirections).length>11));
+ await page.getByRole('button',{name:'Town',exact:true}).click();await page.screenshot({path:`${out}/${name}-one-way.png`});
+ await page.getByRole('button',{name:'Reset',exact:false}).click();await page.getByRole('button',{name:'Keep playing',exact:true}).click();assert.ok(await page.evaluate(()=>Object.keys(cs.getChallengeRun().city.roadDirections).length>11));
+ await page.evaluate(()=>{model.stepChallenge(cs.getChallengeRun(),180);cs.flushChallenges();state.store.patch({});});await page.getByRole('heading',{name:'Nice work!',exact:true}).waitFor();
+ await page.getByRole('dialog').getByRole('button',{name:'Next',exact:false}).click();await page.waitForTimeout(350);
+ assert.equal(await page.evaluate(()=>cs.getChallengeRun().id),'around-the-island');
+ await page.evaluate(()=>{solutions.solveCampaign(cs.getChallengeRun());model.stepChallenge(cs.getChallengeRun(),180);cs.flushChallenges();state.store.patch({});});await page.getByRole('heading',{name:'Nice work!',exact:true}).waitFor();
+ await page.getByRole('button',{name:'Next · Level 12',exact:false}).click();await page.waitForTimeout(350);
+ await page.screenshot({path:`${out}/${name}-stages.png`});
+ await page.getByRole('button',{name:'Levels',exact:true}).click();await go(13);
+ await tap(3,2);await page.getByRole('button',{name:'Choose stops',exact:true}).click();await tap(8,6);await tap(17,6);await page.getByRole('button',{name:'Finish route',exact:true}).click();
+ await page.getByRole('button',{name:'Buy bus · $400',exact:true}).click();await page.getByRole('button',{name:'Start service',exact:true}).click();
+ assert.equal(await page.evaluate(()=>cs.getChallengeRun().city.funds),200);
+ await page.screenshot({path:`${out}/${name}-bus-controls.png`});
+ await page.getByRole('button',{name:'Close bus service',exact:true}).click();
+ // Advance the shared model only; these are functional checks, not FPS measurements.
+ await page.evaluate(()=>{model.stepChallenge(cs.getChallengeRun(),25);cs.flushChallenges();state.store.patch({});});
+ assert.equal(await page.evaluate(()=>cs.getChallengeRun().earned),false);
+ await page.reload();await page.getByRole('button',{name:'Challenges',exact:true}).click();await page.getByRole('button',{name:'Level 13, playable',exact:true}).click();await page.getByRole('button',{name:'Continue level',exact:false}).click();await page.waitForTimeout(350);
+ await page.evaluate(async()=>{const urls=performance.getEntriesByType('resource').map(e=>e.name);window.state=await import(urls.filter(n=>n.includes('/src/state/store.ts')).at(-1));window.cs=await import(urls.filter(n=>n.includes('/src/state/challenges.ts')).at(-1));window.model=await import('/src/game/cityChallenges.ts');window.solutions=await import('/src/game/fixtures/campaignSolutions.ts');model.stepChallenge(cs.getChallengeRun(),180);cs.flushChallenges();state.store.patch({});});
+ const reloaded=await page.evaluate(()=>{const r=cs.getChallengeRun();return {id:r.id,earned:r.earned,elapsed:r.city.elapsed,busServed:r.busServed,stages:model.challengeStages(r),routes:r.city.transit?.routes};});console.log(name,'bus reload',reloaded);assert.equal(reloaded.earned,true);
+ await page.getByRole('heading',{name:'Nice work!',exact:true}).waitFor();assert.equal(await page.evaluate(()=>cs.getChallengeRun().busServed.length),4);
+ await page.getByRole('button',{name:'Next · Level 15',exact:false}).click();await page.waitForTimeout(350);
+ await page.evaluate(()=>{solutions.solveCampaign(cs.getChallengeRun());model.stepChallenge(cs.getChallengeRun(),180);cs.flushChallenges();state.store.patch({});});await page.getByRole('heading',{name:'Nice work!',exact:true}).waitFor();
+ assert.equal(await page.getByRole('dialog').getByRole('button',{name:'Next',exact:false}).count(),1);await page.screenshot({path:`${out}/${name}-final.png`});
+ await page.getByRole('button',{name:'Retry',exact:true}).click();await page.waitForTimeout(350);assert.equal(await page.evaluate(()=>cs.getChallengeRun().earned),false);assert.equal(await page.evaluate(()=>cs.challengeHasStar('a-town-that-works')),true);
+ assert.equal(await page.evaluate(()=>localStorage.getItem('city-workshop:city:v1')),sandbox);assert.deepEqual(errors,[]);
+ results.push({name,oneWayPointerConstruction:true,busPointerSetup:true,stagedSlotsSkipped:true,busReload:true,permanentStar:true,sandboxUnchanged:true});await context.close();
+ }await fs.writeFile(`${out}/results.json`,JSON.stringify(results,null,2));console.log(results);
+}finally{await browser.close();}

@@ -1,0 +1,11 @@
+✔ src/game/cityDirections.test.ts (242.668152ms)
+✔ src/game/cityPathfinding.test.ts (372.159271ms)
+✔ src/game/cityWideRoads.test.ts (148.633993ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 392.890874

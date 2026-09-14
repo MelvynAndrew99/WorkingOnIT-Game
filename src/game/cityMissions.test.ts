@@ -32,12 +32,12 @@ function reload(c: City): City {
 
 test('growth arc completes through real distinct shopping and park visits without any accident', () => {
   const c = town();
-  until(c, () => missionSnapshot(c).recognition === 4);
+  until(c, () => missionSnapshot(c).recognition === 5);
   assert.deepEqual(c.missions!.shoppers.length, 6);
   assert.ok(c.missions!.parkVisitors.length >= 3);
   assert.equal(c.accidentCount, 0);
   assert.equal(c.fatalities, 0);
-  assert.deepEqual(missionSnapshot(c).items.map(i => i.current), [1, 3, 3, 6]);
+  assert.deepEqual(missionSnapshot(c).items.filter(i => i.id !== 'neighborhood-flow').map(i => i.current), [1, 3, 3, 6, 6]);
   assert.ok(c.completed > 0);
 });
 
@@ -122,7 +122,7 @@ test('foresight and early public services keep recognition and rewards wait for 
   place(c, 'policeStation', 4, 10);
   place(c, 'fireStation', 8, 10);
   assert.equal(c.buildings.length, 12);
-  until(c, () => missionSnapshot(c).recognition === 4);
+  until(c, () => missionSnapshot(c).recognition === 5);
   const snapshot = missionSnapshot(c);
   assert.equal(snapshot.servicesSpent, COSTS.hospital + COSTS.policeStation + COSTS.fireStation);
   const funds = c.funds;
@@ -160,8 +160,8 @@ test('legacy and malformed ancillary mission data preserve the existing town', (
 
 test('completed mission rewards are visible and require exactly one explicit claim, including after reload', () => {
   const city = town();
-  until(city, () => missionSnapshot(city).recognition === 4);
-  const jobs = missionSnapshot(city).items;
+  until(city, () => missionSnapshot(city).recognition === 5);
+  const jobs = missionSnapshot(city).items.filter(j=>j.reward>0);
   assert.deepEqual(jobs.map(j => j.reward), [100, 200, 200, 400]);
   assert.ok(jobs.every(j => j.done && !j.claimed));
   const funds = city.funds;
@@ -209,4 +209,14 @@ test('old completed missions migrate to a finite unclaimed reward without paying
   assert.deepEqual(saved.missions, migrated.missions, 'valid unknown receipts survive older builds');
   assert.equal(claimMissionReward(saved, 'open-for-business').amount, 0);
   assert.equal(saved.funds, city.funds + 100);
+});
+
+
+test('pattern missions explain diagnostics and preserve learned results across growth and reload',()=>{
+ const c=town(3,false);until(c,()=>missionSnapshot(c).items.find(j=>j.id==='everyone-connected')!.done);
+ const s=missionSnapshot(c);assert.equal(s.items.find(j=>j.id==='a-town-to-notice')!.diagnosticView,'capacity');
+ assert.equal(s.items.find(j=>j.id==='word-on-the-street')!.diagnosticView,'traffic');
+ assert.equal(s.level,c.expansion?.levels??0);assert.equal(claimMissionReward(c,'everyone-connected').claimed,false);
+ const old=[...c.missions!.completed];const loaded=reload(c);assert.deepEqual(loaded.missions!.completed,old);
+ assert.ok(missionSnapshot(loaded).items.find(j=>j.id==='everyone-connected')!.done);
 });

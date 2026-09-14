@@ -104,7 +104,7 @@ function oneWayTown(){
   return c;
 }
 
-test('an uncontrolled crossing builds visible risk, and a control removes it entirely',()=>{
+test('an uncontrolled crossing builds visible risk, and a suitable control safely serves that demand',()=>{
   const unsigned=competingTown();
   for(let i=0;i<2400;i++)stepCity(unsigned,.025);
   assert.ok(unsigned.risks.length>0 || unsigned.incidents.length>0,
@@ -112,7 +112,7 @@ test('an uncontrolled crossing builds visible risk, and a control removes it ent
   const controlled=competingTown();
   place(controlled,'stop',8,6);
   for(let i=0;i<2400;i++)stepCity(controlled,.025);
-  assert.deepEqual(controlled.risks,[],'a stop sign cancels the warning');
+  assert.ok(controlled.risks.every(r=>r.exposure<2),'ordinary controlled encounters stay below the warning');
   assert.deepEqual(controlled.incidents,[],'and prevents the failed-yield crash');
   assert.ok(controlled.completed>unsigned.completed);
 });

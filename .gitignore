@@ -76,3 +76,6 @@ Thumbs.db
 
 # CI release packaging
 /.release/
+
+# Resources by Melvyn
+inbox/

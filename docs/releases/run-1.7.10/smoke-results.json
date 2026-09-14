@@ -1,0 +1,28 @@
+[
+  {
+    "width": 1440,
+    "production": true,
+    "nestedAssetPath": true,
+    "titleGraphics": true,
+    "cityAtlas": true,
+    "zoom": true,
+    "existingTownPreserved": true,
+    "simulationAdvanced": true,
+    "reload": true,
+    "errors": [],
+    "failed": []
+  },
+  {
+    "width": 390,
+    "production": true,
+    "nestedAssetPath": true,
+    "titleGraphics": true,
+    "cityAtlas": true,
+    "zoom": true,
+    "existingTownPreserved": true,
+    "simulationAdvanced": true,
+    "reload": true,
+    "errors": [],
+    "failed": []
+  }
+]

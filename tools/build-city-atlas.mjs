@@ -170,6 +170,64 @@ add('crateFruit', TILE, TILE, (d) => d.tile(MC, 12, 18));
 add('crateVeg', TILE, TILE, (d) => d.tile(MC, 13, 18));
 add('cone', TILE, TILE, (d) => d.tile(MC, 14, 18));
 
+// Road furniture is already in Modern City. Keep source pixels intact for these
+// props; the renderer places upright barriers rather than rotating their faces.
+add('barrierOrange', TILE, TILE, (d) => d.tile(MC, 24, 5));
+add('barrierWarning', TILE, TILE, (d) => d.tile(MC, 24, 6));
+// Side view for east/west roads: the rail recedes along the screen's vertical
+// axis, while its posts and warning lamps still stand upright. Not a rotation.
+add('barrierWarningVertical', TILE, TILE, (d) => {
+    const out = Array.from({ length: TILE * TILE }, () => [0, 0, 0, 0]);
+    const gray = [134, 134, 134, 255], light = [202, 202, 190, 255];
+    const orange = [180, 92, 36, 255], yellow = [255, 205, 52, 255];
+    const box = (x, y, w, h, c) => {
+        for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) out[j * TILE + i] = c;
+    };
+    box(6, 3, 4, 10, gray);
+    for (let y = 3; y < 12; y++) box(7, y, 2, 1, Math.floor((y - 3) / 2) % 2 ? light : orange);
+    for (const y of [2, 11]) {
+        box(6, y, 1, 5, light);
+        box(5, y + 4, 4, 1, gray);
+        box(6, y - 2, 2, 3, orange);
+        box(6, y - 1, 2, 2, yellow);
+    }
+    d.pixels(out, 0, 0);
+});
+add('barrierYellow', TILE, TILE, (d) => d.tile(MC, 24, 7));
+
+// Prepared work-zone art, not a new gameplay state. Compose a broken asphalt
+// edge around the pack's dirt. Geometry and passability remain model-owned.
+add('workSurface', TILE, TILE, (d) => {
+    const asphalt = tile(MC, ASPHALT_C, ASPHALT_R), dirt = tile(MC, 4, 24);
+    const surface = asphalt.map(c => [...c]);
+    const cut = (x, y) => y >= 2 && y <= 13 && x >= (y < 5 ? 4 : 2) && x <= (y > 10 ? 11 : 13);
+    for (let y = 0; y < TILE; y++) for (let x = 0; x < TILE; x++) {
+        if (cut(x, y)) surface[y * TILE + x] = [...px(dirt, x, y)];
+        // Recessed upper/left edge, sampled from existing asphalt, not a glow.
+        if (cut(x, y) && (!cut(x, y - 1) || !cut(x - 1, y)))
+            surface[y * TILE + x] = [...px(asphalt, 0, 0)];
+    }
+    d.pixels(surface, 0, 0);
+});
+
+// Upright direction boards: retain the pack's barrier legs and palette, expand
+// its orange face, then lift the existing road arrows onto it. These are prepared
+// for a future route preview; no unverified detour direction is shown in-game.
+for (const [side, row] of Object.entries({ N: 21, E: 24, S: 22, W: 23 })) {
+    add(`detour${side}`, TILE, TILE, (d) => {
+        const board = tile(MC, 24, 5).map(c => [...c]);
+        const border = [134, 134, 134, 255], face = [180, 92, 36, 255];
+        for (let y = 0; y <= 11; y++) for (let x = 1; x <= 14; x++)
+            board[y * TILE + x] = [...(x === 1 || x === 14 || y === 0 || y === 11 ? border : face)];
+        const arrow = paint(tile(MC, 19, row));
+        for (let y = 1; y <= 10; y++) for (let x = 2; x <= 13; x++) {
+            const c = px(arrow, x, y + 2);
+            if (c[3]) board[y * TILE + x] = [...c];
+        }
+        d.pixels(board, 0, 0);
+    });
+}
+
 // ---------------------------------------------------------------------------
 // Vehicles — four fixed-viewpoint views each, never rotated.
 //
@@ -207,6 +265,35 @@ for (const [kind, file] of Object.entries({ hospital: 'hospital', fireStation: '
 }
 
 // ---------------------------------------------------------------------------
+// Home lots: four house styles, one 2x2 lot per entrance side, from
+// docs/artwork/housing/generate.mjs. Native pixels, fully opaque lawn.
+// ---------------------------------------------------------------------------
+for (let style = 0; style < 4; style++) for (const [side, suffix] of Object.entries({ N: 'north', E: 'east', S: 'south', W: 'west' })) {
+    const img = read(path.join(ROOT, 'docs/artwork/housing', `home-${style}-${suffix}.png`));
+    if (img.width !== 32 || img.height !== 32) throw new Error(`Unexpected home sprite dimensions: ${style}-${suffix}`);
+    const buf = [];
+    for (let y = 0; y < img.height; y++) for (let x = 0; x < img.width; x++) buf.push(get(img, x, y));
+    sprites.set(`home_${style}_${side}`, { w: img.width, h: img.height, buf });
+}
+
+// Bus depots: one 3x3 lot per entrance side, from docs/artwork/transit/bus-depot/generate.mjs.
+for (const [side, suffix] of Object.entries({ N: 'north', E: 'east', S: 'south', W: 'west' })) {
+    const img = read(path.join(ROOT, 'docs/artwork/transit/bus-depot', `bus-depot-${suffix}.png`));
+    if (img.width !== 48 || img.height !== 48) throw new Error(`Unexpected bus depot sprite dimensions: ${suffix}`);
+    const buf = [];
+    for (let y = 0; y < img.height; y++) for (let x = 0; x < img.width; x++) buf.push(get(img, x, y));
+    sprites.set(`busStation_${side}`, { w: img.width, h: img.height, buf });
+}
+// Bus stops: one 1x1 square per boarding curb, from docs/artwork/transit/bus-stop/generate.mjs.
+for (const [side, suffix] of Object.entries({ N: 'north', E: 'east', S: 'south', W: 'west' })) {
+    const img = read(path.join(ROOT, 'docs/artwork/transit/bus-stop', `bus-stop-${suffix}.png`));
+    if (img.width !== 16 || img.height !== 16) throw new Error(`Unexpected bus stop sprite dimensions: ${suffix}`);
+    const buf = [];
+    for (let y = 0; y < img.height; y++) for (let x = 0; x < img.width; x++) buf.push(get(img, x, y));
+    sprites.set(`busStop_${side}`, { w: img.width, h: img.height, buf });
+}
+
+// ---------------------------------------------------------------------------
 // User-approved service vehicles, four fixed-viewpoint views each.
 // ---------------------------------------------------------------------------
 for (const service of ['police', 'ems', 'fire']) for (const side of DIRS) {
@@ -219,10 +306,35 @@ for (const service of ['police', 'ems', 'fire']) for (const side of DIRS) {
     sprites.set(`car_${service}_${side}`, { w: img.width, h: img.height, buf });
 }
 
+// Approved Claude bus artwork, including the user's requested wheel correction.
+for (const side of DIRS) {
+    const img = read(path.join(ROOT, 'docs/artwork/transit/claude-bus', `bus-${side}.png`));
+    const across = side === 'E' || side === 'W';
+    if (img.width !== (across ? 36 : 22) || img.height !== (across ? 24 : 29))
+        throw new Error(`Unexpected bus sprite dimensions: ${side}`);
+    const buf = [];
+    for (let y = 0; y < img.height; y++) for (let x = 0; x < img.width; x++) buf.push(get(img, x, y));
+    sprites.set(`bus_${side}`, {w:img.width, h:img.height, buf});
+}
+
 // ---------------------------------------------------------------------------
 // Pack: shelf-fit into a power-of-two-width sheet, 1px transparent gutter.
 // ---------------------------------------------------------------------------
-const GUTTER = 1, SHEET_W = 256;
+// Claude-authored, user-approved lots. Copy pixels unchanged from the source sheets.
+for (const [kind, folder] of [['office', 'offices'], ['apartment', 'housing/residential-apartment']]) {
+    const dir = path.join(ROOT, 'docs/artwork', folder);
+    const manifest = JSON.parse(fs.readFileSync(path.join(dir, `${kind}-sheet.json`), 'utf8'));
+    const img = read(path.join(dir, manifest.sheet));
+    if (Object.keys(manifest.frames).length !== 64) throw new Error(`Incomplete ${kind} sprites`);
+    for (const [name, f] of Object.entries(manifest.frames)) {
+        if (f.w !== 64 || f.h !== 64 || f.x < 0 || f.y < 0 || f.x + f.w > img.width || f.y + f.h > img.height)
+            throw new Error(`Invalid lot frame: ${name}`);
+        const buf = [];
+        for (let y = 0; y < f.h; y++) for (let x = 0; x < f.w; x++) buf.push(get(img, f.x + x, f.y + y));
+        sprites.set(name, {w:f.w, h:f.h, buf});
+    }
+}
+const GUTTER = 1, SHEET_W = 512;
 const names = [...sprites.keys()].sort((a, b) => sprites.get(b).h - sprites.get(a).h || a.localeCompare(b));
 const frames = {};
 let cx = GUTTER, cy = GUTTER, rowH = 0;
@@ -248,8 +360,8 @@ fs.writeFileSync(outTs, `/**
  * GENERATED by tools/build-city-atlas.mjs — do not edit by hand.
  *
  * Frame rectangles inside public/images/city/city-atlas.png, which is packed
- * from the Kenney CC0 pack and approved service buildings and vehicles.
- * See docs/artwork/service-{buildings,vehicles}/README.md for provenance.
+ * from the Kenney CC0 pack, home lots and approved service buildings and vehicles.
+ * See docs/artwork/{housing,service-buildings,service-vehicles}/README.md for provenance.
  * Semantic meaning lives in cityArt.ts; this file is only geometry.
  */
 export const ATLAS_URL = 'images/city/city-atlas.png';

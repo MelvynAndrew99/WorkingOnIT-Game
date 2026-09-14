@@ -1,0 +1,78 @@
+# One-way roads: design and implementation assignment
+
+Status: source-inspected design, September 11, 2026. No runtime changes, new mission definitions, player-save edits or publication. User is preparing the mission structure separately. Implementation choices below are proposals to validate, not claimed delivered behavior.
+
+## Player outcome
+
+The player can remove the middle road of the photographed intersection, add the four corner roads, and direct traffic around the resulting eight-tile ring. They can also make one-way shopping streets and paired streets through a dense district. Keep current road artwork; small persistent pavement arrows show actual allowed flow. Changing direction does not widen a road or grant extra capacity.
+
+This creates a circular road layout, not automatic roundabout priority. Current unsigned controls favor E/W approaches, and stops are all-way controls. Neither expresses “entrants yield to circulating vehicles.” Test the ring with current safe admission and real service; if entry priority prevents satisfactory operation, report that specific limitation and design entry-yield separately. Do not award blanket crash immunity for a circle or silently replace shared intersection rules.
+
+## Source findings and proposed graph contract
+
+Current `City.roads` is `Point[]`. `cityPathfinding.ts`, the custom-avoid BFS in `cityModel.ts`, and weighted routing in `cityRouting.ts` all discover cardinal neighbors without direction restrictions. `cityTraffic.ts` separately admits physical movement and reserves lanes/turns. Changing just BFS would leave weighted trips, fallback plans or existing paths driving the wrong way.
+
+Use directed **connections between adjacent road tiles**, stored sparsely as optional metadata on City, with a shared legality helper. Absence means the existing two-way connection. A saved edge has one canonical pair of cardinal-adjacent road coordinates and its permitted orientation; it cannot contain two contradictory records. The final TypeScript field naming belongs to the implementation owner.
+
+- A step A → B is legal only when both road tiles exist and their shared connection permits A → B. The same connection controls exit from A and entry to B; no contradictory independently edited tile flags.
+- Direction is permanent topology, distinct from temporary closures. Ordinary, responding and plan-through-obstruction queries all obey it. Planning through a crash/diversion never means planning against one-way flow.
+- A curved segment is a sequence of directed connections, not one compass heading imposed on every tile. At a branch, each incident connection has its own direction. This permits ring circulation **and** legal exits without turning each ring tile into a single mandatory outgoing neighbor.
+- Example clockwise ring around empty (0,0): (-1,-1) → (0,-1) → (1,-1) → (1,0) → (1,1) → (0,1) → (-1,1) → (-1,0) → (-1,-1). Each midpoint can retain a two-way connection to its external arm. Traffic chooses a legal ring exit toward its actual destination; reverse ring edges remain illegal.
+- Preserve the E/S/W/N tie order for unchanged two-way towns. Keep graph reachability directed: reaching a shop does not establish a route home. Check both separately for homes, destinations, visitor gateway and service stations.
+
+A proposed editing interaction is Road → Direction → drag a connected road run in the intended travel direction, with an arrow preview and one atomic Apply. A closed drag sets circulation around a loop. Tap a segment/connection to reverse or restore Two-way; a selected branch exposes its incoming/outgoing arrows. Desktop and narrow must support the same result without precision dragging being mandatory: tap consecutive road tiles is the accessible fallback. Do not silently direct external branches when drawing a ring. Invalid or ambiguous strokes change nothing. Build cost, unlock and any conversion price remain tuning decisions; do not couple this direction tool to pending timed widening.
+
+## Physical movement and occupied edits
+
+First slice retains the existing physical driving tracks, speed, conservative bend/merge occupancy and safe stopping. One-way means one permitted travel direction using the existing compatible track; it does not enable two same-direction lanes, passing on an unmodeled lane, extra speed or removal of conflict checks. Verify arrows align with actual movement through bends at both zoom extremes. Existing road stripes may remain.
+
+Apply shared edge legality at spawn, route adoption/replanning, each new movement admission, responder dispatch/approach selection, return departure, and saved emergency-pass validation. Inspect `cityTraffic.ts` admission and reversal helpers rather than treating a route result as physical permission. Preserve local waiting geometry and fractional vehicle position.
+
+Proposed bounded first edit policy: reject an atomic direction change when it intersects occupied or committed movement reservations, a working scene, or a reserved emergency pass. Highlight the blocked segment and say “Traffic must clear before changing direction.” Reuse and audit existing committed-road protection, expanding it to every affected edge and future reserved footprint. No teleport, deletion, instant lane swap or grandfathered wrong-way motion. Empty-edge edits may invalidate uncommitted future paths; keep the journey and replan before admission, or wait visibly with destination intact. This policy can be awkward on a busy ring; test that the player can close approaches temporarily, let the intended segment clear, apply direction and reopen. A persisted drain-and-apply workflow is follow-up only if that interaction proves necessary.
+
+Already paused traffic cannot drain until resumed; communicate that in the rejection. A failed edit preserves money, old direction and all vehicle state. Cancellation leaves the old topology intact. Enforce these rules in model mutations as well as UI.
+
+## Junctions, responders and closures
+
+`roadIndex` currently defines junctions by three or more physical cardinal neighbors; `junctionAreas` groups adjacent junction tiles, and admission reserves contiguous junction runs plus an exit. Keep that physical grouping initially. Direction changes the permitted movement set, not whether two physical trajectories overlap. Do not reduce geometric degree to directed out-degree: a one-output merge remains a conflict area.
+
+The pictured minimal ring normally has degree-two corners separating its degree-three entrance junctions. Verify that the actual test geometry has this property; nearby extra roads can join areas. Test larger rings and adjacent junction clusters, ensuring no area grouping reserves an entire cycle indefinitely, and no control governs an unintended distant entrance after edits. Direction-only changes must not retire or refund a still-valid controller.
+
+Responders follow one-way connections in both directions of their duty journey; no implicit contraflow feature. Preserve existing active-response permission to cross civilian diversions and use guarded red-light admission. Routine return traffic obeys diversions. Directionality must also apply to emergency passing candidates: suppress a pass if its physical corridor would require prohibited movement; retaining the old assumption of an opposing lane is insufficient. Scene reachability and safe home return are separate checks. Do not extend rescue deadlines or erase casualties to make an inconvenient design succeed.
+
+Future timed roadworks remain physical closures for all vehicles, including responders, under the user's existing selection. Preserve direction metadata while temporarily closed and restore the same direction on reopening. Bulldozing removes only metadata for vanished connections; rebuilding defaults to two-way and cannot resurrect a hidden direction. Map expansion and external-connector relocation must preserve surviving edges and real legal visitor returns.
+
+## Signal coordination
+
+Today `signalAxis` uses `city.elapsed % cycle` and three timing presets; there is no per-controller phase offset. Equal presets already share a clock, but that does not create a travel-time progression through successive intersections. One-way roads alone must not be advertised as delivering coordinated green waves.
+
+Proposed bounded follow-on, owned by a simulation engineer with a UI engineer against one agreed controller contract:
+
+- Add an optional saved per-controller offset, default zero. Represent it in integer simulation ticks, normalize modulo that preset's cycle, and calculate phase from the common quantized city clock minus offset modulo cycle. Positive offset means this intersection starts its N/S phase later. Keep existing N/S, E/W and all-red durations. Missing offset must reproduce old signals exactly; reject nonfinite/invalid input without damaging the city. Converting to a new preset normalizes the requested offset against its new cycle.
+- Selected-intersection controls expose the existing preset plus manual “Earlier”, “Later” and “Reset offset” actions, a numeric offset, and a compact full-cycle preview showing both green windows, all-red windows and the current clock position. Proposed button step is one simulated second; this is implementation tuning, not a user-selected number. Internal timing remains on the existing tick grid. Preview before Apply; timing edits retain existing free adjustment/payment behavior. Show a pending transition clearly after Apply.
+- Stable progression needs a common cycle length. Balanced currently totals 22 seconds; N/S- and E/W-heavy presets total 23 seconds. Equal offsets across unequal cycles will drift. The first UI should explain this and let players manually select matching-cycle presets for their corridor; it must not silently retime adjacent intersections. Different 23-second presets can share a cycle while retaining different green splits. No automatic corridor grouping, optimization or extra cycle-length editor in this slice.
+- Apply offset or preset changes safely: finish the current green, complete its full all-red clearance, then join the new schedule at its next green-start boundary. Remain all-red while waiting to join. An edit must never jump directly from one green axis to the other or shorten clearance. Persist the pending target preset/offset and transition timing so reload resumes the same clearance/join state; pausing freezes it. Replacing a pending edit updates the target without restarting or bypassing an already-running clearance. For an unchanged requested configuration, do nothing. Existing occupancy gates still prevent entry into occupied conflict space.
+- Test an unchanged zero-offset legacy town, positive and wrapped offsets, cycle-boundary edits, paused edits, repeated edits and reload during green/clearance/pending join. Verify identical signal output under different render-frame chunking. At fixed demand, demonstrate a real platoon crossing several intersections and compare stops, journey time and completed visits/returns. Record side-street throughput, longest wait and whether every affected approach continues receiving service; a corridor gain obtained by starving side streets fails acceptance. Preserve actual conflict and opposing-turn safety checks during shared greens.
+
+These are design proposals for a separate follow-on, not implemented coordination or approved tuning. One-way implementation can land independently. Validate the manual controls and resulting flow in desktop/narrow gameplay before adding automatic synchronization or mission criteria.
+
+## Save and performance requirements
+
+Old saves omit directions and remain behaviorally two-way. Validate bounded metadata, adjacency, road existence and duplicate/conflicting records deterministically; retain unrelated valid city data. Malformed new direction data must produce an explicit recovery/reporting path rather than silently reversing a busy network. Save/load must preserve direction and unchanged physical positions, including waiting, visiting, response, scene-parked and passing states. Do not drop an otherwise valid committed journey merely because its untraveled suffix is obsolete; replan it safely.
+
+The path cache currently keys exact road coordinates plus closures/incidents, with separate ordinary/response/planning views and at most 64 BFS trees each. Add the exact direction topology to all relevant cache identities and weighted snapshots. Same-count in-place direction reversals must invalidate queries and static arrow layers. Keep synchronous read scopes mutation-free, bounded trees and caller-owned returned paths. Avoid per-car graph construction, per-frame arrow recreation or persistent caches keyed only by road count. Directions do not justify changing timestep or reroute schedules without separate measurements.
+
+Use the preserved [200-road/50-building town](../performance-review/player-town/README.md), never the active player save. First compare unchanged town behavior and full-state checkpoints against the current baseline with no direction metadata. Then create a separate ring-edit fixture and record routes, real completions and actual desktop/narrow frame intervals (FPS, p95/p99, long frames), plus model timing. Existing desktop software-rendering results remain slow; successful model timings cannot establish target-device smoothness. Report workload, browser/rendering backend and meaningful regressions rather than claiming any numeric budget was user-approved.
+
+## Delegated implementation stages and acceptance
+
+| Stage / owner role | Deliverable | Acceptance before integration |
+| --- | --- | --- |
+| O1 — simulation owner | Shared directed-edge contract, sparse parsing, all routing variants and cache integration | Straight/bend/merge/branch/ring routes; forbidden reverse; asymmetric shop/return; weighted/custom-avoid/planned/response parity; old-town checkpoint equality; in-place reversal invalidation |
+| O2 — simulation owner with independent safety reviewer | Physical admissions, edit guard, save continuation and controls compatibility | No wrong-way boundary crossing; reject occupied edits atomically; preserve positions/intents on empty edits; real police/EMS/fire work and return; blocked ring reopens after reload; no synthetic success from disconnected demand |
+| O3 — UI/art owner | Direction editing, preview, static flow arrows, useful inaccessible-route explanation | Actual player-built ring on desktop/narrow, including corners and every arm; clear Two-way undo; readable direction at zoom; no artwork pack replacement; no map-input obstruction |
+| O4 — lead validation | Integrated production build and isolated benchmark evidence | Existing model suite; ring traffic and each affected household's real destination visit/return; visitor exit; same-demand signal/stops comparisons; pause/reload continuity; desktop/narrow frame pacing and construction interactions |
+
+Keep runtime ownership sequential between O1 and O2 where files overlap; UI can prepare against the agreed command contract. Bus planning may proceed independently and later use this same vehicle graph. Pedestrian walking must use a distinct walking graph: a car one-way sign must not prevent people walking the other way.
+
+Proposed reusable lesson, not yet implementation-verified: direction must be one shared topology rule across route choice, fallback planning and physical admission. A clockwise ring is an especially useful acceptance fixture because simplistic one-heading-per-tile models lose either bends or exits, while undirected reachability hides broken returns.

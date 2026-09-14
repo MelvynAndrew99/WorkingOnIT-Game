@@ -1,0 +1,108 @@
+[
+  {
+    "kind": "unchanged",
+    "edits": [],
+    "fundsBefore": 705255,
+    "fundsAfterControls": 705255,
+    "completed": 85,
+    "newAccidents": 0,
+    "returningHouseholds": 22,
+    "controls": [
+      {
+        "x": 10,
+        "y": 4,
+        "kind": "signal",
+        "preset": "balanced",
+        "paid": 75
+      }
+    ]
+  },
+  {
+    "kind": "stop",
+    "edits": [
+      "All-way stop placed. Cars halt, then take turns.",
+      "All-way stop placed. Cars halt, then take turns.",
+      "All-way stop placed. Cars halt, then take turns.",
+      "All-way stop placed. Cars halt, then take turns."
+    ],
+    "fundsBefore": 705250,
+    "fundsAfterControls": 705150,
+    "completed": 82,
+    "newAccidents": 0,
+    "returningHouseholds": 22,
+    "controls": [
+      {
+        "x": 10,
+        "y": 3,
+        "kind": "stop",
+        "preset": "balanced",
+        "paid": 25
+      },
+      {
+        "x": 11,
+        "y": 4,
+        "kind": "stop",
+        "preset": "balanced",
+        "paid": 25
+      },
+      {
+        "x": 10,
+        "y": 5,
+        "kind": "stop",
+        "preset": "balanced",
+        "paid": 25
+      },
+      {
+        "x": 9,
+        "y": 4,
+        "kind": "stop",
+        "preset": "balanced",
+        "paid": 25
+      }
+    ]
+  },
+  {
+    "kind": "signal",
+    "edits": [
+      "Traffic light placed (balanced timing). Adjoining junction tiles share this control.",
+      "Traffic light placed (balanced timing). Adjoining junction tiles share this control.",
+      "Traffic light placed (balanced timing). Adjoining junction tiles share this control.",
+      "Traffic light placed (balanced timing). Adjoining junction tiles share this control."
+    ],
+    "fundsBefore": 705250,
+    "fundsAfterControls": 704950,
+    "completed": 71,
+    "newAccidents": 0,
+    "returningHouseholds": 20,
+    "controls": [
+      {
+        "x": 10,
+        "y": 3,
+        "kind": "signal",
+        "preset": "balanced",
+        "paid": 75
+      },
+      {
+        "x": 11,
+        "y": 4,
+        "kind": "signal",
+        "preset": "balanced",
+        "paid": 75
+      },
+      {
+        "x": 10,
+        "y": 5,
+        "kind": "signal",
+        "preset": "balanced",
+        "paid": 75
+      },
+      {
+        "x": 9,
+        "y": 4,
+        "kind": "signal",
+        "preset": "balanced",
+        "paid": 75
+      }
+    ]
+  }
+]

@@ -1,0 +1,1226 @@
+[
+  {
+    "name": "CrGpuMain | Scheduler::RunTask",
+    "n": 264,
+    "totalMs": 5746.191999999995,
+    "maxMs": 167.648
+  },
+  {
+    "name": "CrGpuMain | Graphics.Pipeline",
+    "n": 77,
+    "totalMs": 5612.074000000001,
+    "maxMs": 167.421
+  },
+  {
+    "name": "CrGpuMain | SkiaOutputSurfaceImplOnGpu::SwapBuffers",
+    "n": 38,
+    "totalMs": 5611.5470000000005,
+    "maxMs": 167.473
+  },
+  {
+    "name": "CrRendererMain | ProxyMain::BeginMainFrame",
+    "n": 40,
+    "totalMs": 621.1779999999995,
+    "maxMs": 46.184
+  },
+  {
+    "name": "CrRendererMain | FunctionCall",
+    "n": 185,
+    "totalMs": 545.429,
+    "maxMs": 38.796
+  },
+  {
+    "name": "CrRendererMain | FireAnimationFrame",
+    "n": 120,
+    "totalMs": 545.4109999999998,
+    "maxMs": 43.067
+  },
+  {
+    "name": "CrGpuMain | GpuChannel::ExecuteDeferredRequest",
+    "n": 187,
+    "totalMs": 124.75999999999998,
+    "maxMs": 4.112
+  },
+  {
+    "name": "CrGpuMain | CommandBuffer::Flush",
+    "n": 167,
+    "totalMs": 99.02300000000007,
+    "maxMs": 2.018
+  },
+  {
+    "name": "CrGpuMain | CommandBufferStub::OnAsyncFlush",
+    "n": 167,
+    "totalMs": 98.665,
+    "maxMs": 2.016
+  },
+  {
+    "name": "CrGpuMain | CommandBufferService:PutChanged",
+    "n": 167,
+    "totalMs": 97.54600000000003,
+    "maxMs": 2.01
+  },
+  {
+    "name": "CrGpuMain | RendererRasterWorker",
+    "n": 60,
+    "totalMs": 53.671,
+    "maxMs": 2.02
+  },
+  {
+    "name": "CrGpuMain | WebGL",
+    "n": 95,
+    "totalMs": 43.65499999999999,
+    "maxMs": 1.168
+  },
+  {
+    "name": "Compositor | Graphics.Pipeline",
+    "n": 204,
+    "totalMs": 40.13000000000001,
+    "maxMs": 0.787
+  },
+  {
+    "name": "CrGpuMain | RasterDecoderImpl::DoEndRasterCHROMIUM",
+    "n": 54,
+    "totalMs": 37.02199999999999,
+    "maxMs": 1.547
+  },
+  {
+    "name": "CrGpuMain | RasterDecoderImpl::DoEndRasterCHROMIUM::Flush",
+    "n": 54,
+    "totalMs": 36.251,
+    "maxMs": 1.529
+  },
+  {
+    "name": "CrRendererMain | Paint",
+    "n": 84,
+    "totalMs": 32.752,
+    "maxMs": 0.755
+  },
+  {
+    "name": "VizCompositorThread | Graphics.Pipeline",
+    "n": 318,
+    "totalMs": 29.35099999999998,
+    "maxMs": 0.429
+  },
+  {
+    "name": "ThreadPoolForegroundWorker | V8.GC_SCAVENGER_BACKGROUND_SCAVENGE_PARALLEL",
+    "n": 129,
+    "totalMs": 26.003000000000014,
+    "maxMs": 0.472
+  },
+  {
+    "name": "Compositor | ProxyImpl::ScheduledActionDraw",
+    "n": 40,
+    "totalMs": 20.092000000000002,
+    "maxMs": 0.802
+  },
+  {
+    "name": "Compositor | MainFrame.Draw",
+    "n": 40,
+    "totalMs": 19.987000000000005,
+    "maxMs": 0.798
+  },
+  {
+    "name": "CrRendererMain | MinorGC",
+    "n": 18,
+    "totalMs": 18.476,
+    "maxMs": 1.405
+  },
+  {
+    "name": "CrRendererMain | V8.GC_SCAVENGER",
+    "n": 18,
+    "totalMs": 17.024,
+    "maxMs": 1.347
+  },
+  {
+    "name": "CrRendererMain | V8.GC_SCAVENGER_SCAVENGE",
+    "n": 18,
+    "totalMs": 16.558,
+    "maxMs": 1.318
+  },
+  {
+    "name": "Compositor | ProxyImpl::ReadyToCommit",
+    "n": 40,
+    "totalMs": 16.2,
+    "maxMs": 0.606
+  },
+  {
+    "name": "CrGpuMain | RasterDecoderImpl::DoRasterCHROMIUM",
+    "n": 54,
+    "totalMs": 15.699,
+    "maxMs": 0.647
+  },
+  {
+    "name": "CrGpuMain | RasterDecoderImpl::DoRasterCHROMIUM::Deserializing",
+    "n": 54,
+    "totalMs": 15.350000000000001,
+    "maxMs": 0.632
+  },
+  {
+    "name": "CrGpuMain | GLContextEGL::MakeCurrent",
+    "n": 124,
+    "totalMs": 12.331999999999995,
+    "maxMs": 0.963
+  },
+  {
+    "name": "VizCompositorThread | DisplayScheduler::OnBeginFrameDeadline",
+    "n": 81,
+    "totalMs": 11.907999999999992,
+    "maxMs": 0.441
+  },
+  {
+    "name": "VizCompositorThread | DisplayScheduler::DrawAndSwap",
+    "n": 39,
+    "totalMs": 11.302999999999997,
+    "maxMs": 0.437
+  },
+  {
+    "name": "VizCompositorThread | Display::DrawAndSwap",
+    "n": 39,
+    "totalMs": 11.187,
+    "maxMs": 0.432
+  },
+  {
+    "name": "CrRendererMain | Layout",
+    "n": 23,
+    "totalMs": 10.514000000000001,
+    "maxMs": 1.262
+  },
+  {
+    "name": "VizCompositorThread | DelayBasedBeginFrameSource::OnTimerTick",
+    "n": 81,
+    "totalMs": 10.327,
+    "maxMs": 0.316
+  },
+  {
+    "name": "Compositor | LayerTreeHostImpl::CommitComplete",
+    "n": 40,
+    "totalMs": 10.066000000000004,
+    "maxMs": 0.431
+  },
+  {
+    "name": "CrRendererMain | V8.GC_SCAVENGER_SCAVENGE_PARALLEL_PHASE",
+    "n": 18,
+    "totalMs": 10.065,
+    "maxMs": 0.713
+  },
+  {
+    "name": "Compositor | GpuChannelHost::VerifyFlush",
+    "n": 38,
+    "totalMs": 10.023000000000001,
+    "maxMs": 0.424
+  },
+  {
+    "name": "CrGpuMain | SharedImageStub::OnCreateSharedImage",
+    "n": 3,
+    "totalMs": 9.902000000000001,
+    "maxMs": 4.103
+  },
+  {
+    "name": "Compositor | auto cc::LayerTreeHostImpl::PrepareTiles()::(anonymous class)::operator()()::(anonymous class)::operator()(uint32_t) const",
+    "n": 72,
+    "totalMs": 9.891000000000005,
+    "maxMs": 0.344
+  },
+  {
+    "name": "Compositor | auto cc::TileManager::PrepareTiles(const GlobalStateThatImpactsTilePriority &)::(anonymous class)::operator()()::(anonymous class)::operator()(uint32_t) const",
+    "n": 72,
+    "totalMs": 9.629000000000001,
+    "maxMs": 0.341
+  },
+  {
+    "name": "Compositor | TileManager::PrepareTiles",
+    "n": 72,
+    "totalMs": 9.307,
+    "maxMs": 0.335
+  },
+  {
+    "name": "ThreadPoolForegroundWorker | RasterizerTaskImpl::RunOnWorkerThread",
+    "n": 44,
+    "totalMs": 8.957,
+    "maxMs": 0.688
+  },
+  {
+    "name": "Compositor | auto cc::Scheduler::FinishImplFrame()::(anonymous class)::operator()()::(anonymous class)::operator()(uint32_t) const",
+    "n": 82,
+    "totalMs": 8.850999999999994,
+    "maxMs": 0.485
+  },
+  {
+    "name": "ThreadPoolForegroundWorker | RasterTask",
+    "n": 44,
+    "totalMs": 8.515000000000002,
+    "maxMs": 0.676
+  },
+  {
+    "name": "Compositor | DidNotSubmitInLastFrame",
+    "n": 42,
+    "totalMs": 8.396,
+    "maxMs": 0.466
+  },
+  {
+    "name": "ThreadPoolForegroundWorker | GpuRasterBuffer::Playback",
+    "n": 44,
+    "totalMs": 8.202000000000004,
+    "maxMs": 0.67
+  },
+  {
+    "name": "Compositor | ExternalBeginFrameSource::OnBeginFrame",
+    "n": 82,
+    "totalMs": 7.984000000000001,
+    "maxMs": 0.39
+  },
+  {
+    "name": "Compositor | auto cc::Scheduler::SendDidNotProduceFrame(const viz::BeginFrameArgs &, FrameSkippedReason)::(anonymous class)::operator()()::(anonymous class)::operator()(uint32_t) const",
+    "n": 42,
+    "totalMs": 7.979,
+    "maxMs": 0.319
+  },
+  {
+    "name": "CrRendererMain | PrePaint",
+    "n": 63,
+    "totalMs": 7.972999999999998,
+    "maxMs": 0.369
+  },
+  {
+    "name": "CrRendererMain | UpdateLayoutTree",
+    "n": 40,
+    "totalMs": 7.858,
+    "maxMs": 0.886
+  },
+  {
+    "name": "Compositor | LayerTreeHostImpl::DidNotProduceFrame",
+    "n": 42,
+    "totalMs": 7.657000000000001,
+    "maxMs": 0.295
+  },
+  {
+    "name": "ThreadPoolForegroundWorker | RasterImplementation::RasterCHROMIUM",
+    "n": 44,
+    "totalMs": 7.439,
+    "maxMs": 0.649
+  },
+  {
+    "name": "CrRendererMain | Layerize",
+    "n": 40,
+    "totalMs": 7.007000000000001,
+    "maxMs": 0.396
+  },
+  {
+    "name": "Compositor | Scheduler::BeginFrame",
+    "n": 82,
+    "totalMs": 6.781,
+    "maxMs": 0.3
+  },
+  {
+    "name": "Compositor | TileManager::ScheduleTasks",
+    "n": 72,
+    "totalMs": 6.289000000000001,
+    "maxMs": 0.295
+  },
+  {
+    "name": "CrGpuMain | SkiaOutputSurfaceImplOnGpu::FinishPaintCurrentFrame",
+    "n": 39,
+    "totalMs": 6.132999999999998,
+    "maxMs": 0.326
+  },
+  {
+    "name": "Compositor | TileManager::CheckForCompletedTasksAndIssueSignals",
+    "n": 112,
+    "totalMs": 5.655999999999996,
+    "maxMs": 0.187
+  },
+  {
+    "name": "Compositor | Scheduler::BeginImplFrame",
+    "n": 82,
+    "totalMs": 5.596999999999999,
+    "maxMs": 0.242
+  },
+  {
+    "name": "VizCompositorThread | DirectRenderer::DrawFrame",
+    "n": 39,
+    "totalMs": 4.861,
+    "maxMs": 0.208
+  },
+  {
+    "name": "Compositor | ProxyImpl::Commit",
+    "n": 40,
+    "totalMs": 4.747,
+    "maxMs": 0.244
+  },
+  {
+    "name": "CrRendererMain | V8.GC_SCAVENGER_SCAVENGE_PARALLEL",
+    "n": 17,
+    "totalMs": 4.7330000000000005,
+    "maxMs": 0.557
+  },
+  {
+    "name": "Compositor | TileManager::CheckPendingGpuWorkAndIssueSignals",
+    "n": 152,
+    "totalMs": 4.562999999999993,
+    "maxMs": 0.165
+  },
+  {
+    "name": "VizCompositorThread | DirectRenderer::DrawRenderPass",
+    "n": 39,
+    "totalMs": 3.8130000000000006,
+    "maxMs": 0.185
+  },
+  {
+    "name": "CrRendererMain | CommandBufferHelper::Flush",
+    "n": 57,
+    "totalMs": 3.778999999999999,
+    "maxMs": 0.158
+  },
+  {
+    "name": "CrRendererMain | EventDispatch",
+    "n": 163,
+    "totalMs": 3.615999999999991,
+    "maxMs": 0.246
+  },
+  {
+    "name": "Compositor | LayerTreeHostImpl::ActivateSyncTree",
+    "n": 40,
+    "totalMs": 3.396000000000001,
+    "maxMs": 0.134
+  },
+  {
+    "name": "Compositor | ProxyImpl::ScheduledActionPrepareTiles",
+    "n": 32,
+    "totalMs": 3.243000000000001,
+    "maxMs": 0.349
+  },
+  {
+    "name": "CrRendererMain | CommandBufferProxyImpl::Flush",
+    "n": 57,
+    "totalMs": 3.1629999999999985,
+    "maxMs": 0.149
+  },
+  {
+    "name": "Compositor | LayerTreeHostImpl::FinishCommit",
+    "n": 40,
+    "totalMs": 2.7430000000000008,
+    "maxMs": 0.124
+  },
+  {
+    "name": "Chrome_ChildIOThread | GpuChannelMessageFilter::FlushDeferredRequests",
+    "n": 140,
+    "totalMs": 2.7229999999999976,
+    "maxMs": 0.102
+  },
+  {
+    "name": "Compositor | LayerTreeImpl::PullProperties",
+    "n": 40,
+    "totalMs": 2.5260000000000002,
+    "maxMs": 0.119
+  },
+  {
+    "name": "Compositor | LayerTreeHostImpl::PrepareToDraw",
+    "n": 40,
+    "totalMs": 2.4600000000000013,
+    "maxMs": 0.132
+  },
+  {
+    "name": "CrRendererMain | LocalFrameView::ScheduleAnimation",
+    "n": 227,
+    "totalMs": 2.4559999999999937,
+    "maxMs": 0.291
+  },
+  {
+    "name": "VizCompositorThread | DisplayScheduler::BeginFrame",
+    "n": 81,
+    "totalMs": 2.382999999999998,
+    "maxMs": 0.288
+  },
+  {
+    "name": "ThreadPoolForegroundWorker | TaskSetFinishedTaskImpl::RunOnWorkerThread",
+    "n": 80,
+    "totalMs": 2.377999999999999,
+    "maxMs": 0.077
+  },
+  {
+    "name": "Compositor | ProxyImpl::DidReceiveCompositorFrameAckOnImplThread",
+    "n": 40,
+    "totalMs": 2.139,
+    "maxMs": 0.18
+  },
+  {
+    "name": "Compositor | LayerTreeImpl::UpdateDrawProperties",
+    "n": 40,
+    "totalMs": 2.124,
+    "maxMs": 0.255
+  },
+  {
+    "name": "CrRendererMain | LayerTreeHost::DoUpdateLayers",
+    "n": 40,
+    "totalMs": 2.1079999999999997,
+    "maxMs": 0.154
+  },
+  {
+    "name": "CrGpuMain | RendererMainThread",
+    "n": 12,
+    "totalMs": 2.103,
+    "maxMs": 0.268
+  },
+  {
+    "name": "ThreadPoolForegroundWorker | V8.GC_BACKGROUND_SAFEPOINT",
+    "n": 2,
+    "totalMs": 2.0330000000000004,
+    "maxMs": 1.118
+  },
+  {
+    "name": "Compositor | TileManager::AssignGpuMemoryToTiles",
+    "n": 72,
+    "totalMs": 1.8669999999999995,
+    "maxMs": 0.06
+  },
+  {
+    "name": "CrRendererMain | TimerFire",
+    "n": 4,
+    "totalMs": 1.8,
+    "maxMs": 0.848
+  },
+  {
+    "name": "CrGpuMain | SharedImageStub::OnDestroySharedImage",
+    "n": 17,
+    "totalMs": 1.779,
+    "maxMs": 0.58
+  },
+  {
+    "name": "CrRendererMain | HitTest",
+    "n": 35,
+    "totalMs": 1.727,
+    "maxMs": 0.214
+  },
+  {
+    "name": "Compositor | ProxyImpl::ScheduledActionSendBeginMainFrame",
+    "n": 40,
+    "totalMs": 1.5900000000000003,
+    "maxMs": 0.118
+  },
+  {
+    "name": "Compositor | auto viz::ClientResourceProvider::ReceiveReturnsFromParent(std::vector<ReturnedResource>)::(anonymous class)::operator()()::(anonymous class)::operator()(uint32_t) const",
+    "n": 80,
+    "totalMs": 1.5849999999999977,
+    "maxMs": 0.729
+  },
+  {
+    "name": "Compositor | TreeSynchronizer::PushLayerPropertiesTo.Active",
+    "n": 40,
+    "totalMs": 1.4640000000000002,
+    "maxMs": 0.07
+  },
+  {
+    "name": "Compositor | TileTaskManagerImpl::ScheduleTasks",
+    "n": 72,
+    "totalMs": 1.454,
+    "maxMs": 0.063
+  },
+  {
+    "name": "CrRendererMain | ProxyMain::BeginMainFrame::commit",
+    "n": 40,
+    "totalMs": 1.45,
+    "maxMs": 0.138
+  },
+  {
+    "name": "CrRendererMain | V8.GC_SCAVENGER_SCAVENGE_ROOTS",
+    "n": 18,
+    "totalMs": 1.218,
+    "maxMs": 0.388
+  },
+  {
+    "name": "VizCompositorThread | SkiaRenderer::SwapBuffers",
+    "n": 39,
+    "totalMs": 1.2110000000000003,
+    "maxMs": 0.067
+  },
+  {
+    "name": "CrRendererMain | V8.GC_SCAVENGER_SCAVENGE_FINALIZE",
+    "n": 18,
+    "totalMs": 1.184,
+    "maxMs": 0.129
+  },
+  {
+    "name": "VizCompositorThread | Surface::CommitFrame",
+    "n": 39,
+    "totalMs": 1.1430000000000007,
+    "maxMs": 0.144
+  },
+  {
+    "name": "VizCompositorThread | DisplayScheduler::ScheduleBeginFrameDeadline",
+    "n": 164,
+    "totalMs": 1.1119999999999999,
+    "maxMs": 0.108
+  },
+  {
+    "name": "Compositor | TileManager::PrepareToDraw",
+    "n": 40,
+    "totalMs": 1.0320000000000005,
+    "maxMs": 0.061
+  },
+  {
+    "name": "Compositor | LayerTreeImpl::UpdateDrawProperties::CalculateDrawProperties",
+    "n": 40,
+    "totalMs": 1.0080000000000005,
+    "maxMs": 0.076
+  },
+  {
+    "name": "Compositor | auto cc::ResourcePool::OnResourceReleased(size_t, const gpu::SyncToken &, bool)::(anonymous class)::operator()()::(anonymous class)::operator()(uint32_t) const",
+    "n": 44,
+    "totalMs": 1.006,
+    "maxMs": 0.718
+  },
+  {
+    "name": "CrRendererMain | V8.GC_SCAVENGER_SCAVENGE_WEAK_GLOBAL_HANDLES_IDENTIFY",
+    "n": 18,
+    "totalMs": 0.9770000000000003,
+    "maxMs": 0.098
+  },
+  {
+    "name": "CrGpuMain | RasterDecoderImpl::DoBeginRasterCHROMIUM",
+    "n": 54,
+    "totalMs": 0.9590000000000005,
+    "maxMs": 0.07
+  },
+  {
+    "name": "Compositor | TileTaskManagerImpl::CheckForCompletedTasks",
+    "n": 152,
+    "totalMs": 0.8940000000000006,
+    "maxMs": 0.027
+  },
+  {
+    "name": "VizCompositorThread | Surface::ActivateFrame",
+    "n": 39,
+    "totalMs": 0.8840000000000005,
+    "maxMs": 0.136
+  },
+  {
+    "name": "CrRendererMain | V8.GC_SCAVENGER_SCAVENGE_WEAK_GLOBAL_HANDLES_PROCESS",
+    "n": 18,
+    "totalMs": 0.8610000000000001,
+    "maxMs": 0.124
+  },
+  {
+    "name": "Compositor | Scheduler::ScheduleBeginImplFrameDeadline",
+    "n": 130,
+    "totalMs": 0.8600000000000007,
+    "maxMs": 0.023
+  },
+  {
+    "name": "VizCompositorThread | SkiaOutputSurfaceImpl::FlushGpuTasks",
+    "n": 78,
+    "totalMs": 0.8450000000000004,
+    "maxMs": 0.042
+  },
+  {
+    "name": "Compositor | LayerTreeHostImpl::BeginCommit",
+    "n": 40,
+    "totalMs": 0.8320000000000005,
+    "maxMs": 0.063
+  },
+  {
+    "name": "Compositor | LayerTreeHostImpl::CalculateRenderPasses",
+    "n": 40,
+    "totalMs": 0.8040000000000004,
+    "maxMs": 0.064
+  },
+  {
+    "name": "VizCompositorThread | auto viz::SkiaRenderer::FlushOutputSurface()::(anonymous class)::operator()()::(anonymous class)::operator()(uint32_t) const",
+    "n": 39,
+    "totalMs": 0.7940000000000004,
+    "maxMs": 0.055
+  },
+  {
+    "name": "Compositor | LayerTreeImpl::UpdateDrawProperties::Occlusion",
+    "n": 40,
+    "totalMs": 0.7690000000000005,
+    "maxMs": 0.036
+  },
+  {
+    "name": "ThreadPoolForegroundWorker | V8.GC_BACKGROUND_UNPARK",
+    "n": 1,
+    "totalMs": 0.731,
+    "maxMs": 0.731
+  },
+  {
+    "name": "Compositor | Scheduler::OnBeginImplFrameDeadline",
+    "n": 82,
+    "totalMs": 0.7220000000000002,
+    "maxMs": 0.069
+  },
+  {
+    "name": "Compositor | TileManager::DidFinishRunningTileTasksRequiredForActivation",
+    "n": 72,
+    "totalMs": 0.6720000000000004,
+    "maxMs": 0.035
+  },
+  {
+    "name": "Compositor | TreeSynchronizer::PushLayerPropertiesTo.Main",
+    "n": 40,
+    "totalMs": 0.6570000000000004,
+    "maxMs": 0.032
+  },
+  {
+    "name": "Compositor | RasterSource::PerformSolidColorAnalysis",
+    "n": 44,
+    "totalMs": 0.6560000000000004,
+    "maxMs": 0.025
+  },
+  {
+    "name": "CrGpuMain | SyncToken::Release",
+    "n": 88,
+    "totalMs": 0.5700000000000002,
+    "maxMs": 0.075
+  },
+  {
+    "name": "CrRendererMain | RasterImplementation::RasterCHROMIUM",
+    "n": 12,
+    "totalMs": 0.556,
+    "maxMs": 0.144
+  },
+  {
+    "name": "CrGpuMain | SkiaOutputSurfaceImplOnGpu::BeginAccessImages",
+    "n": 39,
+    "totalMs": 0.5220000000000004,
+    "maxMs": 0.031
+  },
+  {
+    "name": "Compositor | TileManager::DidFinishRunningTileTasksRequiredForDraw",
+    "n": 72,
+    "totalMs": 0.5220000000000002,
+    "maxMs": 0.044
+  },
+  {
+    "name": "CrRendererMain | V8.GC_SCAVENGER_SWEEP_ARRAY_BUFFERS",
+    "n": 18,
+    "totalMs": 0.496,
+    "maxMs": 0.043
+  },
+  {
+    "name": "Compositor | CommandBufferHelper::Flush",
+    "n": 72,
+    "totalMs": 0.49300000000000027,
+    "maxMs": 0.04
+  },
+  {
+    "name": "CrRendererMain | CommandBufferProxyImpl::OrderingBarrier",
+    "n": 66,
+    "totalMs": 0.46700000000000025,
+    "maxMs": 0.137
+  },
+  {
+    "name": "CrRendererMain | V8.GC_SCAVENGER_FREE_REMEMBERED_SET",
+    "n": 18,
+    "totalMs": 0.42700000000000005,
+    "maxMs": 0.129
+  },
+  {
+    "name": "ThreadPoolForegroundWorker | V8.GC_BACKGROUND_YOUNG_ARRAY_BUFFER_SWEEP",
+    "n": 18,
+    "totalMs": 0.42700000000000005,
+    "maxMs": 0.068
+  },
+  {
+    "name": "Compositor | auto cc::(anonymous namespace)::InsertNodeForTask(TaskGraph *, TileTask *, uint16_t, uint16_t, size_t, bool)::(anonymous class)::operator()()::(anonymous class)::operator()(uint32_t) const",
+    "n": 258,
+    "totalMs": 0.4240000000000003,
+    "maxMs": 0.013
+  },
+  {
+    "name": "Chrome_ChildIOThread | Scheduler::ScheduleTask",
+    "n": 202,
+    "totalMs": 0.4110000000000003,
+    "maxMs": 0.02
+  },
+  {
+    "name": "Compositor | TileManager::IsReadyToDraw",
+    "n": 40,
+    "totalMs": 0.38900000000000023,
+    "maxMs": 0.034
+  },
+  {
+    "name": "CrRendererMain | CommandBuffer::OrderingBarrier",
+    "n": 191,
+    "totalMs": 0.3800000000000003,
+    "maxMs": 0.015
+  },
+  {
+    "name": "CrRendererMain | V8.GC_SCAVENGER_SCAVENGE_COLLECT_OLD_TO_NEW_PAGES",
+    "n": 18,
+    "totalMs": 0.35400000000000004,
+    "maxMs": 0.029
+  },
+  {
+    "name": "CrGpuMain | Scheduler::FinishTask",
+    "n": 230,
+    "totalMs": 0.35000000000000026,
+    "maxMs": 0.047
+  },
+  {
+    "name": "Compositor | draw_property_utils::ComputeDrawPropertiesOfVisibleLayers",
+    "n": 40,
+    "totalMs": 0.3500000000000002,
+    "maxMs": 0.059
+  },
+  {
+    "name": "Compositor | LayerTreeImpl::UpdateTiles",
+    "n": 40,
+    "totalMs": 0.3410000000000002,
+    "maxMs": 0.013
+  },
+  {
+    "name": "Compositor | LayerTreeImpl::PushPropertyTreesTo",
+    "n": 40,
+    "totalMs": 0.3350000000000002,
+    "maxMs": 0.017
+  },
+  {
+    "name": "Compositor | Scheduler::NotifyReadyToCommit",
+    "n": 40,
+    "totalMs": 0.31500000000000017,
+    "maxMs": 0.013
+  },
+  {
+    "name": "Compositor | AnimationHost::TickAnimations",
+    "n": 122,
+    "totalMs": 0.2930000000000002,
+    "maxMs": 0.013
+  },
+  {
+    "name": "Compositor | LayerTreeHostImpl::BuildHitTestData",
+    "n": 40,
+    "totalMs": 0.27400000000000013,
+    "maxMs": 0.069
+  },
+  {
+    "name": "Compositor | ProxyImpl::SetNeedsCommitOnImplThread",
+    "n": 40,
+    "totalMs": 0.27300000000000013,
+    "maxMs": 0.025
+  },
+  {
+    "name": "Compositor | TileManager::IsReadyToActivate",
+    "n": 40,
+    "totalMs": 0.2730000000000001,
+    "maxMs": 0.01
+  },
+  {
+    "name": "Compositor | DiscardableImageMap::Generate",
+    "n": 40,
+    "totalMs": 0.2510000000000001,
+    "maxMs": 0.009
+  },
+  {
+    "name": "Compositor | LayerTreeImpl::InvalidateRegionForImages",
+    "n": 40,
+    "totalMs": 0.2470000000000001,
+    "maxMs": 0.067
+  },
+  {
+    "name": "Compositor | CalculateRenderSurfaceLayerList",
+    "n": 40,
+    "totalMs": 0.24600000000000016,
+    "maxMs": 0.009
+  },
+  {
+    "name": "ThreadPoolForegroundWorker | CommandBufferProxyImpl::OrderingBarrier",
+    "n": 44,
+    "totalMs": 0.24000000000000016,
+    "maxMs": 0.008
+  },
+  {
+    "name": "CrRendererMain | IntersectionObserverController::computeIntersections",
+    "n": 80,
+    "totalMs": 0.23300000000000015,
+    "maxMs": 0.041
+  },
+  {
+    "name": "CrRendererMain | LayerTreeHost::ApplyCompositorChanges",
+    "n": 40,
+    "totalMs": 0.23000000000000012,
+    "maxMs": 0.016
+  },
+  {
+    "name": "VizCompositorThread | DirectRenderer::DrawFrame ProcessForOverlays",
+    "n": 39,
+    "totalMs": 0.22900000000000012,
+    "maxMs": 0.012
+  },
+  {
+    "name": "Compositor | CommandBuffer::OrderingBarrier",
+    "n": 82,
+    "totalMs": 0.22600000000000015,
+    "maxMs": 0.01
+  },
+  {
+    "name": "CrRendererMain | WidgetBase::WillBeginMainFrame",
+    "n": 40,
+    "totalMs": 0.2250000000000001,
+    "maxMs": 0.009
+  },
+  {
+    "name": "Compositor | LayerTreeImpl::PushPropertiesTo",
+    "n": 40,
+    "totalMs": 0.2230000000000001,
+    "maxMs": 0.02
+  },
+  {
+    "name": "Compositor | LayerTreeHostImpl::NotifyTileStateChanged",
+    "n": 88,
+    "totalMs": 0.2210000000000001,
+    "maxMs": 0.019
+  },
+  {
+    "name": "CrRendererMain | HandlePostMessage",
+    "n": 1,
+    "totalMs": 0.208,
+    "maxMs": 0.208
+  },
+  {
+    "name": "CrRendererMain | V8.GC_HEAP_EXTERNAL_PROLOGUE",
+    "n": 18,
+    "totalMs": 0.20700000000000005,
+    "maxMs": 0.036
+  },
+  {
+    "name": "Compositor | ProxyImpl::OnCanDrawStateChanged",
+    "n": 80,
+    "totalMs": 0.2030000000000001,
+    "maxMs": 0.019
+  },
+  {
+    "name": "CrRendererMain | V8.GC_TIME_TO_SAFEPOINT",
+    "n": 18,
+    "totalMs": 0.194,
+    "maxMs": 0.089
+  },
+  {
+    "name": "VizCompositorThread | SendBeginFrameDecision",
+    "n": 81,
+    "totalMs": 0.19300000000000012,
+    "maxMs": 0.036
+  },
+  {
+    "name": "CrRendererMain | WidgetBase::DidCommitAndDrawCompositorFrame",
+    "n": 40,
+    "totalMs": 0.19000000000000006,
+    "maxMs": 0.049
+  },
+  {
+    "name": "Compositor | LayerTreeHost::AnimationHost::PushProperties",
+    "n": 40,
+    "totalMs": 0.1860000000000001,
+    "maxMs": 0.007
+  },
+  {
+    "name": "Compositor | TaskSetFinishedTaskImpl::RunOnWorkerThread",
+    "n": 62,
+    "totalMs": 0.18600000000000008,
+    "maxMs": 0.083
+  },
+  {
+    "name": "CrGpuMain | CommandBuffer::FlushComplete",
+    "n": 141,
+    "totalMs": 0.18500000000000014,
+    "maxMs": 0.007
+  },
+  {
+    "name": "CrRendererMain | LayerTreeHost::WaitForCommitCompletion",
+    "n": 40,
+    "totalMs": 0.18500000000000008,
+    "maxMs": 0.012
+  },
+  {
+    "name": "Compositor | CommandBufferProxyImpl::Flush",
+    "n": 72,
+    "totalMs": 0.1790000000000001,
+    "maxMs": 0.036
+  },
+  {
+    "name": "CrRendererMain | V8.GC_SCAVENGER_SCAVENGE_RESTORE_AND_QUARANTINE_PINNED",
+    "n": 18,
+    "totalMs": 0.17500000000000004,
+    "maxMs": 0.017
+  },
+  {
+    "name": "CrRendererMain | V8.GC_SCAVENGER_TRACED_HANDLES_COMPUTE_WEAKNESS_PARALLEL",
+    "n": 18,
+    "totalMs": 0.16500000000000004,
+    "maxMs": 0.027
+  },
+  {
+    "name": "Compositor | TileManager::DidFinishRunningAllTileTasks",
+    "n": 72,
+    "totalMs": 0.1500000000000001,
+    "maxMs": 0.013
+  },
+  {
+    "name": "Compositor | InputHandler::ClearCurrentlyScrollingNode",
+    "n": 40,
+    "totalMs": 0.15000000000000008,
+    "maxMs": 0.012
+  },
+  {
+    "name": "VizCompositorThread | Using new deadline",
+    "n": 81,
+    "totalMs": 0.1480000000000001,
+    "maxMs": 0.003
+  },
+  {
+    "name": "Compositor | TextureLayer::PushPropertiesTo",
+    "n": 40,
+    "totalMs": 0.14300000000000007,
+    "maxMs": 0.017
+  },
+  {
+    "name": "CrGpuMain | Scheduler::SequenceUnblocked",
+    "n": 42,
+    "totalMs": 0.14000000000000004,
+    "maxMs": 0.067
+  },
+  {
+    "name": "ThreadPoolForegroundWorker | DidFinishRunningAllTilesTask::RunOnWorkerThread",
+    "n": 40,
+    "totalMs": 0.13800000000000007,
+    "maxMs": 0.013
+  },
+  {
+    "name": "Compositor | Scheduler::NotifyBeginMainFrameStarted",
+    "n": 40,
+    "totalMs": 0.13500000000000006,
+    "maxMs": 0.006
+  },
+  {
+    "name": "CrGpuMain | SkiaOutputSurfaceImplOnGpu::EndAccessImages",
+    "n": 39,
+    "totalMs": 0.1310000000000001,
+    "maxMs": 0.014
+  },
+  {
+    "name": "ThreadPoolForegroundWorker | V8.GC_MINOR_MS_BACKGROUND_SWEEPING",
+    "n": 18,
+    "totalMs": 0.12400000000000004,
+    "maxMs": 0.009
+  },
+  {
+    "name": "CrRendererMain | V8.GC_SCAVENGER_TRACED_HANDLES_RESET_PARALLEL",
+    "n": 18,
+    "totalMs": 0.11200000000000002,
+    "maxMs": 0.01
+  },
+  {
+    "name": "VizCompositorThread | Scheduler::ScheduleTask",
+    "n": 77,
+    "totalMs": 0.10700000000000007,
+    "maxMs": 0.008
+  },
+  {
+    "name": "Compositor | ImageAnimationController::AnimateImagesForSyncTree",
+    "n": 40,
+    "totalMs": 0.10200000000000005,
+    "maxMs": 0.015
+  },
+  {
+    "name": "Compositor | auto cc::SchedulerStateMachine::SetNeedsBeginMainFrame(bool)::(anonymous class)::operator()()::(anonymous class)::operator()(uint32_t) const",
+    "n": 40,
+    "totalMs": 0.10200000000000004,
+    "maxMs": 0.021
+  },
+  {
+    "name": "VizCompositorThread | SyncToken::Wait",
+    "n": 77,
+    "totalMs": 0.09900000000000007,
+    "maxMs": 0.002
+  },
+  {
+    "name": "Compositor | draw_property_utils::FindLayersThatNeedUpdates",
+    "n": 40,
+    "totalMs": 0.09800000000000005,
+    "maxMs": 0.011
+  },
+  {
+    "name": "Compositor | SchedulerStateMachine::SetNeedsPrepareTiles",
+    "n": 70,
+    "totalMs": 0.09700000000000007,
+    "maxMs": 0.002
+  },
+  {
+    "name": "CrRendererMain | RecordingSource::FinishDisplayItemListUpdate",
+    "n": 40,
+    "totalMs": 0.09400000000000004,
+    "maxMs": 0.01
+  },
+  {
+    "name": "Compositor | ScrollTree::CollectScrollDeltas",
+    "n": 40,
+    "totalMs": 0.09200000000000005,
+    "maxMs": 0.004
+  },
+  {
+    "name": "ThreadPoolForegroundWorker | CommandBuffer::OrderingBarrier",
+    "n": 45,
+    "totalMs": 0.09200000000000004,
+    "maxMs": 0.009
+  },
+  {
+    "name": "Compositor | GpuChannel::Flush",
+    "n": 80,
+    "totalMs": 0.09000000000000007,
+    "maxMs": 0.003
+  },
+  {
+    "name": "CrRendererMain | ScrollTree::SetScrollOffset",
+    "n": 49,
+    "totalMs": 0.09000000000000005,
+    "maxMs": 0.008
+  },
+  {
+    "name": "Compositor | ProxyImpl::DidActivateSyncTreeOnImplThread",
+    "n": 40,
+    "totalMs": 0.08700000000000004,
+    "maxMs": 0.016
+  },
+  {
+    "name": "CrRendererMain | V8.GC_HEAP_EPILOGUE",
+    "n": 18,
+    "totalMs": 0.08400000000000003,
+    "maxMs": 0.007
+  },
+  {
+    "name": "CrRendererMain | GpuChannel::Flush",
+    "n": 63,
+    "totalMs": 0.08200000000000006,
+    "maxMs": 0.003
+  },
+  {
+    "name": "Compositor | ProcessUIResourceRequestQueue",
+    "n": 40,
+    "totalMs": 0.08200000000000005,
+    "maxMs": 0.01
+  },
+  {
+    "name": "Compositor | DidFinishRunningAllTilesTask::RunOnWorkerThread",
+    "n": 32,
+    "totalMs": 0.07900000000000004,
+    "maxMs": 0.012
+  },
+  {
+    "name": "VizCompositorThread | SkiaRenderer::FinishDrawingFrame",
+    "n": 39,
+    "totalMs": 0.07800000000000003,
+    "maxMs": 0.014
+  },
+  {
+    "name": "CrRendererMain | AnimationHost::TickAnimations",
+    "n": 40,
+    "totalMs": 0.07500000000000004,
+    "maxMs": 0.005
+  },
+  {
+    "name": "VizCompositorThread | SurfaceManager::GarbageCollectSurfaces",
+    "n": 39,
+    "totalMs": 0.07500000000000004,
+    "maxMs": 0.003
+  },
+  {
+    "name": "CrRendererMain | V8.GC_HEAP_EPILOGUE_SAFEPOINT",
+    "n": 18,
+    "totalMs": 0.07200000000000001,
+    "maxMs": 0.006
+  },
+  {
+    "name": "CrRendererMain | V8.GC_SCAVENGER_COMPLETE_SWEEP_ARRAY_BUFFERS",
+    "n": 7,
+    "totalMs": 0.072,
+    "maxMs": 0.014
+  },
+  {
+    "name": "Compositor | ImageAnimationController::WillActivate",
+    "n": 38,
+    "totalMs": 0.054000000000000034,
+    "maxMs": 0.003
+  },
+  {
+    "name": "VizCompositorThread | SkiaRenderer::BeginDrawingFrame",
+    "n": 36,
+    "totalMs": 0.05200000000000003,
+    "maxMs": 0.012
+  },
+  {
+    "name": "CrRendererMain | V8.GC_SCAVENGER_RESIZE_NEW_SPACE",
+    "n": 18,
+    "totalMs": 0.051000000000000004,
+    "maxMs": 0.005
+  },
+  {
+    "name": "CrRendererMain | V8.GC_HEAP_EXTERNAL_SECOND_PASS_CALLBACKS",
+    "n": 4,
+    "totalMs": 0.051000000000000004,
+    "maxMs": 0.023
+  },
+  {
+    "name": "CrRendererMain | V8.GC_HEAP_PROLOGUE",
+    "n": 18,
+    "totalMs": 0.05000000000000002,
+    "maxMs": 0.005
+  },
+  {
+    "name": "CrRendererMain | V8.GC_HEAP_EXTERNAL_EPILOGUE",
+    "n": 18,
+    "totalMs": 0.05000000000000002,
+    "maxMs": 0.004
+  },
+  {
+    "name": "Compositor | DrawLayers.FrameViewerTracing",
+    "n": 36,
+    "totalMs": 0.04900000000000003,
+    "maxMs": 0.008
+  },
+  {
+    "name": "CrGpuMain | Scheduler::ContinueTask",
+    "n": 24,
+    "totalMs": 0.04600000000000002,
+    "maxMs": 0.005
+  },
+  {
+    "name": "ThreadPoolForegroundWorker | ArrayBufferSweeper Finished",
+    "n": 18,
+    "totalMs": 0.039000000000000014,
+    "maxMs": 0.005
+  },
+  {
+    "name": "CrRendererMain | ClearWeaknessProcessor start",
+    "n": 18,
+    "totalMs": 0.03300000000000001,
+    "maxMs": 0.003
+  },
+  {
+    "name": "Chrome_ChildIOThread | SyncToken::Wait",
+    "n": 10,
+    "totalMs": 0.030999999999999996,
+    "maxMs": 0.006
+  },
+  {
+    "name": "CrRendererMain | ComputeWeaknessProcessor start",
+    "n": 18,
+    "totalMs": 0.030000000000000013,
+    "maxMs": 0.003
+  },
+  {
+    "name": "CrRendererMain | Parallel scavenge started",
+    "n": 18,
+    "totalMs": 0.03000000000000001,
+    "maxMs": 0.003
+  },
+  {
+    "name": "CrRendererMain | V8.GC_HEAP_PROLOGUE_SAFEPOINT",
+    "n": 18,
+    "totalMs": 0.030000000000000006,
+    "maxMs": 0.003
+  },
+  {
+    "name": "CrRendererMain | V8.GC_HEAP_EXTERNAL_WEAK_GLOBAL_HANDLES",
+    "n": 4,
+    "totalMs": 0.017,
+    "maxMs": 0.007
+  }
+]

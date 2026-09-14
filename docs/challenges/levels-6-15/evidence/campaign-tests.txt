@@ -1,0 +1,23 @@
+✔ shared-streets: untouched puzzle, reference and alternative use real journeys within budget (153.191985ms)
+✔ stop-and-share: untouched puzzle, reference and alternative use real journeys within budget (242.913724ms)
+✔ green-for-the-queue: untouched puzzle, reference and alternative use real journeys within budget (185.691195ms)
+✔ one-way-home: untouched puzzle, reference and alternative use real journeys within budget (408.57811ms)
+✔ around-the-island: untouched puzzle, reference and alternative use real journeys within budget (175.448436ms)
+✔ shops-and-strolls: untouched puzzle, reference and alternative use real journeys within budget (212.464506ms)
+✔ first-bus-service: untouched puzzle, reference and alternative use real journeys within budget (714.871467ms)
+✔ a-town-that-works: untouched puzzle, reference and alternative use real journeys within budget (807.847792ms)
+✔ staged apartment slots retain numbering and Next skips them (0.605584ms)
+✔ every new lesson preserves pause, mid-journey reload and frame-independent results (1236.251652ms)
+✔ one-way lesson protects the main street and requires a directed usable return, not decorative arrows (277.794854ms)
+✔ park stages cannot be satisfied by shopping or a disconnected park; earlier work counts (153.122835ms)
+✔ a missing loop cannot receive the roundabout award; the center island is protected (96.067844ms)
+✔ bus setup and boarding cannot award returns, and passenger receipts survive an onboard reload (293.191296ms)
+✔ fixed set pieces cannot fund solutions; newly placed destinations refund once and no outside tools work (4.235912ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4970.541032

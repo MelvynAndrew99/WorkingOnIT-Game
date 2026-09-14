@@ -15,6 +15,7 @@ function createTestCity() {
 }
 
 const cell = (t: Trip) => Math.min(t.path.length - 1, Math.max(0, Math.ceil(t.progress - 0.5 - 1e-9)));
+const round = (v: number) => Math.round(v * 1e6) / 1e6;
 const dir = (a: Point, b: Point) => (b.x > a.x ? 'E' : b.x < a.x ? 'W' : b.y > a.y ? 'S' : 'N');
 const axis = (d: string) => (d === 'E' || d === 'W' ? 'ew' : 'ns');
 
@@ -419,13 +420,66 @@ test('a responder drives faster than traffic but obeys the same tile and occupan
 
 test('an uncontrolled junction stays safe and costs a cautious look only after stopping', () => {
   const c = tJunction();
-  let sawCaution = false;
+  let longestHold = 0;
   run(c, 90, city => {
-    for (const t of city.trips) if (t.hold >= CAUTION_DWELL) sawCaution = true;
+    for (const t of city.trips) longestHold = Math.max(longestHold, t.hold);
   });
   assert.ok(c.completed > 0, 'uncontrolled crossing traffic still completes trips');
-  assert.ok(sawCaution, 'contended entries pay a cautious pause instead of driving through');
+  assert.ok(longestHold < CAUTION_DWELL, `light demand crosses without stopping (held ${longestHold}s)`);
   assert.equal(c.controls.length, 0);
+
+  // The look is the price of a contended entry, not of arriving. A north-arm driver that meets
+  // the east-west stream has to stop, and pays the pause before it may take its gap.
+  const busy = tJunction();
+  const north = { id: busy.nextId++, homeId: 0, storeId: 0, phase: 'legacy' as const, wait: 0, hold: 0,
+    progress: 2, path: [{x: 8, y: 3}, {x: 8, y: 4}, {x: 8, y: 5}, {x: 8, y: 6},
+      {x: 9, y: 6}, {x: 10, y: 6}, {x: 11, y: 6}, {x: 12, y: 6}] };
+  const eastbound = (start: number) => ({ id: busy.nextId++, homeId: 0, storeId: 0, phase: 'legacy' as const,
+    wait: 0, hold: 0, progress: 0, path: Array.from({length: 13 - start}, (_, j) => ({x: start + j, y: 6})) });
+  busy.trips = [north, eastbound(6), eastbound(4), eastbound(2)];
+  let paidTheLook = false;
+  run(busy, 8, () => { if (north.hold >= CAUTION_DWELL) paidTheLook = true; });
+  assert.ok(paidTheLook, 'a yielding driver pays the cautious pause before entering');
+  assert.ok(north.progress > 3, 'and then takes its gap through the junction');
+});
+
+test('a green releases the whole queue at road speed instead of stopping every second car', () => {
+  const c = corridor([]);
+  place(c, 'signal', 8, 6);
+  const control = controlAt(c, { x: 8, y: 6 })!; // balanced: east-west green from t=11
+  c.trips = [0,1,2,3,4,5].map(i => ({ id: c.nextId++, homeId: 0, storeId: 0, phase: 'legacy' as const,
+    progress: 0, wait: 0, hold: 0, path: Array.from({length: 8 + i}, (_, j) => ({x: 7 - i + j, y: 6})) }));
+  const cleared = new Map<number, number>(), stalled = new Set<number>();
+  run(c, 20, city => {
+    const green = signalAxis(city, control) === 'ew';
+    for (const t of city.trips) {
+      const at = t.path[0].x + t.progress;
+      if (!cleared.has(t.id) && at > 8.5) cleared.set(t.id, round(city.elapsed));
+      if (green && t.hold > 0 && at < 8.5) stalled.add(t.id);
+    }
+  });
+  assert.equal(cleared.size, 6, 'the whole queue clears on one green');
+  assert.deepEqual([...stalled], [], 'no queued driver is stopped again once the green releases it');
+  const times = [...cleared.values()].sort((a, b) => a - b);
+  const headways = times.slice(1).map((t, i) => round(t - times[i]));
+  assert.ok(Math.max(...headways) <= 0.55,
+    `vehicles cross one tile apart, not one junction reservation apart (${headways.join(', ')})`);
+});
+
+test('an aggressive driver takes the change; ordinary drivers stop for it', () => {
+  const seen: Record<string, boolean> = {};
+  for (const [label, id] of [['aggressive', 4], ['ordinary', 5]] as const) {
+    const c = corridor([]);
+    place(c, 'signal', 8, 6);
+    // The east-west green ends at t=21; its all-red clearance runs until t=22.
+    c.elapsed = 21;
+    c.trips = [{ id, homeId: 0, storeId: 0, phase: 'legacy' as const, progress: 0, wait: 0, hold: 0,
+      path: Array.from({length: 8}, (_, j) => ({x: 7 + j, y: 6})) }];
+    run(c, 0.75);
+    seen[label] = c.trips[0].progress > 1;
+  }
+  assert.equal(seen.aggressive, true, 'a rolling chancer carries on through the change');
+  assert.equal(seen.ordinary, false, 'everyone else stops at the line');
 });
 
 test('control prices are atomic, replacements refund payment, timing is free and old controls cannot mint cash',()=>{

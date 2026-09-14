@@ -11,7 +11,7 @@ function until(c:City,predicate:()=>boolean,seconds:number){for(let t=0;t<second
 function firstCustomer(){const c=createCity(true);place(c,'home',3,2);assert.equal(stage(c),1);place(c,'store',13,8);assert.equal(stage(c),2);until(c,()=>stage(c)===3,60);return c;}
 
 test('H starter contains only inherited zero-refund infrastructure; legacy factory remains empty',()=>{
- const c=createCity(true);assert.deepEqual(c.map,{x:0,y:0,width:24,height:20});assert.equal(c.buildings.length,0);assert.equal(c.roads.length,43);assert.equal(new Set(c.roads.map(p=>`${p.x},${p.y}`)).size,43);
+ const c=createCity(true);assert.deepEqual(c.map,{x:0,y:0,width:32,height:32});assert.equal(c.buildings.length,0);assert.equal(c.roads.length,43);assert.equal(new Set(c.roads.map(p=>`${p.x},${p.y}`)).size,43);
  for(const p of c.roads)assert.equal(c.roadPaid?.[`${p.x},${p.y}`],0);
  assert.equal(stage(c),0);const legacy=createCity();assert.equal(legacy.buildings.length,0);assert.equal(legacy.roads.length,0);assert.equal(legacy.tutorial?.hRoad,undefined);
 });
@@ -42,8 +42,8 @@ test('H town scripted impaired driver, player bypass, optional diversion and EMS
  const incident=c.incidents.find(i=>i.id===incidentId)!;assert.equal(incident.status,'cleared');assert.deepEqual([...incident.completedServices].sort(),['ems']);assert.equal(c.fatalities,0);assert.equal(c.rescuedCount,1);
  place(c,'stop',10,4);stepCity(c,.25);assert.equal(stage(c),8,'protect the actual crash junction, not an unrelated crossing');place(c,'stop',10,10);until(c,()=>stage(c)===9,1);assert.equal(c.tutorial?.status,'active');
  const town=structuredClone({roads:c.roads,buildings:c.buildings,trips:c.trips,funds:c.funds});
- expandCity(c,'west');assert.equal(stage(c),9);assert.equal(c.tutorial?.status,'active');
- c=parseCity(JSON.parse(JSON.stringify(c)))!;assert.ok(c);expandCity(c,'east');assert.equal(stage(c),10);assert.equal(c.tutorial?.status,'complete');
+ expandCity(c,'east');assert.equal(stage(c),9);assert.equal(c.tutorial?.status,'active');
+ c=parseCity(JSON.parse(JSON.stringify(c)))!;assert.ok(c);expandCity(c,'south');assert.equal(stage(c),10);assert.equal(c.tutorial?.status,'complete');
  assert.deepEqual({roads:c.roads,buildings:c.buildings,trips:c.trips,funds:c.funds},town);
  const loaded=parseCity(JSON.parse(JSON.stringify(c)))!;assert.ok(loaded);assert.equal(loaded.tutorial?.status,'complete');assert.equal(stage(loaded),10);
 });
@@ -62,7 +62,7 @@ test('900 starting funds and ordinary earnings or finite waivers fund the full t
  buy('home',3,8);buy('home',6,8);buy('park',13,1);until(c,()=>stage(c)>=5,180);
  for(const x of [2,20])for(let y=5;y<=9;y++)buy('road',x,y);until(c,()=>stage(c)===7,1);
  buy('hospital',17,2);until(c,()=>stage(c)===8,240);
- assert.equal(c.rescuedCount,1);assert.equal(c.fatalities,0);buy('stop',10,10);assert.equal(c.tutorial?.status,'active');expandCity(c,'north');expandCity(c,'south');assert.equal(c.tutorial?.status,'complete');assert.equal(stage(c),10);
+ assert.equal(c.rescuedCount,1);assert.equal(c.fatalities,0);buy('stop',10,10);assert.equal(c.tutorial?.status,'active');expandCity(c,'east');expandCity(c,'south');assert.equal(c.tutorial?.status,'complete');assert.equal(stage(c),10);
  assert.ok(c.missions!.shoppers.length>0);assert.equal(c.buildings.length,6);
 });
 

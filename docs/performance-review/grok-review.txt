@@ -1,0 +1,110 @@
+**Pass `RoadIndex` through incidents and stop treating `flowSnapshot` as a 40Hz pathfinding job.** Those two changes match the profile, and they can preserve saves if you keep time-window math and `findPath` answers identical.
+
+The profile numbers overlap, so they are not three exclusive slices. `flowSnapshot` at 28% inclusive is largely sitting inside `findPath` at 37%. `roadIndex` at 25% is a separate tax: the sim already builds one index per `stepCity`, then incident helpers throw that work away. Rendering at 60Hz is not in this profile; do not tune it first.
+
+## Ranked optimizations
+
+### 1. Stop rebuilding `roadIndex` inside incident helpers (highest win, lowest save risk)
+
+`stepCity` already honors the comment: one index per simulation call, then `trafficTick` / `stepVisits` / `stepExternal` reuse it. `stepIncidents(city, TRAFFIC_TICK)` does not get that index.
+
+`areaOf` rebuilds the full index on every call:
+
+```ts
+return roadIndex(city).areas.get(key(p));
+```
+
+`sameIntersection` calls `areaOf` twice. `inIncidentArea` does that for every active incident. `expireRisks` builds an index, then the filter calls `inIncidentArea(city, risk)` for every risk, which rebuilds the index again.
+
+At 40Hz that is not “build once per step.” It is **O(risks × incidents)** full road scans per tick: new `Set` from `city.roads.map`, per-road `nearby().filter`, then `junctionAreas`. That is the 25% inclusive CPU, and it is accidental.
+
+**Do this:** thread the existing `RoadIndex` into `stepIncidents`, `expireRisks`, `areaOf`, `sameIntersection`, and `inIncidentArea`. Optionally keep a `city.elapsed`-scoped or road-generation-scoped cache so catch-up loops and HUD reads share one index.
+
+**Behavior/saves:** the excerpt states roads do not change inside one simulation call. Reusing that index is the intended contract, not a new heuristic. Do not change `expireRisks` merge rules (max exposure, min `warnedAt`, encounter identity `firstId:secondId`, window slice). Those are save-visible.
+
+### 2. Split `flowSnapshot` into cached connectivity and cheap per-tick counts (highest remaining sim win)
+
+Every home does this:
+
+- `findPath(home → dest)` and `findPath(dest → home)` for **every** matching destination
+- plus `findPath(bodyTile → goal)` when a trip is live
+
+That is **2 × homes × destinations** path searches, every traffic tick, because `refreshFlowProgress(city)` sits inside the 40Hz branch. Nested `history.filter` then per-home `records.filter`, plus `trips.find` / `households.find`, are real but secondary.
+
+**Do this, in order:**
+
+1. Memoize path *existence* inside one snapshot keyed by `(from, to)`. Behavior-identical; first call wins.
+2. If `findPath` here is pure topology (roads, closures, incident blocks, entrances), replace the all-pairs existence tests with one BFS/flood from each destination and one reverse flood to each destination. Then each home is a membership test.
+3. Cache that reachability until roads, closures, incident blockage, or entrances change. Recompute visit/return/pending/liveVisit every tick; those depend on `elapsed` and `METRICS_WINDOW`.
+4. Keep `committedAccess` on the tick. It uses `trip.path[bodyTile(trip)]`, so it changes as the car moves. That is O(active trips), not O(homes × destinations).
+
+Do **not** move `refreshFlowProgress` to the 60Hz render path. `stepCity` exists so frame rate cannot change outcomes. HUD-rate sampling would make FLOW receipts and stars depend on render timing.
+
+### 3. Index the cheap scans in `flowSnapshot` (small, safe)
+
+Build `Map<homeId, household>`, `Map<homeId, civilian trip>` (same `find` predicate and array order), and `Map<homeId, records[]>` once per snapshot.
+
+This does not touch `findPath`, so it will not move the 37%, but it removes needless quadratic filters and makes the cached-path version cheaper to reason about.
+
+### 4. Rebuild `roadIndex` once per topology change, not once per `stepCity` (medium, if you need more)
+
+One index per `stepCity` is already better than per helper, but a 60Hz view with `dt ≈ 16ms` still rebuilds on frames that do not even take a traffic tick, and any other caller (`areaOf` from HUD, tools, tutorial) still pays full price.
+
+A generation counter bumped on road edits, junction-control changes, and anything `findPath` treats as blocked is enough. Invalidating on every incident spawn/clear is safer than guessing.
+
+### 5. Render labels: mutate Pixi `Text` style only when zoom/scale changes (not in this profile)
+
+`renderActivity` runs at 60Hz, `activity.clear()`, and on every label:
+
+```ts
+t.style.fontSize = 17.6 / (stage.scale() * camera.zoom)
+t.style.stroke = { color: 0x122d26, width: 3 / (stage.scale() * camera.zoom) }
+```
+
+Style writes often re-measure/re-rasterize text. Pan with unchanged zoom should not do that. This is jank, not the Codex 40Hz fixtures. Do it after the sim hot path is honest.
+
+### 6. Do not “optimize” `expireRisks` merge or `stepCity` slicing
+
+Area folding (max exposure, not sum; distinct encounters once; `!` area lookup after the junction filter) is correctness and save migration, not a CPU problem once `inIncidentArea` stops rebuilding the world. The tick/income/spawn slicing is the frame-rate contract. Leave it.
+
+## Ranked semantic risks
+
+### 1. Sampling FLOW on render frames or a timer (highest save risk)
+
+`flowSnapshot` uses rounded `elapsed`, `h.at > since && h.at <= now`, `visitedAt > since`, and `liveVisit`. Throttling or moving it to 60Hz can change the first tick a household qualifies, which can change saved FLOW receipts/stars. **Reject time-based skipping.** Dirty flags plus window-edge recomputes are the save-safe version.
+
+### 2. Caching `findPath` if it is not pure topology
+
+The snapshot passes `city`, not `RoadIndex`. If `findPath` sees occupancy, reservations, vehicle kind, or “plan through a wreck but stop before it,” a shared cache is wrong. Home↔store reachability can still be cached if that call is topology-only; `committedAccess` may not. **Prove the predicate from `findPath` before all-pairs → flood fill.** If unsure, memoize only inside one snapshot.
+
+### 3. Treating reverse paths as free
+
+The code asks for both directions. Diversions, closures, entrance geometry, or future one-ways can make `A→B` true and `B→A` false. A single undirected component is a behavior change. Two directed floods (or two cached directions) preserve the excerpt.
+
+### 4. Stale `RoadIndex` if anything in the tick mutates roads
+
+The comment says that does not happen. If `refreshTutorial`, connection retry, or incident clearance can add/remove road tiles inside the `while` loop, `stepCity`’s single index is already stale today. Passing that same index into incidents does not make this worse; a cross-tick cache would. Invalidate on mutation, or rebuild at the start of each traffic tick if that mutation exists.
+
+### 5. `Map` instead of `Array.find` for trips
+
+The snapshot takes the first `t.homeId === home.id && !t.service && !t.external`. A map that last-write-wins, or that includes service/external trips, changes `liveVisit` / `committedAccess`. Preserve first-match order.
+
+### 6. Changing risk folding or `inIncidentArea` meaning
+
+`sameIntersection` is area identity, not tile equality. `inIncidentArea` is active incidents only, tile or shared area. Cooling, warning clear, and encounter windows are save state. Faster code must return the same remaining `city.risks`.
+
+### 7. Assuming `junctionAreas` labels every junction
+
+`expireRisks` does `index.areas.get(key(risk))!` after keeping risks whose tiles are in `index.junctions`. If those sets ever disagree, reuse vs rebuild can turn a throw into a persist, or the reverse. Keep that invariant; do not paper over it with `?? tileKey`.
+
+## Preserve-behavior order
+
+1. Pass `RoadIndex` through incidents; delete `roadIndex(city)` from `areaOf`. Same answers, far less CPU.
+2. Intra-snapshot `findPath` memo; index history/households/trips. Same answers.
+3. Topology cache for home↔destination existence; keep windowed counts and `committedAccess` on the 40Hz tick.
+4. Generation-scoped `roadIndex` if still hot.
+5. Zoom-dirty text styles.
+
+Do not skip `refreshFlowProgress` ticks to “match 60Hz.” Do not assume undirected roads. Do not fold exposures. Do not retune `TRAFFIC_TICK` or the `stepCity` slice loop for this profile.
+
+**Expected exclusive picture after (1) and (2):** `roadIndex` should collapse toward one build per sim call (or per topology change). `flowSnapshot` should drop to windowed counting plus a few trip path checks. Remaining `findPath` is real routing, which this excerpt set does not justify rewriting.

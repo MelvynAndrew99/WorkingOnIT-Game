@@ -32,6 +32,7 @@ export const MANIFEST: Manifest = {
                 // tools/build-city-atlas.mjs from the Kenney CC0 source pack.
                 // Frame rectangles: src/game/cityAtlas.ts. Meaning: cityArt.ts.
                 { alias: 'city-atlas', src: 'images/city/city-atlas.png' },
+                ...['N','E','S','W'].map(side=>({alias:`park-${side}`,src:`images/city/park-${side}.png`})),
             ],
         },
         {

@@ -1,0 +1,34 @@
+[
+  {
+    "name": "narrow",
+    "map": {
+      "x": 8,
+      "y": 242.6875,
+      "width": 192.625,
+      "height": 258.875
+    },
+    "panel": {
+      "x": 208.625,
+      "y": 242.6875,
+      "width": 173.359375,
+      "height": 258.875
+    },
+    "checks": "six stats, exact funds, saved elapsed time, pause/resume, Heatmap/Access/Visitors, Dashboard focus, road + Home with panel open, Menu/Continue"
+  },
+  {
+    "name": "desktop",
+    "map": {
+      "x": 8,
+      "y": 117.984375,
+      "width": 1016,
+      "height": 406.015625
+    },
+    "panel": {
+      "x": 1032,
+      "y": 117.984375,
+      "width": 400,
+      "height": 406.015625
+    },
+    "checks": "six stats, exact funds, saved elapsed time, pause/resume, Heatmap/Access/Visitors, Dashboard focus, road + Home with panel open, Menu/Continue"
+  }
+]

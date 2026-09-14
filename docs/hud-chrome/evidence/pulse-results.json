@@ -1,0 +1,34 @@
+[
+  {
+    "name": "desktop",
+    "map": {
+      "x": 8,
+      "y": 141.796875,
+      "width": 1424,
+      "height": 510.203125
+    },
+    "header": {
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "height": 83.796875
+    },
+    "chip": "Failed-yield at 28,28. Busy crossing: add controls or a safer route. · Show"
+  },
+  {
+    "name": "narrow",
+    "map": {
+      "x": 8,
+      "y": 260.28125,
+      "width": 374,
+      "height": 183.46875
+    },
+    "header": {
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 151.09375
+    },
+    "chip": "Failed-yield at 28,28. Busy crossing: add controls or a safer route. · Show"
+  }
+]

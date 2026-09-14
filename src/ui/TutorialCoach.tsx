@@ -17,8 +17,9 @@ import './tutorialCoach.css';
 import {tutorialBuildTarget} from './TutorialGuidance.tsx';
 import {starterDiversionPoint} from '../game/cityStarterTutorial.ts';
 
-export const TOOL_NAMES: Record<Tool, string> = {
-  home: 'Home', store: 'Store', park: 'Park', road: 'Road', hospital: 'Clinic',
+export const TOOL_NAMES: Record<Tool, string> = {office:'Office: work visits and chosen entrances.',communityRoad:'Slower roads connecting apartment blocks.',apartment:'Apartment: four residents; upgrade to six and join complexes.',
+  wideRoad:'4-lane road',busStation:'Bus depot',busStop:'Bus stop',
+  home: 'Home', store: 'Store', park: 'Park', direction: 'One-way', road: 'Road', hospital: 'Clinic',
   policeStation: 'Police', fireStation: 'Fire', bulldoze: 'Remove', stop: 'Stop', signal: 'Light', closure: 'Detour',
 };
 const SHORT: Record<string, { title: string; instruction: string } | undefined> = {
@@ -31,23 +32,45 @@ const SHORT: Record<string, { title: string; instruction: string } | undefined> 
   detour: { title: 'A way around', instruction: 'Join both sides of the crossing with a bypass.' },
 };
 
-export function tutorialObjective(s: AppState, ctx: { openJobs: () => void }): Objective | null {
+export function tutorialObjective(s: AppState): Objective | null {
   const t = s.tutorial;
-  const connectInvitation = t?.currentId === 'h-connect' && t.status === 'complete' && !getSave().city.external?.gateway;
-  if (!t || (t.status !== 'active' && t.status !== 'available' && !connectInvitation)) return null;
-  const act = (value: TutorialAction) => cityCommand({ type: 'tutorial', action: value });
+  if (!t) return null;
+  const finish = () => { if(window.confirm('End the tutorial and welcome outside traffic? A free access road will be added across vacant land if needed. Your town is preserved.')) cityCommand({type:'finish-tutorial'}); };
+  const act = (value: TutorialAction) => value==='skip' ? finish() : cityCommand({ type: 'tutorial', action: value });
+
+  // Historical completed/skipped towns must retain an explicit invitation without
+  // restarting lessons. A saved pending request already contains that consent.
+  if (t.status === 'complete' || t.status === 'skipped') {
+    if (getSave().city.external?.gateway) return null;
+    const pending = !!getSave().city.external?.autoConnectRequested;
+    return {
+      key: pending ? 'connection-pending' : 'connection-invitation',
+      eyebrow: pending ? 'Outside connection pending' : 'Your next step',
+      title: pending ? 'Make room for the connection' : 'Ready for a bigger town',
+      instruction: pending
+        ? 'Outside visitors are waiting for a connection. Build a road with a clear route to the map edge.'
+        : 'Keep your town and welcome outside visitors when you are ready.',
+      primary: pending
+        ? { label: 'Road', run: () => store.patch({ tool: 'road', panning: false, toolSelection: s.toolSelection + 1 }) }
+        : { label: t.currentId === 'h-connect' ? 'Finish tutorial' : 'Welcome outside visitors', run: finish },
+      detail: <p>{pending
+        ? 'You already invited outside traffic. The connection will retry automatically when a safe route is available. Any added access road is free. Run traffic after making room.'
+        : 'Outside visitors use your roads and destination parking. Arrivals grow with your town. Confirming adds a free access road across vacant land if needed and preserves your buildings.'}</p>,
+    };
+  }
 
   if (t.status === 'available') return {
     key: 'guide-offer',
     eyebrow: 'Optional guide',
+    title: 'Your town, your pace',
+    progress: {current:t.completed,target:t.total,label:'Tutorial lessons completed'},
     instruction: 'Learn the roads on the town you already have.',
     primary: { label: 'Start guide', run: () => act('start') },
     detail: <>
       <p>Short steps, on your own map. Nothing is built for you, and you can leave at any point.</p>
       <p>{t.completed}/{t.total} lessons already done.</p>
       <div className="objective-extras">
-        <button onClick={ctx.openJobs}>Jobs</button>
-        <button onClick={() => act('skip')}>No thanks</button>
+          <button onClick={() => act('skip')}>No thanks</button>
       </div>
     </>,
   };
@@ -76,23 +99,21 @@ export function tutorialObjective(s: AppState, ctx: { openJobs: () => void }): O
   const step = starter ? Math.min(t.total, t.completed + 1) : Math.max(1, t.lessons.findIndex(l => l.id === t.currentId) + 1);
   // No lesson builds on the player's map for them: the crossing lesson runs on their own
   // town, watching real traffic or keeping an existing crossing controlled.
-  const primary = t.currentId === 'h-expand' ? { label: 'Add land', run: () => cityCommand({ type: 'open-expansion' }) }
+  const primary = t.currentId === 'h-expand' ? { label: 'Show land', run: () => cityCommand({ type: 'open-expansion' }) }
     : t.currentId === 'driver-rules' ? { label: 'Understood', run: () => act('acknowledge-drivers') }
     : watchVisit ? { label: s.paused ? 'Run traffic' : 'Running', run: () => store.patch({ paused: false }) }
     : tool ? { label: TOOL_NAMES[tool], run: () => chooseTool(tool!), pressed: s.tool === tool && !s.panning }
     : { label: s.paused ? 'Run traffic' : 'Pause', run: () => store.patch({ paused: !s.paused }) };
 
   const detail: ReactNode = <>
-    <h3>{t.title}</h3>
-    <p>{t.body}</p>
+    {lesson && lesson.instruction !== t.body && <p>{t.body}</p>}
     {!!t.hint && <p className="objective-hint">{t.hint}</p>}
     {t.currentId === 'driver-rules' && <p>Ordinary drivers respect traffic controls. Outbound emergency crews can cross red lights when clear and pass using available opposing lanes. Returning crews follow ordinary road rules.</p>}
-    {t.canAcknowledgeSafety && <p>A stop or light on your crossing prevents these collisions. Keep it in place and read the crew explanation. Acknowledging safe design is not a rescue: a real crash still needs crews with a route to it.</p>}
+    {t.canAcknowledgeSafety && <p>Match controls to the traffic and watch for conflict warnings as your town grows. Busy stops may need lights, and conflicting turns may need a safer route. A real crash still needs crews with a route to it.</p>}
     <div className="objective-extras">
       {!s.paused && <button onClick={() => store.patch({ paused: true })}>Pause traffic</button>}
       {t.focus && !starter && <button onClick={() => cityCommand({ type: 'focus', point: t.focus! })}>Show lesson area</button>}
       {t.canAcknowledgeSafety && <button onClick={() => act('acknowledge-safety')}>Keep my safe crossing</button>}
-      <button onClick={ctx.openJobs}>Jobs</button>
       {t.status === 'active' && <button className="objective-exit" onClick={() => act('skip')}>Skip tutorial</button>}
     </div>
   </>;
@@ -101,9 +122,10 @@ export function tutorialObjective(s: AppState, ctx: { openJobs: () => void }): O
     key: `lesson-${t.currentId}-${lesson?.title ?? ''}-${t.waived ? 'waived' : ''}`,
     eyebrow: `Step ${step} of ${t.total} · Traffic ${s.paused ? 'paused' : 'running'}`,
     title: lesson?.title ?? t.title,
+    progress: {current:t.completed,target:t.total,label:'Tutorial lessons completed'},
     instruction: lesson?.instruction ?? t.body,
     note: t.waived?.reason,
-    primary: starter && t.currentId === 'h-connect' ? { label: 'City link', run: ctx.openJobs } : primary,
+    primary: starter && t.currentId === 'h-connect' ? { label: 'Finish tutorial', run: finish } : primary,
     secondary: starter && t.focus ? { label: 'Show lesson area', run: () => {
       if(diversion)chooseTool(t.tool ?? 'road');
       cityCommand({ type: 'focus', point: t.focus! });

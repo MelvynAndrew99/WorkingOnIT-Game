@@ -1,0 +1,1464 @@
+[
+  {
+    "level": 15,
+    "id": "a-town-that-works",
+    "alternative": false,
+    "simulationSeconds": 10,
+    "budget": 1800,
+    "fundsLeft": 1760,
+    "additionalAccidents": 0,
+    "evidence": {
+      "scenes": [
+        {
+          "id": 7,
+          "x": 13,
+          "y": 8,
+          "required": [
+            "police"
+          ],
+          "dispatched": [
+            "police"
+          ],
+          "arrived": [
+            "police"
+          ],
+          "completed": [
+            "police"
+          ],
+          "cleared": true
+        }
+      ],
+      "placed": [],
+      "original": {},
+      "detourReturns": [],
+      "recovered": [],
+      "clearedAt": 10
+    },
+    "stages": [
+      {
+        "label": "Scene (13,8): crews dispatched 1/1",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews arrived 1/1",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): finish clearance",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 15,
+    "id": "a-town-that-works",
+    "alternative": true,
+    "simulationSeconds": 13.350000000000048,
+    "budget": 1800,
+    "fundsLeft": 1760,
+    "additionalAccidents": 0,
+    "evidence": {
+      "scenes": [
+        {
+          "id": 7,
+          "x": 13,
+          "y": 8,
+          "required": [
+            "police"
+          ],
+          "dispatched": [
+            "police"
+          ],
+          "arrived": [
+            "police"
+          ],
+          "completed": [
+            "police"
+          ],
+          "cleared": true
+        }
+      ],
+      "placed": [],
+      "original": {},
+      "detourReturns": [],
+      "recovered": [],
+      "clearedAt": 13.350000000000048
+    },
+    "stages": [
+      {
+        "label": "Scene (13,8): crews dispatched 1/1",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews arrived 1/1",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): finish clearance",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 16,
+    "id": "call-the-police",
+    "alternative": false,
+    "simulationSeconds": 10,
+    "budget": 3000,
+    "fundsLeft": 2400,
+    "additionalAccidents": 0,
+    "evidence": {
+      "scenes": [
+        {
+          "id": 6,
+          "x": 13,
+          "y": 8,
+          "required": [
+            "police"
+          ],
+          "dispatched": [
+            "police"
+          ],
+          "arrived": [
+            "police"
+          ],
+          "completed": [
+            "police"
+          ],
+          "cleared": true
+        }
+      ],
+      "placed": [
+        7
+      ],
+      "original": {},
+      "detourReturns": [],
+      "recovered": [],
+      "clearedAt": 10
+    },
+    "stages": [
+      {
+        "label": "Place Police with connected access",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews dispatched 1/1",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews arrived 1/1",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): finish clearance",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 16,
+    "id": "call-the-police",
+    "alternative": true,
+    "simulationSeconds": 14.000000000000057,
+    "budget": 3000,
+    "fundsLeft": 2180,
+    "additionalAccidents": 0,
+    "evidence": {
+      "scenes": [
+        {
+          "id": 6,
+          "x": 13,
+          "y": 8,
+          "required": [
+            "police"
+          ],
+          "dispatched": [
+            "police"
+          ],
+          "arrived": [
+            "police"
+          ],
+          "completed": [
+            "police"
+          ],
+          "cleared": true
+        }
+      ],
+      "placed": [
+        7
+      ],
+      "original": {},
+      "detourReturns": [],
+      "recovered": [],
+      "clearedAt": 14.000000000000057
+    },
+    "stages": [
+      {
+        "label": "Place Police with connected access",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews dispatched 1/1",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews arrived 1/1",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): finish clearance",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 17,
+    "id": "clinic-access",
+    "alternative": false,
+    "simulationSeconds": 10,
+    "budget": 3500,
+    "fundsLeft": 2700,
+    "additionalAccidents": 0,
+    "evidence": {
+      "scenes": [
+        {
+          "id": 7,
+          "x": 13,
+          "y": 8,
+          "required": [
+            "police",
+            "ems"
+          ],
+          "dispatched": [
+            "police",
+            "ems"
+          ],
+          "arrived": [
+            "ems",
+            "police"
+          ],
+          "completed": [
+            "ems",
+            "police"
+          ],
+          "cleared": true
+        }
+      ],
+      "placed": [
+        8
+      ],
+      "original": {},
+      "detourReturns": [],
+      "recovered": [],
+      "clearedAt": 10
+    },
+    "stages": [
+      {
+        "label": "Place Clinic with connected access",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews dispatched 2/2",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews arrived 2/2",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): finish clearance",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 17,
+    "id": "clinic-access",
+    "alternative": true,
+    "simulationSeconds": 14.000000000000057,
+    "budget": 3500,
+    "fundsLeft": 2480,
+    "additionalAccidents": 0,
+    "evidence": {
+      "scenes": [
+        {
+          "id": 7,
+          "x": 13,
+          "y": 8,
+          "required": [
+            "police",
+            "ems"
+          ],
+          "dispatched": [
+            "police",
+            "ems"
+          ],
+          "arrived": [
+            "police",
+            "ems"
+          ],
+          "completed": [
+            "police",
+            "ems"
+          ],
+          "cleared": true
+        }
+      ],
+      "placed": [
+        8
+      ],
+      "original": {},
+      "detourReturns": [],
+      "recovered": [],
+      "clearedAt": 14.000000000000057
+    },
+    "stages": [
+      {
+        "label": "Place Clinic with connected access",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews dispatched 2/2",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews arrived 2/2",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): finish clearance",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 18,
+    "id": "fire-access",
+    "alternative": false,
+    "simulationSeconds": 13.350000000000048,
+    "budget": 4000,
+    "fundsLeft": 3300,
+    "additionalAccidents": 0,
+    "evidence": {
+      "scenes": [
+        {
+          "id": 8,
+          "x": 13,
+          "y": 8,
+          "required": [
+            "police",
+            "ems",
+            "fire"
+          ],
+          "dispatched": [
+            "police",
+            "ems",
+            "fire"
+          ],
+          "arrived": [
+            "ems",
+            "fire",
+            "police"
+          ],
+          "completed": [
+            "ems",
+            "police",
+            "fire"
+          ],
+          "cleared": true
+        }
+      ],
+      "placed": [
+        9
+      ],
+      "original": {},
+      "detourReturns": [],
+      "recovered": [],
+      "clearedAt": 13.350000000000048
+    },
+    "stages": [
+      {
+        "label": "Place Fire with connected access",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews dispatched 3/3",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews arrived 3/3",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): finish clearance",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 18,
+    "id": "fire-access",
+    "alternative": true,
+    "simulationSeconds": 17.99999999999997,
+    "budget": 4000,
+    "fundsLeft": 3080,
+    "additionalAccidents": 0,
+    "evidence": {
+      "scenes": [
+        {
+          "id": 8,
+          "x": 13,
+          "y": 8,
+          "required": [
+            "police",
+            "ems",
+            "fire"
+          ],
+          "dispatched": [
+            "police",
+            "ems",
+            "fire"
+          ],
+          "arrived": [
+            "ems",
+            "police",
+            "fire"
+          ],
+          "completed": [
+            "ems",
+            "police",
+            "fire"
+          ],
+          "cleared": true
+        }
+      ],
+      "placed": [
+        9
+      ],
+      "original": {},
+      "detourReturns": [],
+      "recovered": [],
+      "clearedAt": 17.99999999999997
+    },
+    "stages": [
+      {
+        "label": "Place Fire with connected access",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews dispatched 3/3",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews arrived 3/3",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): finish clearance",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 19,
+    "id": "past-the-wreck",
+    "alternative": false,
+    "simulationSeconds": 55.74999999999754,
+    "budget": 3200,
+    "fundsLeft": 2770,
+    "additionalAccidents": 0,
+    "evidence": {
+      "scenes": [
+        {
+          "id": 7,
+          "x": 13,
+          "y": 8,
+          "required": [
+            "police"
+          ],
+          "dispatched": [
+            "police"
+          ],
+          "arrived": [
+            "police"
+          ],
+          "completed": [
+            "police"
+          ],
+          "cleared": true
+        }
+      ],
+      "placed": [],
+      "original": {},
+      "detourReturns": [
+        4,
+        3,
+        2,
+        1
+      ],
+      "recovered": [],
+      "clearedAt": 55.74999999999754
+    },
+    "stages": [
+      {
+        "label": "Shopping return via detour while crash is active",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews dispatched 1/1",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews arrived 1/1",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): finish clearance",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 19,
+    "id": "past-the-wreck",
+    "alternative": true,
+    "simulationSeconds": 59.09999999999735,
+    "budget": 3200,
+    "fundsLeft": 2730,
+    "additionalAccidents": 0,
+    "evidence": {
+      "scenes": [
+        {
+          "id": 7,
+          "x": 13,
+          "y": 8,
+          "required": [
+            "police"
+          ],
+          "dispatched": [
+            "police"
+          ],
+          "arrived": [
+            "police"
+          ],
+          "completed": [
+            "police"
+          ],
+          "cleared": true
+        }
+      ],
+      "placed": [],
+      "original": {},
+      "detourReturns": [
+        4,
+        3,
+        2,
+        1
+      ],
+      "recovered": [],
+      "clearedAt": 59.09999999999735
+    },
+    "stages": [
+      {
+        "label": "Shopping return via detour while crash is active",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews dispatched 1/1",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews arrived 1/1",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): finish clearance",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 20,
+    "id": "another-approach",
+    "alternative": false,
+    "simulationSeconds": 92.72500000000328,
+    "budget": 3200,
+    "fundsLeft": 2750,
+    "additionalAccidents": 0,
+    "evidence": {
+      "scenes": [
+        {
+          "id": 7,
+          "x": 13,
+          "y": 8,
+          "required": [
+            "police"
+          ],
+          "dispatched": [
+            "police"
+          ],
+          "arrived": [
+            "police"
+          ],
+          "completed": [
+            "police"
+          ],
+          "cleared": true
+        }
+      ],
+      "placed": [],
+      "original": {
+        "14,8>15,8": "forward",
+        "15,8>16,8": "forward",
+        "16,8>17,8": "forward",
+        "17,8>18,8": "forward"
+      },
+      "detourReturns": [],
+      "recovered": [
+        4,
+        3,
+        2,
+        1
+      ],
+      "clearedAt": 8.000000000000046
+    },
+    "stages": [
+      {
+        "label": "Scene (13,8): crews dispatched 1/1",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews arrived 1/1",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): finish clearance",
+        "done": true
+      },
+      {
+        "label": "New shopping returns after recovery: 4/4",
+        "done": true
+      },
+      {
+        "label": "Keep legal service access available",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 20,
+    "id": "another-approach",
+    "alternative": true,
+    "simulationSeconds": 159.25000000001788,
+    "budget": 3200,
+    "fundsLeft": 2810,
+    "additionalAccidents": 0,
+    "evidence": {
+      "scenes": [
+        {
+          "id": 7,
+          "x": 13,
+          "y": 8,
+          "required": [
+            "police"
+          ],
+          "dispatched": [
+            "police"
+          ],
+          "arrived": [
+            "police"
+          ],
+          "completed": [
+            "police"
+          ],
+          "cleared": true
+        }
+      ],
+      "placed": [],
+      "original": {
+        "14,8>15,8": "forward",
+        "15,8>16,8": "forward",
+        "16,8>17,8": "forward",
+        "17,8>18,8": "forward"
+      },
+      "detourReturns": [],
+      "recovered": [
+        4,
+        3,
+        2,
+        1
+      ],
+      "clearedAt": 8.000000000000046
+    },
+    "stages": [
+      {
+        "label": "Scene (13,8): crews dispatched 1/1",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews arrived 1/1",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): finish clearance",
+        "done": true
+      },
+      {
+        "label": "New shopping returns after recovery: 4/4",
+        "done": true
+      },
+      {
+        "label": "Keep legal service access available",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 21,
+    "id": "temporary-two-way",
+    "alternative": false,
+    "simulationSeconds": 109.22500000000788,
+    "budget": 3500,
+    "fundsLeft": 3030,
+    "additionalAccidents": 0,
+    "evidence": {
+      "scenes": [
+        {
+          "id": 7,
+          "x": 13,
+          "y": 8,
+          "required": [
+            "police"
+          ],
+          "dispatched": [
+            "police"
+          ],
+          "arrived": [
+            "police"
+          ],
+          "completed": [
+            "police"
+          ],
+          "cleared": true
+        }
+      ],
+      "placed": [],
+      "original": {
+        "14,8>15,8": "forward",
+        "15,8>16,8": "forward",
+        "16,8>17,8": "forward",
+        "17,8>18,8": "forward"
+      },
+      "detourReturns": [
+        4
+      ],
+      "recovered": [
+        4,
+        3,
+        1,
+        2
+      ],
+      "diverted": 4.4999999999999964,
+      "converted": 6.250000000000021,
+      "clearedAt": 14.92500000000007,
+      "clearedWithConversion": 14.92500000000007,
+      "restored": 17.5,
+      "reopened": 17.5
+    },
+    "stages": [
+      {
+        "label": "Divert (14,8); run traffic to clear occupied space",
+        "done": true
+      },
+      {
+        "label": "Safely convert (14,8) → (18,8) to two-way with Divert on",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews dispatched 1/1",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews arrived 1/1",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): finish clearance with Divert on and two-way access",
+        "done": true
+      },
+      {
+        "label": "After clearance, safely restore original eastbound arrows",
+        "done": true
+      },
+      {
+        "label": "Remove Divert after restoring arrows",
+        "done": true
+      },
+      {
+        "label": "New shopping returns after recovery: 4/4",
+        "done": true
+      },
+      {
+        "label": "Keep legal service access available",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 21,
+    "id": "temporary-two-way",
+    "alternative": true,
+    "simulationSeconds": 109.22500000000788,
+    "budget": 3500,
+    "fundsLeft": 3230,
+    "additionalAccidents": 0,
+    "evidence": {
+      "scenes": [
+        {
+          "id": 7,
+          "x": 13,
+          "y": 8,
+          "required": [
+            "police"
+          ],
+          "dispatched": [
+            "police"
+          ],
+          "arrived": [
+            "police"
+          ],
+          "completed": [
+            "police"
+          ],
+          "cleared": true
+        }
+      ],
+      "placed": [],
+      "original": {
+        "14,8>15,8": "forward",
+        "15,8>16,8": "forward",
+        "16,8>17,8": "forward",
+        "17,8>18,8": "forward"
+      },
+      "detourReturns": [
+        4
+      ],
+      "recovered": [
+        4,
+        3,
+        1,
+        2
+      ],
+      "diverted": 4.4999999999999964,
+      "converted": 6.250000000000021,
+      "clearedAt": 14.92500000000007,
+      "clearedWithConversion": 14.92500000000007,
+      "restored": 17.5,
+      "reopened": 17.5
+    },
+    "stages": [
+      {
+        "label": "Divert (14,8); run traffic to clear occupied space",
+        "done": true
+      },
+      {
+        "label": "Safely convert (14,8) → (18,8) to two-way with Divert on",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews dispatched 1/1",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews arrived 1/1",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): finish clearance with Divert on and two-way access",
+        "done": true
+      },
+      {
+        "label": "After clearance, safely restore original eastbound arrows",
+        "done": true
+      },
+      {
+        "label": "Remove Divert after restoring arrows",
+        "done": true
+      },
+      {
+        "label": "New shopping returns after recovery: 4/4",
+        "done": true
+      },
+      {
+        "label": "Keep legal service access available",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 22,
+    "id": "paired-response",
+    "alternative": false,
+    "simulationSeconds": 87.1750000000021,
+    "budget": 6500,
+    "fundsLeft": 4710,
+    "additionalAccidents": 0,
+    "evidence": {
+      "scenes": [
+        {
+          "id": 6,
+          "x": 13,
+          "y": 8,
+          "required": [
+            "police",
+            "ems"
+          ],
+          "dispatched": [
+            "police",
+            "ems"
+          ],
+          "arrived": [
+            "ems",
+            "police"
+          ],
+          "completed": [
+            "ems",
+            "police"
+          ],
+          "cleared": true
+        }
+      ],
+      "placed": [
+        7,
+        8
+      ],
+      "original": {},
+      "detourReturns": [],
+      "recovered": [
+        4,
+        3,
+        2,
+        1
+      ],
+      "clearedAt": 10
+    },
+    "stages": [
+      {
+        "label": "Place Police with connected access",
+        "done": true
+      },
+      {
+        "label": "Place Clinic with connected access",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews dispatched 2/2",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews arrived 2/2",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): finish clearance",
+        "done": true
+      },
+      {
+        "label": "New shopping returns after recovery: 4/4",
+        "done": true
+      },
+      {
+        "label": "Keep legal service access available",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 22,
+    "id": "paired-response",
+    "alternative": true,
+    "simulationSeconds": 103.72500000000569,
+    "budget": 6500,
+    "fundsLeft": 4530,
+    "additionalAccidents": 0,
+    "evidence": {
+      "scenes": [
+        {
+          "id": 6,
+          "x": 13,
+          "y": 8,
+          "required": [
+            "police",
+            "ems"
+          ],
+          "dispatched": [
+            "police",
+            "ems"
+          ],
+          "arrived": [
+            "ems",
+            "police"
+          ],
+          "completed": [
+            "ems",
+            "police"
+          ],
+          "cleared": true
+        }
+      ],
+      "placed": [
+        7,
+        8
+      ],
+      "original": {},
+      "detourReturns": [],
+      "recovered": [
+        4,
+        3,
+        2,
+        1
+      ],
+      "clearedAt": 10.67500000000001
+    },
+    "stages": [
+      {
+        "label": "Place Police with connected access",
+        "done": true
+      },
+      {
+        "label": "Place Clinic with connected access",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews dispatched 2/2",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews arrived 2/2",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): finish clearance",
+        "done": true
+      },
+      {
+        "label": "New shopping returns after recovery: 4/4",
+        "done": true
+      },
+      {
+        "label": "Keep legal service access available",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 23,
+    "id": "fire-and-flow",
+    "alternative": false,
+    "simulationSeconds": 86.65000000000198,
+    "budget": 7500,
+    "fundsLeft": 5010,
+    "additionalAccidents": 0,
+    "evidence": {
+      "scenes": [
+        {
+          "id": 6,
+          "x": 13,
+          "y": 8,
+          "required": [
+            "police",
+            "ems",
+            "fire"
+          ],
+          "dispatched": [
+            "police",
+            "ems",
+            "fire"
+          ],
+          "arrived": [
+            "ems",
+            "fire",
+            "police"
+          ],
+          "completed": [
+            "ems",
+            "police",
+            "fire"
+          ],
+          "cleared": true
+        }
+      ],
+      "placed": [
+        7,
+        8,
+        9
+      ],
+      "original": {},
+      "detourReturns": [],
+      "recovered": [
+        4,
+        3,
+        2,
+        1
+      ],
+      "clearedAt": 13.350000000000048
+    },
+    "stages": [
+      {
+        "label": "Place Police with connected access",
+        "done": true
+      },
+      {
+        "label": "Place Clinic with connected access",
+        "done": true
+      },
+      {
+        "label": "Place Fire with connected access",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews dispatched 3/3",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews arrived 3/3",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): finish clearance",
+        "done": true
+      },
+      {
+        "label": "New shopping returns after recovery: 4/4",
+        "done": true
+      },
+      {
+        "label": "Keep legal service access available",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 23,
+    "id": "fire-and-flow",
+    "alternative": true,
+    "simulationSeconds": 103.72500000000569,
+    "budget": 7500,
+    "fundsLeft": 4790,
+    "additionalAccidents": 0,
+    "evidence": {
+      "scenes": [
+        {
+          "id": 6,
+          "x": 13,
+          "y": 8,
+          "required": [
+            "police",
+            "ems",
+            "fire"
+          ],
+          "dispatched": [
+            "police",
+            "ems",
+            "fire"
+          ],
+          "arrived": [
+            "fire",
+            "ems",
+            "police"
+          ],
+          "completed": [
+            "ems",
+            "police",
+            "fire"
+          ],
+          "cleared": true
+        }
+      ],
+      "placed": [
+        7,
+        8,
+        9
+      ],
+      "original": {},
+      "detourReturns": [],
+      "recovered": [
+        4,
+        3,
+        2,
+        1
+      ],
+      "clearedAt": 12.000000000000028
+    },
+    "stages": [
+      {
+        "label": "Place Police with connected access",
+        "done": true
+      },
+      {
+        "label": "Place Clinic with connected access",
+        "done": true
+      },
+      {
+        "label": "Place Fire with connected access",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews dispatched 3/3",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews arrived 3/3",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): finish clearance",
+        "done": true
+      },
+      {
+        "label": "New shopping returns after recovery: 4/4",
+        "done": true
+      },
+      {
+        "label": "Keep legal service access available",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 24,
+    "id": "district-recovery",
+    "alternative": false,
+    "simulationSeconds": 86.65000000000198,
+    "budget": 8500,
+    "fundsLeft": 6010,
+    "additionalAccidents": 0,
+    "evidence": {
+      "scenes": [
+        {
+          "id": 6,
+          "x": 13,
+          "y": 8,
+          "required": [
+            "police"
+          ],
+          "dispatched": [
+            "police"
+          ],
+          "arrived": [
+            "police"
+          ],
+          "completed": [
+            "police"
+          ],
+          "cleared": true
+        },
+        {
+          "id": 7,
+          "x": 22,
+          "y": 11,
+          "required": [
+            "police",
+            "ems",
+            "fire"
+          ],
+          "dispatched": [
+            "ems",
+            "fire",
+            "police"
+          ],
+          "arrived": [
+            "fire",
+            "ems",
+            "police"
+          ],
+          "completed": [
+            "ems",
+            "fire",
+            "police"
+          ],
+          "cleared": true
+        }
+      ],
+      "placed": [
+        8,
+        9,
+        10
+      ],
+      "original": {},
+      "detourReturns": [],
+      "recovered": [
+        4,
+        3,
+        2,
+        1
+      ],
+      "clearedAt": 24.87499999999951
+    },
+    "stages": [
+      {
+        "label": "Place Police with connected access",
+        "done": true
+      },
+      {
+        "label": "Place Clinic with connected access",
+        "done": true
+      },
+      {
+        "label": "Place Fire with connected access",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews dispatched 1/1",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews arrived 1/1",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): finish clearance",
+        "done": true
+      },
+      {
+        "label": "Scene (22,11): crews dispatched 3/3",
+        "done": true
+      },
+      {
+        "label": "Scene (22,11): crews arrived 3/3",
+        "done": true
+      },
+      {
+        "label": "Scene (22,11): finish clearance",
+        "done": true
+      },
+      {
+        "label": "New shopping returns after recovery: 4/4",
+        "done": true
+      },
+      {
+        "label": "Keep legal service access available",
+        "done": true
+      }
+    ]
+  },
+  {
+    "level": 24,
+    "id": "district-recovery",
+    "alternative": true,
+    "simulationSeconds": 106.22500000000626,
+    "budget": 8500,
+    "fundsLeft": 5790,
+    "additionalAccidents": 0,
+    "evidence": {
+      "scenes": [
+        {
+          "id": 6,
+          "x": 13,
+          "y": 8,
+          "required": [
+            "police"
+          ],
+          "dispatched": [
+            "police"
+          ],
+          "arrived": [
+            "police"
+          ],
+          "completed": [
+            "police"
+          ],
+          "cleared": true
+        },
+        {
+          "id": 7,
+          "x": 22,
+          "y": 11,
+          "required": [
+            "police",
+            "ems",
+            "fire"
+          ],
+          "dispatched": [
+            "ems",
+            "fire",
+            "police"
+          ],
+          "arrived": [
+            "fire",
+            "ems",
+            "police"
+          ],
+          "completed": [
+            "ems",
+            "fire",
+            "police"
+          ],
+          "cleared": true
+        }
+      ],
+      "placed": [
+        8,
+        9,
+        10
+      ],
+      "original": {},
+      "detourReturns": [
+        4
+      ],
+      "recovered": [
+        4,
+        3,
+        2,
+        1
+      ],
+      "clearedAt": 39.5999999999986
+    },
+    "stages": [
+      {
+        "label": "Place Police with connected access",
+        "done": true
+      },
+      {
+        "label": "Place Clinic with connected access",
+        "done": true
+      },
+      {
+        "label": "Place Fire with connected access",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews dispatched 1/1",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): crews arrived 1/1",
+        "done": true
+      },
+      {
+        "label": "Scene (13,8): finish clearance",
+        "done": true
+      },
+      {
+        "label": "Scene (22,11): crews dispatched 3/3",
+        "done": true
+      },
+      {
+        "label": "Scene (22,11): crews arrived 3/3",
+        "done": true
+      },
+      {
+        "label": "Scene (22,11): finish clearance",
+        "done": true
+      },
+      {
+        "label": "New shopping returns after recovery: 4/4",
+        "done": true
+      },
+      {
+        "label": "Keep legal service access available",
+        "done": true
+      }
+    ]
+  }
+]

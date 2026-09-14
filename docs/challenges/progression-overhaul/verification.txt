@@ -1,0 +1,4 @@
+warning: Git tree '/home/phil/Code/jams/AI-Overlord' is dirty
+Context Collapse environment ready: node, npm, rundot
+desktop 25 sites, 4 playable, completion/marker/reload, upcoming guards, five districts, reduced motion and sandbox isolation passed
+narrow 25 sites, 4 playable, completion/marker/reload, upcoming guards, five districts, reduced motion and sandbox isolation passed

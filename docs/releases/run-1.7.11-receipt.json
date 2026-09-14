@@ -1,0 +1,23 @@
+{
+  "success": true,
+  "gameId": "l7mD5BHH8LslWkr5mC7d",
+  "version": "1.7.11",
+  "visibility": "review",
+  "recordedAt": "2026-09-11",
+  "publicationRequested": true,
+  "publicUrl": "https://w.run/melvynandrew99/working-on-it",
+  "changelog": "run-1.7.11-changelog.md",
+  "verifiedTags": {
+    "Private": "1.7.11",
+    "Review (Approved)": "1.7.11",
+    "Public": "1.7.11"
+  },
+  "publicVersionAtVerification": "1.7.11",
+  "publicationStatus": "public",
+  "verifiedAt": "2026-09-11T14:46:29-04:00",
+  "validation": [
+    "Model suite passed (324 tests)",
+    "Production TypeScript/Vite build passed, existing bundle-size warning only"
+  ],
+  "notes": "Uploaded from the uncommitted feature/v0.2 working tree (one-way roads, two lanes, roundabouts). No browser smoke test of the frozen artifact, Git push/commit, identity change or player-storage mutation."
+}

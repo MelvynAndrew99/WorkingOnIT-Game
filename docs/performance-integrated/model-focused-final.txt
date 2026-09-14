@@ -1,0 +1,27 @@
+✔ every routing view obeys one-way connections including custom avoidance and planned closures (5.382937ms)
+✔ bends and ring branches retain legal exits with a distinct legal return journey (1.903001ms)
+✔ same-count direction reversal invalidates BFS views and weighted snapshots are isolated (0.752673ms)
+✔ optional save metadata roundtrips; malformed directions fail explicitly; demolition removes edges (6.212288ms)
+✔ patrols take a legal ring home and never dispatch into a one-way dead end (1.275627ms)
+✔ home access and passenger choice require a real return and show its actual distance (1.04992ms)
+✔ cached paths reproduce BFS tie order, isolated roads, diversions, incident blocks and avoid sets (104.875888ms)
+✔ road cache invalidates on in-place edits, same-count replacement, closures and incident clearance (4.527966ms)
+✔ cached paths remain isolated from caller mutation, other cities and tree eviction (9.853093ms)
+✔ planning through temporary blocks does not poison ordinary or emergency routes (1.257278ms)
+✔ warm path caches observe in-place directions and roadwork changes without advancing time (1.500126ms)
+✔ intersection report preserves state, composes with an existing scope and sees later edits (0.898531ms)
+✔ a failed intersection report releases its read scope (0.320427ms)
+✔ paired carriageways preserve right-hand directions and close the midblock median (0.874341ms)
+✔ either narrow-end offset has a legal path into each directed carriageway and back (0.840702ms)
+✔ side street creates a shared two-cell junction while neighboring medians remain closed (0.205338ms)
+✔ wide crossing yields one four-cell junction and directional exits (0.329747ms)
+✔ save validation rejects partial or overlapping parallel carriageways, preserves old towns (0.381306ms)
+✔ new side street and changed section metadata invalidate connectivity caches and route signatures (0.276297ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 19
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 263.911504

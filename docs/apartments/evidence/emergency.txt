@@ -1,0 +1,13 @@
+✔ unconnected primary entrance cannot borrow nearby roads; upgrade admits real crews and survives reload (117.561595ms)
+✔ apartment response obeys one-way approach and civilian Divert exception (68.314329ms)
+✔ building incident saves reject fabricated building references, duplicate scenes and invalid crew entrances (5.18228ms)
+✔ a wreck occupying the only apartment entrance blocks response until a second connected entrance opens (154.942106ms)
+✔ responders physically use the chosen top or side entrance instead of unselected perimeter roads (31.64936ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 387.542186

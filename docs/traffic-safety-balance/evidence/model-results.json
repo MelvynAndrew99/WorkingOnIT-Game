@@ -1,0 +1,438 @@
+[
+  {
+    "scenario": "level2",
+    "homes": 3,
+    "completed": 92,
+    "accidents": 0,
+    "returnedHomes": 3,
+    "missing": [],
+    "crashAt": null,
+    "warningAt": null,
+    "peak": 1.5,
+    "encounters": 1,
+    "vehicles": 2
+  },
+  {
+    "extra": 0,
+    "control": "unsigned",
+    "homes": 10,
+    "completed": 2,
+    "accidents": 1,
+    "returnedHomes": 2,
+    "missing": [
+      {
+        "id": 1,
+        "x": 0,
+        "y": 4
+      },
+      {
+        "id": 2,
+        "x": 2,
+        "y": 4
+      },
+      {
+        "id": 3,
+        "x": 4,
+        "y": 4
+      },
+      {
+        "id": 5,
+        "x": 0,
+        "y": 7
+      },
+      {
+        "id": 6,
+        "x": 2,
+        "y": 7
+      },
+      {
+        "id": 8,
+        "x": 9,
+        "y": 0
+      },
+      {
+        "id": 9,
+        "x": 9,
+        "y": 2
+      },
+      {
+        "id": 10,
+        "x": 9,
+        "y": 4
+      }
+    ],
+    "crashAt": 18.875,
+    "warningAt": 7.875,
+    "peak": 6,
+    "encounters": 6,
+    "vehicles": 7
+  },
+  {
+    "extra": 0,
+    "control": "stop",
+    "homes": 10,
+    "completed": 308,
+    "accidents": 0,
+    "returnedHomes": 10,
+    "missing": [],
+    "crashAt": null,
+    "warningAt": 37.675,
+    "peak": 4,
+    "encounters": 8,
+    "vehicles": 10
+  },
+  {
+    "extra": 0,
+    "control": "signal",
+    "homes": 10,
+    "completed": 209,
+    "accidents": 0,
+    "returnedHomes": 10,
+    "missing": [],
+    "crashAt": null,
+    "warningAt": null,
+    "peak": 0,
+    "encounters": 0,
+    "vehicles": 0
+  },
+  {
+    "extra": 2,
+    "control": "unsigned",
+    "homes": 18,
+    "completed": 0,
+    "accidents": 1,
+    "returnedHomes": 0,
+    "missing": [
+      {
+        "id": 1,
+        "x": 0,
+        "y": 4
+      },
+      {
+        "id": 2,
+        "x": 2,
+        "y": 4
+      },
+      {
+        "id": 3,
+        "x": 4,
+        "y": 4
+      },
+      {
+        "id": 4,
+        "x": 6,
+        "y": 4
+      },
+      {
+        "id": 5,
+        "x": 0,
+        "y": 7
+      },
+      {
+        "id": 6,
+        "x": 2,
+        "y": 7
+      },
+      {
+        "id": 7,
+        "x": 4,
+        "y": 7
+      },
+      {
+        "id": 8,
+        "x": 9,
+        "y": 0
+      },
+      {
+        "id": 9,
+        "x": 9,
+        "y": 2
+      },
+      {
+        "id": 10,
+        "x": 9,
+        "y": 4
+      },
+      {
+        "id": 13,
+        "x": -2,
+        "y": 4
+      },
+      {
+        "id": 14,
+        "x": -2,
+        "y": 7
+      },
+      {
+        "id": 15,
+        "x": 9,
+        "y": -2
+      },
+      {
+        "id": 16,
+        "x": 6,
+        "y": -2
+      },
+      {
+        "id": 17,
+        "x": -4,
+        "y": 4
+      },
+      {
+        "id": 18,
+        "x": -4,
+        "y": 7
+      },
+      {
+        "id": 19,
+        "x": 9,
+        "y": -4
+      },
+      {
+        "id": 20,
+        "x": 6,
+        "y": -4
+      }
+    ],
+    "crashAt": 8.9,
+    "warningAt": 5.825,
+    "peak": 6,
+    "encounters": 4,
+    "vehicles": 5
+  },
+  {
+    "extra": 2,
+    "control": "stop",
+    "homes": 18,
+    "completed": 5,
+    "accidents": 1,
+    "returnedHomes": 5,
+    "missing": [
+      {
+        "id": 1,
+        "x": 0,
+        "y": 4
+      },
+      {
+        "id": 2,
+        "x": 2,
+        "y": 4
+      },
+      {
+        "id": 5,
+        "x": 0,
+        "y": 7
+      },
+      {
+        "id": 8,
+        "x": 9,
+        "y": 0
+      },
+      {
+        "id": 9,
+        "x": 9,
+        "y": 2
+      },
+      {
+        "id": 13,
+        "x": -2,
+        "y": 4
+      },
+      {
+        "id": 14,
+        "x": -2,
+        "y": 7
+      },
+      {
+        "id": 15,
+        "x": 9,
+        "y": -2
+      },
+      {
+        "id": 16,
+        "x": 6,
+        "y": -2
+      },
+      {
+        "id": 17,
+        "x": -4,
+        "y": 4
+      },
+      {
+        "id": 18,
+        "x": -4,
+        "y": 7
+      },
+      {
+        "id": 19,
+        "x": 9,
+        "y": -4
+      },
+      {
+        "id": 20,
+        "x": 6,
+        "y": -4
+      }
+    ],
+    "crashAt": 26.025,
+    "warningAt": 14.075,
+    "peak": 6,
+    "encounters": 10,
+    "vehicles": 11
+  },
+  {
+    "extra": 2,
+    "control": "signal",
+    "homes": 18,
+    "completed": 309,
+    "accidents": 0,
+    "returnedHomes": 18,
+    "missing": [],
+    "crashAt": null,
+    "warningAt": null,
+    "peak": 0,
+    "encounters": 0,
+    "vehicles": 0
+  },
+  {
+    "scenario": "separate-routes",
+    "homes": 18,
+    "completed": 439,
+    "accidents": 0,
+    "returnedHomes": 18,
+    "missing": [],
+    "crashAt": null,
+    "warningAt": null,
+    "peak": 0,
+    "encounters": 0,
+    "vehicles": 0
+  },
+  {
+    "scenario": "opposing-turns-signal",
+    "preset": "balanced",
+    "homes": 24,
+    "completed": 260,
+    "accidents": 0,
+    "returnedHomes": 24,
+    "missing": [],
+    "crashAt": null,
+    "warningAt": 40.2,
+    "peak": 6,
+    "encounters": 10,
+    "vehicles": 11
+  },
+  {
+    "scenario": "opposing-turns-signal",
+    "preset": "ns",
+    "homes": 24,
+    "completed": 175,
+    "accidents": 0,
+    "returnedHomes": 24,
+    "missing": [],
+    "crashAt": null,
+    "warningAt": null,
+    "peak": 1.5,
+    "encounters": 7,
+    "vehicles": 8
+  },
+  {
+    "scenario": "opposing-turns-signal",
+    "preset": "ew",
+    "homes": 24,
+    "completed": 7,
+    "accidents": 1,
+    "returnedHomes": 7,
+    "missing": [
+      {
+        "id": 1,
+        "x": 0,
+        "y": 14
+      },
+      {
+        "id": 2,
+        "x": 0,
+        "y": 17
+      },
+      {
+        "id": 4,
+        "x": 2,
+        "y": 17
+      },
+      {
+        "id": 5,
+        "x": 4,
+        "y": 14
+      },
+      {
+        "id": 7,
+        "x": 6,
+        "y": 14
+      },
+      {
+        "id": 8,
+        "x": 6,
+        "y": 17
+      },
+      {
+        "id": 11,
+        "x": 10,
+        "y": 14
+      },
+      {
+        "id": 14,
+        "x": 20,
+        "y": 17
+      },
+      {
+        "id": 16,
+        "x": 22,
+        "y": 17
+      },
+      {
+        "id": 17,
+        "x": 24,
+        "y": 14
+      },
+      {
+        "id": 18,
+        "x": 24,
+        "y": 17
+      },
+      {
+        "id": 19,
+        "x": 26,
+        "y": 14
+      },
+      {
+        "id": 20,
+        "x": 26,
+        "y": 17
+      },
+      {
+        "id": 21,
+        "x": 28,
+        "y": 14
+      },
+      {
+        "id": 22,
+        "x": 28,
+        "y": 17
+      },
+      {
+        "id": 23,
+        "x": 30,
+        "y": 14
+      },
+      {
+        "id": 24,
+        "x": 30,
+        "y": 17
+      }
+    ],
+    "crashAt": 41.275,
+    "warningAt": 38.2,
+    "peak": 6,
+    "encounters": 10,
+    "vehicles": 11
+  }
+]

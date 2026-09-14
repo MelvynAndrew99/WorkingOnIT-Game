@@ -1,0 +1,2 @@
+desktop UI-06 compatibility passed
+narrow UI-06 compatibility passed

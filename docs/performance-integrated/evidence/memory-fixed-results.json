@@ -1,0 +1,184 @@
+[
+  {
+    "tag": "fixed",
+    "width": 1440,
+    "samples": [
+      {
+        "cycle": 0,
+        "gameplayHeap": {
+          "usedSize": 16422944,
+          "totalSize": 18169856,
+          "embedderHeapUsedSize": 2458936,
+          "backingStorageSize": 4600358
+        },
+        "heap": {
+          "usedSize": 10043064,
+          "totalSize": 11509760,
+          "embedderHeapUsedSize": 2558808,
+          "backingStorageSize": 4838451
+        },
+        "dom": {
+          "documents": 2,
+          "nodes": 256,
+          "jsEventListeners": 238
+        },
+        "canvases": 0
+      },
+      {
+        "cycle": 1,
+        "gameplayHeap": {
+          "usedSize": 17722932,
+          "totalSize": 19218432,
+          "embedderHeapUsedSize": 2740144,
+          "backingStorageSize": 6301462
+        },
+        "heap": {
+          "usedSize": 11235660,
+          "totalSize": 13606912,
+          "embedderHeapUsedSize": 2846296,
+          "backingStorageSize": 6185594
+        },
+        "dom": {
+          "documents": 2,
+          "nodes": 256,
+          "jsEventListeners": 238
+        },
+        "canvases": 0
+      },
+      {
+        "cycle": 2,
+        "gameplayHeap": {
+          "usedSize": 18719180,
+          "totalSize": 20004864,
+          "embedderHeapUsedSize": 2762056,
+          "backingStorageSize": 6958385
+        },
+        "heap": {
+          "usedSize": 12185544,
+          "totalSize": 14393344,
+          "embedderHeapUsedSize": 2784360,
+          "backingStorageSize": 6842516
+        },
+        "dom": {
+          "documents": 2,
+          "nodes": 256,
+          "jsEventListeners": 238
+        },
+        "canvases": 0
+      },
+      {
+        "cycle": 3,
+        "gameplayHeap": {
+          "usedSize": 18988568,
+          "totalSize": 20267008,
+          "embedderHeapUsedSize": 2784632,
+          "backingStorageSize": 6959103
+        },
+        "heap": {
+          "usedSize": 12368948,
+          "totalSize": 13869056,
+          "embedderHeapUsedSize": 2755456,
+          "backingStorageSize": 6930982
+        },
+        "dom": {
+          "documents": 2,
+          "nodes": 258,
+          "jsEventListeners": 238
+        },
+        "canvases": 0
+      }
+    ],
+    "errors": []
+  },
+  {
+    "tag": "fixed",
+    "width": 390,
+    "samples": [
+      {
+        "cycle": 0,
+        "gameplayHeap": {
+          "usedSize": 14955512,
+          "totalSize": 17539072,
+          "embedderHeapUsedSize": 2423912,
+          "backingStorageSize": 3350309
+        },
+        "heap": {
+          "usedSize": 9833984,
+          "totalSize": 11509760,
+          "embedderHeapUsedSize": 2640464,
+          "backingStorageSize": 3587892
+        },
+        "dom": {
+          "documents": 2,
+          "nodes": 258,
+          "jsEventListeners": 238
+        },
+        "canvases": 0
+      },
+      {
+        "cycle": 1,
+        "gameplayHeap": {
+          "usedSize": 17346112,
+          "totalSize": 22257664,
+          "embedderHeapUsedSize": 3039440,
+          "backingStorageSize": 4599588
+        },
+        "heap": {
+          "usedSize": 10979812,
+          "totalSize": 13082624,
+          "embedderHeapUsedSize": 2851552,
+          "backingStorageSize": 4571875
+        },
+        "dom": {
+          "documents": 2,
+          "nodes": 258,
+          "jsEventListeners": 238
+        },
+        "canvases": 0
+      },
+      {
+        "cycle": 2,
+        "gameplayHeap": {
+          "usedSize": 18413788,
+          "totalSize": 23044096,
+          "embedderHeapUsedSize": 3066824,
+          "backingStorageSize": 5423759
+        },
+        "heap": {
+          "usedSize": 11821184,
+          "totalSize": 13082624,
+          "embedderHeapUsedSize": 2708264,
+          "backingStorageSize": 5375864
+        },
+        "dom": {
+          "documents": 2,
+          "nodes": 258,
+          "jsEventListeners": 238
+        },
+        "canvases": 0
+      },
+      {
+        "cycle": 3,
+        "gameplayHeap": {
+          "usedSize": 18731364,
+          "totalSize": 23044096,
+          "embedderHeapUsedSize": 3033632,
+          "backingStorageSize": 5404283
+        },
+        "heap": {
+          "usedSize": 12010432,
+          "totalSize": 13606912,
+          "embedderHeapUsedSize": 2667856,
+          "backingStorageSize": 5375954
+        },
+        "dom": {
+          "documents": 2,
+          "nodes": 260,
+          "jsEventListeners": 238
+        },
+        "canvases": 0
+      }
+    ],
+    "errors": []
+  }
+]

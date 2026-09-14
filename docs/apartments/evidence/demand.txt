@@ -1,0 +1,14 @@
+✔ apartments generate multiple real journeys, bounded by their upgrade, and reload them intact (234.912221ms)
+✔ a second entrance provides physical departure and return without a primary approach (340.820474ms)
+✔ apartment unpaid assignments reserve demand and corrupt reservations reject reload (1.323246ms)
+✔ higher apartment population grows bounded needs without enlarging old home demand (0.613644ms)
+✔ an active resident return replans through a chosen side entrance when its original access closes (75.056694ms)
+✔ apartment returns retain a congestion-aware route selected by the traffic planner (0.787552ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 659.931411

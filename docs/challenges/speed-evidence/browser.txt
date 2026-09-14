@@ -1,0 +1,4 @@
+warning: Git tree '/home/phil/Code/jams/AI-Overlord' is dirty
+Context Collapse environment ready: node, npm, rundot
+desktop {"normal":{"sim":1.4499999999999988,"wall":1.5435999999940395},"fast":{"sim":3.1250000000000093,"wall":1.5711999999955297},"rate":2.1173142425710707} pause, live scene, game-time countdown, reset and layout passed
+narrow {"normal":{"sim":1.4749999999999988,"wall":1.5003000000044704},"fast":{"sim":2.9999999999999996,"wall":1.5001999999955296},"rate":2.0340338802405222} pause, live scene, game-time countdown, reset and layout passed

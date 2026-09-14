@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {readFileSync,writeFileSync} from 'node:fs';
+const read=name=>JSON.parse(readFileSync(new URL(name,import.meta.url)));
+const before=read('browser-before.json'),after=read('browser-after.json');
+const median=a=>{a.sort((a,b)=>a-b);return (a[Math.floor((a.length-1)/2)]+a[Math.ceil((a.length-1)/2)])/2;};
+const fmt=n=>n.toFixed(1);
+for(const runs of [before,after]){assert.equal(runs.length,4);for(const r of runs){assert(r.reload);assert.deepEqual(r.errors,[]);assert(r.radio.playing&&r.radio.currentTime>0);}}
+const lines=['# Supplied-town browser comparison','','Each cell is before → after; median of two capture-level statistics. FPS derives from sampled frame intervals. Zero input means no input events, not zero latency. See README for methodology and limitations.','','| Layout / phase | FPS | Frame p95 ms | Frame p99 ms | Input proxy p95 ms | Simulation p95 ms | Report p95 ms | Long tasks | Sim / wall second |','|---|---:|---:|---:|---:|---:|---:|---:|---:|'];
+for(const width of [1440,390])for(const phase of ['live','pan-zoom','inspectors','radio']){const sets=[before,after].map(r=>r.filter(x=>x.width===width).map(x=>x.phases.find(p=>p.name===phase)));const metrics=[r=>r.frames.n/(r.frames.total/1000),r=>r.frames.p95,r=>r.frames.p99,r=>r.input.p95,r=>r.costs.simulation?.p95??0,r=>r.costs.report?.p95??0,r=>r.longTasks.n,r=>r.simSeconds/(r.wallMs/1000)];lines.push(`| ${width} / ${phase} | ${metrics.map(f=>sets.map(s=>fmt(median(s.map(f)))).join(' → ')).join(' | ')} |`);}
+lines.push('','## Synchronous render CPU totals per capture','','Nested costs overlap; do not sum them.','', '| Layout / phase | Ground ms | World ms | Cars ms | Pixi submit ms |','|---|---:|---:|---:|---:|');
+for(const width of [1440,390])for(const phase of ['live','pan-zoom','inspectors']){const sets=[before,after].map(r=>r.filter(x=>x.width===width).map(x=>x.phases.find(p=>p.name===phase)));lines.push(`| ${width} / ${phase} | ${['renderGround','renderWorld','renderCars','pixiSubmit'].map(k=>sets.map(s=>fmt(median(s.map(r=>r.costs[k]?.total??0)))).join(' → ')).join(' | ')} |`);}
+lines.push('','## Memory','','MiB of used JS heap, medians of two contexts; initial gameplay and final menu after forced GC, gameplay end before GC. Different lifecycle points are not a leak measurement.','','| Layout | Initial gameplay MiB | End gameplay MiB | Menu MiB | Menu DOM nodes | Menu listeners |','|---|---:|---:|---:|---:|---:|');
+for(const width of [1440,390]){const sets=[before,after].map(r=>r.filter(x=>x.width===width));const metrics=[r=>r.heapStart.usedSize/1048576,r=>r.gameplayHeap.usedSize/1048576,r=>r.heapEnd.usedSize/1048576,r=>r.domEnd.nodes,r=>r.domEnd.jsEventListeners];lines.push(`| ${width} | ${metrics.map(f=>sets.map(s=>fmt(median(s.map(f)))).join(' → ')).join(' | ')} |`);}
+writeFileSync(new URL('browser-results.md',import.meta.url),lines.join('\n')+'\n');console.log(lines.join('\n'));

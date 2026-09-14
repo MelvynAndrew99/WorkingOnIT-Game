@@ -1,0 +1,40 @@
+/* FLOW-02 service feedback. Navy surface, cyan for the reading, yellow only for the
+   recognition that has already been earned. Every selector is scoped to .flow-* so no
+   other objective or report section changes height or spacing.
+   Selectors are qualified past .city-ui.dispatch-ui/.objective-detail defaults. */
+
+/* The compact objective line. Cyan on the yellow note row: this is a reading, not a reward. */
+.city-ui.dispatch-ui .flow-note{display:block;color:var(--cyan,#42d9e8);font-size:17.6px;line-height:1.2;font-variant-numeric:tabular-nums}
+
+.city-ui.dispatch-ui .flow-feedback{border:1px solid #33475e;border-radius:10px;background:#0d1829;padding:8px 10px;color:#dfe7f3;font-size:17.6px;line-height:1.3}
+.city-ui.dispatch-ui .flow-feedback h3.flow-heading{margin:0 0 6px;color:var(--cyan,#42d9e8);font-size:19px;font-weight:800;line-height:1.2}
+.city-ui.dispatch-ui .flow-feedback h4{margin:0 0 4px;font-size:17.6px;font-weight:800;line-height:1.2}
+.city-ui.dispatch-ui .flow-feedback p{margin:0 0 6px;font-size:17.6px;line-height:1.3;text-align:left}
+.city-ui.dispatch-ui .flow-feedback p:last-child{margin-bottom:0}
+.city-ui.dispatch-ui .flow-feedback .flow-state{color:#f6f8ff}
+.city-ui.dispatch-ui .flow-feedback .flow-reason{color:#dfe7f3}
+.city-ui.dispatch-ui .flow-feedback .flow-hint{color:#afbdd0}
+.city-ui.dispatch-ui .flow-feedback .flow-earned{color:var(--yellow,#ffd22e)}
+
+/* Counts read as a table, not a paragraph. Labels wrap; values stay on the right. */
+.city-ui.dispatch-ui .flow-stats{display:grid;grid-template-columns:minmax(0,1fr);gap:2px 16px;margin:6px 0}
+.city-ui.dispatch-ui .flow-stats>div{display:flex;justify-content:space-between;align-items:baseline;gap:10px;min-width:0}
+.city-ui.dispatch-ui .flow-stats dt{min-width:0;color:#afbdd0;font-size:17.6px;line-height:1.25}
+.city-ui.dispatch-ui .flow-stats dd{flex:none;margin:0;color:#f6f8ff;font-size:17.6px;line-height:1.25;font-weight:750;font-variant-numeric:tabular-nums}
+
+.city-ui.dispatch-ui .flow-road{margin:6px 0;padding-left:10px;border-left:3px solid var(--cyan,#42d9e8)}
+
+/* Two columns of counts once there is room: the wide dock rail and the Dashboard. */
+@media(min-width:760px){
+  .city-ui.dispatch-ui .flow-feedback[data-place=dashboard] .flow-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+.city-ui.dispatch-ui[data-layout=wide] .flow-feedback[data-place=objective] .flow-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+
+/* Narrow frames keep the same type size; only the gaps tighten. */
+.city-ui.dispatch-ui[data-layout=narrow] .flow-feedback{padding:6px 8px}
+.city-ui.dispatch-ui[data-layout=narrow] .flow-stats{gap:2px 8px}
+
+/* The reserved narrow Dashboard needs a single-row heading to leave reading space. */
+.city-ui.dispatch-ui:not([data-layout=wide]) .dashboard-heading h2{font-size:17.6px;min-width:0;white-space:nowrap}
+.city-ui.dispatch-ui:not([data-layout=wide]) .dashboard-heading{flex-wrap:nowrap;gap:2px}
+.city-ui.dispatch-ui .dashboard-heading button[aria-label="Close Dashboard"]{min-width:44px;min-height:44px;padding:4px;font-size:24px;flex-shrink:0}

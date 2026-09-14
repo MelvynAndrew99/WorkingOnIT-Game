@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+.intersection-warning{flex-shrink:0;margin:0;padding:6px 10px;border-left:4px solid #ffc563;background:#452c1e;color:#ffe1a3;font-size:17.6px;line-height:1.25;text-align:left}
+button.intersection-warning{pointer-events:auto;width:auto;min-height:44px;border-radius:12px;border:1px solid #c4893a}
+
 @theme {
     /* ADAPT: game palette — these become Tailwind utilities (bg-primary,
        text-primary, bg-surface, ...). Add the game's full palette here. */
@@ -118,9 +121,10 @@ body{background:radial-gradient(ellipse at top,#385e53,#142f2d)}
   .city-metrics{font-size:14px}
 }
 
-/* Display preference controls the gameplay frame; title/menu composition stays portrait. */
+/* Gameplay follows the saved display preference; the title adapts to the device. */
+#app-frame[data-phase="menu"]{width:100vw}
 #app-frame{container-type:inline-size;container-name:game-frame}
-#app-frame[data-phase="playing"][data-display-mode="wide"]{width:100vw}
-@media(min-width:900px) and (orientation:landscape){#app-frame[data-phase="playing"][data-display-mode="auto"]{width:100vw}}
+#app-frame:is([data-phase="playing"],[data-phase="challenge"])[data-display-mode="wide"]{width:100vw}
+@media(min-width:900px) and (orientation:landscape){#app-frame:is([data-phase="playing"],[data-phase="challenge"])[data-display-mode="auto"]{width:100vw}}
 .display-mode-setting{display:block!important;margin:14px 0;font-size:17.6px}
-.display-mode-setting select{display:block;width:100%;min-height:44px;margin-top:8px;padding:8px;border:1px solid #8098b5;border-radius:7px;background:#13243a;color:#f5f7fc;font:inherit;touch-action:manipulation}
+.display-mode-setting select{display:block;width:100%;min-height:48px;margin-top:8px;padding:8px 12px;border:1px solid #8098b5;border-radius:7px;background:#13243a;color:#f5f7fc;font:inherit;touch-action:manipulation}

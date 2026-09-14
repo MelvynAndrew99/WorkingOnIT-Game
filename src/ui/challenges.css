@@ -1,0 +1,53 @@
+.challenge-menu{position:absolute;inset:0;overflow:auto;padding:clamp(16px,4vw,48px);background:#102b2c;color:#fff1cf;font-size:17.6px;line-height:1.5}
+.challenge-menu header{display:flex;justify-content:space-between;align-items:center;gap:12px}.challenge-menu h1{font-size:2rem;font-weight:800}.challenge-menu h2{font-size:1.5rem;font-weight:800}
+.challenge-menu>p,.challenge-menu article p{margin:12px 0}.challenge-menu article{max-width:650px;margin:24px auto;padding:24px;border:1px solid #78aaa2;border-radius:16px;background:#143f3b}.challenge-menu summary{cursor:pointer;padding:8px 0}.challenge-menu .commute-button{margin-top:20px;font-size:20px}
+.challenge-menu button,.challenge-ui button{min-height:44px;border:1px solid #708a9f;border-radius:8px;padding:6px 12px}.challenge-menu button:focus-visible,.challenge-ui button:focus-visible{outline:3px solid #ffd75c;outline-offset:2px}
+.challenge-ui{z-index:3;position:absolute;inset:0;display:flex;flex-direction:column;pointer-events:none;color:#f3f6fa;font-size:15px;line-height:1.3}
+.challenge-ui .hud-icon{width:18px;height:18px;flex:none;display:block}
+.challenge-ui .city-header{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 12px;background:linear-gradient(180deg,#1a2a40,#141e30ee);border-bottom:1px solid #3d5470;pointer-events:auto}.challenge-ui .city-header strong{margin-right:auto;font-size:18px;letter-spacing:-.02em}
+.challenge-ui .hud-icon-btn{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:6px 10px;border-radius:12px;background:#1a2b42;border:1px solid #3d5470;color:#f3f6fa;font-weight:750}
+.challenge-ui .city-stage{display:flex;flex:1;min-height:100px;flex-direction:column;padding:0 8px;gap:4px}.challenge-ui nav{display:flex;gap:4px;pointer-events:auto}.challenge-ui .city-map-viewport{flex:1;min-height:100px;position:relative;pointer-events:none}
+.challenge-ui .city-controls{display:grid;grid-template-columns:minmax(300px,1fr) minmax(300px,1fr);gap:8px;padding:10px;background:#102030;pointer-events:auto;max-height:55%;overflow:auto}
+.challenge-objective p{margin:0 0 6px}.challenge-counts{color:#48dce6}.challenge-actions{display:flex;gap:8px}.challenge-details{max-height:170px;overflow:auto;margin-top:8px}.challenge-tools{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:6px;align-content:start}.challenge-tools .build-tool{background:#192c46;min-width:0;flex:none;height:72px;border-radius:12px;border:1px solid #3d5470}.challenge-tools .build-cost,.challenge-tools small{display:block;font-size:12px;color:#f0c56a}.challenge-tools .build-tool[aria-pressed=true]{background:#5bc4d4;color:#102536;border-color:#c0fcff}.challenge-message{grid-column:1/-1;margin:0;font-size:17.6px}
+@media(max-width:650px){.challenge-menu article{padding:16px;margin:16px auto}.challenge-ui .city-controls{display:flex;flex-direction:column;max-height:55%}.challenge-tools{flex-wrap:nowrap;overflow-x:auto;flex-shrink:0;padding-bottom:4px}.challenge-tools button{flex-shrink:0}.challenge-ui .city-header strong{width:100%}.challenge-message{max-height:46px;overflow:auto}}
+
+.challenge-map-note{font-size:13px;line-height:1.3;margin:0;color:#5bc4d4}.challenge-ui nav{flex-wrap:wrap}
+.challenge-gameplay{position:absolute;right:12px;bottom:12px;z-index:1;display:flex;gap:8px;pointer-events:auto}.challenge-ui .challenge-gameplay button{min-height:48px;min-width:108px;padding:8px 14px;border:1px solid #f0d090;border-radius:14px;font-size:16px;font-weight:800;box-shadow:0 3px 10px #0005;display:inline-flex;align-items:center;gap:6px}.challenge-ui .challenge-play{background:linear-gradient(180deg,#f0c56a,#e0a83a);color:#1a2436;box-shadow:0 2px 0 #8a6418}.challenge-ui .challenge-reset{background:#152033;color:#f3f6fa;border-color:#3d5470}.challenge-play:disabled{opacity:.65}
+
+/* Reserve the map while rules expand; scroll the explanation inside the dock. */
+.challenge-ui .city-controls{height:32%;max-height:32%;flex-shrink:0;overflow:hidden;grid-template-rows:minmax(0,1fr) auto;background:linear-gradient(0deg,#0d1522,#152033f7);border-top:1px solid #3d5470}
+.challenge-objective{min-height:0;overflow:auto}.challenge-details{max-height:none;overflow:visible}
+@media(max-width:650px){.challenge-ui .city-controls{height:36%;max-height:36%;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto auto}.challenge-tools{min-width:0}.challenge-message{grid-column:1}}
+
+.route-eyebrow{font-size:17.6px;font-weight:800;letter-spacing:.06em;color:#dfac35;margin:0 0 6px}
+.level-brief,.level-result{margin:auto;width:min(480px,calc(100% - 24px));max-height:calc(100dvh - 24px);overflow:auto;border:3px solid #e8bb51;border-radius:24px;background:#fff5d8;color:#193d3e;padding:28px 22px 22px;font-size:17.6px;line-height:1.4;box-shadow:0 16px 60px #0006}.level-brief::backdrop,.level-result::backdrop{background:#082d36d9;backdrop-filter:blur(3px)}.level-brief h2,.level-result h2{font-size:30px;line-height:1.1;font-weight:900;margin:12px 0}.level-brief p,.level-result p{margin:12px 0}.brief-close{float:right;min-width:44px;min-height:44px;border-radius:50%;background:#193d3e;color:#fff6d8;font-size:26px;line-height:1}.level-brief .commute-button{font-size:22px;margin-top:20px}.level-result{text-align:center}.level-result .brief-close{position:absolute;right:10px;top:10px}.level-result .route-eyebrow{padding:18px 18px 0;font-size:16px}.result-emblem{font-size:110px;line-height:1.2;color:#efb72c;text-shadow:0 5px #a36b19,0 0 26px #ffe088}.result-miss{color:#297d83;text-shadow:none}.result-score{display:grid;gap:4px;border-radius:14px;background:#e2eed6;padding:16px;margin:18px 0}.result-score strong{font-size:36px;line-height:1.1}.result-actions{display:flex;gap:10px;align-items:stretch}.result-actions button{flex:1;min-height:52px;border:2px solid #b08b45;border-radius:12px;font-weight:800;font-size:20px}.result-actions .commute-button{width:auto}.result-map{min-height:44px;margin-top:12px;padding:8px 24px;text-decoration:underline;font-size:17.6px}
+.level-brief button:focus-visible,.level-result button:focus-visible{outline:3px solid #177f92;outline-offset:3px}
+
+@media(max-width:650px){.challenge-ui nav{flex-wrap:nowrap;overflow-x:auto;flex-shrink:0}.challenge-ui nav button{flex-shrink:0}}
+
+/* Keep available funds beside the construction prices they pay for. */
+.challenge-gameplay{flex-wrap:wrap;justify-content:flex-end;max-width:calc(100% - 24px)}
+.challenge-ui .challenge-gameplay .challenge-speed{min-width:72px;padding:10px;background:#173d3d;color:#fff3c2;font-variant-numeric:tabular-nums}
+.challenge-ui .challenge-speed[aria-pressed=true]{background:#ffd75c;color:#173d3d}
+.challenge-speed:disabled{opacity:.65}
+.challenge-construction{display:flex;flex-direction:column;gap:8px;min-width:0;min-height:0}
+.challenge-budget{display:flex;align-items:center;gap:8px;flex-shrink:0;color:#f3f6fa;font-size:13px;line-height:1.3;padding:8px 10px;background:#121c2c;border:1px solid #3d5470;border-radius:12px;align-self:flex-start}
+.challenge-budget strong{color:#ffdd70;font-variant-numeric:tabular-nums;white-space:nowrap}
+.challenge-construction .challenge-tools{min-height:0;overflow-y:auto}
+@media(max-width:650px){
+  .challenge-construction{flex-direction:row;align-items:stretch}
+  .challenge-budget{width:108px;flex-direction:column;justify-content:center;gap:0;align-self:stretch}
+  .challenge-construction .challenge-tools{flex:1;flex-wrap:nowrap;overflow-x:auto}
+}
+
+.challenge-stages{margin:0 0 8px;padding:0;list-style:none;font-size:15px}.challenge-stages [aria-current=step]{color:#ffdd70}
+.challenge-editor{grid-column:1/-1;min-height:0;overflow:auto}.challenge-editor:empty{display:none}.challenge-editor p{margin:0 0 4px;font-size:15px}.challenge-editor .direction-actions{display:flex;gap:4px;flex-wrap:wrap}.challenge-editor .direction-editor{padding:6px;background:#173d3d}.challenge-editor input{margin-right:4px}
+.challenge-ui .city-controls:has(.challenge-editor .direction-actions){height:48%;max-height:48%;grid-template-rows:minmax(40px,1fr) auto auto auto}.challenge-ui .city-controls:has(.challenge-editor .direction-actions) .challenge-editor{max-height:160px;overflow:auto}
+.level-brief .commute-button:disabled{opacity:.6;cursor:default}
+
+/* Emergency checklists remain scrollable above the narrow direction editor. */
+@media(max-width:650px){
+ .challenge-ui .emergency-controls:has(.challenge-editor .direction-actions){height:55%;max-height:55%}
+ .emergency-controls .challenge-editor .direction-actions label{flex-basis:100%}
+ .emergency-controls .challenge-editor .direction-actions button{flex:1}
+}

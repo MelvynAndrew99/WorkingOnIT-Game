@@ -1,4 +1,163 @@
+## Post-jam: expand beyond the beginner campaign (2026-09-13)
+
+- [ ] Add more demanding traffic-optimization missions beyond the first 25, using the jam campaign as a simple, fun introduction.
+- [ ] Add further interactive objects and their focused lessons after the jam, rather than making the beginner campaign wait for those mechanics.
+- [ ] Install the selected What A Jam recording and expose playback for the saved free Level 25 song entitlement. The current repository contains its creative brief/lyrics, not the selected recording.
+
+## Post-jam: balance the economy (user decision, 2026-09-12)
+
+- [ ] Balance the economy **after the game jam ends**. Review construction/building prices and refunds, income/rewards, land purchase prices and progression, and the financial relationships among apartments, stores, parks and transit. Values remain provisional until that pass; do not introduce new fares/upkeep merely because they are candidates for review.
+- [ ] Include the proposed on-map cash land purchases in that balancing pass. Full economic tuning is not a prerequisite for discussing or implementing clearer land interactions; any interim price needs to be explicitly provisional. Preserve already earned land, money and progression when changing rules.
+
+## Bus stop label overlap (user deferred, 2026-09-13)
+
+User will fix this later; not a priority today. Observed in play after the bus stop art revision ([artwork](artwork/transit/bus-stop/README.md)).
+
+- [ ] A bus dwelling at a stop draws its occupancy label (for example "3/8 · 70s") over the stop's boarding curb and yellow waiting-rider markers. Keep the bus label clear of the curb side, for example on the road side of the bus.
+- [ ] The stop's wait timer ("48s") and the dwelling bus's timer sit a few pixels apart, so it is unclear which belongs to which. Separating the labels above should resolve most of this.
+- [ ] Minor: from the fifth waiting rider, the second marker row lands on the shelter bench and reads as a blob. Consider a tighter single row along the curb for up to about six riders.
+
+**Jam MVP:** the user finds fun in watching roads, traffic and crashes and solving the resulting problems. Prioritize that visible traffic/crash/optimization loop and readable cause/effect. This does not request another accident-frequency increase or cancel the recorded mission, apartment/store and on-map interaction plans. Economy tuning is deferred, not removed from the project.
+
+**Reported milestone:** after five days, the game is approaching **100 players** (user report, September 12). Keep “almost 100” approximate; it is not an exact count, a concurrent-player count or a retention measurement. This update adds no analytics or publication work.
+
+## Bus ridership and occupancy markers delivered locally (September 11, 2026)
+
+The agreed representative home/shop/park rules now generate shared saved stop queues, physical eight-seat loads, destination stays and return trips. Bus stops/depot use the existing yellow visitor-dot style. Legacy passengers finish intact; representative riders do not mint existing household/mission rewards or remove cars. [Delivery and checks](transit-and-one-way/bus-economics/IMPLEMENTED.md). No publication or performance testing; gateway abstraction and eventual real household/economy coupling remain follow-ons. This supersedes older bus-pending notes below.
+
+## One-way lanes and yield follow-up delivered locally (2026-09-11)
+
+User favors low CPU cost and selection-order interactions over complex menus. Delivered two usable one-way lanes with physical safe merges and saved lane positions; drag/release or ordered taps/close-loop editing replaces the old direction menu. Simple directed loops automatically yield at entrances while circulating cars keep priority. Existing loop controls remain saved but dormant; adjacent signals still work. This supersedes earlier single-lane/menu and no-automatic-roundabout limitations. Topology is cached, circulating lookahead is indexed once per tick, and unchanged-town full state matches all 180 baseline checkpoints. [Delivery and verification](transit-and-one-way/lanes-and-roundabouts/README.md). No global right-on-red change, bus implementation, mission edits, publication or active-save modification.
+
+## One-way roads delivered locally (2026-09-11)
+
+OW-01/02 first implementation slice is complete: [delivery](transit-and-one-way/IMPLEMENTED.md). Shared directed routes/movement/saves, user-selected corner/ring paths, cached arrows and safe edit guards; 303 tests, build and desktop/narrow browser checks. Actual supplied-town ring was tested with existing controls; automatic circulating priority is not implemented. Bus foundation/art and SIG-01 offsets remain queued. User mission plan remains pending. No publication.
+
+## Requested bus and one-way design work (2026-09-11)
+
+User is writing the mission structure. Three Codex design agents delivered transit simulation, directed-road/ring behavior and asset requirements; [the package](transit-and-one-way/README.md) defines implementation assignments OW-01/02, SIG-01, BUS-01/02, ART-01 and VERIFY-01. One-way movement is the proposed first runtime slice, with bus/walking foundation and artwork preparation independent where possible. Bus stations occupy land and include parking; stops occupy one square; passengers must complete actual journeys while buses physically delay traffic. Reuse existing art where available. Signal coordination requires phase-offset work beyond current timing presets. No new mission order, runtime implementation, save edits or publication in this design pass. Existing widening/roadworks work remains queued; the current user request supersedes its older next-feature ordering for this pass.
+
+# Challenges alongside the sandbox
+
+## Priority intersection rebalance delivered (2026-09-11)
+
+Today's user-prioritized shared danger mechanics are delivered locally: heavier conflicting use can overwhelm stops; heavy opposing turns can make a long shared green dangerous. Quiet traffic and suitable controls/routes remain safe in measured comparisons. Level 2/3 maps unchanged, both modes have actionable warnings, saved measurements prepare a later safety heatmap. [Delivery and evidence](traffic-safety-balance/IMPLEMENTED.md), 272 tests/build/desktop+narrow pass. Next balance follow-up: observe play, then incident-based severity and genuine pile-ups with real crew access. No publication.
+
+## Shared intersection balancing review delivered (2026-09-11)
+
+User explicitly wants mechanics balancing across missions and sandbox while preserving the current Level 3. Installed Grok's completed [review and Codex handoff](traffic-safety-balance/README.md) recommend local conflicting-arrival danger, effective controls, and incident-based police/EMS/fire rosters including real pile-ups. Prototype actual failed-yield contact alongside area-level exposure/decay; do not turn compliant waiting or bad Flow labels into crashes. Severity and pile-up reachability, physical responder access and save compatibility require verification. Numbers remain provisional. Five existing lesson tests pass; no runtime rebalance or publication in this assignment pass.
+
+## First 25 missions: current direction (2026-09-12)
+
+[Mission requirements](challenges/MISSIONS.md): Levels1–15 teach roads and balanced store/park service, with apartment/busy-store multi-car demand, multiple entrances and useful buses around10–15. Levels16–25 teach emergency access and safer roads. Beating25 earns What A Jam free as a jam perk. Exact maps and building/reward mechanics remain to be authored; existing playable levels and saves remain unchanged. The sandbox continues as the open-ended place to create and solve problems.
+
+
+## Challenge route and revised lessons delivered
+
+Latest direction supersedes the earlier three-level order/return-only opening: numbered road-map selection, victory Retry/Next, Level 1 actual store arrival, Level 2 vertically spaced homes returning within a provisional 45 simulated seconds, Level 3 missing roads/no control with real collision avoidance. Original Room to move is a fourth bonus; old stars and neighborhood layouts are preserved. Fixed budgets, separate sandbox, main-menu exit and future learn/earn/sandbox unlock direction remain.262 model tests, build and desktop/narrow verification pass locally; observed fun remains unverified. See [delivery](challenges/IMPLEMENTED.md). No publication.
+
+
+## Challenge opening lessons delivered
+
+User reordered the opening to one home/store connection, then a group of homes needing roads; Room to move is now third. Implemented fixed challenge budgets, per-level saves/stars with legacy migration, matching gold entry button and direct main-menu exit.259 model tests, production build and desktop/narrow checks pass. See [challenge delivery](challenges/IMPLEMENTED.md). Broader challenge authoring/inventory and further lessons remain queued alongside sandbox development.
+
+
+## Latest scope correction (2026-09-10)
+
+The sandbox remains the main game. CHALLENGE work develops alongside it as small predetermined puzzles that teach and test sandbox lessons; it does not supersede sandbox development or postpone it. Immediate authorized slice: main-menu Challenges entry and the existing FLOW puzzle with explicit success criteria and isolated progress/retries. Preserve Claude’s story/monetization direction, ongoing FLOW work and all towns. The subsequent A-to-B and five-lesson proposals remain queued, not implemented.
+
+
+First main-menu entry and FLOW lesson delivered locally: [implementation](challenges/IMPLEMENTED.md),256 model tests and production build. Broader format/inventory/A-to-B items below remain queued; the current slice is not their complete delivery. Blocking correctness regressions still come first.
+
+| Order | Item | Gate |
+| --- | --- | --- |
+| 1 | CHALLENGE-01: challenge data format and headless runner | Loads a `parseCity`-validated snapshot plus inventory/goal/time limit; runs with `stepCity`; untouched map fails, reference solution passes, results match across runs and step sizes |
+| 2 | CHALLENGE-02: first playable challenge, car A to B in under 60 simulated seconds | Plan/Go/Reset flow, limited inventory, fixed vs editable construction, separate progress save; city save untouched |
+| 3 | CHALLENGE-03: first five-lesson set and par/stars | Connect, route around, right of way, emergency access, divert; verified by pre-simulation; desktop and narrow checks |
+| Later | CHALLENGE-04: map-derived challenge generation | Candidates from exported maps kept only when pre-simulation proves a small fix works and a human finds the cause readable |
+| Later | Radio station unlock | Hours-played unlock first; finale unlock once an ending exists; Suno commercial rights confirmed |
+| Later | The Man: good-advice-wrong-order chains | Builds on "Not yet / I have a plan" deferral; advice stays mechanically truthful |
+
+# FLOW-01 implemented locally (2026-09-10)
+
+## FLOW-02 delivered locally (2026-09-10)
+
+Current-objective and compact feedback integration is complete locally: [FLOW-02 delivery and evidence](flow-puzzles/flow02/README.md). Existing-system recognition, current service/returns/waiting, cause distinctions and road-approach inspection are implemented. Actual Claude UI and Grok review, independent Codex tests and lead integration;253 tests, build and desktop/narrow browser checks pass. No publication. FLOW-03 observed playtest/tuning is the next flow task; earlier queued labels below are superseded for FLOW-02 only.
+
+
+The first demand/measurement prototype is complete: [results and verification](flow-puzzles/FLOW-01.md). Same queued nine-home town yields 46 original / 68 retimed / 93 nearby-store returns in 180 measured seconds; every household receives repeated service, and spare reachable store capacity remains. Bounded per-purpose visit/return attribution, unserved/current waiting checks and saved shopping/leisure tie fairness are implemented. 244 tests and production build pass. No publication. FLOW-02 objective/feedback integration and FLOW-03 observed playtest are still pending; earlier queued labels below are superseded for FLOW-01 only.
+
 # Working ON IT! backlog
+
+## Saved police / EMS junction jam corrected locally (2026-09-10)
+
+User-save reproduction and recovery fix delivered: blocked responders no longer hold yielding traffic indefinitely, and emergency congestion rerouting preserves alternate approaches with passable queues. Actual police passing/clearance and reload regression, 234 tests and build pass. [Evidence and scope](emergency-recovery/police-junction-jam/README.md). No publication or edits to the active browser save.
+
+## Follow-on roadworks and resilience (2026-09-10)
+
+Latest resolution: user selected hard upgrade-area closure for responders too, plus a requested pause-menu Arcade/Realistic preference. Actual Grok review and concrete first-mode proposal: [MODES.md](roadworks/MODES.md). Sprite work is delivered locally by Codex using Kenney assets after Claude timed out, including the corrected side-view barrier; see [artwork delivery](artwork/roadworks/README.md). No new mechanics shipped with that artwork. Ship mode controls with functional upgrades, preserve shared physics and existing tutorial/receipts, and keep exact timings and additional Arcade rescue protection unselected.
+
+
+User promotes flow/service goals to the whole-game core and wants single-point-of-failure challenges for roads and destinations. Confirmed future addition: real road widening with timed upgrades and detours, preserving physical emergency access decisions. [Roadworks plan and Grok review](roadworks/PLAN.md) distinguish Divert restrictions, alternative detour routes, destination redundancy and capacity. User resolved upgrade worksites as hard closures for responders too; existing Divert remains a civilian restriction with responder passage. Existing-tool flow prototype precedes the widening/roadworks delivery; prepare disruption semantics before shipping. No ordinary-building timers or random failure system selected. Discussion recorded, implementation pending.
+
+### Remaining work available for assignment
+
+All rows below are queued, not implemented or newly assigned by this status update. Follow the linked plans for acceptance criteria and unresolved balance choices.
+
+| Sequence | Work package | Scope / dependency |
+| --- | --- | --- |
+| 1 | Whole-game flow and service goals | [FLOW-01–04](flow-puzzles/PLAN.md): existing-tool bottleneck puzzle, actual successful service/returns, growth and creative solutions |
+| 2 | Timed worksites and safe reopening | [Roadworks](roadworks/PLAN.md): persisted construction progress, hard closure for all vehicles, pause/reload and recoverable cancellation |
+| 3 | Detour planning and access feedback | Player-built alternate routes around worksites; explain affected households, destinations and responder access; retain distinct Divert behavior |
+| 4 | Real road widening | Functional added lane capacity and routing/occupancy geometry, delivered through timed upgrades; art does not define geometry |
+| 5 | Arcade/Realistic pause-menu setting | [Modes](roadworks/MODES.md): saved preference shipped with working upgrades; tune duration/recovery while retaining physical access rules |
+| 6 | Single-point-of-failure challenges | Road and store/park resilience in growing towns; spare route/service capacity matters; preserve successful foresight |
+
+Exact construction timings and any additional Arcade rescue protection remain unselected. Implementation owners can be assigned per package; no specialist is currently launched for these rows.
+
+## Next gameplay puzzle: flow in a growing town (2026-09-10)
+
+User requests transportation-engineering-inspired, Factorio-like flow problems in existing towns after the tutorial. Fun outweighs textbook accuracy, including exaggeration. Confirmed scope: existing tools first; real four-lane widening next. Actual Grok discussion and lead implementation plan: [FLOW-01–04](flow-puzzles/PLAN.md). This makes the outstanding MECH-01/02 sustained-flow puzzle concrete rather than opening a separate mission architecture.
+
+First prototype must produce a legible road bottleneck at bounded demand, distinguish full destinations, demonstrate two working approaches and recognize foresight. Use useful neighborhood service and actual returns rather than mandatory construction or parking occupancy. Untimed evaluation; no reset, erased demand, revoked receipts or success-triggered escalation. New numeric targets/event systems are not selected. Design recorded; runtime implementation and observed playtest remain next. UI cleanup is complete; unrelated routing polish follows this gameplay slice, with blocking correctness still first.
+
+## Completed UI cleanup: UI-06 — remove Jobs & city link clutter (2026-09-10)
+
+**Status: implemented and verified locally on desktop and narrow; no publication.** User wants the persistent “Jobs & city link” entry and its Jobs / City link & guide screens removed. Completed jobs/levels, the finished tutorial list and gateway-coordinate reference are clutter, not useful ongoing tasks. This is a new cleanup request after the completed UI-01–05 scope and supersedes its requirement to retain that full board. This focused cleanup is complete before J4; the rest of the overhaul remains closed.
+
+Keep the current mission, live progress/reward and any earned-but-unclaimed reward actionable. “Completed” must not discard an unclaimed payout: preserve its current-card claim flow and exactly-once saved receipt. Preserve underlying mission/level/permit progression, completion history in saves, tutorial gates, explicit Skip and consent to outside traffic. Remove the historical UI, not the player's earned state. Do not replace it with a renamed archive or move the same clutter into another menu.
+
+Delivery, checks and limitations: [UI-06 cleanup](ui-overhaul/UI-06.md). Completed/skipped disconnected saves keep an explicit current-objective invitation; pending consent keeps a truthful explanation and real road-placement recovery. Current claims and saved receipts remain. All 232 model tests, browser regressions and production build pass.
+
+## UI overhaul completed locally (2026-09-10)
+
+Latest verification scope: require desktop and narrow only to conserve tokens. Add other configurations when a specific need arises; the former six-layout matrix is no longer mandatory.
+
+User prioritizes the entire gameplay layout for clarity and hierarchy before further routing explanations or advanced vehicle behavior. UI-01 is implemented locally: reserved gameplay regions, measured camera/input rectangle, and responsive scrolling. See [UI-01 evidence](ui-overhaul/UI-01.md). UI-02 is implemented locally: six-stat top bar, Heatmap and reserved Dashboard; see [UI-02 evidence](ui-overhaul/UI-02.md). UI-03 is implemented locally: one current mission card with visible title, progress and reward; see [UI-03 evidence](ui-overhaul/UI-03.md). UI-04 is implemented locally: uniform tool grid, responsive composition and verified placement; see [UI-04 evidence](ui-overhaul/UI-04.md). UI-05 is complete for the agreed desktop/narrow browser scope: improved narrow map space, fixed mission/briefing controls, full tutorial and saved-town verification. See [UI-05 evidence and limitations](ui-overhaul/UI-05.md). J4 routing explanations remain the next larger feature after the subsequently requested UI-06 cleanup; they were not implemented by this UI task. Blocking correctness regressions remain first. See [UI overhaul plan](ui-overhaul/PLAN.md) for exact layout, data definitions, phone adaptation, file boundaries and completion gates.
+
+| Order | Item | Gate |
+| --- | --- | --- |
+| 1 | UI-01: shell, spacing and reserved map rectangle (local complete) | Top/center/bottom regions; no persistent panel overlap; correct map input on resize |
+| 2 | UI-02: unified stats bar, Heatmap and Dashboard (local complete) | Funds/Visitors/On Road/Fatalities/Time/Weather have truthful sources and working actions |
+| 3 | UI-03: anchored mission card (local complete) | Title, description, progress and reward; preserve tutorials, claims and city link |
+| 4 | UI-04: uniform build grid and responsive composition (local complete) | Desktop bottom-right grid; phone adaptation; real selection, guidance and placement |
+| 5 | UI-05: whole-interface verification (local complete) | Desktop and narrow checks, saved-town continuity and production build |
+
+Retain the Claude UI / Codex integration ownership preference. UI-01 was delivered by Codex after the bounded installed-Claude attempt returned no files; details are in its evidence record. Weather simulation is absent, and Heatmap initially maps to existing traffic diagnostics; the plan explicitly separates these facts from new mechanics. Desktop mission-left/build-right placement is requested; narrow-screen stacking is a proposed adaptation. No mockups; variations last. J3 is implemented and submitted as RUN1.7.6; J4/J5 remain queued after UI. Earlier lists below retain historical work/status and do not override this priority.
+
+## Previous priority: simple opening mechanics (2026-09-09)
+
+User confirmed clear road-congestion versus store-capacity feedback, and “Keep it simple to start”: no new currencies, upkeep charges or broad upgrade trees in the first slice. [Actual Claude/Grok/Codex roundtable](mechanics-roundtable/README.md) recommends this work order; design discussion is complete, gameplay implementation has not started under these items. This takes priority over earlier speculative crisis-charge/driver expansion work; blocking routing bugs remain first.
+
+| Order | Item | Assigned owner | Gate |
+| --- | --- | --- | --- |
+| 1 | MECH-01: audit trip intent and diagnostic reasons | Codex | Preserve real goals, queues, reservations and reload behavior outside tutorial; identify access versus capacity failures |
+| 2 | MECH-02: clear feedback and one untimed growth objective | Claude UI; Codex integration; Grok economy review | Existing buildings/tools/prices; show affected origins/destinations; two real solutions and successful foresight accepted |
+| 3 | MECH-03: capacity puzzle and measured economy tuning proposal | Grok; Codex fixtures | Measure income sources and meaningful build pacing before changing balance |
+| Later | MECH-04: bounded outside demand; MECH-05: optional occupancy | Codex simulation; Claude progression; Grok balance | First loop must be understandable and satisfying; future systems remain proposals |
+
+This is dependency ordering and assignment, not a promised calendar date or running background implementation.
+
 
 Lead-maintained queue, September 9, 2026. The lead owns scheduling, specialist briefs, integration and verification.
 
@@ -181,3 +340,40 @@ Owner: Codex lead. Review docs/TRAFFIC-RULES.md with the user after this tutoria
 ### Audio handoff and future radio perk
 
 Next audio integration: receive/audition the two user-selected 96 BPM background songs, preserve masters, establish loop or track transitions and music controls, then verify browser/RUN playback. Files have not yet been supplied here. What a Jam! belongs to ending credits. Later possibility: unlockable radio station offering radio-style songs, including What a Jam!; unlock rules, UI and any physical building remain undecided. Keep this separate from ordinary background music integration.
+
+## Foundation delivered locally (2026-09-09)
+
+User requested modular mission/level structure, toggled diagnostics and a tweakable rules file: first foundation implemented; [details and limits](mechanics-roundtable/IMPLEMENTED.md). Full destination-intent audit and sustained-flow puzzle validation are still outstanding; do not mark MECH-01/02 fully finished solely from UI foundations. Automatic city link now follows confirmed tutorial exit (supersedes manual coordinate selection). Actual Claude park sprite candidate is ready for user selection; no park gameplay changes requested.
+
+Park artwork: user approved Claude candidate; installed locally with four entrance variants. Production build and isolated in-game rendering verified; no gameplay changes.
+
+## Next UI correction: explain building rotation
+
+User reports building rotation is unclear during the v0.2 upload. Make the Rotate control and current entrance direction obvious, show the entrance move in the placement preview, and explain that artwork stays upright while the logical footprint/entrance rotates. Include phone tapping and keyboard R guidance without relying on keyboard-only instructions. Queued after this upload; not included in RUN1.7.0.
+
+Rotation visibility fix implemented locally: selected buildings expose a yellow “Rotate” button with entrance direction; desktop also displays R. Phone control shares the category row to retain map space. Tap/R update the preview through existing rotation state. Build and320/390/1440 browser checks passed. Not included in the earlier RUN1.7.0 upload.
+
+## Pause clarity and future pause music
+
+User clarified missing music was caused by the city being paused and finds the pause state confusing. Make the paused state unmistakable with a clear Resume action; investigate any unexpected automatic pause source before changing simulation behavior. User plans a separate pause music track; none supplied yet. Do not relabel the gameplay track as pause music or silently change its full outro/restart.
+
+Separately, investigation reproduced a lifecycle edge case: onSleep marks music sleeping, while onResume alone clears only store.paused, leaving audio stopped if onAwake did not occur. Queue a bounded lifecycle correction with host-event coverage; this was not the cause of the user's clarified report and is not included in RUN1.7.1.
+
+Pause clarity delivered locally: persistent yellow GAME PAUSED banner with Resume game action and traffic/music explanation, visible for any paused gameplay state, including after tutorial. Header Play label now Resume; redundant tutorial-only pause row removed. Phone/desktop pointer and Space checks passed. Not uploaded with RUN1.7.1.
+
+Pause presentation revised per user: darkened game with centered pause menu replaces banner. Resume game and Main menu, focus containment and Escape resume implemented locally. Future radio controls can extend this component. Build and320/390/1440 browser checks pass. Not uploaded yet.
+
+### Saved-city gridlock follow-up (2026-09-09)
+
+User reports multiple stuck emergency crews and civilian queues that do not respond to added roads. Prioritize working rescue access and automatic rerouting before advice. Main-game manager should offer delayed, situation-specific help for unresolved access/congestion ("MORE roads!" only when a usable alternate route would help). Trip abandonment is not approved as a universal timeout: preserve mandatory destinations; separately design optional leisure cancellation with unmet-demand/city-cost feedback. Never require a city reset to apply routing fixes. Existing congestion recovery work is being verified against saved-state emergency continuations.
+
+### Rich traffic world, delivered affordably (user vision, 2026-09-09)
+
+User supplied broad future direction: varied purposeful vehicles, emergent congestion/spillback, advanced road/control tools, scenario variants, blueprint diagnostics and modular city assets. Requested Grok/agent review and token/cost conservation. Scope and short reusable prompt: docs/traffic-world/README.md and reusable-prompt.txt.
+
+Work order proposal: current real-player responder diagnostics/recovery first; then the routing-cost/adaptive-rerouting plan and one measured junction puzzle with current tools; one-way/roundabout prototype; lane simulation; later buses, pedestrian conflicts and grade separation; scenario and visual variations last. Mockups are removed. This initial proposal defers mass asset generation and a broad upgrade tree. Treat six named scenarios as shared-map data presets with explicit demand rules. New artwork still requires user selection before adoption. Agent suggestions are design proposals, not implemented behavior or playtested balance.
+
+
+### Advanced routing direction — jam interpretation (latest user addition)
+
+Plan added in docs/traffic-world/routing-plan.md. Priority: real responder diagnosis/recovery; shared cost snapshots; bounded stable weighted rerouting; emergency policy; decision traces in the current live debugger; one measured mission. Preserve goals, hard route constraints, safe occupancy and return paths. Lead proposes the global network observer be advisory in the jam; requested automatic retiming/lane/detour strategies remain later player-enabled tools to resolve, not silently implemented behavior. Rules and narrow typed events keep simulation independent of Pixi. No per-car LLM or new hosted dependency proposed. User explicitly removes mockups entirely and puts variations last; this supersedes the prior first-comparison-sheet assignment. Planning only, no code change in this update.

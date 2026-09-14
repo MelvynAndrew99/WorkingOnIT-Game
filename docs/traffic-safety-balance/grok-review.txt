@@ -1,0 +1,95 @@
+**Shared intersection rebalance (proposal only).** Preserve current Level 3 as an unchanged benchmark. Apply the same unsigned-conflict rules to sandbox and missions. This is not playtested or implemented. Code facts are labeled as such; every number below is a **proposal**.
+
+## 1. What should raise crash risk
+
+**Recommend local conflicting-arrival risk. Do not use city density or flow/LOS ratings as crash drivers.**
+
+**Code fact:** crashes already require two live cars on or beside a contact, different approach axes, no governing Stop/Light, and no active scene. Same-axis traffic is excluded. East–west has unsigned priority; north–south waits for a gap. Detection looks at actual junction entry claims and incompatible civilian blockers, not parked cars, not a straight-road queue.
+
+Density on a straight road, a slow but orderly queue, and a north–south car that waits without entering are not failed yields. A city-wide density or average flow score would punish those, hide one starved approach, and break before/after comparisons at identical demand. Flow ratings stay diagnostics.
+
+Busy unsigned danger should come from **repeated incompatible claims at one junction**: two (or more) approaches trying to occupy the same controller area at once. Quiet traffic stays safe because genuine overlapping claims are rare and brief. Controls remain a hard cancel of this mechanism.
+
+Optional intensity, if needed later: cars arriving on two-plus axes into that same unsigned area in a short window. That is still local conflict, not town density.
+
+## 2. Accumulator, windows, warnings
+
+**Code fact:** qualifying exposure is six seconds **per road point**; more than one second without conflict wipes risk. Detection deduplicates to one report per intersection area per 0.025s tick, so a busy junction can pulse on different points and never stack. Two lingering cars can hit six seconds even in a quiet town. That inverts the desired read: pulsed busy traffic can be safer than one stuck pair.
+
+**Proposal: one accumulator per unsigned intersection area**, in simulated time, deterministic, no RNG quota.
+
+- Add `dt * intensity` only on ticks that already pass `recordConflict` (two live cars, different axes, actual contact/claim, no control, no scene).
+- `intensity = 1.0` for two cars; `+0.4` per extra live conflicting participant, cap 2.2.
+- After **0.8s** with no qualifying tick, decay **0.45 units/s**.
+- Visible warning at **2.4** accumulated seconds.
+- Incident at **5.0**.
+- Save the meter with the city; reload must not wipe a mid-warning junction.
+- Integrate by simulated `dt`, not frame count, so variable FPS cannot speed or stall risk.
+
+**Quiet stays safe:** one 0.3–0.6s brush every 15s+ dies to decay. A yielding NS car that never enters adds nothing.
+
+**Busy gets dangerous:** overlapping pulses at the same area keep the meter above decay. Level 3 repaired unsigned must still crash within the existing **90s** lesson test. If 5.0/0.45 misses that lock, retune the threshold, not the map.
+
+**Keep 6s/1s only as the regression baseline** until the new meter matches that lock plus quiet-safe.
+
+**No stationary-wait-to-crash:** waiting on an approach without a junction entry claim is not contact. Same-axis followers and destination queues are not contact. Contact means two incompatible live claims already in or entering the controller tiles.
+
+**Multi-tile areas:** accumulate on the shared controller, not each member tile. One warning, one incident, matching “tap any member” controls.
+
+**Reproducibility:** same roads, demand, and tick produce the same meter. No hidden aggression, no crash lottery on a solved layout.
+
+## 3. Severity and rosters
+
+**Code fact:** severity walks `minor → serious → fire` by global `accidentCount`. Every natural incident wrecks exactly two cars. Rosters already match the user table (police / police+EMS / all three). Serious and fire use a 90s rescue deadline; police/EMS work 6s, fire 10s; max three active incidents. There is no participant list and no pile-up.
+
+Do not relabel a two-car wreck as fire because it is the third crash this session.
+
+| Class | When (proposal) | Participants | Roster | Deadline | Block |
+|---|---|---|---|---|---|
+| Fender | Two cars, overlap mostly on an approach / glancing | 2 | Police | None | Junction through-traffic until police finish (**4s** work) |
+| Injury | Two cars both occupying the junction core | 2 | Police + EMS | **90s** (existing) | Same; **6s** work |
+| Pile-up | Third-plus civilian **already committed** into the area before freeze | 3–4, cap **4** | Police + EMS + Fire | **90s** | Fire scene protection blocks civilians; responders keep current access reservation |
+
+**Genuine pile-up:** extra cars that have already claimed the junction or the next tile during the trigger window become participants. Cars still on distant approaches stop before the existing work box. That is new behavior, not a rename.
+
+**Fire without deadlock:** do not grow wreck occupancy to every approach. Keep current “civilians stop before work space” and emergency passing. One pile-up counts as **one** of the three active incidents. Missed 90s can still fatality on injury/fire; fenders never kill. No new fines. Preserve in-flight rosters and the H-tutorial natural-conflict suppress.
+
+Two-car fender vs two-car injury is overlap depth at the trigger tick, not the session counter. A town’s first crash can be injury. A pile-up can be the first incident.
+
+## 4. Stages and acceptance
+
+Stage A: junction-area meter, warning, decay. Still two-car, still current cycling or minor-only. Lock Level 3 tests.
+
+Stage B: participant severity for two-car fender vs injury. Fire unused until Stage C.
+
+Stage C: committed-car pile-up and fire blocking. Sandbox and later responder lessons only. Level 3 still fails on **any** crash and still has no responders.
+
+Codex verifies. Suggested matrix:
+
+| Case | Expect |
+|---|---|
+| Untouched Level 3 | Same map, $180, four missing tiles, crash fails, no responders |
+| Repaired unsigned | Crash ≤90s (existing test) |
+| Stop or Light at (8,6) | 10 shop **and** return, zero crashes |
+| Quiet 1–2 homes unsigned | No incident in **180s** |
+| Orderly NS yield, EW flow | No incident |
+| Straight-road / same-axis density | No incident |
+| Slow orderly queue | No incident |
+| Alternate route around the conflict | Full service, no crash |
+| Controlled junction at designed demand | No random crashes |
+| Sandbox dense unsigned | Warnings, then incidents |
+| Sandbox calm controlled | Safe |
+| Reload mid-meter / mid-incident | Meter and roster persist |
+| Variable `dt` | Simulated-time integration |
+| Injury/fire rescue | Existing access, clearance, no new deadlock |
+| H tutorial | Scripted injury only; natural conflicts still suppressed |
+
+Identical demand before/after. Do not score by deleting demand, trapping an approach, or averaging only successes.
+
+## 5. Learning and cautions
+
+Do not reorder the 25 maps or change Level 3. It already teaches editable Stop/Light; keep that. Future first-ten flow lessons stay a draft. Prevention (unsigned danger, then controls) stays separate from later dispatcher work.
+
+Sandbox will feel injury and fire once Stage C lands. Earn/unlock must not hide Police/Clinic/Fire after that. Challenges may still fail on any crash without spawning crews.
+
+Lead cautions: no density or LOS crash chance; no RNG quota; do not leave per-point 1s wipes beside per-area detection; do not ship fire as a relabel; persist the meter; do not touch stars, town saves, or publication. Retune proposals if unsigned Level 3 or quiet-safe fails. Fun, readable failed-yield, not a traffic-safety claim.

@@ -1,0 +1,19 @@
+{
+  "baseline": "Frozen prior one-way implementation /tmp/oneway-dev/src, immutable supplied player save",
+  "trials": 3,
+  "checkpointsPerTrial": 60,
+  "allFullCityHashesEqual": true,
+  "baselineMedian": {
+    "ms": 2389.547966,
+    "p50": 0.6458930000007967,
+    "p95": 1.7127829999999449,
+    "p99": 2.6774319999994987
+  },
+  "currentMedian": {
+    "ms": 2368.01904,
+    "p50": 0.6473130000003948,
+    "p95": 1.7053829999995287,
+    "p99": 2.686232000000018
+  },
+  "limitation": "Model measurements only; no target-device smoothness claim."
+}

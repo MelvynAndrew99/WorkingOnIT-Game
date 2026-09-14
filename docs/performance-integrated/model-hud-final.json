@@ -1,0 +1,46 @@
+[
+  {
+    "tag": "before",
+    "root": "/tmp/integrated-model-pristine",
+    "callsPerTrial": 100,
+    "warmupTrials": 1,
+    "trials": [
+      {
+        "totalMs": 482.8335400000001,
+        "perReportMs": 4.828335400000001
+      },
+      {
+        "totalMs": 482.957809,
+        "perReportMs": 4.82957809
+      },
+      {
+        "totalMs": 471.66815699999984,
+        "perReportMs": 4.716681569999999
+      }
+    ],
+    "cityHash": "5b170aface5a5dc3932dda000df90cee6c36557eade342a21bcd0bad6822a279",
+    "outputHash": "2d1d194c58b98caccb5393b34b209357996fd071f9ba71d9782993a8a2020c9c"
+  },
+  {
+    "tag": "after",
+    "root": "/home/phil/Code/jams/AI-Overlord",
+    "callsPerTrial": 100,
+    "warmupTrials": 1,
+    "trials": [
+      {
+        "totalMs": 12.364190000000235,
+        "perReportMs": 0.12364190000000236
+      },
+      {
+        "totalMs": 13.536587000000054,
+        "perReportMs": 0.13536587000000055
+      },
+      {
+        "totalMs": 14.157459000000017,
+        "perReportMs": 0.14157459000000017
+      }
+    ],
+    "cityHash": "5b170aface5a5dc3932dda000df90cee6c36557eade342a21bcd0bad6822a279",
+    "outputHash": "2d1d194c58b98caccb5393b34b209357996fd071f9ba71d9782993a8a2020c9c"
+  }
+]

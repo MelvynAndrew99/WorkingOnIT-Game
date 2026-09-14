@@ -1,4 +1,56 @@
+## Measured integrated performance and renderer lifetime (2026-09-13)
+
+- Capture the current integrated working tree, including uncommitted changes, as the baseline. Keep browser contexts and saves isolated, use production builds for the main comparison, and avoid concurrent timed work. Compare fixed-dt complete-state hashes separately from wall-time browser samples: slow frames alter the transient traffic state through the existing dt cap.
+- Exact ordered-coordinate comparisons can validate cached road graphs without allocating coordinate strings each query. Continue checking all directions, temporary blocks and in-place mutations; do not let a read cache span simulation changes.
+- Scope repeated read-only diagnostics to one road index. Verify identical output, city purity, nested scope behavior, later edits and finally cleanup. CPU savings do not establish a frame-rate gain when the browser waits elsewhere.
+- Retaining a bounded terrain margin removes repeated texture rebuilds on short pans. Ownership, geometry and late artwork must still invalidate; verify pixel equality through zoom/resize/land changes. Extra retained sprites are a memory tradeoff and need measurement.
+- Installed Pixi8.19.0 can retain destroyed renderers through pooled render-texture source callbacks. Heap retainers and a native-click control distinguished this from automation retention. Clear returned `TexturePool` targets after scene destruction and before renderer destruction; never clear shared atlas Assets. Validate repeated game/menu/radio cycles and rendering after re-entry. This removes the demonstrated DOM/listener growth, not every possible JS cache or leak.
+- [Evidence](performance-integrated/README.md): three CPU/render fixes plus teardown cleanup; build, focused/differential/visual/lifecycle checks. Report unchanged steady software-renderer pacing, worse tails, baseline functional failures and unverified physical-device/long-soak behavior explicitly.
+
+## Multi-entrance buildings and grouped communities (2026-09-13)
+
+- Keep physical entrance choices in saved model coordinates; render arrows and future art variants from the same points. Preserve the original driveway when upgrading. Validate every selected tile against lot perimeter, bounds and other footprints; construction protects all enabled access tiles.
+- When adding parallel resident trips, reserve unpaid demand until completed visits consume it. Saved demand, capacity and outstanding trips must agree; an upgraded building must not duplicate its current needs or convert work into shopping credit.
+- Preserve a congestion-aware route already selected by the traffic planner. The first apartment return branch overwrote it with a shortest path; a focused regression now protects the selected detour while unselected routes still reconsider alternate doors.
+- Group membership records an organizational choice, not proof of operational access. Keep membership across a severed road, report structural disconnection, and retain physical routing/one-way/occupancy as the authority for every journey and responder.
+- Verify provider output before integrating it. Installed Claude wrote partial office/residential art, then reported a session limit; placeholders remain and no completed artwork claim is made. User artist ownership still applies when the preferred artist is temporarily unavailable.
+- Evidence: [offices and complexes](apartments/README.md), focused conservation/routing/group tests and isolated1440/390 pointer/UI/reload checks. No performance measurements.
+
 # Shared implementation lessons
+
+## Visual weather and paused rendering (2026-09-12)
+
+Derive atmosphere from saved simulation time to preserve pause/reload continuity without new city-save fields. Keep display preferences separate, and explicitly repaint when a paused player hides an effect. A bounded reused Graphics layer can sit inside the map's existing clip while leaving cars, emergency labels and previews legible. Cache keys must include all affected geometry, including viewport height and map origin; test actual redraw behavior after height-only resizing. Hold one reduced-motion media query per scene and clean up its listener. Verified with actual Grok implementation plus Codex integration corrections, 15 focused tests and desktop/narrow browser checks; no performance measurements. [Weather delivery](weather/README.md).
+
+## Road transitions must fit the visible vehicle (2026-09-11)
+
+- A double-width rectangle and isolated markings do not communicate a lane transition. Share pavement contours with display interpolation, remove the rectangular underlay, and match the source atlas curb width/colour. Check both orientations and offsets.
+- A lone aligned section has no full-width through-lane length; render it as a connector. Preserve full turning pavement for a very short offset dogleg rather than forcing an S taper that puts tires onto grass. Real side junctions and building entrances also need their apron.
+- Inspect exact paused vehicle samples as well as empty-road screenshots; moving simulation can advance a supposedly fixed pose before capture. Geometry tests should verify continuity, opposing lane separation and unchanged saved state.
+
+
+## Paired carriageways and timed topology edits (2026-09-11)
+
+- Adjacency cannot distinguish a median from a street. Shared paired-road topology must drive pathfinding, weighted snapshots, physical movement and rendering. Include both narrow-end offsets and rotations in actual return-route tests; retain return-reachability checks whenever any directed facility exists, not just manual one-way metadata.
+- Multi-tile junctions need reservations spanning their full crossing/exit, including departures originating inside an extended junction. New departures or replans must not reserve an active work area even when their first tile is outside it. Verify physical service journeys and mid-motion reload, not graph reachability alone.
+- Complete timed edits outside a cached simulation-index scope, then rebuild topology and invalidate the static visual cache together. Save exact payment provenance and restoration state; duplicate or conflicting metadata must reject rather than silently change directions.
+- A refreshed source snapshot can leave an already-running Vite server serving timestamped modules alongside fresh bare imports. Restart the isolated server before final UI automation; a second store instance otherwise falsely reports missing construction. Keep world-space preview text readable at narrow scale, and inspect the actual desktop controls after adding rotation rows.
+- Evidence and limits: [four-lane delivery](roadworks/FOUR-LANE-IMPLEMENTED.md), 48 model test files, build and desktop/narrow controls. No performance or final balance conclusions follow from these functional checks.
+
+## Saved-city troubleshooting workflow (2026-09-10)
+
+User explicitly requests reusing the successful full-town debugging process for future issues. Follow [the saved-city troubleshooting brief](SAVED-CITY-DEBUGGING.md): collect diagnostics plus the complete city save, preserve the original, reproduce with the real simulation in isolation, trace actual blockers, and retain regression coverage including reload and preservation checks. Diagnostics alone are not a full save. Explain that browser `copy()` returning `undefined` is normal. Never reset or modify the player’s active town to obtain a reproduction; distinguish verified model recovery from active-browser recovery and publication.
+
+
+## UI verification budget (2026-09-10 user decision)
+
+Default to two representative layouts, desktop and narrow. Expand coverage only for a concrete issue or task-specific need, explaining why. Earlier multi-size test records document completed work; they do not mandate repeating those matrices. Continue checking actual interaction and screenshots within the selected layouts.
+
+## Integrated UI and modal precedence (2026-09-10)
+
+- Let briefing dialogs own modal interaction while simulation is paused. A PauseMenu driven only by `paused` covered the mayor's funding acknowledgement. Observe other open dialogs and queue PauseMenu until they close, without silently resuming. The real two-expansion tutorial reproduced the blocker and verifies the correction.
+- Keep mission headings and actions anchored; scroll only longer task copy and secondary details. Measure two-line buttons as well as nominal 44px controls. Reusing the reserved feedback band for tutorial guidance reclaimed narrow map space without reducing type or targets.
+- Run final browser checks against an isolated source snapshot. Editing verification/docs in the active Vite tree reloaded a long tutorial test and invalidated its imported state handles. Full desktop/narrow pointer-built tutorial, real EMS clearance/outside arrivals, saved continuation, 232 tests and production build pass; see [UI-05](ui-overhaul/UI-05.md). Physical-device comfort remains unverified.
 
 ## Land progression and sequential dialogs (2026-09-09)
 
@@ -244,3 +296,61 @@ Charge after road/junction validation and distinguish installation/replacement f
 ## Release artifact and deployment retries
 
 Build once, then release and publish the same checksummed artifact at the triggering commit. A missing success receipt does not prove an external deployment failed: persist an attempt before mutation and stop ambiguous retries for status inspection. Preserve matching release assets and reject changed bytes on rerun. Explicitly include hidden files when the artifact staging directory itself is hidden; stage only intended public release files there. Validate workflow expressions with actionlint and shell scripts with shellcheck; mock external tools to test publish failure modes without spending a real platform version.
+
+## Mission diagnostics and automatic transition (2026-09-09)
+
+Keep tuning, mission outcome evaluation, read-only diagnostics and presentation separate. Mark full reserved visitor capacity separately from an actual household waiting for capacity; do not infer road failure from occupancy alone. Both-direction reachability supplements real visit evidence, but does not prove stable throughput or a completed return. Automatic authorized road additions must happen before traffic-index construction, preserve actual-payment provenance, and retry only with persisted consent. Evidence:199 simulation tests and phone/desktop browser checks; current foundation is not a validated full puzzle campaign.
+
+### Patrols share service occupancy (verified)
+
+A routine service vehicle can reuse ordinary return-driving occupancy while retaining an explicit patrol flag. Reassignment must commit through the same occupied-lane check as replanning, rather than spawning a replacement at its station. Emergency recovery tests should assert response completion independently of later routine patrol presence. Verified by real dispatch/return and save tests; routine patrol geometry remains separate from artwork.
+
+### Gridlock and replacement response recovery (verified)
+
+Strict emergency junction emptiness must cover the junction itself; exit tiles still use lane compatibility. Requiring the opposite exit lane to be empty can deadlock the very civilian yielding to the responder. A stopped-traffic retry must find a real alternative before backing up, and must concern the remaining route rather than unrelated stationary cars. Otherwise it creates repeated reverse/creep or pointless route trimming.
+
+A stale response assignment must not permanently monopolize a service request. Replacement transfers responsibility, not the original vehicle's position: preserve its occupied path and fractional progress, save explicit cancelled-return state, then route it home physically. Validate legacy assignment -> replacement -> reload -> exactly-once service work for each crew. Verified in 210 model tests including dedicated gridlock and backup fixtures. The user's live account save was not accessible, so exact-city recovery still needs playtesting.
+
+### Crew scene occupancy versus return admission (verified)
+
+Whole-road scene occupancy plus immediate U-turn return can trap crews against each other. Separate parked work from road occupancy; retain the actual arrival position and explicitly check clear road space before departure. Save completed-but-parked crews and retain their incident references until they return. Recovery from old scene-turn states must back up at simulation speed before switching parking state. Verified simultaneous police/EMS/fire work, blocked return -> reload -> reopen -> every original crew home, plus an old fractional-progress return snapshot. Tutorial timing tests must target actual incomplete work rather than depend on crews previously blocking each other.
+
+### Vehicle diagnostics reuse movement rules
+
+Expose read-only snapshots from the occupancy module instead of guessing blockages in the renderer. Share the road index/grid across the inspected batch, and clone returned paths so UI/report use cannot mutate trips. Separate response intent from vehicle type: a returning police car correctly follows ordinary traffic rules. Provide copied snapshots and a text fallback because host clipboard access may differ. Read-only blocker and disconnected-scene-return tests pass.
+
+### Siren yielding must consider the blocking vehicle (verified regression)
+
+User's live inspector showed EMS waiting on a civilian whose own reason was yielding with no conflicting reservation. Reproduced a circular wait at an incident approach: response admission requires the exit tile exclusively, while its occupant yields to the responder approaching the junction. Direction-only lead-car exceptions miss this opposing-approach case. Yield logic now checks the responder's actual next admission reservations against the civilian's held space, permitting that blocker to clear through ordinary movement gates. Keep committed passing-corridor yields and all occupancy checks. Regression fails before the fix; after it, the blocking car clears and each service reaches scene work. No exact user save was supplied.
+
+### Weighted routes retain physical admission (verified)
+
+Select the destination before weighting its route, and validate departure occupancy against that selected path. Compare old and candidate costs on one directional snapshot, exclude the querying car, and avoid charging control delay twice. New bypass construction can turn the stopped car's tile into a junction: excluding every junction from replanning breaks recovery. Permit sustained-stop reconsideration through existing gradual reversal and reservation checks, while moving committed junction traffic keeps its route. Save cooldown continuity separately from derived observations. Verified in 224 tests and 390/1440 browser save/reload checks; workstation query timings do not establish physical-phone performance. See docs/traffic-world/routing-implementation.md.
+
+### Emergency weighted routing keeps intent separate from vehicle type (J3)
+
+Cost dispatch and subsequent scene-approach reconsideration consistently; otherwise a tile-count retarget can overwrite the weighted choice. Active responses may omit control delay and cross civilian diversions only because physical movement already supports those exceptions. Routine returns use ordinary speed and restrictions even before their old response speed field is updated. Reserve ordinary query capacity separately from prioritized responses and test repeated response pressure. Route selection never replaces safe admission, committed passing, parked work or return merges. Evidence:232 model tests and390/1440 browser response/reload/work/return plus civilian completions; physical-phone performance remains unmeasured.
+
+### FLOW-01 service observations and purpose fairness (verified)
+
+Timestamp actual completed stays separately from physical returns; carry optional local attribution in the existing bounded traffic history and retain completed parked customers in live observations. A valid route both ways does not prove the current car can return from its committed destination. Keep fixed household targets and all current households alongside averages; absent old attribution means unknown evidence, not invented progress. Restore elapsed time before parsing trip timestamps.
+
+Equal-urgency demand ties can starve shopping if leisure refills before every departure. Persist the last successful departure purpose and alternate ties without reassigning a committed journey. A real long-park-trip/reload regression verifies continuing shopping and leisure service.
+
+Comparison fixtures must assert each placement and every destination's reachability: a spare slot in an accidentally disconnected store is not evidence of usable spare capacity. Same queued-town copies verify retiming and nearby destinations with every household served; a preplanned layout needs no forced jam. 244 model tests and build pass; narrow-window qualification variation and player-observed fun remain tuning work. See [FLOW-01](flow-puzzles/FLOW-01.md).
+
+### FLOW-02 civic recognition and compact feedback (verified)
+
+Keep comparison thresholds separate from civic qualification through the same measurement function. A shopping quota that ignores real park journeys can reject useful mixed-purpose service; verify a retained-park town and reload before choosing the gate. A slower original layout may genuinely serve all homes and should not be forced to fail. New recognition belongs in the existing receipt system, with optional observation state and a saved high-water household target; corrupted optional state must not erase old receipts.
+
+Pure helpers in mutually importing model modules are safe at call time, but a top-level definition reading a not-yet-initialized imported constant caused an ES-module initialization failure. Keep mission definitions independent of that initialization order.
+
+Polled Flow labels/counts should stay outside live regions. Reuse the objective's compact note and scrollable Details slots. Numeric bounds passed while the initial narrow Dashboard still had poor reading space; inspect screenshots, shorten copy and measure heading fit too. Road approach observation must follow connected roads, not a geometric radius across an unconnected parallel street. Verified in253 model tests, build and two-layout browser evidence; observed fun remains separate. [FLOW-02](flow-puzzles/flow02/README.md).
+
+### Moving a saved external connector (verified)
+
+Run one-time sandbox migration after validating and selecting the winning host/local save, keeping pure parseCity useful for original-state reproductions. Moving the connector must update every visitor origin and returning goal together, preserving local path geometry and fractional position. Returners must re-enter physical routing instead of completing at the obsolete endpoint. Verify a disconnected wait, reconnect through actual construction, physical completion and reload. An expansion rejection must precede progress refresh or allowance consumption. Reconnection guidance belongs in the measured objective layout; adding a supplemental row caused overlap on narrow screens. See [delivery](land-progression/connected-edge/README.md).
+
+### Optional patrol boundaries must not trap the return journey (2026-09-12)
+
+The captured roundabout jam combines a radius-selected U-turn, exclusive turn occupancy and priority for a circulating car whose exit that turn blocks. Changing yield alone cannot release already-held ring reservations. Prevent the optional turnaround at route selection; recover existing trips through gradual movement and occupancy-checked legal rerouting. An interrupted patrol can leave its optional radius to return home, but must preserve explicit saved patrol identity: simply deleting `patrol` creates a service trip with no incident, which strict parsing correctly rejects. Verify the committed recovery state immediately through save/reload, and clear the return flag when dispatch reassigns that same car. Evidence: `cityRoundaboutJam.test.ts` and `cityPatrols.test.ts`.

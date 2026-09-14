@@ -1,0 +1,26 @@
+[
+  {
+    "width": 1440,
+    "point": {
+      "x": 8,
+      "y": 5
+    },
+    "pauseResume": true,
+    "constructionVisible": true,
+    "zoom": true,
+    "reloadPreservesConstruction": true,
+    "errors": []
+  },
+  {
+    "width": 390,
+    "point": {
+      "x": 8,
+      "y": 5
+    },
+    "pauseResume": true,
+    "constructionVisible": true,
+    "zoom": true,
+    "reloadPreservesConstruction": true,
+    "errors": []
+  }
+]

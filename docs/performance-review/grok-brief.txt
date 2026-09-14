@@ -1,0 +1,416 @@
+Read-only performance review requested by user from Grok, Claude and Codex. No tools needed: relevant excerpts below. Identify ranked optimizations, semantic risks, and safe crash-logic simplifications. Preserve real travel/collisions/rescue deadlines/saves. No edits.
+
+src/game/cityTraffic.ts:62
+export const isEmergencyResponse = (t: Trip) => !!t.service && (phaseOf(t) === 'outbound' || (phaseOf(t) === 'waiting' && t.resume === 'outbound'));
+export const emergencyLaneOffset = (t: Trip) => t.emergencyPass?.shift ?? 0;
+const stepOf = (t: Trip) => TRAFFIC_TICK * (t.service ? (isEmergencyResponse(t) ? EMERGENCY_TILES_PER_SECOND : TRAVEL_TILES_PER_SECOND) : (t.speed ?? TRAVEL_TILES_PER_SECOND));
+
+export type RoadIndex = { roads: Set<string>; junctions: Set<string>; areas: Map<string, string> };
+/** Roads never change inside one simulation call, so this index is built once per step. */
+export function roadIndex(city: City): RoadIndex {
+  const roads = new Set(city.roads.map(tileKey));
+  const junctions = new Set<string>();
+  for (const p of city.roads) {
+    if (nearby(p).filter(n => roads.has(tileKey(n))).length >= JUNCTION_DEGREE) junctions.add(tileKey(p));
+  }
+  return { roads, junctions, areas: junctionAreas(junctions) };
+}
+
+/**
+ * Adjoining junction tiles are one intersection, so one control governs the whole area.
+ * Without this a light placed on the far tile of a wide junction would be decorative.
+ */
+export function governingControl(city: City, index: RoadIndex, p: Point): JunctionControl | undefined {
+  const area=index.areas.get(tileKey(p));
+  return area===undefined ? undefined : (city.controls??[]).find(c=>index.areas.get(tileKey(c))===area);
+}
+
+/** One vehicle body reserving one tile. Junction slots also carry the movement they perform. */
+
+src/game/cityTraffic.ts:594
+/** The civilian reserving an incompatible junction movement, if any. */
+function crossingBlocker(city: City, index: RoadIndex, g: Grid, byId: Map<number, Trip>, trip: Trip, k: number): number | null {
+  const target = slotAt(index, trip.path, k + 1);
+  const m = g.get(target.tile);
+  if (m) for (const [owner, slots] of m) {
+    if (owner === trip.id) continue;
+    const other = byId.get(owner);
+    if (!other || other.service || phaseOf(other) === 'crashed') continue;
+    for (const s of slots) {
+      if (s.tile !== target.tile || !s.junction || !target.junction) continue;
+      if (s.enter === target.enter) continue;
+      if (!compatible(target, s)) return owner;
+    }
+  }
+  // The gap-acceptance rule only holds the minor axis, so only that driver can fail to yield.
+  if (axisOf(heading(trip.path[k], trip.path[k + 1])) !== 'ns') return null;
+  return priorityBlocker(city, index, trip, k);
+}
+
+/**
+ * Report fresh crossing encounters, including overloaded stops and opposing left turns on green.
+ * Normal signal separation and stop dwell still apply. Returns true when the
+ * incident module turned sustained conflict into a crash, which invalidates this tick's occupancy.
+ */
+function detectConflicts(city: City, index: RoadIndex, g: Grid): boolean {
+  if (city.trips.length < 2) return false;
+  const byId = new Map(city.trips.map(t => [t.id, t] as const));
+  const seen = new Set<string>();
+  let crashed = false;
+  for (const trip of city.trips) {
+    if (trip.service || !driving(trip) || isYielding(city,trip,index)) continue;
+    const last = trip.path.length - 1;
+    if (trip.progress >= last - 1e-9) continue;
+    const k = cellIndex(trip.progress, last);
+    if (k >= last) continue;
+    // Only an actual claim on the junction this tick counts as a conflicting arrival.
+    if (round6(trip.progress + stepOf(trip)) <= k + 0.5 + 1e-9) continue;
+    const target = trip.path[k + 1];
+    if (!index.junctions.has(tileKey(target)) || index.junctions.has(tileKey(trip.path[k]))) continue;
+    if (isBlocked(city, target)) continue;
+    const control = governingControl(city, index, target);
+    // Red means wait, never accumulate danger for obeying it. Stops must finish their halt.
+    if (control?.kind === 'signal' && signalAxis(city, control) !== contactAxis(trip, target)) continue;
+    if (control?.kind === 'stop' && trip.hold < STOP_DWELL - 1e-9) continue;
+    const other = crossingBlocker(city, index, g, byId, trip, k);
+    if (other === null) continue;
+    const area = index.areas.get(tileKey(target)) ?? tileKey(target);
+    if (seen.has(area)) continue;
+    seen.add(area);
+    if (recordConflict(city, { x: target.x, y: target.y }, trip.id, other, TRAFFIC_TICK)) crashed = true;
+  }
+  return crashed;
+}
+
+/** Arrival is not automatically a completion: responders report to their own module. */
+function finish(city: City, g: Grid, held: Map<number, Slot[]>, done: Trip[]): void {
+  const credited: Trip[] = [];
+
+src/game/cityIncidents.ts:66
+export function isIncidentBlocked(city: City, p: Point): boolean {
+  return city.incidents.some(i => i.status === 'active' && at(p, i.x, i.y));
+}
+
+function areaOf(city: City, p: Point): string | undefined {
+  return roadIndex(city).areas.get(key(p));
+}
+
+function sameIntersection(city: City, a: Point, b: Point): boolean {
+  const area = areaOf(city, a);
+  return area !== undefined && areaOf(city, b) === area;
+}
+
+function inIncidentArea(city: City, p: Point): boolean {
+  for (const i of city.incidents) {
+    if (i.status !== 'active') continue;
+    if (at(p, i.x, i.y) || sameIntersection(city, p, i)) return true;
+  }
+  return false;
+}
+
+function cancelRisks(city: City, p: Point): void {
+  const area = areaOf(city, p);
+  city.risks = city.risks.filter(r => (area === undefined ? !at(r, p.x, p.y) : areaOf(city, r) !== area));
+}
+
+/** Body or the tile it is actually claiming this tick must sit on/beside the contact tile. */
+function nearContact(trip: Trip, point: Point): boolean {
+  if (trip.path.length === 0) return false;
+  const k = bodyTile(trip);
+  const here = trip.path[k];
+  if (here && at(here,point.x,point.y)) return true;
+  const next = trip.path[k + 1];
+  return !!next && at(next, point.x, point.y);
+}
+
+function livePair(city: City, point: Point, firstId: number, secondId: number, index: RoadIndex): [Trip, Trip] | null {
+  if (firstId === secondId) return null;
+  const first = city.trips.find(t => t.id === firstId);
+  const second = city.trips.find(t => t.id === secondId);
+  if (!first || !second || !drivingCivilian(first) || !drivingCivilian(second)) return null;
+  if (!nearContact(first, point) || !nearContact(second, point)) return null;
+  if (!conflictingContact(index, point, first, second)) return null;
+  // A pair sitting still is waiting, not a new failed-yield encounter.
+  if (first.hold > TRAFFIC_TICK && second.hold > TRAFFIC_TICK) return null;
+  return [first, second];
+}
+
+export function recordConflict(city: City, point: Point, firstId: number, secondId: number, dt: number): boolean {
+  const training=city.tutorial?.status==='active'?city.tutorial.hRoad:undefined;
+  // This teaching arc owns one explicitly scripted event; ordinary crashes resume after it.
+  if(training)return false;
+  if (!Number.isFinite(dt) || dt <= 0 || !isId(firstId) || !isId(secondId) || firstId === secondId) return false;
+  const index = roadIndex(city);
+  const control = governingControl(city, index, point);
+  const area=index.areas.get(key(point));
+  let risk = city.risks.find(r => index.areas.get(key(r))===area);
+  if(risk && risk.control!==control?.kind){cancelRisks(city,point);risk=undefined;}
+  if (inIncidentArea(city, point)) { cancelRisks(city, point); return false; }
+  const pair = livePair(city,point,firstId,secondId,index);
+  if(!index.junctions.has(key(point)) || !pair)return false;
+  // Signals protect perpendicular movements. Only incompatible turns sharing green remain exposed.
+  if(control?.kind==='signal' && pair.some(t=>contactAxis(t,point)!==signalAxis(city,control)))return false;
+  if (!risk) {
+    risk = { x: point.x, y: point.y, exposure: 0, lastConflictAt: round6(city.elapsed), firstId, secondId,
+      encounters:[], ...(control?{control:control.kind}:{}) };
+    city.risks.push(risk);
+  }
+  risk.encounters=(risk.encounters??[]).filter(e=>e.at>city.elapsed-SAFETY.encounterWindowSeconds);
+  const first=Math.min(firstId,secondId),second=Math.max(firstId,secondId);
+  if(risk.encounters.some(e=>Math.abs(e.at-city.elapsed)<1e-9))return false;
+  if(risk.encounters.some(e=>e.firstId===first&&e.secondId===second))return false;
+  risk.encounters.push({firstId:first,secondId:second,at:round6(city.elapsed)});
+  risk.firstId=firstId;risk.secondId=secondId;
+  const vehicles=new Set(risk.encounters.flatMap(e=>[e.firstId,e.secondId])).size;
+  if(control && vehicles<SAFETY.controlledConflictVehicles)return false;
+  const weight=control?.kind==='signal'?SAFETY.signalTurnEncounterExposure:control?SAFETY.controlledEncounterExposure:SAFETY.unsignedEncounterExposure;
+  risk.exposure=Math.min(RISK_THRESHOLD,round6(risk.exposure+weight));
+  risk.lastConflictAt=round6(city.elapsed);
+  if(risk.exposure>=SAFETY.warningExposure)risk.warnedAt??=round6(city.elapsed);
+  if (risk.exposure + 1e-9 < RISK_THRESHOLD) return false;
+  if(city.elapsed-(risk.warnedAt??city.elapsed)<SAFETY.warningSeconds-1e-9)return false;
+  if (active(city).length >= MAX_ACTIVE_INCIDENTS) return false;
+  // A contact cannot consume a third civilian or overlap a responder already on the tile.
+  if(city.trips.some(t=>!pair.includes(t)&&!t.sceneParked&&phaseOf(t)!=='visiting'
+    &&t.path[bodyTile(t)]&&at(t.path[bodyTile(t)],point.x,point.y)))return false;
+  const severity = SEVERITIES[city.accidentCount % SEVERITIES.length];
+  createIncident(city,point,pair,severity);
+  return true;
+}
+
+
+src/game/cityIncidents.ts:350
+function expireRisks(city: City, dt: number): void {
+  const index = roadIndex(city);
+  city.risks = city.risks.filter(risk => {
+    if (!index.junctions.has(key(risk)) || governingControl(city, index, risk)?.kind!==risk.control || inIncidentArea(city, risk)) return false;
+    if(risk.encounters)risk.encounters=risk.encounters.filter(e=>e.at>city.elapsed-SAFETY.encounterWindowSeconds);
+    if(city.elapsed-risk.lastConflictAt>SAFETY.coolingDelaySeconds+1e-9)
+      risk.exposure=Math.max(0,round6(risk.exposure-dt*SAFETY.coolingPerSecond));
+    if(risk.exposure<SAFETY.warningExposure)delete risk.warnedAt;
+    return risk.exposure>1e-9 || !!risk.encounters?.length;
+  });
+  // Road edits can join previously separate areas; legacy saves also stored risk per tile.
+  // Keep the strongest warning, not the sum, and retain distinct encounters only once.
+  const areas=new Map<string,JunctionRisk>();
+  for(const risk of city.risks){
+    const area=index.areas.get(key(risk))!;
+    const existing=areas.get(area);
+    if(!existing){areas.set(area,risk);continue;}
+    existing.exposure=Math.max(existing.exposure,risk.exposure);
+    existing.lastConflictAt=Math.max(existing.lastConflictAt,risk.lastConflictAt);
+    if(risk.warnedAt!==undefined)existing.warnedAt=Math.min(existing.warnedAt??risk.warnedAt,risk.warnedAt);
+    if(existing.encounters||risk.encounters){
+      const encounters=new Map<string,NonNullable<JunctionRisk['encounters']>[number]>();
+      for(const e of [...(existing.encounters??[]),...(risk.encounters??[])].sort((a,b)=>a.at-b.at))encounters.set(`${e.firstId}:${e.secondId}`,e);
+      existing.encounters=[...encounters.values()].sort((a,b)=>a.at-b.at).slice(-Math.ceil(SAFETY.encounterWindowSeconds/TRAFFIC_TICK));
+    }
+  }
+  city.risks=[...areas.values()];
+}
+
+src/game/cityScene.ts:108
+    function report() {
+        refreshMissions(city);
+        store.patch({
+            vehicleDebug:store.get().vehicleDebugOpen?debugVehicles(city):[],
+            flow: flowReport(city, inspectedRoad),
+            diagnostics: cityDiagnostics(city), missions: missionSnapshot(city), tutorial: tutorialSnapshot(city),
+            roadIssues: city.buildings.filter(b=>b.kind==='home').flatMap(b=>{const reason=homeRoadIssue(city,b);return reason?[{homeId:b.id,x:b.x,y:b.y,reason}]:[]}),
+            elapsedSeconds: Math.floor(city.elapsed),
+            map: city.map, funds: city.funds, income: income(city), connected: connectedHomes(city),
+            tripSeconds: averageTripSeconds(city), homes: city.buildings.filter(b => b.kind === 'home').length,
+            completed: city.completed, activeTrips: city.trips.filter(t=>!t.service && t.phase!=='visiting' && t.phase!=='crashed').length,
+            demand: demandSummary(city), incidentInfo: incidentSummary(city), rescued: city.rescuedCount, fatalities: city.fatalities,
+            inspected: (()=>{const b=city.buildings.find(b=>b.id===inspectedId);if(!b)return null;const status=buildingStatus(city,b),visitors=city.trips.filter(t=>!t.service&&t.storeId===b.id&&t.phase==='visiting');const next=visitors.length?Math.ceil(Math.min(...visitors.map(t=>t.visitRemaining??0))):null;return {id:b.id,name:BUILDING_LABELS[b.kind],...status,capacity:b.kind==='store'||b.kind==='park'?status.capacity:0,label:status.label+(next===0?' · Ready to leave; waiting for road access':next!==null?` · Next visit finishes in ${next}s`:'')};})(),
+            ...trafficMetrics(city), longestStop: Math.max(0,...city.trips.filter(t=>t.phase!=='visiting'&&t.phase!=='working'&&t.phase!=='crashed').map(t=>t.hold)),
+        });
+    }
+
+    // -----------------------------------------------------------------------
+    // Building geometry, derived from the model rather than assumed
+    // -----------------------------------------------------------------------
+
+src/game/cityScene.ts:380
+    function renderActivity() {
+        activity.clear();
+        const live = new Set<string>();
+        const liveBadges = new Set<string>();
+        function label(key:string,text:string,x:number,y:number,color=0xffeed6) {
+            live.add(key);
+            let t=statusLabels.get(key);
+            if(!t){t=new Text({text,style:{fontFamily:'system-ui',fontSize:12,fontWeight:'bold',fill:color,stroke:{color:0x122d26,width:3}}});t.anchor.set(.5);activityLabels.addChild(t);statusLabels.set(key,t);}
+            t.text=text;t.style.fill=color;t.style.fontSize=17.6/(stage.scale()*camera.zoom);t.style.stroke={color:0x122d26,width:3/(stage.scale()*camera.zoom)};t.position.set(px(x),py(y));
+        }
+        if(inspectedRoad && city.roads.some(p=>same(p,inspectedRoad!)))activity.rect(px(inspectedRoad.x)+1,py(inspectedRoad.y)+1,tile-2,tile-2).stroke({color:0x42d9e8,width:3,alpha:.9});
+        const station=city.buildings.find(b=>b.id===inspectedId&&b.kind==='policeStation');
+        if(station){const e=entrance(station);activity.circle(px(e.x+.5),py(e.y+.5),CITY_RULES.policePatrol.radiusTiles*tile).fill({color:0x7bdfff,alpha:.06}).stroke({color:0x7bdfff,width:2,alpha:.8});}
+        const selected=store.get().vehicleDebugOpen&&city.trips.find(t=>t.id===store.get().selectedVehicleId);
+        if(selected){
+            for(const p of selected.path)activity.rect(px(p.x)+2,py(p.y)+2,tile-4,tile-4).stroke({color:0x42d9e8,width:2,alpha:.75});
+            const sprite=carPool.get(selected.id);if(sprite)activity.circle(sprite.x,sprite.y,tile*.45).stroke({color:0xffd22e,width:3});
+
+src/game/cityScene.ts:690
+        if (e.key.toLowerCase() === 'r') store.patch({ rotation: (store.get().rotation + 1) % 4 });
+        if (e.code === 'Space' && !(e.target instanceof HTMLButtonElement)) { e.preventDefault(); store.patch({ paused: !store.get().paused }); }
+    }
+
+    const tick = () => {
+        const dt = Math.min(app.ticker.deltaMS / 1000, .1);
+        const noticed=city.tutorial?.noticedIncident;
+        if(session)session.step(dt);else stepCity(city, dt); renderCars(); renderControls(); renderActivity();
+        setFiretruckResponding(city.trips.some(t=>t.service==='fire'&&!t.patrol&&!t.responseCancelled&&isEmergencyResponse(t)));
+        setPoliceResponding(city.trips.some(t=>t.service==='police'&&!t.patrol&&!t.responseCancelled&&isEmergencyResponse(t)));
+        stepTrafficAudio(dt,city.trips.filter(t=>!t.service&&t.path.length&&(!t.phase||t.phase==='legacy'||t.phase==='outbound'||t.phase==='returning')).length);
+        if(city.tutorial?.status==='active'&&!city.tutorial.hRoad&&!noticed&&city.tutorial.noticedIncident){
+            store.patch({tutorialNotice:true,message:'A crash needs attention. Traffic is running; build another route and keep emergency access open.'});
+            report();flushSave();
+        }
+        reportClock += dt; saveClock += dt;
+        if (reportClock >= .5) { reportClock = 0; report(); }
+        if (saveClock >= 2) { saveClock = 0; flushSave(); }
+    };
+    const unsub = store.subscribe(() => { preview(); paint(); });
+    const unresize = stage.onResize(layout);
+    const observer = new ResizeObserver(layout);
+    // Observe the region AND its allocating bands: a band's change can move the
+    // rectangle without resizing it. The region stays mounted across panel changes.
+    for (const el of document.querySelectorAll('.city-map-viewport, .city-header, .city-controls, .city-stage')) observer.observe(el);
+    window.addEventListener('keydown', keyboard);
+
+src/game/cityFlow.ts:15
+export function flowSnapshot(city: City, targetHomes: number, purpose: TripPurpose = 'shopping',
+  rules: {returnsPerHome:number;maximumStoppedSeconds:number;maximumJourneySeconds:number} = FLOW_PROTOTYPE) {
+  if (!Number.isSafeInteger(targetHomes) || targetHomes < 1) throw new Error('Flow needs a fixed positive household target');
+  const now = Math.round(city.elapsed * 1e6) / 1e6, since = now - METRICS_WINDOW;
+  const kind = purpose === 'shopping' ? 'store' : 'park';
+  const destinations = city.buildings.filter(b => b.kind === kind).map(b => ({...b, ...visitorSlots(city, b)}));
+  const records = city.history.filter(h => h.at > since && h.at <= now && h.service?.purpose === purpose);
+  const homes = city.buildings.filter(b => b.kind === 'home').map(home => {
+    const household = city.households.find(h => h.homeId === home.id);
+    const trip = city.trips.find(t => t.homeId === home.id && !t.service && !t.external);
+    const returns = records.filter(h => h.service!.homeId === home.id);
+    const liveVisit = trip?.purpose === purpose && trip.rewarded && trip.visitedAt !== undefined
+      && trip.visitedAt > since ? 1 : 0;
+    const visits = returns.filter(h => h.service!.visitedAt > since).length + liveVisit;
+    const reachable = destinations.filter(d => findPath(city, entrance(home), entrance(d))
+      && findPath(city, entrance(d), entrance(home)));
+    const goal = trip?.phase === 'visiting' ? entrance(home) : trip ? goalOf(city, trip) : null;
+    const committedAccess = !!trip && !!goal && !findPath(city, trip.path[bodyTile(trip)], goal);
+    const access = reachable.length === 0 || committedAccess;
+    const pending = household?.[purpose] ?? 0;
+    // A completed parked stay awaiting its return merge must remain visible too.
+    const parkedWait = trip?.phase === 'visiting' && trip.rewarded && trip.visitedAt !== undefined
+      ? Math.max(0, now - trip.visitedAt) : 0;
+    const stoppedSeconds = Math.max(trip?.hold ?? 0, parkedWait);
+    const traffic = !!trip && !committedAccess && stoppedSeconds >= CITY_RULES.diagnostics.stoppedSeconds;
+    const capacity = !trip && pending > 0 && reachable.length > 0
+      && reachable.every(d => d.occupied + d.inbound >= d.capacity);
+    const journeySeconds = trip?.startedAt !== undefined ? Math.max(0, now - trip.startedAt) : null;
+    const qualified = returns.length >= rules.returnsPerHome && !access && !capacity
+      && stoppedSeconds <= rules.maximumStoppedSeconds
+      && (journeySeconds === null || journeySeconds <= rules.maximumJourneySeconds);
+
+src/game/cityFlow.ts:111
+export function refreshFlowProgress(city: City): void {
+  const missions = city.missions;
+  if (!missions || !['complete','skipped'].includes(city.tutorial?.status ?? '')
+    || !missions.completed.includes('word-on-the-street')) return;
+  const now = Math.round(city.elapsed * 1e6) / 1e6;
+  const homes = city.buildings.filter(b => b.kind === 'home').length;
+  const p = missions.flow ??= {targetHomes: Math.max(FLOW_MINIMUM_HOMES, homes), checkedAt:0,
+    label:'Measuring', candidate:'Measuring', candidateSince:0};
+  if (!missions.completed.includes(FLOW_MISSION_ID)) p.targetHomes = Math.max(p.targetHomes, homes);
+  if (now < p.checkedAt + 1 - 1e-6) return;
+  p.checkedAt = now;
+  const snapshot = flowSnapshot(city, p.targetHomes, 'shopping', FLOW_OBJECTIVE_RULES), candidate = labelFor(snapshot);
+  if (p.candidate !== candidate) { p.candidate = candidate; p.candidateSince = now; }
+  if (now - p.candidateSince >= LABEL_SETTLE_SECONDS) p.label = candidate;
+  if (!missions.completed.includes(FLOW_MISSION_ID)) {
+    if (!snapshot.ready) delete p.readySince;
+    else {
+      p.readySince ??= now;
+      if (now - p.readySince >= FLOW_SETTLE_SECONDS) missions.completed.push(FLOW_MISSION_ID);
+    }
+  }
+}
+
+/** Current approach counts: intentionally no invented throughput on an empty road. */
+export function roadFlowSnapshot(city: City, point: {x:number;y:number}) {
+  if (!city.roads.some(p => p.x === point.x && p.y === point.y)) return null;
+  const roads = new Set(city.roads.map(p=>`${p.x},${p.y}`)), nearby = new Set([`${point.x},${point.y}`]);
+
+src/game/cityRouting.ts:1
+/** Estimated route costs. Movement remains the authority for admission. */
+import {blockedTiles, type City, type Point, type Trip} from './cityModel.ts';
+import {bodyTile, roadIndex, governingControl, TRAVEL_TILES_PER_SECOND, EMERGENCY_TILES_PER_SECOND, STOP_DWELL, type RoadIndex} from './cityTraffic.ts';
+import {CITY_RULES} from './cityRules.ts';
+const key = (p: Point) => `${p.x},${p.y}`;
+const edge = (a: Point, b: Point) => `${key(a)}>${key(b)}`;
+const neighbours = (p: Point) => [{x:p.x+1,y:p.y},{x:p.x,y:p.y+1},{x:p.x-1,y:p.y},{x:p.x,y:p.y-1}];
+export type RoutingSnapshot = {
+  at: number; revision: string; roads: ReadonlySet<string>; blocked: ReadonlySet<string>;
+  areas: ReadonlyMap<string,string>; controls: ReadonlyMap<string,number>;
+  queues: ReadonlyMap<string,ReadonlyArray<{id:number; seconds:number}>>;
+};
+/** Snapshot samples sustained current holds, not a forecast or completed-trip history.
+ * Directional observations avoid penalizing an independent opposing lane. */
+export function routingSnapshot(city: City, index: RoadIndex = roadIndex(city), response = false): RoutingSnapshot {
+  const queues = new Map<string,Array<{id:number;seconds:number}>>();
+  for (const t of city.trips) {
+    if ((!response && t.service) || t.sceneParked || !['outbound','returning','waiting'].includes(t.phase ?? '')
+      || t.hold < CITY_RULES.routing.minimumHoldSeconds) continue;
+    const k = bodyTile(t), a=t.path[k], b=t.path[k+1];
+    if(a && !b && t.phase==='waiting') {
+      for(const from of neighbours(a)) {
+        const e=edge(from,a), observations=queues.get(e)??[];
+        observations.push({id:t.id,seconds:Math.min(CITY_RULES.routing.queueCapSeconds,t.hold)});
+        queues.set(e,observations);
+      }
+    }
+    if (!a || !b) continue;
+    const e=edge(a,b), observations=queues.get(e) ?? [];
+    observations.push({id:t.id,seconds:Math.min(CITY_RULES.routing.queueCapSeconds,t.hold)});
+    queues.set(e,observations);
+  }
+  const controls=new Map<string,number>();
+  for (const p of city.roads) {
+    const c=governingControl(city,index,p), area=index.areas.get(key(p));
+    if(!response&&c&&area) controls.set(area,c.kind==='stop'?STOP_DWELL:CITY_RULES.routing.signalEstimateSeconds);
+  }
+  const blocked=blockedTiles(city,response);
+  return {at:city.elapsed, revision:(response?'response|':'ordinary|')+[...index.roads].sort().join(';')+'|'+[...blocked].sort().join(';')+'|'+JSON.stringify(city.controls),
+    roads:new Set(index.roads),blocked,areas:new Map(index.areas),controls,queues};
+}
+export type RouteCost = {travel:number; queue:number; control:number; total:number};
+function edgeCost(s:RoutingSnapshot,a:Point,b:Point,speed:number,excludeId?:number):RouteCost {
+
+src/game/cityModel.ts:452
+export function stepCity(city: City, dt: number): void {
+  if (!finite(dt) || dt === 0) return;
+  retryAutomaticConnection(city);
+  const index = roadIndex(city);
+  // Advance exactly across tick/payment/departure boundaries so frame rate cannot change outcomes.
+  while (dt > 1e-9) {
+    const slice = Math.min(dt, INCOME_INTERVAL - city.incomeClock, SPAWN_INTERVAL - city.spawnClock, TRAFFIC_TICK - city.tickClock);
+    city.elapsed += slice; city.incomeClock += slice; city.spawnClock += slice; city.tickClock += slice; dt -= slice;
+    if (city.tickClock >= TRAFFIC_TICK - 1e-9) {
+      city.tickClock = 0;
+      trafficTick(city, index);
+      stepVisits(city, index, TRAFFIC_TICK);
+      // Exactly one incident step per traffic tick, with or without vehicles on the road.
+      stepIncidents(city, TRAFFIC_TICK);
+      stepExternal(city, index, TRAFFIC_TICK);
+      refreshTutorial(city);
+      refreshFlowProgress(city);
+    }
+    if (city.incomeClock >= INCOME_INTERVAL - 1e-9) { city.incomeClock = 0; city.funds += income(city); }
+    if (city.spawnClock >= SPAWN_INTERVAL - 1e-9) {
+      city.spawnClock = 0;
+      growDemand(city, SPAWN_INTERVAL);
+      spawnTrips(city, index);
+    }
+  }
+}
+function parsePoints(raw: unknown, roads: Set<string>, limit: number): Point[] | null {
+  if (raw === undefined) return [];

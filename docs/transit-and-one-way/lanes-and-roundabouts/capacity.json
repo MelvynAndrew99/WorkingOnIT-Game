@@ -1,0 +1,191 @@
+{
+  "description": "Identical nine physical vehicles on a 61-tile corridor, first56 tiles one-way, one slower leader. Same timestep, speed, demand and geometry. Synthetic road-capacity fixture, not a general city throughput multiplier.",
+  "results": [
+    {
+      "label": "prior-one-lane",
+      "initial": [
+        {
+          "id": 1,
+          "progress": 15,
+          "speed": 0.7
+        },
+        {
+          "id": 2,
+          "progress": 13,
+          "speed": 2
+        },
+        {
+          "id": 3,
+          "progress": 11.5,
+          "speed": 2
+        },
+        {
+          "id": 4,
+          "progress": 10,
+          "speed": 2
+        },
+        {
+          "id": 5,
+          "progress": 8.5,
+          "speed": 2
+        },
+        {
+          "id": 6,
+          "progress": 7,
+          "speed": 2
+        },
+        {
+          "id": 7,
+          "progress": 5.5,
+          "speed": 2
+        },
+        {
+          "id": 8,
+          "progress": 4,
+          "speed": 2
+        },
+        {
+          "id": 9,
+          "progress": 2.5,
+          "speed": 2
+        }
+      ],
+      "simulatedSeconds": 40,
+      "completed": 0,
+      "crossed40": 4,
+      "passedLeader": 0,
+      "sharedTicks": 0,
+      "newAccidents": 0,
+      "remaining": [
+        {
+          "id": 1,
+          "progress": 43,
+          "lane": 0
+        },
+        {
+          "id": 2,
+          "progress": 42.5,
+          "lane": 0
+        },
+        {
+          "id": 3,
+          "progress": 41.5,
+          "lane": 0
+        },
+        {
+          "id": 4,
+          "progress": 40.5,
+          "lane": 0
+        },
+        {
+          "id": 5,
+          "progress": 39.5,
+          "lane": 0
+        },
+        {
+          "id": 6,
+          "progress": 38.5,
+          "lane": 0
+        },
+        {
+          "id": 7,
+          "progress": 37.5,
+          "lane": 0
+        },
+        {
+          "id": 8,
+          "progress": 36.5,
+          "lane": 0
+        },
+        {
+          "id": 9,
+          "progress": 35.5,
+          "lane": 0
+        }
+      ]
+    },
+    {
+      "label": "current-two-lanes",
+      "initial": [
+        {
+          "id": 1,
+          "progress": 15,
+          "speed": 0.7
+        },
+        {
+          "id": 2,
+          "progress": 13,
+          "speed": 2
+        },
+        {
+          "id": 3,
+          "progress": 11.5,
+          "speed": 2
+        },
+        {
+          "id": 4,
+          "progress": 10,
+          "speed": 2
+        },
+        {
+          "id": 5,
+          "progress": 8.5,
+          "speed": 2
+        },
+        {
+          "id": 6,
+          "progress": 7,
+          "speed": 2
+        },
+        {
+          "id": 7,
+          "progress": 5.5,
+          "speed": 2
+        },
+        {
+          "id": 8,
+          "progress": 4,
+          "speed": 2
+        },
+        {
+          "id": 9,
+          "progress": 2.5,
+          "speed": 2
+        }
+      ],
+      "simulatedSeconds": 40,
+      "completed": 4,
+      "crossed40": 8,
+      "passedLeader": 4,
+      "sharedTicks": 486,
+      "newAccidents": 0,
+      "remaining": [
+        {
+          "id": 1,
+          "progress": 43,
+          "lane": 0
+        },
+        {
+          "id": 3,
+          "progress": 42.5,
+          "lane": 0
+        },
+        {
+          "id": 5,
+          "progress": 41.5,
+          "lane": 0
+        },
+        {
+          "id": 7,
+          "progress": 40.5,
+          "lane": 0
+        },
+        {
+          "id": 9,
+          "progress": 39.5,
+          "lane": 0
+        }
+      ]
+    }
+  ]
+}

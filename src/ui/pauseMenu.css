@@ -1,0 +1,48 @@
+/* Native modal blocks map clicks/shortcuts and contains keyboard focus. */
+.city-ui.dispatch-ui .pause-menu{
+  position:fixed;
+  inset:0;
+  z-index:20;
+  pointer-events:auto;
+  text-align:left;
+  width:min(460px,calc(100vw - 24px));
+}
+.pause-menu-actions{display:grid;gap:10px}
+.city-ui.dispatch-ui .pause-menu p{margin:0;color:var(--menu-hint);text-align:left;font-size:1.1rem}
+.city-ui.dispatch-ui .pause-menu .menu-lede{margin-top:8px;color:var(--menu-muted)}
+.city-ui.dispatch-ui .pause-menu h2,.city-ui.dispatch-ui .pause-menu h3{color:inherit}
+.city-ui.dispatch-ui .pause-menu .menu-x{
+  width:44px;
+  min-width:44px;
+  height:44px;
+  padding:0;
+  background:var(--menu-surface);
+  color:var(--menu-text);
+  border:1px solid var(--menu-border);
+}
+.city-ui.dispatch-ui .pause-menu .pause-resume{
+  width:100%;
+  min-height:48px;
+  padding:12px;
+  font-size:1.15rem;
+  font-weight:800;
+  background:linear-gradient(180deg,#f0c56a,#e0a83a);
+  color:#1a2436;
+  border:1px solid #f0d090;
+  border-bottom:4px solid #b07a22;
+  border-radius:14px;
+}
+.city-ui.dispatch-ui .pause-menu .pause-leave{
+  width:100%;
+  min-height:48px;
+  padding:12px;
+  font-size:1.1rem;
+  font-weight:800;
+  background:#152033;
+  color:#f3f6fa;
+  border:1px solid #3d5470;
+  border-radius:12px;
+}
+@media(hover:hover) and (pointer:fine){
+  .city-ui.dispatch-ui .pause-menu .pause-leave:hover,.city-ui.dispatch-ui .pause-menu .menu-x:hover{background:#1e2e46}
+}

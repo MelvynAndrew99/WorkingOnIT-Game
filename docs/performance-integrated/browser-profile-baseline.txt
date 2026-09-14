@@ -1,0 +1,88 @@
+Profile duration 6133.3 ms; sample deltas 6132.092 ms.
+SELF ms
+5210.5 (idle)
+216.1 (program)
+55.3 (garbage collector)
+45.0 src/game/cityTraffic.ts : 102 ()
+43.1 src/game/cityTraffic.ts : 94 (roadIndex)
+41.4 src/game/cityRouting.ts : 22 (routingSnapshot)
+36.3 src/game/cityPathfinding.ts : 23 (graphFor)
+35.1 src/game/cityRouting.ts : 72 (weightedRoute)
+20.8 src/game/cityTraffic.ts : 55 (p)
+17.6 src/game/cityTraffic.ts : 495 (isYielding)
+17.3 src/game/cityPathfinding.ts : 53 (cachedRoadPath)
+13.6 src/game/cityTraffic.ts : 210 (heldSlots)
+13.2 src/game/cityPathfinding.ts : 6 (p)
+12.5 src/game/cityTraffic.ts : 704 (replan)
+12.3 src/game/cityRouting.ts : 7 (p)
+12.1 src/game/cityTraffic.ts : 154 (slotAt)
+11.8 src/game/junctionAreas.ts : 3 (junctionAreas)
+11.1 src/game/cityRouting.ts : 54 (edgeCost)
+10.8 src/game/cityTraffic.ts : 961 (trafficTick)
+9.5 src/game/cityTraffic.ts : 856 (detectConflicts)
+8.5 src/game/cityTraffic.ts : 463 (grid)
+7.8 src/game/cityScene.ts : 648 (renderActivitySnapshot)
+7.6 src/game/cityModel.ts : 303 (findPath)
+5.5 src/game/cityModel.ts : 712 (advanceCity)
+5.5 src/game/cityTraffic.ts : 202 (heldRange)
+5.5 src/game/cityTraffic.ts : 119 (governingControl)
+4.6 src/game/cityTraffic.ts : 56 (p)
+4.4 node_modules/pixi.js/lib/scene/graphics/shared/utils/buildContextBatches.mjs : 24 (buildContextBatches)
+4.4 src/game/cityTraffic.ts : 122 (c)
+4.4 src/game/cityTraffic.ts : 352 (priorityBlocker)
+
+INCLUSIVE ms (overlap; do not add)
+6132.1 (root)
+5210.5 (idle)
+613.9 node_modules/pixi.js/lib/ticker/Ticker.mjs : 123 (time)
+612.8 node_modules/pixi.js/lib/ticker/TickerListener.mjs : 37 (emit)
+612.8 node_modules/pixi.js/lib/ticker/Ticker.mjs : 421 (update)
+553.6 src/game/cityScene.ts : 1197 (lu)
+343.7 src/game/cityTraffic.ts : 82 (withRoadIndex)
+343.7 src/game/cityModel.ts : 701 (stepCity)
+326.1 src/game/cityModel.ts : 712 (advanceCity)
+326.1 src/game/cityModel.ts : 704 (index)
+216.1 (program)
+209.7 src/game/cityTraffic.ts : 961 (trafficTick)
+170.3 src/game/cityPathfinding.ts : 16 (withRoadPathRead)
+139.4 src/game/cityScene.ts : 171 (reportSnapshot)
+139.4 src/game/cityScene.ts : 168 (perfOriginal_report)
+139.4 src/game/cityScene.ts : 167 (report)
+125.2 src/game/cityTraffic.ts : 704 (replan)
+115.3 src/game/cityTraffic.ts : 94 (roadIndex)
+105.5 src/game/cityDiagnostics.ts : 10 (cityDiagnostics)
+102.2 src/game/cityIncidents.ts : 620 (intersectionSafetySnapshot)
+98.9 src/game/cityIncidents.ts : 81 (inIncidentArea)
+97.8 src/game/cityIncidents.ts : 72 (areaOf)
+97.8 src/game/cityIncidents.ts : 76 (sameIntersection)
+97.8 src/game/cityIncidents.ts : 622 (area)
+82.3 src/game/cityVisits.ts : 245 (stepVisits)
+77.8 src/game/cityRouting.ts : 101 (civilianRoute)
+73.4 src/game/cityVisits.ts : 266 (goal)
+73.4 src/game/cityVisits.ts : 266 (from)
+66.8 src/game/cityPathfinding.ts : 53 (cachedRoadPath)
+63.5 src/game/cityRouting.ts : 22 (routingSnapshot)
+62.8 src/game/cityModel.ts : 389 (retarget)
+58.2 node_modules/pixi.js/lib/rendering/renderers/shared/system/SystemRunner.mjs : 16 (emit)
+58.2 node_modules/pixi.js/lib/rendering/renderers/shared/system/AbstractRenderer.mjs : 73 (render)
+58.2 src/game/pixiApp.ts : 35 ()
+58.2 node_modules/pixi.js/lib/app/Application.mjs : 83 (render)
+
+INTERPRETATION
+Production bundled baseline, busy town, desktop 1440 live phase. Original source positions mapped through the exact baseline dist sourcemaps with @jridgewell/trace-mapping. Inclusive stacks overlap; self times are sample estimates, not instrumented exact durations.
+
+The CPU sample is 85.0% V8 idle (5210.5/6132.1 ms). The independent phase span records 40 measured frame intervals in ~6 seconds, median 149.9 ms, p95 166.6 ms, but simulation totals 355.8 ms, report 150.3 ms and Pixi submit 59.6 ms. Thus main-thread JavaScript observed here does not explain most elapsed frame time. This is consistent with headless software-renderer/compositor scheduling or rendering waits. It is not a measurement of GPU execution or proof of a particular GPU bottleneck; the CPU profile cannot attribute idle to those subsystems. Preserve physical-device limitations in the report.
+
+Within JavaScript, simulation is largest: stepCity ~344 ms inclusive, trafficTick210 ms. RoutingSnapshot (~41 ms self), graphFor (~36 ms self), weightedRoute35 ms and traffic index building are meaningful costs. They remain much smaller than elapsed frame spacing.
+
+HUD/report ~139 ms inclusive includes cityDiagnostics105 ms and intersectionSafetySnapshot102 ms. Its read-only per-area callback calls inIncidentArea -> sameIntersection -> areaOf; areaOf invokes roadIndex repeatedly for every active-incident comparison without a reusable scope. This accounts for ~98 ms inclusive here. A narrowly scoped withRoadIndex around intersectionSafetySnapshot is a grounded follow-up candidate, preserving each returned status and all incident logic. Do not cache across mutations or suppress report fields.
+
+Pan/zoom independent instrumented totals: 11682 ms wall, simulation380.6 ms, report199.9 ms, renderGround45.7 ms, renderWorld13.1 ms, PixiSubmit271 ms. Longer wall time and submission work support checking terrain rebuild frequency and compositor traces, not claiming 45.7 ms alone explains stalls.
+
+Model benchmark dt is 1/60. Browser ticker clamps each elapsed delta to .1 then processes smaller substeps; under this slow browser sample simulation advances only 4.1 seconds in 6 wall seconds. Model step quantiles cannot be substituted for browser frame pacing, and a faster browser can process more simulated work per wall second.
+
+CANDIDATE PATCH (awaiting post-change measurement)
+intersectionSafetySnapshot now evaluates its unchanged output inside the existing synchronous withRoadIndex scope. No roads or other model fields are mutated by the report. Nested areaOf calls reuse its index; the existing try/finally scope restores an outer scope or deletes the local one on success/failure. citySafetySnapshot.test.ts covers output/purity, nested reads, caller output mutation, incident/control edits, in-place same-count road edits and exception cleanup. These checks and post-change profile comparison remain to run after baseline timed captures finish.
+
+FOLLOW-UP VERIFICATION
+Candidate adopted and focused checks pass (19 assertions across snapshot/path/direction/wide-road tests). Isolated HUD report benchmark on the same busy fixture measures median 4.828 ms -> 0.135 ms per report, exact result/city hash equality (model-hud-final.json). Browser overall impact remains to be measured independently. Final model preservation matches 120 baseline checkpoints; full regression 69/71 files pass with the same two previously reproduced baseline-failing files.

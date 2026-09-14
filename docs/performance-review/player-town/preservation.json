@@ -1,0 +1,8 @@
+{
+  "equalStateChecks": 60,
+  "reloadAtSecond": 30,
+  "closureAddedAt": 20,
+  "closureMovedInPlaceAt": 25,
+  "closureRemovedAt": 40,
+  "geometryPreserved": true
+}

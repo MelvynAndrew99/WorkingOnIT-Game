@@ -23,3 +23,33 @@ Instrumental companion to a calm city-building groove, 96 BPM. Warm electric pia
 Audition the two supplied background songs when files arrive. Verify duration, tempo, loudness and usable loop or ending points. Matching 96 BPM alone does not guarantee aligned phrases or seamless transitions; playback order, looping and any adaptive switching remain to choose after listening.
 
 Retain selected masters in `src/assets/source/audio/`; add runtime exports only when selected. Confirm the actual loop seam and phone-speaker balance. Keep music optional with a mute setting, respect browser gesture playback and RUN pause/resume, and avoid switching tracks on every brief queue fluctuation. These integration steps are future work; no new audio is installed by this brief.
+
+## First supplied background recording installed
+
+User supplied `Work On It Main Theme.mp3`, described as tranquil city background music and authorized renaming. Installed unchanged as `public/audio/music/tranquil-city.mp3` (89.92 seconds reported by browser). This supersedes the no-audio-installed status for this recording only. The What a Jam! credits song and additional backgrounds remain separate.
+
+Gameplay-only repeat is now active through src/audio/music.ts with30% default volume, saved mute/volume under Menu → Settings, browser gesture retry, menu/pause/hidden-page suppression and RUN sleep/awake handling. Actual MP3 playback, end-to-start repeat, pause/resume and preference reload verified in an isolated browser; production build passed. Loop restart is verified, not a claim of a musically seamless seam or measured96BPM. No effects supplied or integrated by this change.
+
+User subsequently confirmed the supplied recording is **96 BPM**. Its approximately90-second arrangement intentionally includes an outro, then restarts from the beginning. Preserve that full-file behavior; seamless-loop trimming or crossfading is not requested. The user has REAPER available for future audio editing if needed.
+
+## Firetruck siren (2026-09-09)
+
+User supplied the approximately15-second Splice clip at `public/audio/vehicles/FireTruckSiren_S08ER.232.mp3` and authorized firetruck integration. The source remains unchanged. `src/audio/vehicles.ts` plays a single shared full-file loop at25% default volume while at least one firetruck is responding, including traffic/route waiting. Patrols, cancelled responses, scene work and return journeys are silent. The scene refreshes response eligibility after simulation steps and clears it on destruction; audio does not affect dispatch or traffic rules.
+
+Menu → Settings now has independent saved Sound effects and Effects volume controls (`working-on-it:effects`). Menu, pause, hidden page and RUN sleep suppress playback. Browser autoplay denial waits for a new gesture before retrying. Future supplied effects can use these preferences; no additional clips are selected yet.
+
+Verification: production build and diff whitespace check pass. Chromium decoded14.928 seconds and verified actual playback, full-file repeat, single audio instance, response-end stop/rewind, menu/pause/sleep/visibility suppression, mute/zero-volume behavior, resume and saved preference reload. This checks playback and lifecycle behavior, not a seamless edit or phone-speaker balance. Local integration only; this task did not upload a release.
+
+## Police siren (2026-09-10)
+
+Integrated user-supplied `public/audio/vehicles/PoliceSiren_AP1.1061.mp3` unchanged. Browser reports2.624 seconds. It repeats during police emergency responses (including response waiting), stops/rewinds when no police response remains, and stays silent for patrols, cancelled responses, scene work and returns. Vehicle audio now maintains one independent loop per service, sharing existing effects preferences and lifecycle gates. Multiple police cars do not stack duplicate loops; police and fire can sound together.
+
+Production build and whitespace checks pass. Actual Chromium playback verified police decoding/repeat, simultaneous fire playback and independent stop, idempotent initialization, response-end reset, pause/menu/sleep/visibility, mute/zero volume and saved preference reload. No new UI or clip editing; phone-speaker balance and seam quality remain listening checks. Local integration, no release upload.
+
+## Traffic pass-bys, trial (2026-09-10)
+
+User supplied four Splice WAVs (96 kHz/24-bit, 11.5 to 18 seconds), converted to 192 kbps/48 kHz MP3s at `public/audio/vehicles/CarPassBy_*.mp3` at full length; the inbox WAVs were deleted at the user's request (they keep the Splice originals). The cue list's 1–3 second traffic-pass one-shot is replaced by a background layer: each clip builds, passes and fades, so overlapping full clips blend. User approved it as a trial that may be removed.
+
+`src/audio/traffic.ts` starts clips while civilian cars are outbound or returning (not visiting, waiting or crashed; service vehicles excluded). At most 1/2/3 play together at 1–2/3–7/8+ moving cars, with random 3–9 second gaps between starts and no immediate repeat. Each play gets random 0.75–1 level and 0.92–1.08 rate. Per-clip gains even out measured loudness (-17.3 to -22.7 LUFS, all peaking near -0.8 dBFS). Volume is half the shared effects volume (12.5% at the 25% default) and follows the effects mute plus menu, pause, hidden page and RUN sleep. To remove: delete the module, its calls in `cityScene.ts` and `main.tsx`, and the four MP3s.
+
+User listening check (same day): "so subtle but it works, way better than expected." Kept at the current mix; no tuning requested.

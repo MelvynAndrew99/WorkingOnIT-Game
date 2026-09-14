@@ -1,0 +1,8 @@
+Context Collapse environment ready: node, npm, rundot
+place 24 14 Road built. Unsigned junctions give E/W traffic priority.
+place 24 13 Road built. Unsigned junctions give E/W traffic priority.
+place 24 12 Road built. Unsigned junctions give E/W traffic priority.
+place 24 11 Road built. Unsigned junctions give E/W traffic priority.
+{"s":1,"incident":{"id":11105,"x":23,"y":10,"severity":"serious","status":"active","createdAt":9960.325,"required":["police","ems"],"completedServices":[],"rescueDeadline":10050.325,"outcome":"pending"},"responders":[{"id":11088,"phase":"outbound","target":{"x":22,"y":10},"progress":2.5,"work":0},{"id":11106,"phase":"outbound","target":{"x":23,"y":11},"progress":4.5,"work":0}]}
+{"s":11,"incident":{"id":11105,"x":23,"y":10,"severity":"serious","status":"active","createdAt":9960.325,"required":["police","ems"],"completedServices":["ems"],"rescueDeadline":10050.325,"outcome":"rescued"},"responders":[{"id":11088,"phase":"working","target":{"x":24,"y":10},"progress":12,"work":2.15},{"id":11106,"phase":"working","target":{"x":24,"y":10},"progress":7,"work":0}]}
+{"s":14,"incident":{"id":11105,"x":23,"y":10,"severity":"serious","status":"cleared","createdAt":9960.325,"required":["police","ems"],"completedServices":["ems","police"],"rescueDeadline":10050.325,"outcome":"rescued"},"responders":[{"id":11088,"phase":"returning","target":{"x":13,"y":4},"progress":1.65,"work":0},{"id":11106,"phase":"returning","target":{"x":20,"y":7},"progress":5.55,"work":0}]}

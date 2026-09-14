@@ -1,0 +1,12 @@
+✔ src/game/cityLaneBends.test.ts (219.387069ms)
+✔ src/game/cityLaneRecovery.integration.test.ts (733.027558ms)
+✔ src/game/cityRoundabout.integration.test.ts (429.122909ms)
+✔ src/game/cityTwoLane.integration.test.ts (515.190737ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 750.370017

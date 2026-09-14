@@ -1,0 +1,356 @@
+{
+  "self": [
+    {
+      "function": "findPath",
+      "file": "cityModel.ts",
+      "sampledMs": 6165.22
+    },
+    {
+      "function": "(idle)",
+      "file": "",
+      "sampledMs": 2212.86
+    },
+    {
+      "function": "",
+      "file": "cityVisits.ts",
+      "sampledMs": 431.56
+    },
+    {
+      "function": "(program)",
+      "file": "",
+      "sampledMs": 364.43
+    },
+    {
+      "function": "texSubImage2D",
+      "file": "",
+      "sampledMs": 275.48
+    },
+    {
+      "function": "exports.jsxDEV",
+      "file": "react_jsx-dev-runtime.js",
+      "sampledMs": 251.89
+    },
+    {
+      "function": "roadIndex",
+      "file": "cityTraffic.ts",
+      "sampledMs": 217.71
+    },
+    {
+      "function": "(garbage collector)",
+      "file": "",
+      "sampledMs": 192.23
+    },
+    {
+      "function": "",
+      "file": "cityFlow.ts",
+      "sampledMs": 136.97
+    },
+    {
+      "function": "routingSnapshot",
+      "file": "cityRouting.ts",
+      "sampledMs": 96.22
+    },
+    {
+      "function": "expansionHouseholds",
+      "file": "cityExpansion.ts",
+      "sampledMs": 59.0
+    },
+    {
+      "function": "_renderTextToCanvas",
+      "file": "pixi__js.js",
+      "sampledMs": 57.01
+    },
+    {
+      "function": "",
+      "file": "cityDiagnostics.ts",
+      "sampledMs": 51.2
+    },
+    {
+      "function": "_CanvasTextMetrics.experimentalLetterSpacing",
+      "file": "chunk-GWIDOEBS.js",
+      "sampledMs": 47.31
+    },
+    {
+      "function": "nearestStore",
+      "file": "cityModel.ts",
+      "sampledMs": 39.08
+    },
+    {
+      "function": "packQuadAttributes",
+      "file": "chunk-TTKKVR6O.js",
+      "sampledMs": 37.28
+    },
+    {
+      "function": "replan",
+      "file": "cityTraffic.ts",
+      "sampledMs": 36.69
+    },
+    {
+      "function": "collectRenderables",
+      "file": "chunk-X7WI7FYN.js",
+      "sampledMs": 36.23
+    },
+    {
+      "function": "weightedRoute",
+      "file": "cityRouting.ts",
+      "sampledMs": 34.98
+    },
+    {
+      "function": "ReactElement",
+      "file": "react_jsx-dev-runtime.js",
+      "sampledMs": 34.66
+    },
+    {
+      "function": "packAttributes",
+      "file": "chunk-TTKKVR6O.js",
+      "sampledMs": 32.87
+    },
+    {
+      "function": "break",
+      "file": "chunk-MDJUSS5W.js",
+      "sampledMs": 32.8
+    },
+    {
+      "function": "blockedTiles",
+      "file": "cityModel.ts",
+      "sampledMs": 32.71
+    },
+    {
+      "function": "areaOf",
+      "file": "cityIncidents.ts",
+      "sampledMs": 32.66
+    },
+    {
+      "function": "strokeText",
+      "file": "",
+      "sampledMs": 31.95
+    },
+    {
+      "function": "junctionAreas",
+      "file": "junctionAreas.ts",
+      "sampledMs": 29.93
+    },
+    {
+      "function": "isYielding",
+      "file": "cityTraffic.ts",
+      "sampledMs": 29.15
+    },
+    {
+      "function": "toStrokeStyle",
+      "file": "chunk-QRA3BZYW.js",
+      "sampledMs": 28.51
+    },
+    {
+      "function": "build",
+      "file": "chunk-QRA3BZYW.js",
+      "sampledMs": 28.46
+    },
+    {
+      "function": "texParameteri",
+      "file": "",
+      "sampledMs": 27.57
+    },
+    {
+      "function": "break",
+      "file": "chunk-TTKKVR6O.js",
+      "sampledMs": 27.44
+    },
+    {
+      "function": "",
+      "file": "cityMissions.ts",
+      "sampledMs": 27.37
+    },
+    {
+      "function": "pause",
+      "file": "",
+      "sampledMs": 25.36
+    },
+    {
+      "function": "measureText",
+      "file": "",
+      "sampledMs": 25.26
+    },
+    {
+      "function": "",
+      "file": "cityTraffic.ts",
+      "sampledMs": 24.44
+    }
+  ],
+  "inclusive": [
+    {
+      "function": "(root)",
+      "file": "",
+      "sampledMs": 12509.57
+    },
+    {
+      "function": "_tick",
+      "file": "chunk-X7WI7FYN.js",
+      "sampledMs": 9122.46
+    },
+    {
+      "function": "emit",
+      "file": "chunk-X7WI7FYN.js",
+      "sampledMs": 9119.15
+    },
+    {
+      "function": "update",
+      "file": "chunk-X7WI7FYN.js",
+      "sampledMs": 9119.15
+    },
+    {
+      "function": "tick",
+      "file": "cityScene.ts",
+      "sampledMs": 7868.97
+    },
+    {
+      "function": "findPath",
+      "file": "cityModel.ts",
+      "sampledMs": 6192.47
+    },
+    {
+      "function": "renderActivity",
+      "file": "cityScene.ts",
+      "sampledMs": 3852.86
+    },
+    {
+      "function": "homeRoadIssue",
+      "file": "cityVisits.ts",
+      "sampledMs": 3828.87
+    },
+    {
+      "function": "",
+      "file": "cityVisits.ts",
+      "sampledMs": 3812.45
+    },
+    {
+      "function": "report",
+      "file": "cityScene.ts",
+      "sampledMs": 2566.14
+    },
+    {
+      "function": "(idle)",
+      "file": "",
+      "sampledMs": 2212.86
+    },
+    {
+      "function": "",
+      "file": "cityModel.ts",
+      "sampledMs": 1592.97
+    },
+    {
+      "function": "stepCity",
+      "file": "cityModel.ts",
+      "sampledMs": 1304.67
+    },
+    {
+      "function": "withRoadIndex",
+      "file": "cityTraffic.ts",
+      "sampledMs": 1301.38
+    },
+    {
+      "function": "render",
+      "file": "pixi__js.js",
+      "sampledMs": 1239.82
+    },
+    {
+      "function": "render",
+      "file": "chunk-MDJUSS5W.js",
+      "sampledMs": 1237.64
+    },
+    {
+      "function": "emit",
+      "file": "chunk-MDJUSS5W.js",
+      "sampledMs": 1234.35
+    },
+    {
+      "function": "advanceCity",
+      "file": "cityModel.ts",
+      "sampledMs": 1195.29
+    },
+    {
+      "function": "_updateRenderGroups",
+      "file": "chunk-MDJUSS5W.js",
+      "sampledMs": 1116.7
+    },
+    {
+      "function": "flowSnapshot",
+      "file": "cityFlow.ts",
+      "sampledMs": 1071.65
+    },
+    {
+      "function": "",
+      "file": "cityFlow.ts",
+      "sampledMs": 1068.26
+    },
+    {
+      "function": "_buildInstructions",
+      "file": "chunk-MDJUSS5W.js",
+      "sampledMs": 1049.52
+    },
+    {
+      "function": "collectRenderablesWithEffects",
+      "file": "chunk-X7WI7FYN.js",
+      "sampledMs": 1045.13
+    },
+    {
+      "function": "collectRenderables",
+      "file": "chunk-X7WI7FYN.js",
+      "sampledMs": 1044.02
+    },
+    {
+      "function": "collectRenderablesSimple",
+      "file": "chunk-X7WI7FYN.js",
+      "sampledMs": 1044.02
+    },
+    {
+      "function": "addRenderable",
+      "file": "pixi__js.js",
+      "sampledMs": 719.75
+    },
+    {
+      "function": "_updateGpuText",
+      "file": "pixi__js.js",
+      "sampledMs": 701.14
+    },
+    {
+      "function": "items",
+      "file": "cityMissions.ts",
+      "sampledMs": 683.92
+    },
+    {
+      "function": "",
+      "file": "cityMissions.ts",
+      "sampledMs": 680.65
+    },
+    {
+      "function": "getManagedTexture",
+      "file": "pixi__js.js",
+      "sampledMs": 640.97
+    },
+    {
+      "function": "getTexture",
+      "file": "pixi__js.js",
+      "sampledMs": 626.68
+    },
+    {
+      "function": "missionSnapshot",
+      "file": "cityMissions.ts",
+      "sampledMs": 624.98
+    },
+    {
+      "function": "trafficTick",
+      "file": "cityTraffic.ts",
+      "sampledMs": 621.74
+    },
+    {
+      "function": "cityDiagnostics",
+      "file": "cityDiagnostics.ts",
+      "sampledMs": 620.44
+    },
+    {
+      "function": "",
+      "file": "react-dom_client.js",
+      "sampledMs": 602.14
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+[
+  {
+    "width": 1440,
+    "wallMs": 12069.599999999627,
+    "simSeconds": 12.066199999891978,
+    "frames": 224,
+    "p50": 50,
+    "p95": 66.70000000000073,
+    "p99": 83.39999999999964,
+    "over33": 212,
+    "longTasks": [
+      53,
+      53,
+      52,
+      54
+    ],
+    "geometryPreserved": true,
+    "paused": false,
+    "errors": []
+  },
+  {
+    "width": 390,
+    "wallMs": 12019.099999999627,
+    "simSeconds": 12.032900000136578,
+    "frames": 705,
+    "p50": 16.69999999999891,
+    "p95": 16.799999999999272,
+    "p99": 33.30000000000018,
+    "over33": 2,
+    "longTasks": [],
+    "geometryPreserved": true,
+    "paused": false,
+    "errors": []
+  }
+]

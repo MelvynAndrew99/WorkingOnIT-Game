@@ -1,0 +1,14 @@
+{
+  "baseline": {
+    "src/game/GameCanvas.tsx": "395c105df9a004304891d46b050ff45621dae780f69dede83062eff385bcb03b",
+    "src/game/cityScene.ts": "cb0bdb9019bc02fb49306ee4370c3d4514a42df9e601927431ca0a808722185d",
+    "src/game/cityPathfinding.ts": "c0d12ef649c4e4b1a46f6b2eeec3624d520331410744de10bae0862b77da8b3b",
+    "src/game/cityIncidents.ts": "9c854c46d7e0f16eed6151cf2e22aeb89c5a45ba1d2302c7173071436fa5ca50"
+  },
+  "final": {
+    "src/game/GameCanvas.tsx": "e5e1409abf77ada76bac0fee51dee0c4e60f11f16371d1c7424abab9413e8804",
+    "src/game/cityScene.ts": "ea413ac6a44c1e8859b147986df2b23bbad6d2b5edb3d630f46f935fbe2a8933",
+    "src/game/cityPathfinding.ts": "bb30c92a3c2c0fba692147e961ce8d0460fa7ad4dade8d1bf276256a54401b6f",
+    "src/game/cityIncidents.ts": "aa07f9f832f1c49298fea09b80a95241840ca93581e846e8656c4ad760fc9c04"
+  }
+}

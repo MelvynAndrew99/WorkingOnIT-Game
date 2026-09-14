@@ -1,4 +1,318 @@
+## All radio songs free for the jam (2026-09-13)
+
+User unlocks every radio song for the jam and defers credit-based unlocking to the next update. Shared radio access now allows full playback and automatic progression through every track, including What a Jam! and Fill It Up!, with no preview/lock prompts. Existing unlock metadata and saved mission awards are preserved for later; no credit system, award grants, active-save edits or publication. This supersedes earlier active radio locks for the jam release. See public/audio/radio/README.md.
+
+## Approved realistic radio branding (2026-09-13)
+
+User rejects the playful station names and approves: 92.3 The Mix, 95.5 Now FM, 97.1 Country, 98.7 The Rock, 101.5 UK Hits, 105.7 Classic FM. User identifies 101.5 as UK pop, 105.7 as classical/non-lyrical and 95.5 as modern. Applied to the existing station-name displays; song order, audio and unlock rules preserved. Supersedes the W-ON-IT FM/Gridlock/Pizza Party/Breakroom/Full Tank/Junction station names. Local only; publication remains user-managed.
+
+## Additional free jam radio gift (2026-09-13)
+
+User adds We Got Pizza, We Got Praise from inbox as a free jam gift immediately after What a Jam! Installed at 97.1 FM as full free playback, converted to verified 128kbps MP3 (179.52s, 2.87MB); inbox original preserved. No timed eligibility cutoff specified or implemented. Other station order and lock rules preserved. [Audio record](public/audio/radio/README.md). Local only; no publication or active-save edits.
+
+## Front-page radio tuning and playlist (2026-09-13)
+
+User requests first tuning to the theme, reordered songs, free Too Busy to Work from inbox at 128kbps, and Room For Us removal. Delivered initial theme dial/first SEEK, functional Tap to tune in, and frequency order Working ON IT! → What a Jam! → Too Busy to Work → Fill It Up! → retained Busy Junction. New song verified 128kbps (3.5MB); original inbox preserved; Room For Us game MP3 deleted. User reiterates previews apply only while locked: What a Jam retains Level 25 entitlement, Fill It Up retains locked chorus preview/full-on-entitlement behavior (purchase wiring remains unimplemented). Build/typecheck, radio regression command and isolated desktop/narrow browser tuning, playback and simulated entitlement checks pass. [Audio details](public/audio/radio/README.md). Local only; no publication, player-save edits or performance tests.
+
+## Integrated performance pass delivered locally (2026-09-13)
+
+User explicitly requested desktop/mobile performance testing on isolated small/busy towns, targeted fixes, preservation checks and no publication. Implemented exact path-cache coordinate validation without road-string allocation, a shared read-only safety-report index, retained terrain margins, and returned Pixi texture-pool disposal before renderer destruction. Demand, traffic rules, saves and visual features remain unchanged. Busy fixed-step model total improves 7.9%; safety-report microbenchmark 97.2%. Production pan/zoom p95 improves across both towns/layouts, while steady software-rendered desktop remains slow and some construction/join tails do not improve. Measured renderer teardown retention (506 DOM nodes/54 listeners per cycle) is removed; residual heap growth and extra bounded terrain retention remain documented.
+
+[Methods, all before/after results, source patch and limitations](docs/performance-integrated/README.md). Build/typecheck, 19 focused assertions, 120 full-state differential checkpoints, all 16 browser workload contexts, 24 exact visual comparisons and repeated lifecycle/radio checks pass. Full model/audio suite:69/71 files pass; four assertions in Flow/IntersectionSafety reproduce on the pristine integrated baseline (supersedes older three-failure count). No publication or active-player-save access. Future performance testing still requires an explicit user request.
+
+The user subsequently supplied their current town and clarified that gameplay feels responsive; performance work is for future engine-capacity planning. Its isolated 408-road/71-building/68-trip replay improves 11.3% with all 60 full-state checkpoints identical. Eight supplemental desktop/mobile browser contexts pass; pan/zoom improves, software-rendered desktop steady FPS remains limited, and mixed tails/memory are recorded. [Current-town evidence and planning limits](docs/performance-integrated/current-town/README.md). No additional runtime edits, publication or active-save access.
+
+## Level 14 apartment complex lesson (2026-09-13)
+
+User requests teaching apartment placement and joining in an existing mission. Level 14 now uses stable ID `another-front-door`, revision 3: place two nearby apartment blocks, Inspect → Join complex → another block → Build lanes & join, connect shared lanes to the shop street, then observe actual shopping returns from both blocks. $2,600 and no countdown; two reference layouts leave $760. The challenge exposes the existing complex inspector. Old revision 2 attempts archive on selection and awards remain earned. Level 19 retains second-neighborhood-entrance teaching. [Implementation and verification](docs/challenges/apartment-complex/README.md). No publication, active-save edits or performance tests.
+
+## Automatic apartment private lanes delivered locally (2026-09-13)
+
+User wants grouped apartments to share public entry/exit through small automatic private lanes, without the player drawing/managing internal streets. Inspect → Join complex → another nearby block now previews a bounded clear-space route/cost and Apply builds it atomically. Narrow unmarked pavement and driveway spurs replace the confusing ordinary-road appearance; the manual Community button is removed. Saved owned lanes reject individual public-road edits, and lane inspection opens the complex. Existing public streets/directions, real slow vehicle journeys, payments and resident counts remain authoritative. No exclusive gate, teleportation or forced public-road conversion. Parks/gyms/value/growth remain post-jam.
+
+53 focused model/regression tests, production build/typecheck and desktop/narrow pointer joining/reload checks pass. [Details and constraints](docs/apartments/README.md#automatic-private-lanes-and-shared-access). This supersedes the manual-community-road/membership-only UI below. No active-save edits, publication or performance tests.
+
+## Office/apartment entrance editing delivered locally (2026-09-13)
+
+User requests clicking buildings and editing entrances. Inspect → Edit entrances exposes first/second selectors and highlighted map targets. First uses the four supported corner orientations; upgraded second uses any other perimeter tile. Free edits preserve capacity, payment and membership, persist through existing save fields, and reject active building journeys/emergencies or occupied old/new access tiles. Cancel/Escape/tool changes discard drafts. Focused model/regression tests, build/typecheck and desktop/narrow map-click checks pass. [Details](docs/apartments/README.md#editing-existing-entrances). No publication or performance tests.
+
+## Office and apartment sprites installed locally (2026-09-13)
+
+User approved Claude’s completed office/residential sprite delivery. Runtime atlas now packs both64-frame sets unchanged; placed lots and previews select the saved upgrade and second entrance. Apartment art visibly grows4→6 units; office art carries OFFICE signage. Both source pixel verifiers, all128 model-to-frame entrance mappings, production build and desktop/narrow rendering checks pass. [Delivery](docs/apartments/README.md#artwork-status). No gameplay/save migration, original house-art edits, performance tests or publication.
+
+## Offices, selectable entrances and apartment complexes (2026-09-13)
+
+User reclassifies Claude's original coral/plum apartment art as **offices**, asks for a slight office adaptation and real work journeys, and selects separate **4-resident apartment blocks upgrading to6**, connected by slower community roads and joined into one complex through the UI. The player chooses the second entrance on any side; the first driveway stays fixed. Claude owns all artwork, explicitly reaffirmed twice. Actual installed Claude began both art assignments but hit its session limit (reported reset2:40pm America/New_York); new office/residential art is unfinished and **not installed**. Keep the code placeholders and preserve the partial Claude files for its follow-up; do not substitute another artist or alter house art.
+
+Implemented locally:4×4 apartments4→6; offices with real work arrivals/stays/returns and provisional8→16 work spaces; fixed corner primary plus saved selectable second perimeter driveway; building emergencies requiring actual legal responder arrival/work;1 tile/second community roads for all vehicles; UI joining/merging of connected apartment blocks, aggregate residents and saved membership. Grouping never invents physical access or teleports people. Community roads are slower shared pavement, not exclusive gates. Work grants no shopping/leisure mission or income credit. Apartment/work linked transit, detailed schedules/payroll and economy tuning remain separate. Provisional costs apartment800/office600/upgrade200/communityroad20; existing clear road reclassification is free. No campaign changes, publication, active-save edits or performance tests.
+
+[Delivery, exact APIs, validation and limits](docs/apartments/README.md), [Claude art follow-up](docs/apartments/claude-art-handoff.md). New focused tests and desktop/narrow pointer construction, complex joining, office visits and reload checks pass; original no-office town state matches at ten functional checkpoints. Full-suite caveat: the known Flow and IntersectionSafety files have three identical failures on isolated original HEAD; don't mask them by changing traffic balance or expectations.
+
+## All 25 beginner jam missions (2026-09-13)
+
+User also requires sequential locks: Level 1 begins open; each later mission requires the preceding mission's permanent award. Locked briefings explain the prerequisite and disable Play; the state selection API enforces it too. Wins unlock the next job immediately, and retries/reloads keep earned unlocks. No fabricated prior awards or active-save edits.
+
+User requests filling the missing levels for the final jam day, ordering by increasing combined skills, and keeping Levels 1–25 simple/fun. Harder optimization and new interactive objects are for after the jam. Implemented home-based replacements for staged slots: four-lane connection (10), shopping-funded park (11), second neighborhood entrance (14); reordered the earlier connection/control lessons by prerequisites while keeping stable save/award IDs. Level 19 now has a two-lane neighborhood off a four-lane avenue, $3,200 for a second entrance/police connection, explicit Divert/real clearance/reopen/fresh-journey stages. Its old revision 3 attempt is archived on selection; revision 4 is the new map. Level 25 is an open-ended two-scene finale accepting different legal permanent designs, with a saved free What A Jam entitlement. Song audio itself is not installed. [Delivery, order and verification](docs/challenges/jam-25/README.md). No publication, active-save edits, house-art changes or performance tests.
+
+This supersedes earlier staged-slot/finale-design-only statuses and first-14 ordering. Emergency budgets remain forgiving; only the dedicated income lesson earns shopping money. Historical apartment plans remain post-jam possibilities, not dependencies for these levels.
+
+## Missions 15–24 implemented locally (2026-09-12)
+
+The requested emergency sequence is now playable: police access (15), Police placement (16), Clinic placement (17), Fire placement (18), a civilian detour before response (19), legal one-way access (20), the complete Divert/two-way/clear/original-direction/reopen/recovery lesson (21), paired placement (22), all-service fire recovery (23), and two-scene district recovery (24). Budgets remain forgiving. Real dispatch, legal arrival and completed incident work are recorded across reload; later recovery requires new returns from every home. Level 15 keeps its stable ID and award, archiving the old bus-composite attempt on selection. Levels 1–14 are preserved; apartments and Level 25/reward remain staged. [Per-level handoffs and verification](docs/challenges/levels-15-24/README.md). No publication, active-player-save edits or performance tests.
+
+This delivery supersedes design-only/current-bus-Level15 statements below for Levels 15–24; historical requests and Level 25 constraints remain recorded.
+
+## Level 25: open-ended multipart finale (2026-09-12 refinement)
+
+User selects **Level25** as a multipart challenge that leaves the solution to the player's creativity. Combine the learned emergency-service placement, traffic management and recovery skills in a readable beginner finale with forgiving funds and room to experiment. Present the required outcomes as clear stages, while allowing players to plan ahead and satisfy them through their own designs.
+
+Author stages around usable access for the required services, actual responder arrival and incident clearance, then restored civilian journeys with emergency access maintained. Exact incidents, stage targets and map remain to author. Accept different legal road layouts, service locations, detours and combinations of learned controls whenever they achieve those outcomes. Do not require a particular tile layout, building location, road type or prescribed sequence of tool clicks in this finale. The earlier temporary-two-way puzzle is a focused teaching example, not a mandatory solution for Level25. Do not force players to undo a successful permanent redesign merely to match the starting layout.
+
+Verify multiple materially different reference solutions before shipping, retain progress evidence across reload, and make each remaining objective visible. Completion still grants **What A Jam** free as the game-jam reward. Design recorded only; no playable Level25, reward implementation, save edits or publication in this update.
+
+## Emergency building placement lessons (2026-09-12 refinement)
+
+User confirms that Levels **15–25** should include placing **clinics, fire stations and police stations**, alongside detours and temporary road conversions. Introduce one service-placement/access problem at a time, then combine services and traffic management in later staged puzzles. Keep budgets forgiving and provide enough room and funds for the required building and usable access roads.
+
+Make placement an explicit objective when it is the taught action, followed by actual dispatch, legal responder arrival and the required incident service/clearance. A building placed on the map alone does not win. Teach that station location and connected approaches matter: civilian queues must not block services, and crews still obey one-way and physical traffic rules. Use incidents with the appropriate required crews; preplace supporting services in introductory lessons so one new building remains the clear task. Later puzzles may require placing multiple services, diverting civilian traffic, clearing the incident and restoring normal road operation.
+
+Exact level assignments, maps and budgets remain to author. This records the requested progression; no playable mission or shared responder-rule changes are made here.
+
+## Temporary two-way emergency access mission (2026-09-12 refinement)
+
+User specifies the full recovery sequence for a forgiving Level15–25 lesson:
+
+1. Place **Divert** on the relevant one-way approach to stop new civilian arrivals. Let occupied/committed road space clear before editing.
+2. Convert the needed street to **two-way** while the diversion remains active.
+3. The responder must physically reach the accident via legal access, and the required crews must actually finish clearing it. Existing responding-service access through civilian Divert remains applicable; never grant a wrong-way exception or bypass occupied road space.
+4. After the accident is cleared and the road is safe to edit, restore the street’s **original one-way direction**.
+5. Toggle **Divert off** to reopen civilian traffic, and observe traffic resume legally.
+
+Expose these as successive objectives. Neither conversion alone nor responder arrival alone completes the whole mission. Preserve the original direction, the incident identity and actual completion evidence across reload; restoration must match the original flow, not just any one-way setting. Player-facing guidance should distinguish waiting for cars to clear from a missing legal route. Maintain forgiving funds and accessible fixes. Exact level, map, roster and resumed-traffic target remain to author.
+
+This supersedes the earlier shortened idea that ended at police arrival, including reopening the converted street before the rescue. The new sequence keeps the civilian diversion during the response and removes it after restoring one-way flow. Documentation only; no runtime mission or traffic-rule changes, save edits or publication.
+
+## Forgiving emergency lessons: Levels 15–25 (latest correction, 2026-09-12)
+
+User clarifies that **Levels15–25 remain forgiving** and focus on managing traffic and accidents with emergency responders: build/use detours, keep civilian queues from blocking services, and maintain usable responder access. The challenge comes from road/access decisions and observing real recovery, not increasingly restrictive budgets. This supersedes the previous “budget precision from15” interpretation and moves the emergency phase’s start from16 to15. Earlier positive feedback about Level15’s budget does not authorize tightening allowances.
+
+Keep readable causes, affordable fixes, creative alternatives and actual responder arrival/service as evidence of success. Responders retain the shared road/occupancy rules, including one-way directions; a detour alone does not clear a crash. Specific maps, responder rosters and budgets remain to author. The current local Level15 is still the bus/shopping/park composite and needs revision for this newly clarified role. Documentation only here: no runtime map/budget changes, save edits, performance testing or publication.
+
+## Inspect cursor and toggle construction tools (2026-09-12)
+
+User requests a default inspect/select cursor, particularly for editing and moving bus stops, and clicking an already-selected construction tool again to deselect it. Challenges now enter/reset with no construction tool. Sandbox/challenge palettes expose Inspect and toggle active tools off; shortcuts toggle too, Escape returns to inspection/cancels pending moves or direction/route drafts. Inspect clicks select roads/buildings/stops without construction; selecting a bus stop exposes its existing Move stop action. Changes are UI/input only; no save migration, automatic movement, publication or performance tests.
+
+## Level 13: make buying the bus explicit (2026-09-12)
+
+User found the empty bus stops confusing and requests bus purchase as a mission objective. Level13 now separately shows Buy a bus ($400 at the depot), Choose both stops, and Start service/Play, with a prominent next-step prompt. Briefing explains passengers appear once service and traffic are running. This is mission/UI clarification, not authorization to alter passenger generation or remove the separate shopping-return requirement. No publication.
+
+## Beginner missions 6–15 (2026-09-12)
+
+User authorizes creating missions while away, with optional Grok restricted to ideas/gameplay balancing. Latest clarification: chess.com-like beginner puzzles, single clear tasks first and multiple transparent stages later; connect buildings/roads, extend networks, introduce Stops/Lights, one-way roads, roundabouts and buses using existing set pieces. First25 remain beginner-oriented; expand beyond25 after the jam. User explicitly selects staging apartment lessons until the later building work and permits skipping missing-building slots.
+
+Delivered local content adds Level5 continuity plus playable6–9,12,13,15;10/11/14 have visible staged briefings and authored building-dependent plans. Original1–4 IDs/maps/progress stay intact; Next skips staged slots. New jobs use real per-home shopping/leisure returns, directed access/rings and per-home completed representative bus outings, with fixed budgets and no new failure countdown. Representative passengers do not imply fewer cars. [Delivery, staged designs and verification](docs/challenges/levels-6-15/README.md). No publication, active-save changes, apartment mechanics, economy rebalance or performance testing.
+
 # Project instructions: city building and traffic optimization
+
+## Economy balancing after the jam / current MVP (2026-09-12)
+
+User explicitly defers economy balancing until after the game jam; added to [BACKLOG](docs/BACKLOG.md), including prices/refunds, income/rewards, land purchases/progression and building/transit financial balance. Current fun/MVP is seeing roads, traffic and crashes and solving the resulting problems. Preserve readable causes/effective fixes; this is not a request to increase accidents again or cancel mission/building/map-interaction plans. Values stay provisional; full economy tuning need not block on-map land interaction work. User reports **almost100 players after five days**, approximate reported adoption, not exact/concurrent count or retention evidence. Documentation only; no runtime rebalance, analytics, active-save edits or publication.
+
+## Finite sandbox size and clickable land purchases (2026-09-13)
+
+Implemented locally: 64×48 envelope stored on the save, 16×16 plots in a 4×3 grid, For sale signs on adjacent locked plots, two free unlocks then provisional cash. The H tutorial starts with four plots (32×32) so the teaching roads fit; empty factory towns start with one plot. The north/south/east/west expansion dialog is removed. Existing towns keep their land and coordinates; unused permits become free unlocks. Envelope dimensions stay configurable for later land additions. Prices remain provisional. [Discussion](docs/land-progression/BOUNDED-MAP.md). No publication.
+
+## Apartment/busy-store access and useful transit lessons (2026-09-12 refinement)
+
+User wants apartment lessons with **more than one car per building / multiple active journeys**, and the same concentrated-traffic/access planning at a busy store. Teach optimization around **Levels 10–15**: existing wider four-lane roads (“double roads”), multiple usable entrances/exits and alternate access roads, balanced shopping/leisure provision, and a bus stop/service that is genuinely useful for those building journeys. A crash blocking an apartment/store's sole approach can motivate another road/entrance; road count alone is not success and wider pavement on the same blocked approach need not help. Detailed emergency lessons remain16–25. This refines the prior optional apartment-versus-neighborhood wording: apartment multi-car demand is requested; single-entry neighborhoods remain a related layout idea. Exact footprints, demand/capacities, entrance rules and bus/car substitution remain unselected. Current representative bus riders do not remove cars; actual bus benefit is an implementation dependency, not an existing proven effect. User explicitly requests mission documentation now and building mechanics later today. Updated mission requirements/PLAN/DESIGN only; no runtime implementation, performance testing, active-save edits or publication.
+
+## Campaign phases, remaining building idea and free song reward (2026-09-12)
+
+User selects Levels **1–15 for road building and balancing stores and parks**: single roads, connecting roads, Stop signs, traffic lights and managing those systems. Levels **16–25 teach emergency response and safer road updates**, including the stuck-police-car access lesson below. Beating **Level 25 grants What A Jam free as a game-jam perk**. This supersedes the first-ten road-only sequence and the undecided ending/hours-played trigger for this song; broader radio remains separate. Apartments **or** single-entry neighborhoods are a possible remaining civic-planning addition, with shopping/leisure provision; choice, footprint, household demand and access mechanics remain open. User feels that addition plus existing road systems should suffice for authoring these levels. The sandbox remains for open-ended creation and problem solving. More frequent accidents are reported as making the optimization loop feel promising/fun, not a request for another frequency increase or a measured balance result. Updated [mission requirements](docs/challenges/MISSIONS.md), [challenge plan](docs/challenges/PLAN.md) and [design](docs/DESIGN.md). Documentation only; no runtime level/building/reward changes, active-save edits or publication.
+
+## Roundabout patrol deadlock corrected locally (2026-09-12)
+
+User supplied another full town and clarified: explain realistic traffic puzzles, but remove artificial game-logic deadlocks that undermine roundabouts. Patrol 21548's radius-selected U-turn at (8,4) held both exit lanes while yielding to circulating car 21515, whose reserved ring tile blocked reentry. New patrols avoid optional turnarounds immediately outside rings. Old stalled patrols physically back to center and return through another legal approach, with a strictly saved `patrolReturningHome` flag preserving patrol identity and lifting only the optional patrol radius. All one-way directions, occupancy and road gates remain. Original car home in 4.425s, police in 18.625s, all eight original queued trips finish by 75.325s; no new crashes in 120 simulated seconds. Original save/reload/continuous-motion/no-alternative/corruption/reassignment coverage, full 53 model test files and build pass. [Debugging record](docs/transit-and-one-way/roundabout-jam/README.md). Local only; no active player-save edits, new UI warning, browser/performance testing or publication.
+
+User also confirms emergency vehicles should respect road rules including one-way directions. Record the mission idea as **help a stuck police car reach the crash**: block the relevant one-way road, safely convert it to two-way and reopen it; success requires actual police arrival. [Mission requirements](docs/challenges/MISSIONS.md) updated; exact map/level/budget/criteria remain unselected, no playable mission edits.
+
+## Bus stop skipping, relocation and passenger times delivered locally (2026-09-12)
+
+User supplied a stuck-bus town and selected skipping unserviceable stops with an actionable warning and a way to move the stop. They then requested passenger wait times instead of map IDs, and rejected verbose map labels. Delivered compact stop wait seconds and bus `load/8 · seconds` (oldest representative passenger queue-plus-ride time on that leg), sampled with the existing HUD refresh from saved timestamps. Buses skip invalid/unreachable curbs through physical route/occupancy checks, keep queued/onboard passengers and serve remaining usable stops. Show opens the stop inspector; Move stop/Rotate/Cancel preserves ID, route order, payment and rider queues. Free local move within six connected road tiles; affected existing riders retain a saved maximum twelve-tile walking allowance, new demand stays six. Approaching/dwelling buses must clear the stop first. [Delivery, captured-town regression and desktop/narrow evidence](docs/transit-and-one-way/buses/stuck-stop-14813/README.md). Full 52 model test files, focused skip/move/walker/reload checks, typecheck and build pass. No publication, active player-save edits, performance measurements or new happiness penalties.
+
+## Visual weather delivered locally (2026-09-12)
+
+User explicitly requested actual installed Grok implementation and approved sharing game source. Grok authored a visual clear/cloudy/rain system; Codex reviewed, corrected and integrated it. Six-minute deterministic cycle follows saved simulation time, with map-only shading/rain, live weather label, saved title Settings/sandbox Pause checkbox, and reduced-motion support. Provisional cycle values are Grok-selected. No traffic/economy/safety effects or mission-rule edits. [Delivery and evidence](docs/weather/README.md): 51 model test files, 15 focused weather tests, typecheck/build and desktop/narrow browser checks pass. No performance measurements, active player-save edits or publication. This supersedes weather-deferred notes for visual atmosphere only.
+
+## Four-lane transition graphics corrected locally (2026-09-11)
+
+User rejects square widening protrusions and requests horizontal/vertical blending. Longitudinal connections now taper pavement and curbs with matching vehicle display interpolation; ordinary rectangular road sprites no longer sit beneath wide art. A lone aligned section draws as a connector until extended; one-section offset doglegs, real junctions and building access retain full pavement. Saved two-tile footprints and physical traffic reservations remain authoritative. [Delivery and evidence](docs/roadworks/FOUR-LANE-IMPLEMENTED.md): 49 model test files, build and desktop/narrow road/vehicle/reload checks. No publication, performance tests or active-save edits.
+
+## Four-lane roads implemented locally (2026-09-11)
+
+User authorized implementation after the Grok gameplay review and acknowledges the early economy is unsettled. Delivered Roads → 4-lane (9), Rotate/R and direct tap/drag over empty land or clear ordinary roads; two-tile paired carriageways, real two-lane traffic each way, end transition aprons, shared wide junction controls, legal bends/returns and curb-bus passing. New pair $40, conversion only missing $20 tiles; same driving speed, no automatic demand increase. Conversion has saved three-second physical roadworks including responders, clear-before-start and bounded cancellation/refund; these are provisional implementation values. Strict metadata/payment/commitment parsing, household and police journeys/reloads, 48 test files/build and desktop/narrow browser checks pass. [Delivery and limits](docs/roadworks/FOUR-LANE-IMPLEMENTED.md). Conservative single shared turning space; direct narrowing/building relocation/mode selector remain separate. No performance or balance benchmarks, mission edits, active-save edits or publication. This supersedes the design-only status below.
+
+## Four-lane road footprint agreed (2026-09-11)
+
+Latest placement refinement: select the road type and place directly, like Stops/Lights, either over existing roads where the complete footprint fits or on empty land from the start. This supersedes the proposed separate stretch-selection/choose-widening-side workflow. Show the footprint and connections in a placement preview; do not silently demolish buildings. Proposed labels distinguish existing 2-lane roads from wide 4-lane roads (two per direction); user wording was “2 lane button.”
+
+User agrees on two tiles wide, two lanes each direction, paired carriageways presented as one road. Land pressure and moving/demolishing obstructing buildings are intended planning tradeoffs; relocation mechanics/prices remain unselected. Dedicated two-to-four-lane transition graphics and physical merges, plus visually/programmatically shared wide intersections, are essential. [Design discussion](docs/roadworks/FOUR-LANE-DESIGN.md) records agreed direction separately from proposed connection rules and validation. Design only this pass; no runtime widening, demand rebalance, performance testing, mission edits, player-save edits or publication.
+
+## User-managed publication (2026-09-11)
+
+The user handles publication while coordinating multiple agents. `make run` starts `npm run dev`; `make publish` runs the existing `npm run deploy` command, which builds and uploads to RUN. Do not publish automatically after implementation; leave publication to the user unless they explicitly delegate it again.
+
+## Representative bus ridership and stop dots delivered locally (2026-09-11)
+
+User says to implement the agreed rules regardless of implementer, then asks for the same yellow occupancy dots used by other sprites at bus stops. Delivered saved shared home demand (six connected tiles, one opening request, 20-second cadence, two outstanding round trips/home), physical alight-first/FIFO eight-seat buses, shop/park stays and return queues, bounded representative destination pools, blocked-route retention and drain-before-edit/stop. Stops/depot show yellow visitor dots and exact waiting counts; buses show actual combined loads. Existing linked passengers drain intact; representative riders do not award household money/service/mission/fatality credit or remove cars. Strict save conservation and real crash/depot recovery are covered. [Delivery and verification](docs/transit-and-one-way/bus-economics/IMPLEMENTED.md). This supersedes the pending implementation notes below. No performance testing, publication or active player-save edits; gateway abstraction and economic/car-reduction coupling remain future work.
+
+## Abstract bus rules agreed (2026-09-11)
+
+User agrees with the presented Grok/lead rules and sees the fun of managing interacting systems taking shape. Accepted starting rules: six connected road tiles of catchment, one opening rider per served home, further demand every 20 simulated seconds capped at two outstanding trips/home, useful home/shop-or-park routes, eight seats with alight-first/FIFO boarding, timed stays/return queues, shared demand across buses, and preserved blocked queues. Retain $1,000 depot / $50 stop / $400 bus; no fares/upkeep initially; existing shopping/mission credits stay tied to linked journeys. [Agreed rules](docs/transit-and-one-way/bus-economics/README.md). Implementation remains pending; no publication or performance testing authorized by this agreement.
+
+## Abstract bus ridership requested / Grok economics review (2026-09-11)
+
+User explicitly permits abstract riders disconnected from complete pedestrian/household logic so buses visibly fill and take people places, and asks installed Grok for economics/rules. This supersedes requiring fully linked household passengers before the prototype can show ridership. Actual Grok review and lead-corrected proposed rules: [bus economics](docs/transit-and-one-way/bus-economics/README.md). Favor stop queues/destination tokens driven by actual bus stop visits, bounded building-based demand and return waves; no pedestrian sprites required. Current invisible journey logic does exist. Preserve active linked riders, total eight-seat capacity, physical traffic, saves and clear attribution; abstract riders must not accidentally mint existing shop/mission credit or imply fewer cars. Grok/lead favor retaining capital prices with no fare/upkeep for the detached prototype; provisional rules await implementation/validation. Review/documentation only this pass, no runtime edits, performance testing or publication.
+
+## Bus visual refinement requested (2026-09-11)
+
+User rejects the geometric bus as inconsistent with the game and explicitly asks installed Claude to inspect Kenney packs first, then use them as inspiration if no bus exists. Actual Claude inspected isolated copies of both sheets and authored four-view cream/teal pixel-art candidates; [candidate and provenance](docs/artwork/transit/claude-bus/README.md). No ready-made bus identified. User then instructed “Have claude fix the bus wheels then approve.” Actual Claude supplied round-tire/centered-hub and end-view tire-edge corrections; Codex rendered/reviewed and adopted the approved set locally for moving and parked buses via the atlas. Original candidates remain preserved. Retain the one-tile physical envelope, current simulation and no-publication/no-performance-testing boundaries.
+
+## Bus system implemented locally (2026-09-11)
+
+User requested BUS-DESIGN work packages, simple menus, performance tests only on request, and no publication. Delivered optional saved transit: 3×3 depot/two paid fleet bays, one-square directional curb stops, ordered map-tap route editor, eight-seat visible minibuses with ordinary traffic/dwell, real walking/household/gateway journeys, shared destination activity capacity, seat/run reservations, one-shot stays/physical returns, safe edit/removal guards, crash passenger attribution and corruption rejection. First transit placement explicitly enables nearby walking; untouched no-transit towns keep car behavior. Depot is mandatory route start/return/interchange; current route identity is its depot number. Prototype Kenney/code geometry, no new raster artwork adoption. [Delivery and functional/UI evidence](docs/transit-and-one-way/buses/README.md). No performance profiling, balance benchmark, mission edits, active-save edits, or publication in this task. Full measured balance and final selected art remain follow-ups.
+
+## Performance testing only on request (latest user decision, 2026-09-11)
+
+User explicitly requests performance testing only when they ask, to reduce development time and token use. This supersedes earlier mandatory supplied-town CPU/frame-pacing benchmarks for performance-impacting changes. Preserve performance-conscious implementation, but do not automatically run profiling, timing benchmarks, FPS/frame-pacing captures or performance comparisons. Normal functional tests/builds and relevant UI correctness checks remain appropriate; do not treat them as authorization for performance testing. The user will request measurements when needed. Preserve the supplied benchmark town/evidence for that future use.
+
+## Two one-way lanes, simple editing and automatic yields (2026-09-11)
+
+User favors low CPU cost and selection-order interactions over complex menus. Delivered two usable one-way lanes with physical safe merges and saved lane positions; drag/release or ordered taps/close-loop editing replaces the old direction menu. Simple directed loops automatically yield at entrances while circulating cars keep priority. Existing loop controls remain saved but dormant; adjacent signals still work. This supersedes earlier single-lane/menu and no-automatic-roundabout limitations. Topology is cached, circulating lookahead is indexed once per tick, and unchanged-town full state matches all 180 baseline checkpoints. [Delivery and verification](docs/transit-and-one-way/lanes-and-roundabouts/README.md). No global right-on-red change, bus implementation, mission edits, publication or active-save modification.
+
+## One-way roads implemented locally (2026-09-11)
+
+User requested starting one-way implementation from the delegated design. Delivered Roads → One-way (shortcut 8), consecutive tile selection/closed rings, preview and saved flow arrows, atomic Apply/Reverse/Two-way/Undo/Cancel. Sparse directed connections govern cached/weighted/custom/planned paths, physical travel, destination returns, patrols and responders. Existing physical lanes remain; occupied/interpolated/committed edits are rejected, old towns remain two-way, stale future paths replan safely, saves preserve direction. Corrupt committed-direction saves are rejected with original-copy recovery protection rather than silently replacing the town.
+
+[Delivery and evidence](docs/transit-and-one-way/IMPLEMENTED.md): 303 model tests, production build, desktop/narrow pointer construction/edit/zoom/reload and invalid-save preservation checks. All 180 unchanged supplied-town model checkpoints match baseline. Actual copied-town ring at (10,4) can be built after natural traffic clearance without deleting demand/vehicles. One-way does not automatically grant roundabout priority: unsigned busy variant has an entry crash; four existing Stops produce 82 completions/no new crashes over 120 seconds versus original intersection 85/no new crashes. Preserve the distinction and do not claim universal safety or target-device smoothness. Bus mechanics, signal offsets and mission authoring remain separate. No publication or active player-save modification.
+
+## Bus infrastructure and one-way roads — design delegation (2026-09-11)
+
+User is authoring the mission structure and requests these mechanics designed and delegated meanwhile: bus station with parking and physical footprint, exactly one-square bus stops, buses that delay road traffic while carrying more travelers with fewer cars, neighborhood walking, and one-way roads enabling player-built rings/dense networks with flow arrows. Coordinated signals across multiple intersections are a follow-on teaching capability. Preserve current missions until their plan arrives.
+
+Three Codex design agents were launched for transit simulation, directed roads and artwork inventory. [Design and work packages](docs/transit-and-one-way/README.md) records their source-grounded handoffs, provisional defaults and integration order: directed movement first while transit/art design proceeds, then real passenger/walking journeys and bus service. Reuse Kenney assets before authoring missing bus art. A one-way ring needs verified junction/entry behavior; arrows alone do not create roundabout priority. Current visitors count household trips and combine parking/service slots, so transit needs explicit journey/capacity work rather than simply removing cars. Benchmark future changes against the supplied town with actual desktop/narrow frame pacing. Design only; no runtime implementation, mission edits, player-save changes or publication in this pass.
+
+## Lanes/roundabouts update published — RUN 1.7.11 (2026-09-11)
+
+User explicitly requested pushing the current changes to run.world. The uncommitted feature/v0.2 working tree (one-way roads, two lanes, roundabout yields, lane recovery) was uploaded once as a public patch release, superseding the "no publication" note on the lanes/roundabouts delivery. 324/324 model tests and the production build pass; no browser smoke test of the frozen artifact was run this time. Tag check confirms Private, Review (Approved) and Public all at **1.7.11** (approved about four minutes after upload). [Changelog](docs/releases/run-1.7.11-changelog.md), [receipt](docs/releases/run-1.7.11-receipt.json). No Git push/commit or player-save modification.
+
+## Graphics/performance update published — RUN 1.7.10 (2026-09-11)
+
+User explicitly requested pushing the updated game online. Current verified working-tree build uploaded once to the existing RUN game; public and approved-review tags now both confirm **1.7.10**, superseding prior local-only publication status for these accumulated graphics/performance changes. Model suite/build and frozen production desktop/narrow asset/traffic/zoom/save-reload checks pass. [Release evidence](docs/releases/run-1.7.10/README.md), [receipt](docs/releases/run-1.7.10-receipt.json). Public URL remains https://w.run/melvynandrew99/working-on-it. No Git push or player-save modification. This does not remove the documented need to verify smoothness on the user's actual desktop device.
+
+
+## Smooth frame pacing and supplied benchmark town (2026-09-11)
+
+User makes smooth gameplay the number-one constraint: yesterday's animation was good; today's slowdown makes the game hard to play. Use the supplied 200-road/50-building town as the benchmark for future performance-impacting changes, and measure actual desktop/narrow frame pacing, not CPU time alone. [Delivery and preserved save](docs/performance-review/player-town/README.md). Codex implemented bounded exact BFS reuse with safe read scopes, unchanged-label style guards and static terrain/building texture caching. Full city state matches baseline at 60 checkpoints, including closure edits/reload. Model p99 ~13.6→2.4ms; narrow software-rendered browser ~31→58 FPS, p95 150→16.8ms. Desktop software-rendered capture improves but remains ~15 FPS: do not claim target-device smoothness solved. Existing tests/build and real construction/zoom/pause/reload checks pass. No crash-rule removal, timestep change, save alteration or publication. User suggests reconsidering routes at intersections; preserve physical movement checks and treat route-query scheduling as a separate measured opportunity. Antialiasing-off experiment was not adopted.
+
+
+## Performance review and first optimizations (2026-09-11)
+
+User requested actual Grok/Claude optimization reviews after today's slowdown, including crash logic simplification. Both installed clients delivered source reviews. Codex profiled and implemented per-step road-index reuse plus removal of an unused Flow calculation from visit mission credit. Existing saved-town benchmark uses about 51% less simulation CPU wall time; p99 falls from ~22ms to ~14.5ms, with identical full final city hashes across three fixtures. Tests/build pass. No crash rules, saves, rendering code or publication changed. This is model performance evidence, not device FPS or the user's exact current-town recovery. [Review and next priorities](docs/performance-review/README.md): per-frame home access BFS/text styles, then Flow/HUD reachability, routing allocations and carefully verified responder scans. Flow already samples once per simulated second; Grok's 40Hz claim is corrected in the synthesis.
+
+
+## Fixed outside-city edge and connector repair (2026-09-11)
+
+User chooses to block expansion on the outside-city connection side. For towns already expanded beyond it, they explicitly request deleting the old connector, putting it at the map edge, and highlighting the need to connect town roads to it. Implemented locally: expansion guard/UI, sandbox-load relocation to nearest boundary tile without a building, preserved visitor positions and real new-exit routing, yellow marker and Show city connection prompt. Existing construction/progress remain; no automatic road building. Supplied town moves (23,10) to (39,10), needing six road tiles. [Delivery](docs/land-progression/connected-edge/README.md): 277 tests, build and desktop/narrow checks. No publication. This supersedes preserving interior gateway locations at sandbox load.
+
+Character refinement: manager must not sound conceited. Heart in the right place, motives self-serving; reveal that through choices rather than overt credit-taking boasts. User proposes “Oh, another crash! Here is what I would do, build more roads!” Delayed unsolicited advice remains queued; no new speech trigger in this pass.
+
+
+## Main menu redesign delivered locally (2026-09-11)
+
+Latest user decision: keep the worn paper card; sticky-note proposal canceled. Make “Good as new!” handwritten while preserving the faded CITY MANAGER letterhead. A future framed picture on his wall is intended, not implemented now.
+
+Latest label refinement: fade both CI and AGER in CITY MANAGER, leaving TY MAN prominent, which can suggest “Thank You Man.” Implemented on the title label.
+
+Character clarification: “The Man” comes from MANAGER with AGER faded/rubbed off through wear, not an ego-selected title. He remains kind and knowledgeable but out of touch. Title-screen caption is “Good as new!” beside the obvious patch, with CITY MANAGER’s AGER worn/faded. Save the more-roads joke for gameplay; avoid happy-accident wording on the title because it suggests causing crashes is the goal. This supersedes peeled-off lettering and the earlier title caption.
+
+Latest user refinement: New city and Settings should match the other gold road-sign buttons. Title-screen tagline is now “Fix the commute.” only; reveal the credit-taking theme during gameplay. Implemented and verified locally.
+
+User requests a game-like title screen with distinct desktop/mobile composition and clear themed controls. Codex implemented full-viewport menu framing, a live title, existing illustrated manager scene, gold road-sign Start/Continue and smaller Challenges actions, and a separate Settings/New city utility row. New city remains confirmed and appears only with an existing town; title Skip moves into Settings, in-game Skip remains. Gameplay display preferences and saves remain intact. Actual installed Claude and Grok gave text-only design reviews; Codex selected, implemented and verified the result. Build and isolated desktop/narrow interaction/screenshots pass. See [delivery](docs/title-menu/README.md). Local only; no publication.
+
+## Intersection danger balancing delivered locally (2026-09-11)
+
+User made shared intersection mechanics today's priority: light Level 2 traffic can be safe unsigned, heavy Level 3 traffic should feel dangerous, and wrong controls can remain dangerous. Preserve current maps. Codex implemented distinct local conflict encounters, area-wide exposure/gradual decay, overloaded-stop danger and opposing left-turn danger under shared green, with actionable warnings in both modes. Normal red waiting, stationary pairs and through traffic do not generate accident quotas. Heavy turning fixture's long EW green crashes while a shorter phase serves all households; signals and route separation solve the heavier stop fixture. Saved diagnostics prepare for a later safety heatmap, not implemented now. This supersedes prior blanket Stop/Light crash immunity. [Delivery](docs/traffic-safety-balance/IMPLEMENTED.md): 272 tests, build and desktop/narrow browser verification pass. Existing incidents/rosters/deadlines, maps, stars and towns preserved. Severity cycling and real pile-ups remain follow-up work. No publication.
+
+## Shared intersection balance (2026-09-11)
+
+User requests installed Grok balance uncontrolled intersection danger and accident severity/responders for both missions and sandbox. Latest clarification: preserve the current Level 3; the request is shared mechanics balancing, not level redesign. Quiet traffic should remain safe, busy conflicting approaches should be dangerous without controls, and safe solutions must retain actual service/returns. Fender benders police, injury/serious crashes police+EMS, actual pile-ups all three including fire scene protection. User approved sharing the prepared game-rule brief after initial automatic-review rejection; actual installed Grok review is delivered. Grok recommends local conflicting-arrival exposure with area-wide gradual decay, not density/Flow-rating crash quotas, and replacing global severity cycling. [Assignment and lead synthesis](docs/traffic-safety-balance/README.md) record provisional numbers, corrections needed for stationary waits/actual contact/severity/pile-up reachability, save and responder constraints, and 5/5 unchanged lesson baseline tests. Assignment complete; no runtime rebalance or publication yet.
+
+## First 25 missions: latest direction for the next discussion
+
+The first ten missions will focus on placing roads, connecting homes to stores and reducing commute time across different intersection layouts. This supersedes the planned early crash/control lesson order, but does not change published maps or saved progress yet. [Mission requirements: Levels 1–25](docs/challenges/MISSIONS.md) records the confirmed direction and a proposed sequence expanding into congestion, destination capacity, crashes, emergency access and diversion. Individual maps, targets, budgets, star criteria and later-level ordering await discussion/playtesting. The user reports 46 unique players and hopes short challenges encourage return visits; retention is a hypothesis, not a measured result. Documentation only in this pass; no implementation, publication or agent discussion scheduled automatically.
+
+
+## Challenge route and revised lessons (latest user decision)
+
+Latest direction supersedes the earlier three-level order/return-only opening: numbered road-map selection, victory Retry/Next, Level 1 actual store arrival, Level 2 vertically spaced homes returning within a provisional 45 simulated seconds, Level 3 missing roads/no control with real collision avoidance. Original Room to move is a fourth bonus; old stars and neighborhood layouts are preserved. Fixed budgets, separate sandbox, main-menu exit and future learn/earn/sandbox unlock direction remain.262 model tests, build and desktop/narrow verification pass locally; observed fun remains unverified. See [delivery](docs/challenges/IMPLEMENTED.md). No publication.
+
+
+## Challenge opening order and fixed budgets (latest user decision)
+
+The sandbox remains the main game. Challenge lessons now start with one home/store needing a road, then three homes needing roads to a shared store; Room to move follows third. Challenge budgets never earn simulation income; normal construction/refunds remain, sandbox income unchanged. Main-menu Challenges uses the same gold style as Continue commute; each level has direct Main menu and Levels exits. Independent saved runs/stars preserve old FLOW progress. Delivered locally;259 model tests, build and desktop/narrow checks. See docs/challenges/IMPLEMENTED.md. No publication.
+
+
+## Sandbox and focused challenges (2026-09-10, corrected)
+
+The sandbox remains the main game, including the story and future monetization direction documented by Claude. Develop it alongside small predetermined challenges that teach and test lessons under the same simulation rules, like Chess.com puzzles. This is not a challenges-first pivot or a postponement of sandbox development. Challenges can provide bounded jam content. User requested a main-menu Challenges button and the current FLOW puzzle with an explicit objective, separate retries/progress and no edits to the player’s town. Delivered locally: docs/challenges/IMPLEMENTED.md; shared renderer/engine with an injected challenge session, protected nine-home demand, one permanent star, independent challenge saves.256 model tests, build and desktop/narrow checks. Stars/scoring beyond the first completion remain balance work. Preserve existing work and publication boundaries.
+
+
+## FLOW-02 delivered locally (2026-09-10)
+
+FLOW-02 now integrates a new neighborhood-service objective into the existing mission system, compact Flow feedback, Details/Dashboard metrics and selected-road approach inspection. Installed Claude delivered the UI; Codex integrated and verified it, and installed Grok reviewed the balance proposal. Civic qualification uses one real shopping return per household in60simulated seconds with access/tail checks and4seconds stabilization; FLOW-01's stricter comparison remains. Saved targets/receipts preserve old missions, tutorial/outside consent, cash/land and existing local fixes. 253 model tests, production build and desktop/narrow browser checks pass. No publication. See [FLOW-02](docs/flow-puzzles/flow02/README.md); FLOW-03 observed fun is next.
+
+
+## Challenges mode, The Man and radio unlock (2026-09-10)
+
+User decisions, pending playtest validation. Read the matching section at the top of docs/DESIGN.md and [the challenges plan](docs/challenges/PLAN.md).
+
+- Chess.com-style puzzle section, developed alongside the sandbox (see the corrected section above; not a challenges-first pivot). The first proposed puzzle is getting a car from A to B in this city in under 1 minute with limited supplies. Puzzles grow harder under the same rules; the sandbox stays for experimentation. Puzzles can come from exported, pre-simulated existing maps that the player adds to or updates. Challenge play must never modify the player's city save.
+- Refer to the manager as **The Man** for now. The "AGER" peeled off his MANAGER sign; the title is not ego-driven, and he adopts it cheerfully. His backstory and mayoral ambition are revealed gradually.
+- His advice is good but poorly prioritized and needs prerequisite work (yak shaving). Players choose to act now and fix it later, or queue it. Deaths are a player-facing mechanic, not a portrayal of him.
+- Radio station (Suno songs including kids' songs and What a Jam!) unlocks on beating the game or after a number of hours played. The ending is undefined while mechanics are built.
+- v1 is expected to take months past the jam. Monetization is deferred until playtests; favored directions are the radio and ego-themed vanity items. This does not authorize implementing payments or ads.
+
+## FLOW-01 delivered locally (2026-09-10)
+
+User requested implementation, with no publication. The existing-tool demand/measurement prototype now has a reproducible road bottleneck with spare reachable capacity, retiming and nearby-store solutions at identical demand, and preplanned success. Bounded real visit/return attribution and fixed-target/current-wait diagnostics preserve existing receipts; saved departure tie fairness prevents long leisure trips starving shopping. 244 model tests and production build pass. See [FLOW-01 results](docs/flow-puzzles/FLOW-01.md). FLOW-02 objective/UI integration and FLOW-03 observed fun remain pending; no player-facing Flow indicator, widening, construction timers, modes or separate mission system was added.
+
+## Saved-city troubleshooting workflow (2026-09-10)
+
+User explicitly requests reusing the successful full-town debugging process for future issues. Follow [the saved-city troubleshooting brief](docs/SAVED-CITY-DEBUGGING.md): collect diagnostics plus the complete city save, preserve the original, reproduce with the real simulation in isolation, trace actual blockers, and retain regression coverage including reload and preservation checks. Diagnostics alone are not a full save. Explain that browser `copy()` returning `undefined` is normal. Never reset or modify the player’s active town to obtain a reproduction; distinguish verified model recovery from active-browser recovery and publication.
+
+
+## Roadworks artwork source correction (2026-09-10)
+
+User points back to the included Kenney sprite packs. Inspect and reuse those before commissioning custom art. Lead confirmed Modern City already contains cones, orange/white and yellow/black barriers, direction arrows, dirt and worn paving; cone/arrows/dirt/worn paving are already in the runtime atlas. See docs/artwork/roadworks/README.md for verified coordinates and preview. The earlier broad Claude custom-art request was premature; only genuinely missing variants should be authored after trying existing compositions. Source packs remain untouched.
+
+## Roadworks simulation preferences and sprite assignment (2026-09-10)
+
+User resolved the construction-access debate: initially **upgrade areas block responders too**, with short downtime. They requested Arcade versus Realistic preference in the pause menu and actual Grok collaboration, and assigned roadworks sprites to installed Claude. See docs/roadworks/MODES.md for the Grok-reviewed first mode contract and implementation boundaries. Both modes retain physical closures; shorter work/restoration in Arcade is a proposal, not authorization to remove rescue deadlines or resurrect casualties. A question about extra Arcade rescue protection remains open; preserve current deadlines by default. Avoid a mode selector with no functional effect; ship it with actual roadworks. Existing tools first, real widening next remains the progression order. No publication of this new mechanic is authorized by the prior UI-only release. Actual Grok review is recorded. Claude sprite generation was attempted twice but timed out without files; docs/artwork/roadworks/README.md records the blocked art delivery. No runtime roadworks/mode selector was implemented in this design/art-assignment pass.
+
+## Whole-game resilience and timed road upgrades (2026-09-10)
+
+User confirms useful service/growth goals form the whole-game core, with future transportation-engineering-inspired challenges. Single points of failure include neighborhood access roads, stores and parks. Road widening is wanted, and road upgrades should take time while traffic detours around them; emergency access matters. User asks about distinct Detour/Divert purposes. See docs/roadworks/PLAN.md and actual installed Grok review for proposals and the unresolved emergency-pass-through versus full-closure choice. Existing-tool flow prototype first remains selected, with widening next. Upgrade timers supersede earlier no-construction-timer proposals only for road upgrades; do not infer timers for every build, offline progress, random facility failures or paid skips. This turn is discussion/planning, no runtime implementation or publication.
+
+## First post-tutorial flow puzzle (2026-09-10)
+
+Latest user direction: transportation-engineering-inspired puzzles should arise in the player's own growing city after the tutorial, with civic service/growth outcomes rather than mandatory road-fix instructions. **Fun is greater than accuracy; exaggeration is welcome.** Preserve intuitive cause/effect and visible improvement. The initial LOS A–F / two-to-four-lane example is inspiration; user explicitly chose **existing tools first, widening next**. Do not require a prescribed solution, force a well-planned city to fail, or silently increase demand after success. Busy shops/parks should represent useful completed service, not trapped parked cars.
+
+Actual installed Grok consulted using a text-only design brief. Lead synthesis and staged implementation: docs/flow-puzzles/PLAN.md. Untimed first flow prototype, real trips/returns, two solutions and good initial layouts; four-lane road mechanics follow. Grok's timed Saturday event and numeric pass target were not adopted. Design/planning only in this discussion; no new runtime puzzle or publication yet. This refines the unfinished MECH-01/02 sustained-flow work after UI cleanup; blocking correctness remains first.
+
+## UI verification scope (2026-09-10, latest user decision)
+
+Require only two representative layouts for future UI work: desktop and narrow. Conserve token usage by checking those two by default. Add other sizes or display-mode combinations only when a specific issue or task warrants them, and explain that need briefly. This supersedes earlier mandatory six-layout matrices, including UI-05; historical verification evidence remains valid. Preserve responsive behavior and saved display preferences.
 
 ## Land progression and final tutorial lesson (2026-09-09)
 

@@ -1,3 +1,11 @@
+import {loadChallenges,flushChallenges} from './state/challenges.ts';
+import {initMusic,setMusicSleeping} from './audio/music.ts';
+import {setRadioSleeping} from './audio/radio.ts';
+import {initVehicleAudio,setVehicleAudioSleeping} from './audio/vehicles.ts';
+import {initTrafficAudio,setTrafficAudioSleeping} from './audio/traffic.ts';
+import {initCrashAudio,setCrashAudioSleeping} from './audio/crashes.ts';
+import {initConstructionAudio,setConstructionAudioSleeping} from './audio/construction.ts';
+import {initWeatherAudio,setWeatherAudioSleeping} from './audio/weather.ts';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import RundotGameAPI from '@series-inc/rundot-game-sdk/api';
@@ -13,6 +21,10 @@ import './styles/app.css';
  * games use. Keep the numbered steps in this order; add your own work at the
  * marked points.
  */
+function persistActiveGame() {
+    if (['challenge','challenges'].includes(store.get().phase)) flushChallenges();
+    else flushSave();
+}
 async function boot() {
     // 1. SDK first. Nothing may call RundotGameAPI before this resolves.
     //    Resolves even if init fails (local dev outside the RUN host).
@@ -23,6 +35,7 @@ async function boot() {
     //    ADAPT: patch your own SaveData fields here; if the game is
     //    localized, restore the language here too — before any UI renders.
     await loadSave();
+    await loadChallenges();
 
     // 3. Mount React. `phase` starts at 'loading', so this paints the
     //    loading screen (progress bar at 0%).
@@ -44,6 +57,10 @@ async function boot() {
         });
     });
 
+    // Start fetching the menu theme during the loading bar so it is ready
+    // when the menu appears (nothing plays while phase is 'loading').
+    initMusic();
+
     // 5. Warm all critical assets (see src/assets/manifest.ts). Deferred
     //    assets keep loading in the background after this resolves.
     await warmAssets((p) => store.patch({ loadProgress: p }));
@@ -51,10 +68,11 @@ async function boot() {
     // 6. Loading done — hand over to the menu.
     store.patch({ phase: 'menu' });
 
-    // Start the title theme now that there's a menu to play it under. Not
-    // awaited — the 2.7MB track streams in the background; play() itself
-    // may still be gated on a first user gesture (see audio/music.ts).
-    // Historical theme retained on disk; city milestone uses no music yet.
+    initVehicleAudio();
+    initTrafficAudio();
+    initCrashAudio();
+    initConstructionAudio();
+    initWeatherAudio();
 
     // 7. Host lifecycle hooks. Register AFTER boot so handlers never race
     //    half-initialized state.
@@ -64,8 +82,9 @@ async function boot() {
     registerLifecycles({
         onPause: () => store.patch({ paused: true }),
         onResume: () => store.patch({ paused: false }),
-        onSleep: () => flushSave(),
-        onQuit: () => flushSave(), // treat onSleep as the reliable one
+        onSleep: () => {setMusicSleeping(true);setRadioSleeping(true);setVehicleAudioSleeping(true);setTrafficAudioSleeping(true);setCrashAudioSleeping(true);setConstructionAudioSleeping(true);setWeatherAudioSleeping(true);persistActiveGame();},
+        onAwake: () => {setMusicSleeping(false);setRadioSleeping(false);setVehicleAudioSleeping(false);setTrafficAudioSleeping(false);setCrashAudioSleeping(false);setConstructionAudioSleeping(false);setWeatherAudioSleeping(false);},
+        onQuit: () => persistActiveGame(), // treat onSleep as the reliable one
     });
 
     // 8. Post-boot, fire-and-forget work goes here — analytics boot event,

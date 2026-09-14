@@ -1,0 +1,44 @@
+desktop bus reload {
+  id: 'first-bus-service',
+  earned: true,
+  elapsed: 85.0000000000016,
+  busServed: [ 4, 5, 6, 7 ],
+  stages: [
+    { label: 'Start a route with a bus', done: true },
+    { label: 'Bus outings returned: 4/4', done: true },
+    { label: 'Shopping round trips: 4/4', done: true }
+  ],
+  routes: [ { id: 9, stationId: 1, stopIds: [Array], running: true } ]
+}
+narrow bus reload {
+  id: 'first-bus-service',
+  earned: true,
+  elapsed: 85.0000000000016,
+  busServed: [ 4, 5, 6, 7 ],
+  stages: [
+    { label: 'Start a route with a bus', done: true },
+    { label: 'Bus outings returned: 4/4', done: true },
+    { label: 'Shopping round trips: 4/4', done: true }
+  ],
+  routes: [ { id: 9, stationId: 1, stopIds: [Array], running: true } ]
+}
+[
+  {
+    name: 'desktop',
+    oneWayPointerConstruction: true,
+    busPointerSetup: true,
+    stagedSlotsSkipped: true,
+    busReload: true,
+    permanentStar: true,
+    sandboxUnchanged: true
+  },
+  {
+    name: 'narrow',
+    oneWayPointerConstruction: true,
+    busPointerSetup: true,
+    stagedSlotsSkipped: true,
+    busReload: true,
+    permanentStar: true,
+    sandboxUnchanged: true
+  }
+]

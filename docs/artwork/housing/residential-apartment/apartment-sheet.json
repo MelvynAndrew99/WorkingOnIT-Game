@@ -1,0 +1,1612 @@
+{
+  "version": 1,
+  "sheet": "apartment-sheet.png",
+  "note": "Residential apartment lot art with a fixed primary entrance and a player-chosen second entrance. Lot-local pixel origin is lot tile (0,0); entrance tiles are the road tiles just outside the lot. `residents`/`units` describe what the art draws (one balconied unit per resident); parking stalls are decorative and are not a capacity claim.",
+  "frameSize": 64,
+  "tileSize": 16,
+  "lotTiles": {
+    "w": 4,
+    "h": 4
+  },
+  "keyFormat": {
+    "level1": "apartment_1_<primarySide>",
+    "level2": "apartment_2_<primarySide>_<secondSide>_<secondOffset>",
+    "offsetAxis": "N/S offsets are world x 0..3; E/W offsets are world y 0..3"
+  },
+  "levels": {
+    "1": {
+      "floors": 3,
+      "residents": 4,
+      "units": 4,
+      "entrances": 1
+    },
+    "2": {
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "entrances": 2
+    }
+  },
+  "primaryByRotation": [
+    {
+      "rotation": 0,
+      "side": "S",
+      "offset": 0,
+      "x": 0,
+      "y": 4
+    },
+    {
+      "rotation": 1,
+      "side": "W",
+      "offset": 0,
+      "x": -1,
+      "y": 0
+    },
+    {
+      "rotation": 2,
+      "side": "N",
+      "offset": 3,
+      "x": 3,
+      "y": -1
+    },
+    {
+      "rotation": 3,
+      "side": "E",
+      "offset": 3,
+      "x": 4,
+      "y": 3
+    }
+  ],
+  "perimeterTiles": [
+    {
+      "side": "N",
+      "offset": 0,
+      "x": 0,
+      "y": -1
+    },
+    {
+      "side": "N",
+      "offset": 1,
+      "x": 1,
+      "y": -1
+    },
+    {
+      "side": "N",
+      "offset": 2,
+      "x": 2,
+      "y": -1
+    },
+    {
+      "side": "N",
+      "offset": 3,
+      "x": 3,
+      "y": -1
+    },
+    {
+      "side": "E",
+      "offset": 0,
+      "x": 4,
+      "y": 0
+    },
+    {
+      "side": "E",
+      "offset": 1,
+      "x": 4,
+      "y": 1
+    },
+    {
+      "side": "E",
+      "offset": 2,
+      "x": 4,
+      "y": 2
+    },
+    {
+      "side": "E",
+      "offset": 3,
+      "x": 4,
+      "y": 3
+    },
+    {
+      "side": "S",
+      "offset": 0,
+      "x": 0,
+      "y": 4
+    },
+    {
+      "side": "S",
+      "offset": 1,
+      "x": 1,
+      "y": 4
+    },
+    {
+      "side": "S",
+      "offset": 2,
+      "x": 2,
+      "y": 4
+    },
+    {
+      "side": "S",
+      "offset": 3,
+      "x": 3,
+      "y": 4
+    },
+    {
+      "side": "W",
+      "offset": 0,
+      "x": -1,
+      "y": 0
+    },
+    {
+      "side": "W",
+      "offset": 1,
+      "x": -1,
+      "y": 1
+    },
+    {
+      "side": "W",
+      "offset": 2,
+      "x": -1,
+      "y": 2
+    },
+    {
+      "side": "W",
+      "offset": 3,
+      "x": -1,
+      "y": 3
+    }
+  ],
+  "frames": {
+    "apartment_1_S": {
+      "x": 0,
+      "y": 0,
+      "w": 64,
+      "h": 64,
+      "level": 1,
+      "rotation": 0,
+      "floors": 3,
+      "residents": 4,
+      "units": 4,
+      "primary": {
+        "side": "S",
+        "offset": 0,
+        "x": 0,
+        "y": 4
+      },
+      "secondary": null
+    },
+    "apartment_1_W": {
+      "x": 64,
+      "y": 0,
+      "w": 64,
+      "h": 64,
+      "level": 1,
+      "rotation": 1,
+      "floors": 3,
+      "residents": 4,
+      "units": 4,
+      "primary": {
+        "side": "W",
+        "offset": 0,
+        "x": -1,
+        "y": 0
+      },
+      "secondary": null
+    },
+    "apartment_1_N": {
+      "x": 128,
+      "y": 0,
+      "w": 64,
+      "h": 64,
+      "level": 1,
+      "rotation": 2,
+      "floors": 3,
+      "residents": 4,
+      "units": 4,
+      "primary": {
+        "side": "N",
+        "offset": 3,
+        "x": 3,
+        "y": -1
+      },
+      "secondary": null
+    },
+    "apartment_1_E": {
+      "x": 192,
+      "y": 0,
+      "w": 64,
+      "h": 64,
+      "level": 1,
+      "rotation": 3,
+      "floors": 3,
+      "residents": 4,
+      "units": 4,
+      "primary": {
+        "side": "E",
+        "offset": 3,
+        "x": 4,
+        "y": 3
+      },
+      "secondary": null
+    },
+    "apartment_2_S_N_0": {
+      "x": 256,
+      "y": 0,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 0,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "S",
+        "offset": 0,
+        "x": 0,
+        "y": 4
+      },
+      "secondary": {
+        "side": "N",
+        "offset": 0,
+        "x": 0,
+        "y": -1
+      }
+    },
+    "apartment_2_S_N_1": {
+      "x": 320,
+      "y": 0,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 0,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "S",
+        "offset": 0,
+        "x": 0,
+        "y": 4
+      },
+      "secondary": {
+        "side": "N",
+        "offset": 1,
+        "x": 1,
+        "y": -1
+      }
+    },
+    "apartment_2_S_N_2": {
+      "x": 384,
+      "y": 0,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 0,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "S",
+        "offset": 0,
+        "x": 0,
+        "y": 4
+      },
+      "secondary": {
+        "side": "N",
+        "offset": 2,
+        "x": 2,
+        "y": -1
+      }
+    },
+    "apartment_2_S_N_3": {
+      "x": 448,
+      "y": 0,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 0,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "S",
+        "offset": 0,
+        "x": 0,
+        "y": 4
+      },
+      "secondary": {
+        "side": "N",
+        "offset": 3,
+        "x": 3,
+        "y": -1
+      }
+    },
+    "apartment_2_S_E_0": {
+      "x": 0,
+      "y": 64,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 0,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "S",
+        "offset": 0,
+        "x": 0,
+        "y": 4
+      },
+      "secondary": {
+        "side": "E",
+        "offset": 0,
+        "x": 4,
+        "y": 0
+      }
+    },
+    "apartment_2_S_E_1": {
+      "x": 64,
+      "y": 64,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 0,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "S",
+        "offset": 0,
+        "x": 0,
+        "y": 4
+      },
+      "secondary": {
+        "side": "E",
+        "offset": 1,
+        "x": 4,
+        "y": 1
+      }
+    },
+    "apartment_2_S_E_2": {
+      "x": 128,
+      "y": 64,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 0,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "S",
+        "offset": 0,
+        "x": 0,
+        "y": 4
+      },
+      "secondary": {
+        "side": "E",
+        "offset": 2,
+        "x": 4,
+        "y": 2
+      }
+    },
+    "apartment_2_S_E_3": {
+      "x": 192,
+      "y": 64,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 0,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "S",
+        "offset": 0,
+        "x": 0,
+        "y": 4
+      },
+      "secondary": {
+        "side": "E",
+        "offset": 3,
+        "x": 4,
+        "y": 3
+      }
+    },
+    "apartment_2_S_S_1": {
+      "x": 256,
+      "y": 64,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 0,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "S",
+        "offset": 0,
+        "x": 0,
+        "y": 4
+      },
+      "secondary": {
+        "side": "S",
+        "offset": 1,
+        "x": 1,
+        "y": 4
+      }
+    },
+    "apartment_2_S_S_2": {
+      "x": 320,
+      "y": 64,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 0,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "S",
+        "offset": 0,
+        "x": 0,
+        "y": 4
+      },
+      "secondary": {
+        "side": "S",
+        "offset": 2,
+        "x": 2,
+        "y": 4
+      }
+    },
+    "apartment_2_S_S_3": {
+      "x": 384,
+      "y": 64,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 0,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "S",
+        "offset": 0,
+        "x": 0,
+        "y": 4
+      },
+      "secondary": {
+        "side": "S",
+        "offset": 3,
+        "x": 3,
+        "y": 4
+      }
+    },
+    "apartment_2_S_W_0": {
+      "x": 448,
+      "y": 64,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 0,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "S",
+        "offset": 0,
+        "x": 0,
+        "y": 4
+      },
+      "secondary": {
+        "side": "W",
+        "offset": 0,
+        "x": -1,
+        "y": 0
+      }
+    },
+    "apartment_2_S_W_1": {
+      "x": 0,
+      "y": 128,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 0,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "S",
+        "offset": 0,
+        "x": 0,
+        "y": 4
+      },
+      "secondary": {
+        "side": "W",
+        "offset": 1,
+        "x": -1,
+        "y": 1
+      }
+    },
+    "apartment_2_S_W_2": {
+      "x": 64,
+      "y": 128,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 0,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "S",
+        "offset": 0,
+        "x": 0,
+        "y": 4
+      },
+      "secondary": {
+        "side": "W",
+        "offset": 2,
+        "x": -1,
+        "y": 2
+      }
+    },
+    "apartment_2_S_W_3": {
+      "x": 128,
+      "y": 128,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 0,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "S",
+        "offset": 0,
+        "x": 0,
+        "y": 4
+      },
+      "secondary": {
+        "side": "W",
+        "offset": 3,
+        "x": -1,
+        "y": 3
+      }
+    },
+    "apartment_2_W_N_0": {
+      "x": 192,
+      "y": 128,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 1,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "W",
+        "offset": 0,
+        "x": -1,
+        "y": 0
+      },
+      "secondary": {
+        "side": "N",
+        "offset": 0,
+        "x": 0,
+        "y": -1
+      }
+    },
+    "apartment_2_W_N_1": {
+      "x": 256,
+      "y": 128,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 1,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "W",
+        "offset": 0,
+        "x": -1,
+        "y": 0
+      },
+      "secondary": {
+        "side": "N",
+        "offset": 1,
+        "x": 1,
+        "y": -1
+      }
+    },
+    "apartment_2_W_N_2": {
+      "x": 320,
+      "y": 128,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 1,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "W",
+        "offset": 0,
+        "x": -1,
+        "y": 0
+      },
+      "secondary": {
+        "side": "N",
+        "offset": 2,
+        "x": 2,
+        "y": -1
+      }
+    },
+    "apartment_2_W_N_3": {
+      "x": 384,
+      "y": 128,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 1,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "W",
+        "offset": 0,
+        "x": -1,
+        "y": 0
+      },
+      "secondary": {
+        "side": "N",
+        "offset": 3,
+        "x": 3,
+        "y": -1
+      }
+    },
+    "apartment_2_W_E_0": {
+      "x": 448,
+      "y": 128,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 1,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "W",
+        "offset": 0,
+        "x": -1,
+        "y": 0
+      },
+      "secondary": {
+        "side": "E",
+        "offset": 0,
+        "x": 4,
+        "y": 0
+      }
+    },
+    "apartment_2_W_E_1": {
+      "x": 0,
+      "y": 192,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 1,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "W",
+        "offset": 0,
+        "x": -1,
+        "y": 0
+      },
+      "secondary": {
+        "side": "E",
+        "offset": 1,
+        "x": 4,
+        "y": 1
+      }
+    },
+    "apartment_2_W_E_2": {
+      "x": 64,
+      "y": 192,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 1,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "W",
+        "offset": 0,
+        "x": -1,
+        "y": 0
+      },
+      "secondary": {
+        "side": "E",
+        "offset": 2,
+        "x": 4,
+        "y": 2
+      }
+    },
+    "apartment_2_W_E_3": {
+      "x": 128,
+      "y": 192,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 1,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "W",
+        "offset": 0,
+        "x": -1,
+        "y": 0
+      },
+      "secondary": {
+        "side": "E",
+        "offset": 3,
+        "x": 4,
+        "y": 3
+      }
+    },
+    "apartment_2_W_S_0": {
+      "x": 192,
+      "y": 192,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 1,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "W",
+        "offset": 0,
+        "x": -1,
+        "y": 0
+      },
+      "secondary": {
+        "side": "S",
+        "offset": 0,
+        "x": 0,
+        "y": 4
+      }
+    },
+    "apartment_2_W_S_1": {
+      "x": 256,
+      "y": 192,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 1,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "W",
+        "offset": 0,
+        "x": -1,
+        "y": 0
+      },
+      "secondary": {
+        "side": "S",
+        "offset": 1,
+        "x": 1,
+        "y": 4
+      }
+    },
+    "apartment_2_W_S_2": {
+      "x": 320,
+      "y": 192,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 1,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "W",
+        "offset": 0,
+        "x": -1,
+        "y": 0
+      },
+      "secondary": {
+        "side": "S",
+        "offset": 2,
+        "x": 2,
+        "y": 4
+      }
+    },
+    "apartment_2_W_S_3": {
+      "x": 384,
+      "y": 192,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 1,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "W",
+        "offset": 0,
+        "x": -1,
+        "y": 0
+      },
+      "secondary": {
+        "side": "S",
+        "offset": 3,
+        "x": 3,
+        "y": 4
+      }
+    },
+    "apartment_2_W_W_1": {
+      "x": 448,
+      "y": 192,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 1,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "W",
+        "offset": 0,
+        "x": -1,
+        "y": 0
+      },
+      "secondary": {
+        "side": "W",
+        "offset": 1,
+        "x": -1,
+        "y": 1
+      }
+    },
+    "apartment_2_W_W_2": {
+      "x": 0,
+      "y": 256,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 1,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "W",
+        "offset": 0,
+        "x": -1,
+        "y": 0
+      },
+      "secondary": {
+        "side": "W",
+        "offset": 2,
+        "x": -1,
+        "y": 2
+      }
+    },
+    "apartment_2_W_W_3": {
+      "x": 64,
+      "y": 256,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 1,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "W",
+        "offset": 0,
+        "x": -1,
+        "y": 0
+      },
+      "secondary": {
+        "side": "W",
+        "offset": 3,
+        "x": -1,
+        "y": 3
+      }
+    },
+    "apartment_2_N_N_0": {
+      "x": 128,
+      "y": 256,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 2,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "N",
+        "offset": 3,
+        "x": 3,
+        "y": -1
+      },
+      "secondary": {
+        "side": "N",
+        "offset": 0,
+        "x": 0,
+        "y": -1
+      }
+    },
+    "apartment_2_N_N_1": {
+      "x": 192,
+      "y": 256,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 2,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "N",
+        "offset": 3,
+        "x": 3,
+        "y": -1
+      },
+      "secondary": {
+        "side": "N",
+        "offset": 1,
+        "x": 1,
+        "y": -1
+      }
+    },
+    "apartment_2_N_N_2": {
+      "x": 256,
+      "y": 256,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 2,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "N",
+        "offset": 3,
+        "x": 3,
+        "y": -1
+      },
+      "secondary": {
+        "side": "N",
+        "offset": 2,
+        "x": 2,
+        "y": -1
+      }
+    },
+    "apartment_2_N_E_0": {
+      "x": 320,
+      "y": 256,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 2,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "N",
+        "offset": 3,
+        "x": 3,
+        "y": -1
+      },
+      "secondary": {
+        "side": "E",
+        "offset": 0,
+        "x": 4,
+        "y": 0
+      }
+    },
+    "apartment_2_N_E_1": {
+      "x": 384,
+      "y": 256,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 2,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "N",
+        "offset": 3,
+        "x": 3,
+        "y": -1
+      },
+      "secondary": {
+        "side": "E",
+        "offset": 1,
+        "x": 4,
+        "y": 1
+      }
+    },
+    "apartment_2_N_E_2": {
+      "x": 448,
+      "y": 256,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 2,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "N",
+        "offset": 3,
+        "x": 3,
+        "y": -1
+      },
+      "secondary": {
+        "side": "E",
+        "offset": 2,
+        "x": 4,
+        "y": 2
+      }
+    },
+    "apartment_2_N_E_3": {
+      "x": 0,
+      "y": 320,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 2,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "N",
+        "offset": 3,
+        "x": 3,
+        "y": -1
+      },
+      "secondary": {
+        "side": "E",
+        "offset": 3,
+        "x": 4,
+        "y": 3
+      }
+    },
+    "apartment_2_N_S_0": {
+      "x": 64,
+      "y": 320,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 2,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "N",
+        "offset": 3,
+        "x": 3,
+        "y": -1
+      },
+      "secondary": {
+        "side": "S",
+        "offset": 0,
+        "x": 0,
+        "y": 4
+      }
+    },
+    "apartment_2_N_S_1": {
+      "x": 128,
+      "y": 320,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 2,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "N",
+        "offset": 3,
+        "x": 3,
+        "y": -1
+      },
+      "secondary": {
+        "side": "S",
+        "offset": 1,
+        "x": 1,
+        "y": 4
+      }
+    },
+    "apartment_2_N_S_2": {
+      "x": 192,
+      "y": 320,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 2,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "N",
+        "offset": 3,
+        "x": 3,
+        "y": -1
+      },
+      "secondary": {
+        "side": "S",
+        "offset": 2,
+        "x": 2,
+        "y": 4
+      }
+    },
+    "apartment_2_N_S_3": {
+      "x": 256,
+      "y": 320,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 2,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "N",
+        "offset": 3,
+        "x": 3,
+        "y": -1
+      },
+      "secondary": {
+        "side": "S",
+        "offset": 3,
+        "x": 3,
+        "y": 4
+      }
+    },
+    "apartment_2_N_W_0": {
+      "x": 320,
+      "y": 320,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 2,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "N",
+        "offset": 3,
+        "x": 3,
+        "y": -1
+      },
+      "secondary": {
+        "side": "W",
+        "offset": 0,
+        "x": -1,
+        "y": 0
+      }
+    },
+    "apartment_2_N_W_1": {
+      "x": 384,
+      "y": 320,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 2,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "N",
+        "offset": 3,
+        "x": 3,
+        "y": -1
+      },
+      "secondary": {
+        "side": "W",
+        "offset": 1,
+        "x": -1,
+        "y": 1
+      }
+    },
+    "apartment_2_N_W_2": {
+      "x": 448,
+      "y": 320,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 2,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "N",
+        "offset": 3,
+        "x": 3,
+        "y": -1
+      },
+      "secondary": {
+        "side": "W",
+        "offset": 2,
+        "x": -1,
+        "y": 2
+      }
+    },
+    "apartment_2_N_W_3": {
+      "x": 0,
+      "y": 384,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 2,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "N",
+        "offset": 3,
+        "x": 3,
+        "y": -1
+      },
+      "secondary": {
+        "side": "W",
+        "offset": 3,
+        "x": -1,
+        "y": 3
+      }
+    },
+    "apartment_2_E_N_0": {
+      "x": 64,
+      "y": 384,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 3,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "E",
+        "offset": 3,
+        "x": 4,
+        "y": 3
+      },
+      "secondary": {
+        "side": "N",
+        "offset": 0,
+        "x": 0,
+        "y": -1
+      }
+    },
+    "apartment_2_E_N_1": {
+      "x": 128,
+      "y": 384,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 3,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "E",
+        "offset": 3,
+        "x": 4,
+        "y": 3
+      },
+      "secondary": {
+        "side": "N",
+        "offset": 1,
+        "x": 1,
+        "y": -1
+      }
+    },
+    "apartment_2_E_N_2": {
+      "x": 192,
+      "y": 384,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 3,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "E",
+        "offset": 3,
+        "x": 4,
+        "y": 3
+      },
+      "secondary": {
+        "side": "N",
+        "offset": 2,
+        "x": 2,
+        "y": -1
+      }
+    },
+    "apartment_2_E_N_3": {
+      "x": 256,
+      "y": 384,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 3,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "E",
+        "offset": 3,
+        "x": 4,
+        "y": 3
+      },
+      "secondary": {
+        "side": "N",
+        "offset": 3,
+        "x": 3,
+        "y": -1
+      }
+    },
+    "apartment_2_E_E_0": {
+      "x": 320,
+      "y": 384,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 3,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "E",
+        "offset": 3,
+        "x": 4,
+        "y": 3
+      },
+      "secondary": {
+        "side": "E",
+        "offset": 0,
+        "x": 4,
+        "y": 0
+      }
+    },
+    "apartment_2_E_E_1": {
+      "x": 384,
+      "y": 384,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 3,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "E",
+        "offset": 3,
+        "x": 4,
+        "y": 3
+      },
+      "secondary": {
+        "side": "E",
+        "offset": 1,
+        "x": 4,
+        "y": 1
+      }
+    },
+    "apartment_2_E_E_2": {
+      "x": 448,
+      "y": 384,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 3,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "E",
+        "offset": 3,
+        "x": 4,
+        "y": 3
+      },
+      "secondary": {
+        "side": "E",
+        "offset": 2,
+        "x": 4,
+        "y": 2
+      }
+    },
+    "apartment_2_E_S_0": {
+      "x": 0,
+      "y": 448,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 3,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "E",
+        "offset": 3,
+        "x": 4,
+        "y": 3
+      },
+      "secondary": {
+        "side": "S",
+        "offset": 0,
+        "x": 0,
+        "y": 4
+      }
+    },
+    "apartment_2_E_S_1": {
+      "x": 64,
+      "y": 448,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 3,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "E",
+        "offset": 3,
+        "x": 4,
+        "y": 3
+      },
+      "secondary": {
+        "side": "S",
+        "offset": 1,
+        "x": 1,
+        "y": 4
+      }
+    },
+    "apartment_2_E_S_2": {
+      "x": 128,
+      "y": 448,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 3,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "E",
+        "offset": 3,
+        "x": 4,
+        "y": 3
+      },
+      "secondary": {
+        "side": "S",
+        "offset": 2,
+        "x": 2,
+        "y": 4
+      }
+    },
+    "apartment_2_E_S_3": {
+      "x": 192,
+      "y": 448,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 3,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "E",
+        "offset": 3,
+        "x": 4,
+        "y": 3
+      },
+      "secondary": {
+        "side": "S",
+        "offset": 3,
+        "x": 3,
+        "y": 4
+      }
+    },
+    "apartment_2_E_W_0": {
+      "x": 256,
+      "y": 448,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 3,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "E",
+        "offset": 3,
+        "x": 4,
+        "y": 3
+      },
+      "secondary": {
+        "side": "W",
+        "offset": 0,
+        "x": -1,
+        "y": 0
+      }
+    },
+    "apartment_2_E_W_1": {
+      "x": 320,
+      "y": 448,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 3,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "E",
+        "offset": 3,
+        "x": 4,
+        "y": 3
+      },
+      "secondary": {
+        "side": "W",
+        "offset": 1,
+        "x": -1,
+        "y": 1
+      }
+    },
+    "apartment_2_E_W_2": {
+      "x": 384,
+      "y": 448,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 3,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "E",
+        "offset": 3,
+        "x": 4,
+        "y": 3
+      },
+      "secondary": {
+        "side": "W",
+        "offset": 2,
+        "x": -1,
+        "y": 2
+      }
+    },
+    "apartment_2_E_W_3": {
+      "x": 448,
+      "y": 448,
+      "w": 64,
+      "h": 64,
+      "level": 2,
+      "rotation": 3,
+      "floors": 4,
+      "residents": 6,
+      "units": 6,
+      "primary": {
+        "side": "E",
+        "offset": 3,
+        "x": 4,
+        "y": 3
+      },
+      "secondary": {
+        "side": "W",
+        "offset": 3,
+        "x": -1,
+        "y": 3
+      }
+    }
+  }
+}

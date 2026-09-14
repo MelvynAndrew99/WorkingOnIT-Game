@@ -1,0 +1,29 @@
+{
+  "date": "2026-09-11",
+  "runs": [
+    {
+      "scope": "Complete model suite before final depot-spacing adjustment",
+      "files": 44,
+      "assertions": 367,
+      "failures": 0,
+      "execution": "node --experimental-strip-types <each test file>"
+    },
+    {
+      "scope": "All four transit/ridership/incident suites after final adjustment",
+      "files": 4,
+      "assertions": 32,
+      "failures": 0,
+      "execution": "node --experimental-strip-types <each test file>"
+    }
+  ],
+  "productionBuild": "pass",
+  "performanceTesting": false,
+  "published": false,
+  "sourceSha256": {
+    "src/game/cityBusRidership.ts": "047d1f3a40dc440e13057133622ce3d19629a080af96bf307384e5a625b60267",
+    "src/game/cityTransit.ts": "4a3f4fc5099ab19fe3f6badbbbc244f000f397c77cae436d2470a7c93d5d1761",
+    "src/game/cityScene.ts": "aaf9ced187bc271a419056270d32bbd5b729e4d1e18c17e697b1094115399ea8",
+    "src/game/cityBusRidership.test.ts": "023be8c9e80f35b2a317e4c47ab25155e802c6188720897793b4219c15905f5e",
+    "src/game/cityBusIncidents.test.ts": "e81289063df3a453f4ead93fba1dacd6f4eb556335fe16eb7a3215ad0fe5cc04"
+  }
+}

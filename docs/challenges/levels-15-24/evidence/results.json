@@ -1,0 +1,26 @@
+[
+  {
+    "name": "desktop",
+    "legacyAttemptArchived": true,
+    "legacyAwardPreserved": true,
+    "policePointerPlacement": true,
+    "responseReload": true,
+    "allNewBriefingsAndCompletions": true,
+    "directionEditor": true,
+    "finaleUnavailable": true,
+    "sandboxUnchanged": true,
+    "errors": []
+  },
+  {
+    "name": "narrow",
+    "legacyAttemptArchived": true,
+    "legacyAwardPreserved": true,
+    "policePointerPlacement": true,
+    "responseReload": true,
+    "allNewBriefingsAndCompletions": true,
+    "directionEditor": true,
+    "finaleUnavailable": true,
+    "sandboxUnchanged": true,
+    "errors": []
+  }
+]

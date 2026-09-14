@@ -1,0 +1,12 @@
+✔ community limits physically apply to cars, buses and responding crews; old roads retain their speeds (11.039803ms)
+✔ weighted routes use the same community limit and prefer a faster public-road detour (0.695204ms)
+✔ community metadata validates real narrow pavement without duplicates or invented roads (1.01411ms)
+✔ a completed work return keeps its own history purpose across history parsing (0.604084ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 22.209492
