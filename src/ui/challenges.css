@@ -51,3 +51,13 @@
  .emergency-controls .challenge-editor .direction-actions label{flex-basis:100%}
  .emergency-controls .challenge-editor .direction-actions button{flex:1}
 }
+
+/* This rescue lesson supplies all roads; keep its single control and current step clear. */
+.simple-rescue .challenge-budget{display:none}
+.simple-rescue .challenge-tools{grid-template-columns:100px}
+
+.road-puzzle .challenge-actions{flex-wrap:wrap}
+@media(max-width:650px){
+ .road-puzzle .challenge-tools{display:flex;overflow-x:auto;overflow-y:hidden}
+ .road-puzzle .challenge-tools .build-tool{flex:0 0 76px}
+}

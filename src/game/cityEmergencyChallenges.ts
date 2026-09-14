@@ -2,7 +2,7 @@ import {hasSecondEntrance,type ChallengeRun} from './cityChallenges.ts';
 import {entrance,findPath,SERVICE_OF,type City} from './cityModel.ts';
 import {directionReservedTiles} from './cityTraffic.ts';
 import {roadEdgeKey,roadDirectionForStep} from './cityDirections.ts';
-import {emergencyDefinition,requiredPlacements,needsRecovery,recoveryStreet} from './fixtures/emergencyTown.ts';
+import {emergencyDefinition,isRoadPuzzle,requiredPlacements,needsRecovery,recoveryStreet} from './fixtures/emergencyTown.ts';
 import type {ServiceKind} from './cityIncidents.ts';
 const attempts=new WeakMap<City,ChallengeRun>();
 export function bindEmergency(run:ChallengeRun){if(run.emergency)attempts.set(run.city,run);return run;}
@@ -13,6 +13,7 @@ export interface EmergencyEvidence {
  original:Record<string,'forward'|'reverse'>;
  diverted?:number; converted?:number; restored?:number; reopened?:number; clearedAt?:number; clearedWithConversion?:number;
  detourReturns:number[]; recovered:number[];
+ roadReopened?:number;
  neighborhoodDiverted?:number;neighborhoodCleared?:number;neighborhoodReopened?:number;
 }
 export function initialEmergency(city:City):EmergencyEvidence {
@@ -27,7 +28,7 @@ const safe=(c:City)=>{const reserved=directionReservedTiles(c);return recoverySt
 export function observeEmergency(run:ChallengeRun){
  const e=run.emergency;if(!e)return;const c=run.city,now=c.elapsed;
  for(const b of c.buildings)if((b.paid??0)>0&&requiredPlacements(run.id).includes(b.kind)&&!e.placed.includes(b.id))e.placed.push(b.id);
- const temporary=run.id==='temporary-two-way';
+ const temporary=run.id==='temporary-two-way'&&run.revision===3;
  const neighborhood=run.id==='past-the-wreck'&&run.revision===4;
  const neighborhoodClosed=c.closures.some(p=>p.x===8&&p.y===10);
  if(neighborhood&&e.clearedAt===undefined&&e.scenes.some(s=>c.incidents.some(i=>i.id===s.id&&i.status==='active'))){
@@ -58,9 +59,10 @@ export function observeEmergency(run:ChallengeRun){
  if(neighborhood&&e.neighborhoodCleared!==undefined&&!neighborhoodClosed&&hasSecondEntrance(c))e.neighborhoodReopened??=now;
  if(temporary&&e.converted!==undefined&&e.clearedWithConversion!==undefined&&diverted(c)&&originalFlow(c,e)&&safe(c))e.restored??=now;
  if(temporary&&e.restored!==undefined&&!diverted(c)&&originalFlow(c,e))e.reopened??=now;
+ if(run.id==='past-the-wreck'&&run.revision===5&&e.clearedAt!==undefined&&!c.closures.length)e.roadReopened??=now;
  for(const h of c.history){const s=h.service;if(s?.purpose!=='shopping')continue;
   if(e.clearedAt===undefined&&!e.detourReturns.includes(s.homeId))e.detourReturns.push(s.homeId);
-  const after=neighborhood?e.neighborhoodReopened:temporary?e.reopened:e.clearedAt;
+  const after=run.id==='past-the-wreck'&&run.revision===5?e.roadReopened:neighborhood?e.neighborhoodReopened:temporary?e.reopened:e.clearedAt;
   if(after!==undefined&&(s.startedAt??-1)>=after&&!e.recovered.includes(s.homeId))e.recovered.push(s.homeId);
  }
 }
@@ -70,8 +72,27 @@ export function emergencyStages(run:ChallengeRun){
  const e=run.emergency;if(!e)return [];
  const stages:{label:string;done:boolean}[]=[];
  const names={policeStation:'Police',hospital:'Clinic',fireStation:'Fire'};
- for(const kind of requiredPlacements(run.id))stages.push({label:`Place ${names[kind as keyof typeof names]} with connected access`,done:run.city.buildings.some(b=>b.kind===kind&&e.placed.includes(b.id)&&e.scenes.some(scene=>sceneAccess(run.city,entrance(b),scene)))});
+ for(const kind of requiredPlacements(run.id))stages.push({label:isRoadPuzzle(run.id)?`${names[kind as keyof typeof names]} available with road access`:`Place ${names[kind as keyof typeof names]} with connected access`,done:run.city.buildings.some(b=>b.kind===kind&&e.placed.includes(b.id)&&e.scenes.some(scene=>sceneAccess(run.city,entrance(b),scene)))});
  const neighborhood=run.id==='past-the-wreck'&&run.revision===4;
+ if(run.id==='temporary-two-way'&&run.revision===4)return [
+  {label:'Police have a legal route to the crash',done:access(run.city,e)},
+  {label:'Police have cleared the crash',done:e.scenes.every(scene=>scene.cleared)},
+  {label:'A household is home from a new shopping trip',done:e.recovered.length>0},
+ ];
+ if(isRoadPuzzle(run.id)&&run.id!=='temporary-two-way'){
+  stages.push({label:'Emergency crews have legal access to every scene',done:access(run.city,e)});
+  for(const [index,scene] of e.scenes.entries()){
+   const name=e.scenes.length>1?(index===0?'Main street crash':'Southern road fire'):(scene.required.includes('fire')?'Vehicle fire':'Crash');
+   stages.push({label:`${name} cleared: crews finished ${scene.completed.length}/${scene.required.length}`,done:scene.cleared});
+  }
+  stages.push({label:`Households home after recovery: ${e.recovered.length}/4`,done:e.recovered.length===4});
+  return stages;
+ }
+ if(run.id==='past-the-wreck'&&run.revision===5)return [
+  {label:'Press Play: let police reach and clear the crash',done:e.scenes.every(scene=>scene.cleared)},
+  {label:'Show Divert → tap the highlighted tile to reopen',done:e.roadReopened!==undefined&&!run.city.closures.length},
+  {label:'Keep Play running: a household gets home from a new shopping trip',done:e.recovered.length>0},
+ ];
  if(run.id==='past-the-wreck'&&!neighborhood)stages.push({label:'Shopping return via detour while crash is active',done:e.detourReturns.length>0});
  if(neighborhood)stages.push({label:'Build a usable second entrance; keep the original road',done:hasSecondEntrance(run.city)},{label:'Select Divert → tap the old approach (8,10); let cars clear',done:e.neighborhoodDiverted!==undefined});
  if(run.id==='temporary-two-way')stages.push({label:'Divert (14,8); run traffic to clear occupied space',done:e.diverted!==undefined},{label:'Safely convert (14,8) → (18,8) to two-way with Divert on',done:e.converted!==undefined});
@@ -97,7 +118,7 @@ export function parseEmergency(raw:unknown,city:City,id:string,revision=3):Emerg
  for(const [index,s] of e.scenes.entries()){
   if(!s||typeof s!=='object')return null;
   const incident=city.incidents.find(i=>i.id===s.id);
-  if(!incident||s.x!==(index?22:13)||s.y!==(neighborhood?5:index?11:8)||incident.x!==s.x||incident.y!==s.y||JSON.stringify(s.required)!==JSON.stringify(incident.required)||!services(s.dispatched,s.required)||!services(s.arrived,s.dispatched)||!services(s.completed,s.arrived)||s.completed.some(k=>!incident.completedServices.includes(k))||typeof s.cleared!=='boolean'||s.cleared&&(incident.status!=='cleared'||s.completed.length!==s.required.length))return null;
+  if(!incident||s.x!==(index?22:13)||s.y!==(id==='past-the-wreck'&&revision>=4?5:index?11:8)||incident.x!==s.x||incident.y!==s.y||JSON.stringify(s.required)!==JSON.stringify(incident.required)||!services(s.dispatched,s.required)||!services(s.arrived,s.dispatched)||!services(s.completed,s.arrived)||s.completed.some(k=>!incident.completedServices.includes(k))||typeof s.cleared!=='boolean'||s.cleared&&(incident.status!=='cleared'||s.completed.length!==s.required.length))return null;
  }
  if(!e.original||typeof e.original!=='object')return null;
  const expected=['temporary-two-way','another-approach','what-a-jam'].includes(id)?Object.fromEntries(recoveryStreet.slice(1).map((p,i)=>[roadEdgeKey(recoveryStreet[i],p),roadDirectionForStep(recoveryStreet[i],p)])):{};
@@ -105,8 +126,17 @@ export function parseEmergency(raw:unknown,city:City,id:string,revision=3):Emerg
  for(const k of ['diverted','converted','restored','reopened','clearedAt','clearedWithConversion'] as const)if(e[k]!==undefined&&(!Number.isFinite(e[k])||e[k]!<0||e[k]!>city.elapsed))return null;
  for(const k of ['neighborhoodDiverted','neighborhoodCleared','neighborhoodReopened'] as const)if(e[k]!==undefined&&(!neighborhood||!Number.isFinite(e[k])||e[k]!<0||e[k]!>city.elapsed))return null;
  if(e.neighborhoodCleared!==undefined&&(e.neighborhoodDiverted===undefined||e.neighborhoodCleared!==e.clearedAt||e.neighborhoodCleared<e.neighborhoodDiverted)||e.neighborhoodReopened!==undefined&&(e.neighborhoodCleared===undefined||e.neighborhoodReopened<e.neighborhoodCleared)||neighborhood&&e.recovered.length&&e.neighborhoodReopened===undefined)return null;
+ if(e.roadReopened!==undefined&&(id!=='past-the-wreck'||revision!==5||!Number.isFinite(e.roadReopened)||e.clearedAt===undefined||e.roadReopened<e.clearedAt||e.roadReopened>city.elapsed)||id==='past-the-wreck'&&revision===5&&e.recovered.length&&e.roadReopened===undefined)return null;
  if(e.clearedWithConversion!==undefined&&(e.converted===undefined||e.clearedWithConversion!==e.clearedAt||e.clearedWithConversion<e.converted))return null;
  if(e.restored!==undefined&&e.clearedWithConversion===undefined)return null;
- if(e.converted!==undefined&&(e.diverted===undefined||e.converted<e.diverted)||e.restored!==undefined&&(e.converted===undefined||e.clearedAt===undefined||e.restored<Math.max(e.converted,e.clearedAt))||e.reopened!==undefined&&(e.restored===undefined||e.reopened<e.restored)||e.clearedAt!==undefined&&!e.scenes.every(s=>s.cleared)||e.recovered.length&&(e.clearedAt===undefined||id==='temporary-two-way'&&e.reopened===undefined))return null;
+ if(e.converted!==undefined&&(e.diverted===undefined||e.converted<e.diverted)||e.restored!==undefined&&(e.converted===undefined||e.clearedAt===undefined||e.restored<Math.max(e.converted,e.clearedAt))||e.reopened!==undefined&&(e.restored===undefined||e.reopened<e.restored)||e.clearedAt!==undefined&&!e.scenes.every(s=>s.cleared)||e.recovered.length&&(e.clearedAt===undefined||id==='temporary-two-way'&&revision===3&&e.reopened===undefined))return null;
  return structuredClone(e);
+}
+
+/** Keep the preplaced teaching diversion until the real rescue finishes. */
+export function emergencyEditMessage(city:City,tool:string,x:number,y:number):string|undefined {
+ const run=attempts.get(city);
+ if(run?.id!=='past-the-wreck'||run.revision!==5||!['closure','bulldoze'].includes(tool))return;
+ if(city.closures.some(p=>p.x===x&&p.y===y)&&!run.emergency!.scenes.every(s=>s.cleared))
+  return 'Leave Divert on until police clear the crash. Press Play so police can reach the crash.';
 }

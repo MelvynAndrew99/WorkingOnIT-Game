@@ -35,7 +35,7 @@ jobs:
             echo '::error::Run this release workflow from main.'
             exit 1
           fi
-      - uses: actions/checkout@7
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - uses: cachix/install-nix-action@v31

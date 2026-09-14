@@ -1,10 +1,8 @@
 import {apartmentComplexSummary} from './cityApartmentComplexes.ts';
-import {initialEmergency,observeEmergency,bindEmergency,observeEmergencyEdit,emergencyStages,parseEmergency,type EmergencyEvidence} from './cityEmergencyChallenges.ts';
+import {initialEmergency,emergencyEditMessage,observeEmergency,bindEmergency,observeEmergencyEdit,emergencyStages,parseEmergency,type EmergencyEvidence} from './cityEmergencyChallenges.ts';
 import {emergencyDefinition} from './fixtures/emergencyTown.ts';
 import {CAMPAIGN_LEVELS, campaignDefinition, campaignTown, type CampaignId} from './fixtures/campaignTown.ts';
 import {applyRoadDirections, type DirectionEditMode} from './cityDirectionEdits.ts';
-import {roadEdgeKey,roadDirectionForStep} from './cityDirections.ts';
-import {roundaboutIndex} from './cityRoundabouts.ts';
 import {wideRoadFootprint} from './cityWideRoads.ts';
 import {originalEntrance} from './fixtures/neighborhoodTown.ts';
 import type {Point} from './cityModel.ts';
@@ -16,14 +14,14 @@ import {flowTown} from './fixtures/flowTown.ts';
 export const FLOW_CHALLENGE = {
   id: 'shopping-flow', title: 'Room to move',
   goal: 'Help all 9 households shop and get home twice in the latest minute of traffic. Keep that service steady for 15 seconds.',
-  lesson: 'Learn to spot a busy approach and improve how a neighborhood is served.',
-  rules: 'Keep all 9 homes. Change roads, junction controls or shops. No outside traffic or land expansion. Pause to plan; there is no failure countdown.',
+  lesson: 'All homes are connected, but queues are holding up shopping trips.',
+  rules: 'All nine homes need reliable shopping trips, with shorter queues and usable return routes. The homes must stay. Road layout, traffic control and shop locations are up to you. No outside traffic or land expansion; there is no failure countdown.',
 };
 export const CHALLENGE_TOOLS: Tool[] = ['road','stop','signal','store','closure','bulldoze','policeStation','hospital','fireStation'];
 const CHALLENGE_DEFINITIONS = [
-  {id:'first-road',title:'The first road',goal:'Build the missing road. Get the car to the store.',lesson:'Join the entrance arrows with a continuous road.',rules:'Build between the entrance arrows, then Run traffic. Win as soon as the car arrives at the store.',homes:1,budget:140},
-  {id:'neighborhood-roads',title:'Roads for the neighborhood',goal:'Get all 3 households to the store and home within 45 seconds.',lesson:'Build a shared road that serves every entrance.',rules:'Connect the scattered homes. The 45-second trip test starts when you Run traffic; pause stops the clock. All three must return home.',homes:3,budget:600},
-  {id:'safe-crossing',title:'Share the crossing',goal:'Reconnect the junction. Get every household to the shops and home without an accident.',lesson:'Manage the meeting point of two busy approaches.',rules:'Repair the missing roads and manage the junction with Stops or Lights, or find a safe alternative. Every household must return; any accident ends this attempt.',homes:10,budget:180},
+  {id:'first-road',title:'The first road',goal:'Get the car from home to the store.',lesson:'The home and the shop have no road between them.',rules:'The car needs a connected road from its home entrance to the shop entrance. It must actually reach the store to finish the puzzle. The entrance arrows show where buildings meet the road.',homes:1,budget:140},
+  {id:'neighborhood-roads',title:'Roads for the neighborhood',goal:'Get all 3 households to the store and home within 45 seconds.',lesson:'Three homes are separated from the shop.',rules:'All three households need a shopping trip and a way home. Your road layout must serve them within 45 seconds of running traffic. Planning while paused does not use the timer.',homes:3,budget:600},
+  {id:'safe-crossing',title:'Share the crossing',goal:'Get every household to the shops and home without an accident.',lesson:'Two busy approaches meet at an unfinished crossing.',rules:'The streets are unfinished where traffic from different directions meets. Every household needs a safe shopping round trip. Any accident ends the attempt; the road layout and traffic controls are yours to choose.',homes:10,budget:180},
   {...FLOW_CHALLENGE,homes:9,budget:1200},
   ...CAMPAIGN_LEVELS,
 ] as const;
@@ -71,17 +69,17 @@ export function createChallenge(id:ChallengeId='shopping-flow'): ChallengeRun {
   if(campaign)for(const control of city.controls)control.paid=0;
   city.funds = definition.budget;
   if(city.tutorial)city.tutorial.status = 'complete';
-  return bindEmergency({id,revision:id==='another-front-door'?3:id==='past-the-wreck'?4:emergencyDefinition(id)?3:2,...(emergencyDefinition(id)?{emergency:initialEmergency(city)}:{}),city, earned:false, accumulator:0, checkedAt:city.elapsed});
+  return bindEmergency({id,revision:id==='another-front-door'?3:id==='past-the-wreck'?5:id==='temporary-two-way'?4:emergencyDefinition(id)?3:2,...(emergencyDefinition(id)?{emergency:initialEmergency(city)}:{}),city, earned:false, accumulator:0, checkedAt:city.elapsed});
 }
 export function challengeSnapshot(run: ChallengeRun) {return flowSnapshot(run.city,Math.max(1,challengeDefinition(run.id).homes),'shopping', {returnsPerHome:run.id==='shopping-flow'?2:1,maximumStoppedSeconds:20,maximumJourneySeconds:60});}
 export function challengePlace(city: City, tool: Tool, x: number, y: number, rotation = 0, id:ChallengeId='shopping-flow'): string {
   if (!challengeTools(id).includes(tool)) return 'Use the construction tools supplied for this lesson.';
   if(id==='around-the-island'&&x===8&&y===6)return 'Keep the center island clear. Build around it.';
   if(id==='one-way-home'&&tool==='bulldoze'&&y===6&&x>=2&&x<=13)return 'Keep the inherited eastbound street. Add a way home.';
-  if(id==='past-the-wreck'&&tool==='bulldoze'&&x===8&&y>=5&&y<=12)return 'Keep the original entrance. Build another connection.';
   if (tool==='bulldoze' && city.buildings.some(b=>(b.kind==='home'||(id!=='shopping-flow'&&!campaignDefinition(id))||(!!campaignDefinition(id)&&b.paid===0)) && footprint(b).some(p=>p.x===x&&p.y===y)))
     return 'Keep the existing buildings: every household needs service.';
   observeEmergencyEdit(city);
+  const blocked=emergencyEditMessage(city,tool,x,y);if(blocked)return blocked;
   const message=place(city,tool,x,y,rotation);
   observeEmergencyEdit(city);
   return message.startsWith('Wait for the next income')?'Not enough budget. Clear roads you built for a refund, or retry.':message;
@@ -92,7 +90,7 @@ export function challengeProgress(run:ChallengeRun) {
   const ids=new Set(run.served??[]);
   if(run.id==='first-road') for(const t of run.city.trips)
     if(!t.service&&!t.external&&t.purpose==='shopping'&&t.phase==='visiting')ids.add(t.homeId);
-  for(const h of run.city.history)if(h.service?.purpose==='shopping'&&(!requiresTaughtAction(run.id)||run.serviceSince!==undefined&&(h.service.startedAt??-1)>=run.serviceSince-1e-6))ids.add(h.service.homeId);
+  for(const h of run.city.history)if(h.service?.purpose==='shopping'&&(run.id!=='stop-and-share'||run.serviceSince!==undefined&&(h.service.startedAt??-1)>=run.serviceSince-1e-6))ids.add(h.service.homeId);
   return {served:homes.filter(h=>ids.has(h.id)).length,total:homes.length,
     seconds:Math.max(0,(run.finishedAt??run.city.elapsed)-(run.startedAt??run.city.elapsed)),
     leisureServed:(run.leisureServed??[]).length,busServed:(run.busServed??[]).length,
@@ -104,7 +102,7 @@ export function stepChallenge(run: ChallengeRun, seconds: number) {
   run.startedAt??=run.city.elapsed;
   run.accumulator += seconds;
   while (run.accumulator + 1e-9 >= .025) {
-    if(requiresTaughtAction(run.id)){
+    if(run.id==='stop-and-share'){
       if(challengeStages(run)[0].done)run.serviceSince??=run.city.elapsed;
       else {run.serviceSince=undefined;run.served=[];}
     }
@@ -171,11 +169,11 @@ export function parseChallenge(raw: unknown): ChallengeRun | null {
   if(r.apartmentServed!==undefined&&(!isApartmentLesson(r)||!Array.isArray(r.apartmentServed)||new Set(r.apartmentServed).size!==r.apartmentServed.length||r.apartmentServed.some(id=>!Number.isSafeInteger(id)||!city.buildings.some(b=>b.kind==='apartment'&&b.id===id))))return null;
   if(r.shoppingIncome!==undefined&&(!challengeHasIncome(id)||!Number.isSafeInteger(r.shoppingIncome)||r.shoppingIncome<0||r.shoppingIncome%100!==0))return null;
   const validTime=(n:unknown):n is number=>typeof n==='number'&&Number.isFinite(n)&&n>=0&&n<=city.elapsed;
-  const emergency=emergencyDefinition(id)&&(r.revision===3||r.revision===4)?parseEmergency(r.emergency,city,id,r.revision):undefined;
-  if(emergencyDefinition(id)&&(r.revision===3||r.revision===4)&&!emergency)return null;
-  if(r.revision===4&&id!=='past-the-wreck')return null;
-  if(emergencyDefinition(id)&&id!=='a-town-that-works'&&r.revision!==3&&r.revision!==4)return null;
-  const parsed:ChallengeRun={id,revision:r.revision===4?4:r.revision===3?3:r.revision===2?2:1,...(emergency?{emergency}:{}),city,earned:r.earned===true,
+  const emergency=emergencyDefinition(id)&&(r.revision===3||r.revision===4||r.revision===5)?parseEmergency(r.emergency,city,id,r.revision):undefined;
+  if(emergencyDefinition(id)&&(r.revision===3||r.revision===4||r.revision===5)&&!emergency)return null;
+  if((r.revision===4&&!['past-the-wreck','temporary-two-way'].includes(id)||r.revision===5&&id!=='past-the-wreck'))return null;
+  if(emergencyDefinition(id)&&id!=='a-town-that-works'&&r.revision!==3&&r.revision!==4&&r.revision!==5)return null;
+  const parsed:ChallengeRun={id,revision:r.revision===5?5:r.revision===4?4:r.revision===3?3:r.revision===2?2:1,...(emergency?{emergency}:{}),city,earned:r.earned===true,
     ...(r.apartmentServed!==undefined?{apartmentServed:[...r.apartmentServed]}:{}),
     ...(r.routeServed!==undefined?{routeServed:Array.isArray(r.routeServed)?[...new Set(r.routeServed)].filter(n=>city.buildings.some(b=>b.kind==='home'&&b.id===n)):[]}:{}),
     ...(r.shoppingIncome!==undefined?{shoppingIncome:Number.isSafeInteger(r.shoppingIncome)&&r.shoppingIncome>=0&&r.shoppingIncome%100===0?r.shoppingIncome:0}:{}),
@@ -194,12 +192,16 @@ export function parseChallenge(raw: unknown): ChallengeRun | null {
   return bindEmergency(parsed);
 }
 
-function requiresTaughtAction(id:ChallengeId){return ['stop','signal','direction','roundabout'].includes(campaignDefinition(id)?.objective??'');}
-
-/** These are taught actions plus observed service, never a road-count score. Foresight counts. */
+/** Puzzle outcomes use actual journeys; available tools do not prescribe a solution. */
 export function challengeStages(run:ChallengeRun):{label:string;done:boolean}[]{
  if(run.emergency)return emergencyStages(run);
- const d=campaignDefinition(run.id);if(!d)return [];
+ const d=campaignDefinition(run.id);
+ if(!d){
+  const p=challengeProgress(run);
+  if(run.id==='first-road')return [{label:'The car reaches the store',done:p.served===p.total}];
+  if(run.id==='neighborhood-roads'||run.id==='safe-crossing')return [{label:`Households home from shopping: ${p.served}/${p.total}`,done:p.served===p.total}];
+  return [];
+ }
  const p=challengeProgress(run),shopping=p.served===d.homes,leisure=p.leisureServed===d.homes,bus=p.busServed===d.homes;
  const shop={label:`Shopping round trips: ${p.served}/${d.homes}`,done:shopping};
  const park={label:`Park round trips: ${p.leisureServed}/${d.homes}`,done:leisure};
@@ -210,13 +212,11 @@ export function challengeStages(run:ChallengeRun):{label:string;done:boolean}[]{
   const count=Math.max(0,...accessible.map(g=>g.buildingIds.filter(id=>served.has(id)).length));
   return [{label:'Place two nearby apartment blocks · $800 each',done:run.city.buildings.filter(b=>b.kind==='apartment').length>=2},{label:'Inspect → Join complex → select the other block',done:groups.length>0},{label:'Connect the private lanes to the shop street with Road',done:accessible.length>0},{label:`Press Play: shopping returns from joined blocks · ${Math.min(count,2)}/2`,done:count>=2}];
  }
- if(d.objective==='wide')return [{label:'Join the avenue with a usable four-lane connection',done:run.city.buildings.filter(b=>b.kind==='home').every(h=>run.city.buildings.some(s=>s.kind==='store'&&!!findPath(run.city,entrance(h),entrance(s))&&!!findPath(run.city,entrance(s),entrance(h))))},{label:`Shopping returns using your new four-lane road: ${run.routeServed?.length??0}/${d.homes}`,done:run.routeServed?.length===d.homes}];
+ if(d.objective==='wide')return [shop];
  if(run.id==='another-front-door'&&!isApartmentLesson(run))return [{label:'Keep the original entrance and build another usable connection',done:hasSecondEntrance(run.city)},{label:`Shopping returns through the new entrance: ${run.routeServed?.length??0}/4`,done:run.routeServed?.length===4},{label:'Reopen the original entrance: toggle Divert off',done:!run.city.closures.length}];
  if(d.objective==='income')return [{label:`Earn shopping income: $${run.shoppingIncome??0} / $300`,done:(run.shoppingIncome??0)>=300},shop,park];
- if(d.objective==='signal')return [{label:'Place Lights at the crossing',done:run.city.controls.some(c=>c.kind==='signal')},shop];
- if(d.objective==='stop')return [{label:'Place Stops at the crossing',done:run.city.controls.some(c=>c.kind==='stop')},shop];
- if(d.objective==='direction')return [{label:'Direct the new return street',done:hasDirectedReturn(run.city)},shop];
- if(d.objective==='roundabout')return [{label:'Close a one-way loop around the island',done:roundaboutIndex(run.city).rings.length>0},shop];
+ if(d.objective==='stop')return [{label:'The crossing has stop control',done:run.city.controls.some(c=>c.kind==='stop')},shop];
+ if(['signal','direction','roundabout'].includes(d.objective))return [shop];
  if(d.objective==='mixed')return [shop,park];
  if(d.objective==='bus')return [
    {label:'Buy a bus · $400 at the depot',done:!!run.city.transit?.fleet.length},
@@ -237,15 +237,6 @@ export function hasSecondEntrance(city:City){
  if(!Array.from({length:8},(_,i)=>i+5).every(y=>city.roads.some(p=>p.x===8&&p.y===y)))return false;
  const avoid=new Set([`${originalEntrance.x},${originalEntrance.y}`]);
  return city.buildings.filter(b=>b.kind==='home').every(h=>city.buildings.some(s=>s.kind==='store'&&findPath(city,entrance(h),entrance(s),false,avoid)&&findPath(city,entrance(s),entrance(h),false,avoid)));
-}
-function hasDirectedReturn(city:City){
- const shop=city.buildings.find(b=>b.kind==='store');if(!shop)return false;
- const inherited=inheritedOneWayEdges();
- return city.buildings.filter(b=>b.kind==='home').every(home=>{
-   const path=findPath(city,entrance(shop),entrance(home));if(!path)return false;
-   const edges=path.slice(1).map((p,i)=>({key:roadEdgeKey(path[i],p),direction:roadDirectionForStep(path[i],p)})).filter(e=>!inherited.has(e.key));
-   return edges.length>=2&&edges.every(e=>city.roadDirections?.[e.key]===e.direction);
- });
 }
 function inheritedOneWayEdges(){return new Set(Array.from({length:11},(_,i)=>`${i+2},6>${i+3},6`));}
 export function challengeDirections(city:City,points:Point[],mode:DirectionEditMode,id:ChallengeId){

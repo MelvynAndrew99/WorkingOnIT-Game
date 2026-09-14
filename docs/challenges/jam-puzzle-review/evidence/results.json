@@ -1,0 +1,358 @@
+[
+  {
+    "width": 1440,
+    "level": 20,
+    "earned": true,
+    "stages": [
+      {
+        "label": "Emergency crews have legal access to every scene",
+        "done": true
+      },
+      {
+        "label": "Crash cleared: crews finished 1/1",
+        "done": true
+      },
+      {
+        "label": "Households home after recovery: 4/4",
+        "done": true
+      }
+    ],
+    "funds": 2750,
+    "errors": []
+  },
+  {
+    "width": 1440,
+    "level": 21,
+    "earned": true,
+    "stages": [
+      {
+        "label": "Police have a legal route to the crash",
+        "done": true
+      },
+      {
+        "label": "Police have cleared the crash",
+        "done": true
+      },
+      {
+        "label": "A household is home from a new shopping trip",
+        "done": true
+      }
+    ],
+    "funds": 3500,
+    "errors": []
+  },
+  {
+    "width": 1440,
+    "level": 22,
+    "earned": true,
+    "stages": [
+      {
+        "label": "Police available with road access",
+        "done": true
+      },
+      {
+        "label": "Clinic available with road access",
+        "done": true
+      },
+      {
+        "label": "Emergency crews have legal access to every scene",
+        "done": true
+      },
+      {
+        "label": "Crash cleared: crews finished 2/2",
+        "done": true
+      },
+      {
+        "label": "Households home after recovery: 4/4",
+        "done": true
+      }
+    ],
+    "funds": 4710,
+    "errors": []
+  },
+  {
+    "width": 1440,
+    "level": 23,
+    "earned": true,
+    "stages": [
+      {
+        "label": "Police available with road access",
+        "done": true
+      },
+      {
+        "label": "Clinic available with road access",
+        "done": true
+      },
+      {
+        "label": "Fire available with road access",
+        "done": true
+      },
+      {
+        "label": "Emergency crews have legal access to every scene",
+        "done": true
+      },
+      {
+        "label": "Vehicle fire cleared: crews finished 3/3",
+        "done": true
+      },
+      {
+        "label": "Households home after recovery: 4/4",
+        "done": true
+      }
+    ],
+    "funds": 5010,
+    "errors": []
+  },
+  {
+    "width": 1440,
+    "level": 24,
+    "earned": true,
+    "stages": [
+      {
+        "label": "Police available with road access",
+        "done": true
+      },
+      {
+        "label": "Clinic available with road access",
+        "done": true
+      },
+      {
+        "label": "Fire available with road access",
+        "done": true
+      },
+      {
+        "label": "Emergency crews have legal access to every scene",
+        "done": true
+      },
+      {
+        "label": "Main street crash cleared: crews finished 1/1",
+        "done": true
+      },
+      {
+        "label": "Southern road fire cleared: crews finished 3/3",
+        "done": true
+      },
+      {
+        "label": "Households home after recovery: 4/4",
+        "done": true
+      }
+    ],
+    "funds": 6010,
+    "errors": []
+  },
+  {
+    "width": 1440,
+    "level": 25,
+    "earned": true,
+    "stages": [
+      {
+        "label": "Police available with road access",
+        "done": true
+      },
+      {
+        "label": "Clinic available with road access",
+        "done": true
+      },
+      {
+        "label": "Fire available with road access",
+        "done": true
+      },
+      {
+        "label": "Emergency crews have legal access to every scene",
+        "done": true
+      },
+      {
+        "label": "Main street crash cleared: crews finished 1/1",
+        "done": true
+      },
+      {
+        "label": "Southern road fire cleared: crews finished 3/3",
+        "done": true
+      },
+      {
+        "label": "Households home after recovery: 4/4",
+        "done": true
+      }
+    ],
+    "funds": 7370,
+    "errors": []
+  },
+  {
+    "width": 390,
+    "level": 20,
+    "earned": true,
+    "stages": [
+      {
+        "label": "Emergency crews have legal access to every scene",
+        "done": true
+      },
+      {
+        "label": "Crash cleared: crews finished 1/1",
+        "done": true
+      },
+      {
+        "label": "Households home after recovery: 4/4",
+        "done": true
+      }
+    ],
+    "funds": 2810,
+    "errors": []
+  },
+  {
+    "width": 390,
+    "level": 21,
+    "earned": true,
+    "stages": [
+      {
+        "label": "Police have a legal route to the crash",
+        "done": true
+      },
+      {
+        "label": "Police have cleared the crash",
+        "done": true
+      },
+      {
+        "label": "A household is home from a new shopping trip",
+        "done": true
+      }
+    ],
+    "funds": 3290,
+    "errors": []
+  },
+  {
+    "width": 390,
+    "level": 22,
+    "earned": true,
+    "stages": [
+      {
+        "label": "Police available with road access",
+        "done": true
+      },
+      {
+        "label": "Clinic available with road access",
+        "done": true
+      },
+      {
+        "label": "Emergency crews have legal access to every scene",
+        "done": true
+      },
+      {
+        "label": "Crash cleared: crews finished 2/2",
+        "done": true
+      },
+      {
+        "label": "Households home after recovery: 4/4",
+        "done": true
+      }
+    ],
+    "funds": 4530,
+    "errors": []
+  },
+  {
+    "width": 390,
+    "level": 23,
+    "earned": true,
+    "stages": [
+      {
+        "label": "Police available with road access",
+        "done": true
+      },
+      {
+        "label": "Clinic available with road access",
+        "done": true
+      },
+      {
+        "label": "Fire available with road access",
+        "done": true
+      },
+      {
+        "label": "Emergency crews have legal access to every scene",
+        "done": true
+      },
+      {
+        "label": "Vehicle fire cleared: crews finished 3/3",
+        "done": true
+      },
+      {
+        "label": "Households home after recovery: 4/4",
+        "done": true
+      }
+    ],
+    "funds": 4790,
+    "errors": []
+  },
+  {
+    "width": 390,
+    "level": 24,
+    "earned": true,
+    "stages": [
+      {
+        "label": "Police available with road access",
+        "done": true
+      },
+      {
+        "label": "Clinic available with road access",
+        "done": true
+      },
+      {
+        "label": "Fire available with road access",
+        "done": true
+      },
+      {
+        "label": "Emergency crews have legal access to every scene",
+        "done": true
+      },
+      {
+        "label": "Main street crash cleared: crews finished 1/1",
+        "done": true
+      },
+      {
+        "label": "Southern road fire cleared: crews finished 3/3",
+        "done": true
+      },
+      {
+        "label": "Households home after recovery: 4/4",
+        "done": true
+      }
+    ],
+    "funds": 5790,
+    "errors": []
+  },
+  {
+    "width": 390,
+    "level": 25,
+    "earned": true,
+    "stages": [
+      {
+        "label": "Police available with road access",
+        "done": true
+      },
+      {
+        "label": "Clinic available with road access",
+        "done": true
+      },
+      {
+        "label": "Fire available with road access",
+        "done": true
+      },
+      {
+        "label": "Emergency crews have legal access to every scene",
+        "done": true
+      },
+      {
+        "label": "Main street crash cleared: crews finished 1/1",
+        "done": true
+      },
+      {
+        "label": "Southern road fire cleared: crews finished 3/3",
+        "done": true
+      },
+      {
+        "label": "Households home after recovery: 4/4",
+        "done": true
+      }
+    ],
+    "funds": 7170,
+    "errors": []
+  }
+]
