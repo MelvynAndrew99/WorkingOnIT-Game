@@ -10,6 +10,7 @@ import { store, type DisplayMode } from '../state/store.ts';
 import { getSave, startNewCity, flushSave } from '../state/save.ts';
 import {IconMusic,IconSpeaker,MenuToggle,VolumeMixer} from './menuControls.tsx';
 import CityRadio from './CityRadio.tsx';
+import CreditsPanel from './CreditsPanel.tsx';
 import './menuPanel.css';
 import './titleScreen.css';
 
@@ -34,7 +35,7 @@ export default function MainMenu() {
     const city = getSave().city;
     const untouchedStarter = city.tutorial?.hRoad?.stage === 0 && city.buildings.length === 0 && city.elapsed === 0;
     const hasTown = !untouchedStarter && (city.buildings.length > 0 || city.roads.length > 0 || city.elapsed > 0);
-    const [panel, setPanel] = useState<'new' | 'settings' | null>(null);
+    const [panel, setPanel] = useState<'new' | 'settings' | 'credits' | null>(null);
     const [artAvailable, setArtAvailable] = useState(true);
     const dialog = useRef<HTMLDialogElement>(null);
     const radio = useSyncExternalStore(subscribeRadio, radioState);
@@ -100,10 +101,12 @@ export default function MainMenu() {
                 </div>
             </nav>
             <CityRadio className="title-radio" />
-            <footer className="title-footer"><span aria-hidden="true" className="title-stripes" /><span>A better commute starts with you.</span></footer>
+            <footer className="title-footer"><span aria-hidden="true" className="title-stripes" /><span>A better commute starts with you.</span><button type="button" className="title-credits" onClick={() => setPanel('credits')}>Credits</button></footer>
         </div>
         <dialog ref={dialog} className="title-dialog menu-dialog" onCancel={() => setPanel(null)} onClose={() => setPanel(null)} aria-labelledby="title-dialog-heading">
-            {panel === 'new' ? (
+            {panel === 'credits' ? (
+                <CreditsPanel onClose={() => setPanel(null)} />
+            ) : panel === 'new' ? (
                 <NewCityPanel onConfirm={newGame} onCancel={() => setPanel(null)} />
             ) : panel === 'settings' ? (
                 <SettingsPanel

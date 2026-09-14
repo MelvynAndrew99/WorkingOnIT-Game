@@ -171,3 +171,8 @@
  .title-radio{position:sticky;bottom:10px;align-self:stretch;max-width:520px;margin:14px auto 0;width:100%}
  .title-footer{padding-bottom:4px}
 }
+
+.title-footer{flex-wrap:wrap}
+.title-credits{min-height:44px;padding:8px 14px;border:1px solid #83afa0;border-radius:10px;background:#123833;color:#fff4d4;font-size:14px;font-weight:800;cursor:pointer}
+.title-credits:hover{background:#24685a}
+.title-credits:focus-visible{outline:3px solid #fff4ca;outline-offset:3px}
