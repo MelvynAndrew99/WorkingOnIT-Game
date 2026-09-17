@@ -1,0 +1,44 @@
+--- a/src/game/cityTraffic.ts
++++ b/src/game/cityTraffic.ts
+@@ -494,6 +494,12 @@
+ 
+ /** Yield where there is space: passed cars hold their lane; cars inside junctions keep clearing. */
+ export function isYielding(city: City, trip: Trip, preparedIndex?: RoadIndex): boolean {
++  return yieldingWithOccupancy(city,trip,preparedIndex);
++}
++/** Prepared occupancy is only supplied by read-only inspection or the pre-movement
++ * conflict scan. Moving vehicles use a fresh lazy snapshot for each call. */
++function yieldingWithOccupancy(city:City,trip:Trip,preparedIndex?:RoadIndex,occupied?:Grid):boolean {
++  let byId:TripIndex|undefined;
+   if (isEmergencyResponse(trip) || !driving(trip) || !city.trips.some(isEmergencyResponse)) return false;
+   const k=bodyTile(trip), here=trip.path[k], next=trip.path[k+1];
+   const index=preparedIndex ?? roadIndex(city);
+@@ -513,7 +519,7 @@
+     // that traffic; active passing reservations retain priority above.
+     if (responder.hold >= REPLAN_PATIENCE && rk + 1 < responder.path.length
+       && !index.junctions.has(tileKey(responder.path[rk]))
+-      && !allowed(city,index,grid(city,index).grid,responder,rk,tripIndex(city))) continue;
++      && !allowed(city,index,occupied??=grid(city,index).grid,responder,rk,byId??=tripIndex(city))) continue;
+     // Yielding must not freeze the vehicle whose occupied space the responder needs.
+     // The ordinary movement gate still checks lanes, controls and a clear junction exit.
+     if(rk+1<responder.path.length){
+@@ -896,7 +902,9 @@
+   const seen = new Set<string>();
+   let crashed = false;
+   for (const trip of city.trips) {
+-    if (trip.service || !driving(trip) || isYielding(city,trip,index)) continue;
++    // recordConflict can create a crash mid-scan. Subsequent yield checks must
++    // rebuild from the changed trips rather than reuse the pre-crash grid.
++    if (trip.service || !driving(trip) || yieldingWithOccupancy(city,trip,index,crashed?undefined:g)) continue;
+     const last = trip.path.length - 1;
+     if (trip.progress >= last - 1e-9) continue;
+     const k = cellIndex(trip.progress, last);
+@@ -1214,7 +1222,7 @@
+       const slot=isEmergencyResponse(trip)&&i===trip.path.length-1?{...base,exclusive:true}:base;
+       for(const [id,slots] of g.get(slot.tile)??[])if(id!==trip.id&&slots.some(other=>!compatible(slot,other)))blockers.add(id);
+     }
+-    if(isYielding(city,trip,index))reason='Yielding to an approaching emergency vehicle';
++    if(yieldingWithOccupancy(city,trip,index,g))reason='Yielding to an approaching emergency vehicle';
+     else if(blockers.size)reason='Waiting for occupied lane, junction, or scene approach';
+     else if(!index.junctions.has(tileKey(position))&&index.junctions.has(tileKey(next))&&!gated(city,index,g,trip,k))
+       reason=isEmergencyResponse(trip)?'Waiting for traffic to clear the junction':control?`Waiting at ${control.kind}${control.kind==='signal'?` (${signalAxis(city,control)??'all red'})`:''}`:'Waiting for priority traffic at uncontrolled junction';

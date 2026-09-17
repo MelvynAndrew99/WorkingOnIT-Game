@@ -1,0 +1,9 @@
+{
+  "fullStateCheckpoints": 60,
+  "editCases": 7,
+  "editCheckpoints": 70,
+  "simulatedSecondsPerSample": 5,
+  "samples": 7,
+  "beforeMedianMs": 1420.4490370000058,
+  "afterMedianMs": 918.7254760000069
+}

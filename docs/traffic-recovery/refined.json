@@ -1,0 +1,368 @@
+[
+  {
+    "name": "refined",
+    "logs": [
+      {
+        "action": [
+          "closure",
+          2,
+          -2
+        ],
+        "result": "Road reopened."
+      },
+      {
+        "action": [
+          "signal",
+          10,
+          10
+        ],
+        "result": "Traffic light placed (balanced timing). Adjoining junction tiles share this control."
+      },
+      {
+        "action": [
+          "signal",
+          4,
+          11
+        ],
+        "result": "Traffic light placed (balanced timing). Adjoining junction tiles share this control."
+      },
+      {
+        "action": [
+          "signal",
+          12,
+          18
+        ],
+        "result": "Traffic light placed (balanced timing). Adjoining junction tiles share this control."
+      },
+      {
+        "action": [
+          "signal",
+          17,
+          18
+        ],
+        "result": "Traffic light placed (balanced timing). Adjoining junction tiles share this control."
+      }
+    ],
+    "clearedAt": 32.15,
+    "snapshots": [
+      {
+        "seconds": 60,
+        "completed": 68,
+        "accidents": 0,
+        "active": [],
+        "stuck": 3,
+        "originalTripsRemaining": [
+          35662,
+          35673,
+          35708,
+          35818,
+          35881,
+          35902,
+          35976,
+          35982,
+          35985,
+          35986,
+          36005,
+          36028,
+          36050,
+          36061,
+          36069,
+          36080,
+          36125,
+          36135,
+          36156,
+          36198,
+          36202,
+          36208,
+          36265,
+          36283,
+          36299,
+          36300
+        ],
+        "bus": {
+          "id": 35662,
+          "homeId": 0,
+          "storeId": 0,
+          "progress": 58,
+          "wait": 40.375,
+          "hold": 0,
+          "path": [
+            {
+              "x": 17,
+              "y": 10
+            },
+            {
+              "x": 16,
+              "y": 10
+            },
+            {
+              "x": 15,
+              "y": 10
+            },
+            {
+              "x": 14,
+              "y": 10
+            },
+            {
+              "x": 13,
+              "y": 10
+            },
+            {
+              "x": 12,
+              "y": 10
+            },
+            {
+              "x": 11,
+              "y": 10
+            },
+            {
+              "x": 10,
+              "y": 10
+            },
+            {
+              "x": 9,
+              "y": 10
+            },
+            {
+              "x": 8,
+              "y": 10
+            },
+            {
+              "x": 7,
+              "y": 10
+            },
+            {
+              "x": 6,
+              "y": 10
+            },
+            {
+              "x": 5,
+              "y": 10
+            },
+            {
+              "x": 4,
+              "y": 10
+            },
+            {
+              "x": 4,
+              "y": 11
+            },
+            {
+              "x": 3,
+              "y": 11
+            },
+            {
+              "x": 2,
+              "y": 11
+            },
+            {
+              "x": 1,
+              "y": 11
+            },
+            {
+              "x": 0,
+              "y": 11
+            },
+            {
+              "x": -1,
+              "y": 11
+            },
+            {
+              "x": -1,
+              "y": 10
+            },
+            {
+              "x": -2,
+              "y": 10
+            },
+            {
+              "x": -2,
+              "y": 9
+            },
+            {
+              "x": -3,
+              "y": 9
+            },
+            {
+              "x": -4,
+              "y": 9
+            },
+            {
+              "x": -5,
+              "y": 9
+            },
+            {
+              "x": -6,
+              "y": 9
+            },
+            {
+              "x": -7,
+              "y": 9
+            },
+            {
+              "x": -8,
+              "y": 9
+            },
+            {
+              "x": -9,
+              "y": 9
+            },
+            {
+              "x": -10,
+              "y": 9
+            },
+            {
+              "x": -11,
+              "y": 9
+            },
+            {
+              "x": -12,
+              "y": 9
+            },
+            {
+              "x": -13,
+              "y": 9
+            },
+            {
+              "x": -14,
+              "y": 9
+            },
+            {
+              "x": -15,
+              "y": 9
+            },
+            {
+              "x": -16,
+              "y": 9
+            },
+            {
+              "x": -17,
+              "y": 9
+            },
+            {
+              "x": -18,
+              "y": 9
+            },
+            {
+              "x": -19,
+              "y": 9
+            },
+            {
+              "x": -20,
+              "y": 9
+            },
+            {
+              "x": -21,
+              "y": 9
+            },
+            {
+              "x": -21,
+              "y": 8
+            },
+            {
+              "x": -21,
+              "y": 7
+            },
+            {
+              "x": -21,
+              "y": 6
+            },
+            {
+              "x": -21,
+              "y": 5
+            },
+            {
+              "x": -21,
+              "y": 4
+            },
+            {
+              "x": -21,
+              "y": 3
+            },
+            {
+              "x": -21,
+              "y": 2
+            },
+            {
+              "x": -21,
+              "y": 1
+            },
+            {
+              "x": -21,
+              "y": 0
+            },
+            {
+              "x": -21,
+              "y": -1
+            },
+            {
+              "x": -21,
+              "y": -2
+            },
+            {
+              "x": -21,
+              "y": -3
+            },
+            {
+              "x": -21,
+              "y": -4
+            },
+            {
+              "x": -21,
+              "y": -5
+            },
+            {
+              "x": -21,
+              "y": -6
+            },
+            {
+              "x": -21,
+              "y": -7
+            },
+            {
+              "x": -21,
+              "y": -8
+            }
+          ],
+          "busId": 21635,
+          "nextRouteQueryAt": 29301.1,
+          "phase": "visiting",
+          "stationId": 21610,
+          "target": {
+            "x": -21,
+            "y": -8
+          }
+        },
+        "riders": 3
+      },
+      {
+        "seconds": 120,
+        "completed": 142,
+        "accidents": 0,
+        "active": [],
+        "stuck": 6,
+        "originalTripsRemaining": [
+          35976,
+          35986,
+          36050,
+          36069,
+          36198
+        ],
+        "riders": 5
+      },
+      {
+        "seconds": 180,
+        "completed": 221,
+        "accidents": 0,
+        "active": [],
+        "stuck": 5,
+        "originalTripsRemaining": [
+          35976
+        ],
+        "riders": 5
+      }
+    ],
+    "valid": true,
+    "route": null
+  }
+]

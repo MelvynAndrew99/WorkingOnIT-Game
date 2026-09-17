@@ -1,0 +1,90 @@
+--- a/src/game/cityTraffic.ts
++++ b/src/game/cityTraffic.ts
+@@ -1,3 +1,4 @@
++import {roadAccessToken, withRoadPathRead} from './cityPathfinding.ts';
+ import { communityRoadKeys, communityEdgeSpeed } from './cityCommunityRoads.ts';
+ import { wideRoadTopology } from './cityWideRoads.ts';
+ import {arriveBus} from './cityTransit.ts';
+@@ -671,12 +672,12 @@
+  * rejoin as soon as a road exists again. Keep the approach segment and exact position; a car
+  * blocked just beyond a tile centre reverses within its owned tile before changing direction.
+  */
+-function tryRetarget(city:City,index:RoadIndex,trip:Trip,from:Point, avoid?: Set<string>):void {
++function tryRetarget(city:City,index:RoadIndex,trip:Trip,from:Point, avoid?: Set<string>):boolean {
+   const candidate={...trip};
+-  if(!retarget(city,candidate,from,avoid))return;
++  if(!retarget(city,candidate,from,avoid))return false;
+   // A congestion detour is optional; retain the current route if no alternate exists.
+-  if(avoid && candidate.phase==='waiting')return;
+-  commitTripRoute(city,index,trip,candidate);
++  if(avoid && candidate.phase==='waiting')return false;
++  return commitTripRoute(city,index,trip,candidate);
+ }
+ /** Commit a changed assignment only when its actual lane/junction space is free. */
+ export function commitTripRoute(city:City,index:RoadIndex,trip:Trip,candidate:Trip):boolean {
+@@ -701,8 +702,28 @@
+   if(candidate.laneChange===undefined)delete trip.laneChange;
+   Object.assign(trip,candidate);return true;
+ }
++type FailedWaitingReads={token:object;dependencies:string;trips:WeakMap<Trip,string>};
++const failedWaitingReads=new WeakMap<City,FailedWaitingReads>();
++/** Only topology-dependent civilian/bus failures qualify. Service planning can depend
++ * on live congestion and patrol restrictions, so it continues to run normally. */
++function failedWaitingRead(city:City):FailedWaitingReads {
++  const token=roadAccessToken(city);
++  const dependencies=JSON.stringify([city.buildings,city.transit?.routes,
++    city.transit?.fleet.map(b=>[b.id,b.routeId,b.stopIndex]),
++    city.incidents.filter(i=>i.status==='active').map(i=>[i.x,i.y,i.buildingId])]);
++  let read=failedWaitingReads.get(city);
++  if(!read || read.token!==token || read.dependencies!==dependencies) {
++    read={token,dependencies,trips:new WeakMap()};failedWaitingReads.set(city,read);
++  }
++  return read;
++}
++function waitingRouteKey(trip:Trip):string {
++  return JSON.stringify([trip.path,trip.progress,trip.target,trip.resume,trip.homeId,
++    trip.storeId,trip.purpose,trip.external,trip.busId,trip.trafficLane]);
++}
+ function replan(city: City, index: RoadIndex): Set<number> {
+   const reversing=new Set<number>();
++  let failed:FailedWaitingReads|undefined;
+   let snapshot:RoutingSnapshot|undefined, responseSnapshot:RoutingSnapshot|undefined, queries=0, responseQueries=0;
+   // Response work runs first; a separate ordinary quota cannot be consumed by it.
+   const ordered=[...city.trips].sort((a,b)=>Number(isEmergencyResponse(b))-Number(isEmergencyResponse(a))
+@@ -723,6 +744,15 @@
+         if(trip.progress>k+1e-9){
+           trip.progress=round6(Math.max(k,trip.progress-stepOf(trip, index)));
+           reversing.add(trip.id);
++        }else if(!trip.service && !trip.patrol) {
++          const read=failed??=failedWaitingRead(city),key=waitingRouteKey(trip);
++          if(read.trips.get(trip)!==key) {
++            read.trips.delete(trip);
++            // Cache only a committed no-route state. A route rejected for occupied
++            // lane space must retry admission against live traffic on the next tick.
++            if(tryRetarget(city,index,trip,trip.path[k]) && trip.phase==='waiting')
++              read.trips.set(trip,waitingRouteKey(trip));
++          }
+         }else tryRetarget(city,index,trip,trip.path[k]);
+       }
+       continue;
+@@ -974,7 +1004,8 @@
+ /** One fixed simulation tick. Ordering by waiting time keeps junction service fair. */
+ export function trafficTick(city: City, index: RoadIndex): void {
+   clearWrecks(city);
+-  const reversing=replan(city, index);
++  // Replanning changes trips only; incident/road mutations occur outside this scope.
++  const reversing=withRoadPathRead(city,()=>replan(city, index));
+   const { grid: g, held } = grid(city, index);
+   if(index.roundabouts?.rings.length)index.roundaboutGaps=roundaboutTrafficGaps(city,index.roundabouts);
+   // A crash rewrites who is standing where, so this tick's movement is abandoned.
+--- a/src/game/cityPathfinding.ts
++++ b/src/game/cityPathfinding.ts
+@@ -13,7 +13,7 @@
+ const graphs = new WeakMap<City, Map<number, Graph>>();
+ const readScopes = new WeakMap<City, Map<number, Graph>>();
+ 
+-/** Only for synchronous read-only reports/drawing: no roads, closures or incidents may change. */
++/** For synchronous topology-stable reads/planning: no roads, closures or incidents may change. */
+ export function withRoadPathRead<T>(city: City, action: () => T): T {
+   if (readScopes.has(city)) return action();
+   readScopes.set(city, new Map());

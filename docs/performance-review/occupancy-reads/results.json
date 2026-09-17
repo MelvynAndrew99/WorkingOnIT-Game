@@ -1,0 +1,10 @@
+{
+  "fullStateCheckpoints": 60,
+  "extraPerTickCheckpoints": 9600,
+  "editCases": 7,
+  "editCheckpoints": 70,
+  "simulatedSecondsPerSample": 5,
+  "samples": 7,
+  "beforeMedianMs": 1019.3936539999995,
+  "afterMedianMs": 647.8498620000028
+}

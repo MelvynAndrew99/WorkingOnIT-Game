@@ -1,0 +1,10 @@
+{
+  "seconds": 2,
+  "calls": {
+    "at commitTripRoute / at tryRetarget": 141,
+    "at trafficTick / at advanceCity": 80,
+    "at isYielding / at trafficTick": 1392,
+    "at commitTripRoute / at replan": 63,
+    "at isYielding / at detectConflicts": 1365
+  }
+}

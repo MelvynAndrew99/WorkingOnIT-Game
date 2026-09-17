@@ -56,3 +56,11 @@ Reproduce final benchmark: `node --experimental-strip-types docs/performance-rev
 ## HUD walking-query follow-up (2026-09-17)
 
 [Implementation and measured results](hud-walking/README.md): shared sidewalk reads within each report and an early distance bound reduce the supplied-town sampled report median from41.44ms to3.23ms, with exact path/report/state comparisons. No browser FPS claim.
+
+## Failed-route reuse (2026-09-17)
+
+[Implementation and validation](failed-routes/README.md): committed civilian/bus no-route results are reused until access or routing inputs change; topology-stable planning shares graph validation. Supplied-town isolated model time improves35.3%, with exact state comparisons and live occupancy preserved.
+
+## Occupancy-read reuse (2026-09-17)
+
+[Profiling, implementation and checks](occupancy-reads/README.md): repeated emergency-yield grid builds reduced within safe read scopes. Supplied-town grid builds fall70.2%; isolated model CPU falls36.4% against the immediate baseline, with exact state comparisons and sequential movement preserved.

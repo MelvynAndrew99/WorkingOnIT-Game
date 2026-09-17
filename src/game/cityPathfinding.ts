@@ -13,7 +13,7 @@ type Graph = {
 const graphs = new WeakMap<City, Map<number, Graph>>();
 const readScopes = new WeakMap<City, Map<number, Graph>>();
 
-/** Only for synchronous read-only reports/drawing: no roads, closures or incidents may change. */
+/** For synchronous topology-stable reads/planning: no roads, closures or incidents may change. */
 export function withRoadPathRead<T>(city: City, action: () => T): T {
   if (readScopes.has(city)) return action();
   readScopes.set(city, new Map());
