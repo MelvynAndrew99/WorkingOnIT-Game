@@ -258,3 +258,13 @@ test('corrupt lane changes reject impossible direction, lateral state, or overla
   ];
   for(const corrupt of corruptions){const bad=structuredClone(city); corrupt(bad); assert.equal(parseCity(bad),null);}
 });
+
+for(const service of ['police','ems','fire'] as const)test(`${service} responding crosses a clear red light without waiting for green`,()=>{
+  const city=road();
+  place(city,'road',8,5);place(city,'signal',8,6);
+  assert.equal(signalAxis(city,city.controls[0]),'ns');
+  const response=car(city,line(0,15),7.5,{phase:'outbound',service,speed:3});
+  tick(city);
+  assert.equal(signalAxis(city,city.controls[0]),'ns');
+  assert.ok(response.progress>7.5,'active response crosses the red immediately when space is free');
+});

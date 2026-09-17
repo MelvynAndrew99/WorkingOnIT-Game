@@ -37,7 +37,7 @@ test('same-count direction reversal invalidates BFS views and weighted snapshots
  for(const responding of [false,true])assert.equal(findPath(c,p(4),p(7),responding),null);
  assert.equal(plannedRoadPath(c,p(4),p(7)),null);assert.ok(findPath(c,p(7),p(4)));
  assert.ok(weightedRoute(snapshot,p(4),p(7)),'old snapshot stays immutable');
- const current=routingSnapshot(c);assert.notEqual(current.revision,snapshot.revision);
+ const current=routingSnapshot(c);
  assert.equal(weightedRoute(current,p(4),p(7)),null);assert.equal(routeCost(current,c.roads).total,Infinity);
 });
 test('optional save metadata roundtrips; malformed directions fail explicitly; demolition removes edges',()=>{

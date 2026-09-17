@@ -1,0 +1,230 @@
+[
+  {
+    "seconds": 10,
+    "accidents": 109,
+    "completed": 32035,
+    "active": [
+      34392,
+      34929,
+      34936
+    ],
+    "police": [
+      {
+        "id": 34374,
+        "position": {
+          "x": 5,
+          "y": 10
+        },
+        "progress": 17,
+        "hold": 10,
+        "reason": "Waiting for space to merge into the exit lane",
+        "blockers": [
+          34336
+        ]
+      },
+      {
+        "id": 34934,
+        "position": {
+          "x": 14,
+          "y": 18
+        },
+        "progress": 5.5,
+        "hold": 10.575,
+        "reason": "Waiting for occupied lane, junction, or scene approach",
+        "blockers": [
+          34889
+        ]
+      }
+    ]
+  },
+  {
+    "seconds": 20,
+    "accidents": 109,
+    "completed": 32040,
+    "active": [
+      34392,
+      34929,
+      34936
+    ],
+    "police": [
+      {
+        "id": 34374,
+        "position": {
+          "x": 5,
+          "y": 10
+        },
+        "progress": 17,
+        "hold": 20,
+        "reason": "Waiting for space to merge into the exit lane",
+        "blockers": [
+          34336
+        ]
+      },
+      {
+        "id": 34934,
+        "position": {
+          "x": 14,
+          "y": 18
+        },
+        "progress": 5.5,
+        "hold": 20.575,
+        "reason": "Waiting for occupied lane, junction, or scene approach",
+        "blockers": [
+          34889
+        ]
+      }
+    ]
+  },
+  {
+    "seconds": 30,
+    "accidents": 109,
+    "completed": 32043,
+    "active": [
+      34392,
+      34929,
+      34936
+    ],
+    "police": [
+      {
+        "id": 34374,
+        "position": {
+          "x": 5,
+          "y": 10
+        },
+        "progress": 17,
+        "hold": 30,
+        "reason": "Waiting for space to merge into the exit lane",
+        "blockers": [
+          34336
+        ]
+      },
+      {
+        "id": 34934,
+        "position": {
+          "x": 14,
+          "y": 18
+        },
+        "progress": 5.5,
+        "hold": 30.575,
+        "reason": "Waiting for occupied lane, junction, or scene approach",
+        "blockers": [
+          34889
+        ]
+      }
+    ]
+  },
+  {
+    "seconds": 40,
+    "accidents": 109,
+    "completed": 32048,
+    "active": [
+      34392,
+      34929,
+      34936
+    ],
+    "police": [
+      {
+        "id": 34374,
+        "position": {
+          "x": 5,
+          "y": 10
+        },
+        "progress": 17,
+        "hold": 40,
+        "reason": "Waiting for space to merge into the exit lane",
+        "blockers": [
+          34336
+        ]
+      },
+      {
+        "id": 34934,
+        "position": {
+          "x": 14,
+          "y": 18
+        },
+        "progress": 5.5,
+        "hold": 40.575,
+        "reason": "Waiting for occupied lane, junction, or scene approach",
+        "blockers": [
+          34889
+        ]
+      }
+    ]
+  },
+  {
+    "seconds": 50,
+    "accidents": 109,
+    "completed": 32051,
+    "active": [
+      34392,
+      34929,
+      34936
+    ],
+    "police": [
+      {
+        "id": 34374,
+        "position": {
+          "x": 5,
+          "y": 10
+        },
+        "progress": 17,
+        "hold": 50,
+        "reason": "Waiting for space to merge into the exit lane",
+        "blockers": [
+          34336
+        ]
+      },
+      {
+        "id": 34934,
+        "position": {
+          "x": 14,
+          "y": 18
+        },
+        "progress": 5.5,
+        "hold": 50.575,
+        "reason": "Waiting for occupied lane, junction, or scene approach",
+        "blockers": [
+          34889
+        ]
+      }
+    ]
+  },
+  {
+    "seconds": 60,
+    "accidents": 109,
+    "completed": 32055,
+    "active": [
+      34392,
+      34929,
+      34936
+    ],
+    "police": [
+      {
+        "id": 34374,
+        "position": {
+          "x": 5,
+          "y": 10
+        },
+        "progress": 17,
+        "hold": 60,
+        "reason": "Waiting for space to merge into the exit lane",
+        "blockers": [
+          34336
+        ]
+      },
+      {
+        "id": 34934,
+        "position": {
+          "x": 14,
+          "y": 18
+        },
+        "progress": 5.5,
+        "hold": 60.575,
+        "reason": "Waiting for occupied lane, junction, or scene approach",
+        "blockers": [
+          34889
+        ]
+      }
+    ]
+  }
+]

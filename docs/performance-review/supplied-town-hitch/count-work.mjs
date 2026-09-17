@@ -1,0 +1,20 @@
+import assert from 'node:assert/strict';
+import {readFileSync,writeFileSync} from 'node:fs';
+import * as model from '/tmp/won-hitch-town/src/game/cityModel.ts';
+import * as plain from '/home/phil/Code/jams/won/src/game/cityModel.ts';
+import {withRoadPathRead} from '/tmp/won-hitch-town/src/game/cityPathfinding.ts';
+import {refreshMissions,missionSnapshot} from '/tmp/won-hitch-town/src/game/cityMissions.ts';
+import {flowReport} from '/tmp/won-hitch-town/src/game/cityFlow.ts';
+import {cityDiagnostics} from '/tmp/won-hitch-town/src/game/cityDiagnostics.ts';
+const out='/home/phil/Code/jams/won/docs/performance-review/supplied-town-hitch';
+const raw=JSON.parse(readFileSync(out+'/save.json')).city;let c=model.parseCity(raw),control=plain.parseCity(raw);assert.ok(c&&control);
+let spans={},trips={};globalThis.__probeRecord=(name,ms)=>{const s=spans[name]??={count:0,total:0,max:0};s.count++;s.total+=ms;s.max=Math.max(s.max,ms);};
+globalThis.__tripRecord=(t,previous,ms)=>{const s=trips[t.id]??={count:0,total:0,waitingBefore:0,waitingAfter:0,goal:t.target};s.count++;s.total+=ms;if(previous==='waiting')s.waitingBefore++;if(t.phase==='waiting')s.waitingAfter++;};
+for(let i=0;i<1200;i++){model.stepCity(c,1/60);plain.stepCity(control,1/60);if(i%60===59)assert.deepEqual(c,control);}
+const simulation={seconds:20,spans,trips,equalFullStateCheckpoints:20};
+c=model.parseCity(raw);spans={};trips={};
+const serialized=JSON.stringify(c);
+for(let i=0;i<10;i++)withRoadPathRead(c,()=>{refreshMissions(c);flowReport(c);cityDiagnostics(c);missionSnapshot(c);model.connectedHomes(c);});
+const report={repetitions:10,spans,serializedStateUnchanged:serialized===JSON.stringify(c)};
+writeFileSync(out+'/work-counts.json',JSON.stringify({simulation,report},null,2));
+console.log(JSON.stringify({simulation:{spans:simulation.spans,topTrips:Object.entries(simulation.trips).sort((a,b)=>b[1].count-a[1].count).slice(0,15)},report},null,2));

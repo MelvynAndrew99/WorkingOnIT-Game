@@ -818,13 +818,6 @@ function replan(city: City, index: RoadIndex): Set<number> {
       // A queue facing a distant obstruction must not repeatedly reverse and creep
       // forward when there is still no alternate route. Keep its actual lane.
       if(!trip.service&&next&&!unusable(city,index,next,false)&&!sceneAhead&&trip.target&&!findPath(city,trip.path[k],trip.target))continue;
-      if(trip.service) {
-        // A legal route may still require a turn across an occupied lane. Verify
-        // admission at the centre before backing up, without changing the live trip.
-        // Recheck on every tick so newly available space can unblock the response.
-        const centred={...trip,progress:k},candidate={...centred};
-        if(!retarget(city,candidate,trip.path[k]) || !commitTripRoute(city,index,centred,candidate))continue;
-      }
       // A closure appeared just ahead: back up within the already-owned tile at driving speed.
       // Re-route on reaching its centre, rather than snapping backwards by half a tile.
       trip.progress=round6(Math.max(k,trip.progress-stepOf(trip, index)));
@@ -957,12 +950,8 @@ function changeLane(index: RoadIndex, g: Grid, held: Map<number,Slot[]>, trip: T
   const [start,end]=heldRange(index,trip.path,k);
   if(desired===1 && Array.from({length:end-start+1},(_,j)=>j+start).some(i=>!secondLaneAvailable(index,trip.path,i)))return false;
   const slots=heldSlots(index,trip.path,k,movement.enter!==movement.exit,desired);
-  if(slots.some(slot=>!vacant(g,slot,trip.id))) {
-    if(lane===1&&!future) {
-      trip.hold=round6(trip.hold+TRAFFIC_TICK);
-      trip.wait=round6(trip.wait+TRAFFIC_TICK);
-      return true;
-    }
+  if(slots.some(slot=>!vacant(g,slot,trip.id))){
+    if(lane===1&&!future){trip.hold=round6(trip.hold+TRAFFIC_TICK);trip.wait=round6(trip.wait+TRAFFIC_TICK);return true;}
     return false;
   }
   trip.laneChange={from:lane,to:desired,shift:0};
@@ -1166,11 +1155,6 @@ export function vehicleDebug(city:City,trip:Trip,index=roadIndex(city),g=grid(ci
   else if(trip.phase==='visiting')reason='Parked at destination';
   else if(trip.phase==='crashed')reason='Vehicle involved in crash';
   else if(trip.emergencyPass)reason=`Emergency pass: ${trip.emergencyPass.stage}`;
-  else if(trip.trafficLane===1 && Math.abs(trip.progress-k)<1e-9 && !laneContinuation(index,trip.path,k)) {
-    for(const slot of heldSlots(index,trip.path,k,slotAt(index,trip.path,k).enter!==slotAt(index,trip.path,k).exit,0))
-      for(const [id,slots] of g.get(slot.tile)??[])if(id!==trip.id&&slots.some(other=>!compatible(slot,other)))blockers.add(id);
-    reason=blockers.size?'Waiting for space to merge into the exit lane':'Merging into the exit lane';
-  }
   else if(trip.phase==='waiting')reason=trip.target&&findPath(city,position,trip.target,isEmergencyResponse(trip))?'Route exists; waiting for safe lane reservation':'No open route to current target';
   else if(!next)reason='At route endpoint';
   else if(index.roundabouts?.byTile.has(tileKey(next)) && roundaboutEntryBlocked(city,trip,k,index.roundabouts))reason='Yielding to circulating traffic';
@@ -1186,7 +1170,7 @@ export function vehicleDebug(city:City,trip:Trip,index=roadIndex(city),g=grid(ci
     if(isYielding(city,trip,index))reason='Yielding to an approaching emergency vehicle';
     else if(blockers.size)reason='Waiting for occupied lane, junction, or scene approach';
     else if(!index.junctions.has(tileKey(position))&&index.junctions.has(tileKey(next))&&!gated(city,index,g,trip,k))
-      reason=isEmergencyResponse(trip)?'Waiting for traffic to clear the junction':control?`Waiting at ${control.kind}${control.kind==='signal'?` (${signalAxis(city,control)??'all red'})`:''}`:'Waiting for priority traffic at uncontrolled junction';
+      reason=control?`Waiting at ${control.kind}${control.kind==='signal'?` (${signalAxis(city,control)??'all red'})`:''}`:'Waiting for priority traffic at uncontrolled junction';
   }
   return {id:trip.id,label:trip.busId !== undefined?'Bus':trip.service?.toUpperCase()??'Car',phase:trip.phase??'legacy',intent:trip.resume??trip.phase??'legacy',
     emergency:isEmergencyResponse(trip),patrol:!!trip.patrol,sceneParked:!!trip.sceneParked,cancelledResponse:!!trip.responseCancelled,

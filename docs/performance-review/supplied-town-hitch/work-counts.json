@@ -1,0 +1,316 @@
+{
+  "simulation": {
+    "seconds": 20,
+    "spans": {
+      "roadIndex": {
+        "count": 17161,
+        "total": 408.5149239999362,
+        "max": 1.1417689999998402
+      },
+      "stepCity": {
+        "count": 1200,
+        "total": 4271.17220600002,
+        "max": 31.17156100000011
+      },
+      "grid": {
+        "count": 14632,
+        "total": 710.5813050000909,
+        "max": 0.6606940000001487
+      },
+      "replan": {
+        "count": 800,
+        "total": 2719.9009380000157,
+        "max": 14.086049000000003
+      },
+      "allowed": {
+        "count": 33465,
+        "total": 116.79115599999363,
+        "max": 0.4605759999994916
+      },
+      "trafficTick": {
+        "count": 800,
+        "total": 3384.1769910000075,
+        "max": 19.526872000000026
+      },
+      "routingSnapshot": {
+        "count": 900,
+        "total": 151.34803600000578,
+        "max": 1.1440200000000686
+      },
+      "weightedRoute": {
+        "count": 958,
+        "total": 49.64038699998912,
+        "max": 1.394117999999935
+      },
+      "stepVisits": {
+        "count": 800,
+        "total": 175.75115000000255,
+        "max": 21.03864600000088
+      },
+      "stepIncidents": {
+        "count": 800,
+        "total": 26.59466600000087,
+        "max": 0.7767830000000231
+      },
+      "refreshFlowProgress": {
+        "count": 800,
+        "total": 156.464674000002,
+        "max": 16.022221000000172
+      },
+      "walkingPath": {
+        "count": 3820,
+        "total": 154.85020100000224,
+        "max": 0.6294739999993908
+      },
+      "hasJourneyAccess": {
+        "count": 4332,
+        "total": 183.20391400000517,
+        "max": 1.1669500000007247
+      },
+      "flowSnapshot": {
+        "count": 20,
+        "total": 153.62016900000117,
+        "max": 16.005510999999842
+      },
+      "spawnTrips": {
+        "count": 5,
+        "total": 23.12198799999942,
+        "max": 6.997499000000062
+      },
+      "refreshMissions": {
+        "count": 2,
+        "total": 45.017069999999876,
+        "max": 24.965154999999868
+      },
+      "connectedHomes": {
+        "count": 464,
+        "total": 498.1201190000138,
+        "max": 3.332722000001013
+      }
+    },
+    "trips": {
+      "34321": {
+        "count": 800,
+        "total": 27.067822999998953,
+        "waitingBefore": 800,
+        "waitingAfter": 800,
+        "goal": {
+          "x": -21,
+          "y": -8
+        }
+      },
+      "34622": {
+        "count": 800,
+        "total": 277.77999400000056,
+        "waitingBefore": 800,
+        "waitingAfter": 800,
+        "goal": {
+          "x": 16,
+          "y": 10
+        }
+      },
+      "34814": {
+        "count": 800,
+        "total": 41.977859999992006,
+        "waitingBefore": 800,
+        "waitingAfter": 800,
+        "goal": {
+          "x": 6,
+          "y": -5
+        }
+      },
+      "34879": {
+        "count": 800,
+        "total": 84.7762629999927,
+        "waitingBefore": 800,
+        "waitingAfter": 800,
+        "goal": {
+          "x": -13,
+          "y": 17
+        }
+      },
+      "34884": {
+        "count": 800,
+        "total": 86.19904899999653,
+        "waitingBefore": 800,
+        "waitingAfter": 800,
+        "goal": {
+          "x": 28,
+          "y": 18
+        }
+      },
+      "34886": {
+        "count": 800,
+        "total": 42.045453999992674,
+        "waitingBefore": 800,
+        "waitingAfter": 800,
+        "goal": {
+          "x": 17,
+          "y": 17
+        }
+      },
+      "34889": {
+        "count": 800,
+        "total": 85.00321300000621,
+        "waitingBefore": 800,
+        "waitingAfter": 800,
+        "goal": {
+          "x": -13,
+          "y": 17
+        }
+      },
+      "34906": {
+        "count": 800,
+        "total": 84.68485400000964,
+        "waitingBefore": 800,
+        "waitingAfter": 800,
+        "goal": {
+          "x": 28,
+          "y": 18
+        }
+      },
+      "34914": {
+        "count": 800,
+        "total": 85.21152400001256,
+        "waitingBefore": 800,
+        "waitingAfter": 800,
+        "goal": {
+          "x": 28,
+          "y": 18
+        }
+      },
+      "34921": {
+        "count": 800,
+        "total": 86.7204209999885,
+        "waitingBefore": 800,
+        "waitingAfter": 800,
+        "goal": {
+          "x": 28,
+          "y": 18
+        }
+      },
+      "34930": {
+        "count": 800,
+        "total": 33.995999999987134,
+        "waitingBefore": 0,
+        "waitingAfter": 800,
+        "goal": {
+          "x": 20,
+          "y": 7
+        }
+      },
+      "34931": {
+        "count": 800,
+        "total": 37.38752800001191,
+        "waitingBefore": 0,
+        "waitingAfter": 800,
+        "goal": {
+          "x": 22,
+          "y": 4
+        }
+      },
+      "34932": {
+        "count": 800,
+        "total": 57.614443999994364,
+        "waitingBefore": 0,
+        "waitingAfter": 0,
+        "goal": {
+          "x": 14,
+          "y": 10
+        }
+      },
+      "34934": {
+        "count": 15,
+        "total": 8.584662999999637,
+        "waitingBefore": 0,
+        "waitingAfter": 0,
+        "goal": {
+          "x": 22,
+          "y": 18
+        }
+      },
+      "34944": {
+        "count": 800,
+        "total": 47.38288800001237,
+        "waitingBefore": 800,
+        "waitingAfter": 800,
+        "goal": {
+          "x": 14,
+          "y": 10
+        }
+      },
+      "34952": {
+        "count": 800,
+        "total": 45.00995000000364,
+        "waitingBefore": 800,
+        "waitingAfter": 800,
+        "goal": {
+          "x": 10,
+          "y": -10
+        }
+      },
+      "34959": {
+        "count": 800,
+        "total": 47.26567099998613,
+        "waitingBefore": 0,
+        "waitingAfter": 0,
+        "goal": {
+          "x": 14,
+          "y": 10
+        }
+      }
+    },
+    "equalFullStateCheckpoints": 20
+  },
+  "report": {
+    "repetitions": 10,
+    "spans": {
+      "walkingPath": {
+        "count": 10860,
+        "total": 364.2116950001182,
+        "max": 0.9355820000000676
+      },
+      "hasJourneyAccess": {
+        "count": 12210,
+        "total": 383.01428500001384,
+        "max": 0.9435720000001311
+      },
+      "refreshMissions": {
+        "count": 10,
+        "total": 112.27979600000072,
+        "max": 12.638208999998824
+      },
+      "flowSnapshot": {
+        "count": 20,
+        "total": 125.20893100000103,
+        "max": 7.307256000000052
+      },
+      "flowReport": {
+        "count": 10,
+        "total": 61.22714299999825,
+        "max": 7.340525999999954
+      },
+      "roadIndex": {
+        "count": 1590,
+        "total": 3.3165310000167665,
+        "max": 0.35155699999995704
+      },
+      "cityDiagnostics": {
+        "count": 10,
+        "total": 67.15578199999618,
+        "max": 8.212707999999111
+      },
+      "missionSnapshot": {
+        "count": 10,
+        "total": 172.30822100000114,
+        "max": 18.58093800000097
+      },
+      "connectedHomes": {
+        "count": 10,
+        "total": 2.883904000003895,
+        "max": 0.6526840000005905
+      }
+    },
+    "serializedStateUnchanged": true
+  }
+}

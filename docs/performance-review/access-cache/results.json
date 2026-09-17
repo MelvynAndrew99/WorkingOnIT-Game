@@ -1,0 +1,101 @@
+{
+  "node": "v24.18.0",
+  "results": [
+    {
+      "fixture": "../../performance-integrated/model-small.json",
+      "roads": 32,
+      "homes": 2,
+      "buildings": 7,
+      "frames": 3600,
+      "trials": [
+        {
+          "cached": 5.527431000000007,
+          "original": 27.67675299999999
+        },
+        {
+          "original": 20.000574999999998,
+          "cached": 3.593929000000003
+        },
+        {
+          "cached": 3.2559009999999944,
+          "original": 17.049169999999975
+        },
+        {
+          "original": 16.654844999999966,
+          "cached": 2.4702080000000137
+        },
+        {
+          "cached": 2.388769000000025,
+          "original": 16.83121299999999
+        }
+      ],
+      "medianOriginalMs": 17.049169999999975,
+      "medianCachedMs": 3.2559009999999944,
+      "identicalFullStateCheckpoints": 60
+    },
+    {
+      "fixture": "../../performance-integrated/model-busy.json",
+      "roads": 200,
+      "homes": 37,
+      "buildings": 50,
+      "frames": 3600,
+      "trials": [
+        {
+          "cached": 17.238439000000085,
+          "original": 369.37820699999986
+        },
+        {
+          "original": 338.4061730000001,
+          "cached": 23.17819799999984
+        },
+        {
+          "cached": 14.377864000000045,
+          "original": 307.95107399999983
+        },
+        {
+          "original": 334.35773900000004,
+          "cached": 16.138568999999734
+        },
+        {
+          "cached": 15.353644999999688,
+          "original": 343.97055
+        }
+      ],
+      "medianOriginalMs": 338.4061730000001,
+      "medianCachedMs": 16.138568999999734,
+      "identicalFullStateCheckpoints": 60
+    },
+    {
+      "fixture": "../../performance-integrated/current-town/save.json",
+      "roads": 408,
+      "homes": 46,
+      "buildings": 71,
+      "frames": 3600,
+      "trials": [
+        {
+          "cached": 96.92890100000022,
+          "original": 501.43007099999977
+        },
+        {
+          "original": 514.6363259999998,
+          "cached": 99.7896869999995
+        },
+        {
+          "cached": 92.96272599999975,
+          "original": 500.48555899999974
+        },
+        {
+          "original": 504.48524500000076,
+          "cached": 93.28149300000041
+        },
+        {
+          "cached": 93.30563399999846,
+          "original": 511.63391299999967
+        }
+      ],
+      "medianOriginalMs": 504.48524500000076,
+      "medianCachedMs": 93.30563399999846,
+      "identicalFullStateCheckpoints": 60
+    }
+  ]
+}

@@ -2,6 +2,7 @@ import {abstractService} from './cityBusRidership.ts';
 import {journeyActivitySlots, tryWalkingJourney} from './cityJourneys.ts';
 import {tryTransitJourney, transitSummary} from './cityTransit.ts';
 import {civilianRoute} from './cityRouting.ts';
+import {roadAccessToken, withRoadPathRead} from './cityPathfinding.ts';
 /**
  * Household demand, destination capacity, and off-road visits.
  * Counts here are households, not people: one home owns one car; an apartment shares bounded demand across four cars, upgraded to six.
@@ -277,6 +278,32 @@ export function stepVisits(city: City, index: RoadIndex, dt: number): void {
   }
   if (leaving.length > 0) city.trips = city.trips.filter(t => !leaving.includes(t.id));
 }
+const roadIssueCache = new WeakMap<City, {
+ token: object; buildings: number[]; issues: ReadonlyMap<number, string | null>;
+}>();
+
+/** Derived UI data only. Validate once per report/frame, then use constant-time lookups.
+ * Exact entrance values notice in-place edits and loads without save fields or edit hooks.
+ * Traffic queues, parking and elapsed time do not affect these access warnings. */
+export function homeRoadIssues(city: City): ReadonlyMap<number, string | null> {
+ return withRoadPathRead(city, () => {
+  const token = roadAccessToken(city);
+  const buildings: number[] = [];
+  for (const b of city.buildings) {
+   if (!residential(b) && b.kind !== 'store') continue;
+   const doors = b.kind === 'store' ? [entrance(b)] : entrances(b);
+   buildings.push(b.id, b.kind === 'store' ? 0 : 1, doors.length);
+   for (const p of doors) buildings.push(p.x, p.y);
+  }
+  const cached = roadIssueCache.get(city);
+  if (cached?.token === token && cached.buildings.length === buildings.length &&
+      buildings.every((value, i) => value === cached.buildings[i])) return cached.issues;
+  const issues = new Map(city.buildings.filter(residential).map(b => [b.id, homeRoadIssue(city, b)]));
+  roadIssueCache.set(city, {token, buildings, issues});
+  return issues;
+ });
+}
+
 /** Access failures are separate from full parking and temporary traffic queues. */
 export function homeRoadIssue(city:City, home:Building):string|null {
  const shops=city.buildings.filter(b=>b.kind==='store');
@@ -288,7 +315,7 @@ export function homeRoadIssue(city:City, home:Building):string|null {
  return null;
 }
 /** HUD-facing occupancy for one building. Numbers are households, not people. */
-export function buildingStatus(city: City, b: Building): VisitorSlots {
+export function buildingStatus(city: City, b: Building, accessIssues?: ReadonlyMap<number, string | null>): VisitorSlots {
   if(b.kind==='busStation'||b.kind==='busStop')return {occupied:0,inbound:0,capacity:b.kind==='busStation'?2:0,label:transitSummary(city)};
   if (isDestination(b)) {
     const slots = visitorSlots(city, b);
@@ -298,15 +325,16 @@ export function buildingStatus(city: City, b: Building): VisitorSlots {
     return { occupied: slots.occupied, capacity: slots.capacity, inbound: slots.inbound, label };
   }
   if (residential(b)) {
+    const roadIssue = accessIssues?.has(b.id) ? accessIssues.get(b.id) : homeRoadIssue(city,b);
     const journey=city.transit?.journeys.find(j=>j.homeId===b.id&&!j.external);
     const carsOut = city.trips.filter(t => !t.service && t.homeId === b.id).length;
     const out = !!journey || carsOut > 0;
     const h = city.households.find(x => x.homeId === b.id);
     const waiting = (h?.shopping ?? 0) + (h?.leisure ?? 0) + (h?.work ?? 0);
     if (b.kind === 'apartment') return {occupied: carsOut, capacity: residentialCarCapacity(b), inbound: 0,
-      label: `${carsOut}/${residentialCarCapacity(b)} cars out, ${waiting} trips wanted · ${entrances(b).length} entrance${entrances(b).length === 1 ? '' : 's'}${homeRoadIssue(city,b)?` · ${homeRoadIssue(city,b)}`:''}`};
+      label: `${carsOut}/${residentialCarCapacity(b)} cars out, ${waiting} trips wanted · ${entrances(b).length} entrance${entrances(b).length === 1 ? '' : 's'}${roadIssue?` · ${roadIssue}`:''}`};
     return { occupied: out ? 1 : 0, capacity: 1, inbound: 0,
-      label: `${journey ? (journey.mode==='bus'?'Traveler using bus':'Traveler walking') : out ? 'Car out' : 'Car at home'}, ${waiting} trip${waiting === 1 ? '' : 's'} wanted${homeRoadIssue(city,b)?` · ${homeRoadIssue(city,b)}`:''}` };
+      label: `${journey ? (journey.mode==='bus'?'Traveler using bus':'Traveler walking') : out ? 'Car out' : 'Car at home'}, ${waiting} trip${waiting === 1 ? '' : 's'} wanted${roadIssue?` · ${roadIssue}`:''}` };
   }
   const responding = city.trips.some(t => t.service && t.stationId === b.id);
   return { occupied: responding ? 1 : 0, capacity: 1, inbound: 0, label: city.trips.some(t=>t.stationId===b.id&&t.patrol)?'Police on local patrol':responding ? 'Vehicle responding' : 'Vehicle ready' };

@@ -34,9 +34,8 @@ test('weighted routes use the same community limit and prefer a faster public-ro
   const route=weightedRoute(s,start,goal)!;
   assert.ok(route.path.some(p=>p.y===7));
   assert.ok(route.cost.travel<11);
-  const revision=s.revision;
   city.communityRoads=[];
-  assert.notEqual(routingSnapshot(city).revision,revision);
+  assert.deepEqual(weightedRoute(routingSnapshot(city),start,goal)!.path,direct);
   assert.equal(routeCost(s,direct).travel,11,'published snapshot retains original speed metadata');
   assert.equal(routeCost(routingSnapshot(city),direct).travel,5.5);
 });

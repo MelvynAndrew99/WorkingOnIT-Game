@@ -6,6 +6,7 @@ import type {City, Point} from './cityModel.ts';
 const key = (p: Point) => `${p.x},${p.y}`;
 const MAX_TREES = 64;
 type Graph = {
+  token: object;
   signature: string; points: Point[]; ids: Map<string, number>;
   edges: number[][]; blocked: Set<number>; trees: Map<number, Int32Array>;
 };
@@ -54,9 +55,14 @@ function graphFor(city: City, responding: boolean, ignoreBlocked: boolean): Grap
   const edges = points.map(p => [
     `${p.x + 1},${p.y}`, `${p.x},${p.y + 1}`, `${p.x - 1},${p.y}`, `${p.x},${p.y - 1}`,
   ].flatMap(k => ids.has(k) && allowsRoadStep(city,p,points[ids.get(k)!]) ? [ids.get(k)!] : []));
-  const graph = {signature, points, ids, edges, blocked, trees:new Map<number, Int32Array>()};
+  const graph = {token:{}, signature, points, ids, edges, blocked, trees:new Map<number, Int32Array>()};
   views.set(mode, graph); scope?.set(mode, graph);
   return graph;
+}
+
+/** Opaque identity for validated ordinary access; never exposes mutable graph data. */
+export function roadAccessToken(city: City): object {
+  return graphFor(city, false, false).token;
 }
 
 /** Same E/S/W/N tie order and blocked-start escape as findPath, with fresh output points. */

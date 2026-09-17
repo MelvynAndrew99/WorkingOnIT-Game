@@ -1,0 +1,35 @@
+
+> working-on-it@1.0.0 build
+> npm run _build
+
+
+> working-on-it@1.0.0 _build
+> tsc --noEmit && vite build
+
+vite v6.4.3 building for production...
+transforming...
+✓ 847 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/rundot-game-libraries.manifest.json        0.90 kB │ gzip:   0.37 kB
+dist/index.html                                 1.92 kB │ gzip:   0.98 kB
+dist/assets/_rundot_bootstrap.639f73d6.js       4.31 kB
+dist/assets/index-Cw8I3DdZ.css                127.24 kB │ gzip:  25.43 kB
+dist/assets/Filter-C7Kl026s.js                  0.90 kB │ gzip:   0.48 kB
+dist/assets/core-7QSNRRMV-W2DTfCWt.js           1.26 kB │ gzip:   0.57 kB
+dist/assets/BufferResource-BJu03OmD.js         10.61 kB │ gzip:   2.79 kB
+dist/assets/BitmapFont-6FSvs2FX.js             12.81 kB │ gzip:   4.67 kB
+dist/assets/webworkerAll-BCCuOyng.js           15.42 kB │ gzip:   4.89 kB
+dist/assets/CanvasRenderer-Dp2orYw-.js         17.50 kB │ gzip:   5.86 kB
+dist/assets/WebGPURenderer-BvlMbdSj.js         38.93 kB │ gzip:  10.87 kB
+dist/assets/browserAll-BuGhxWvI.js             43.05 kB │ gzip:  11.30 kB
+dist/assets/RenderTargetSystem-BxJ0gzlt.js     46.37 kB │ gzip:  12.72 kB
+dist/assets/dist-AQIWY6KR-6PLyDLI8.js          47.41 kB │ gzip:  20.43 kB
+dist/assets/WebGLRenderer-5OESGCtY.js          68.74 kB │ gzip:  18.83 kB
+dist/assets/index-CtGIFeWk.js               1,090.69 kB │ gzip: 348.24 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 4.62s

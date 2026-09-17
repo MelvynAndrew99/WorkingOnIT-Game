@@ -1,0 +1,14 @@
+{
+  "pathComparisons": 4800,
+  "fullStateCheckpoints": 20,
+  "editedReportChecks": 3,
+  "repetitions": 60,
+  "before": {
+    "medianMs": 41.437276999999085,
+    "p95Ms": 43.11230300000079
+  },
+  "after": {
+    "medianMs": 3.234841999999844,
+    "p95Ms": 3.9262350000008155
+  }
+}

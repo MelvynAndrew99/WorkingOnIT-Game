@@ -1,6 +1,10 @@
 # Performance review and first fixes — September 11, 2026
 
+**September 17 follow-up:** [Current assessment of the five proposals and the first warning-cache improvement](access-cache/README.md). The original opportunities below predate the September 13 fixes; consult the follow-up before treating them as current hotspots.
+
 User requested Codex, installed Grok and installed Claude review today's slowdown and opportunities to simplify crash work. Both installed clients delivered actual source reviews. Codex profiled the model, checked their recommendations and implemented two behavior-preserving optimizations locally. No publication.
+
+**Next incremental change:** [Unused routing-snapshot work removed, with before/after behavior and timing comparisons](routing-snapshot/README.md).
 
 ## Implemented
 
@@ -48,3 +52,7 @@ The baseline CPU profile puts `roadIndex` at approximately 25% inclusive sampled
 - [Tests](tests.txt), [build](build.txt).
 
 Reproduce final benchmark: `node --experimental-strip-types docs/performance-review/benchmark.mjs`. Full tests: `npm test`; production build: `npm run build`. The raw sampled CPU profile lives in the temporary local directory; the text summary is retained here.
+
+## HUD walking-query follow-up (2026-09-17)
+
+[Implementation and measured results](hud-walking/README.md): shared sidewalk reads within each report and an early distance bound reduce the supplied-town sampled report median from41.44ms to3.23ms, with exact path/report/state comparisons. No browser FPS claim.

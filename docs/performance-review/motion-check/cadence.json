@@ -1,0 +1,14 @@
+[
+  {
+    "hz": 60,
+    "frames": 180,
+    "identicalFullStateFrames": 180,
+    "framesWithoutTrafficTick": 60
+  },
+  {
+    "hz": 120,
+    "frames": 360,
+    "identicalFullStateFrames": 360,
+    "framesWithoutTrafficTick": 240
+  }
+]

@@ -1,0 +1,118 @@
+[
+  {
+    "width": 1440,
+    "initial": [
+      {
+        "homeId": 6,
+        "x": 10,
+        "y": 9,
+        "reason": "Entrance needs a road"
+      },
+      {
+        "homeId": 7,
+        "x": 16,
+        "y": 9,
+        "reason": "Entrance needs a road"
+      }
+    ],
+    "disconnected": [
+      {
+        "homeId": 1,
+        "x": 2,
+        "y": 6,
+        "reason": "Entrance needs a road"
+      },
+      {
+        "homeId": 2,
+        "x": 4,
+        "y": 12,
+        "reason": "Entrance needs a road"
+      },
+      {
+        "homeId": 6,
+        "x": 10,
+        "y": 9,
+        "reason": "Entrance needs a road"
+      },
+      {
+        "homeId": 7,
+        "x": 16,
+        "y": 9,
+        "reason": "Entrance needs a road"
+      }
+    ],
+    "restored": [
+      {
+        "homeId": 6,
+        "x": 10,
+        "y": 9,
+        "reason": "Entrance needs a road"
+      },
+      {
+        "homeId": 7,
+        "x": 16,
+        "y": 9,
+        "reason": "Entrance needs a road"
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 390,
+    "initial": [
+      {
+        "homeId": 6,
+        "x": 10,
+        "y": 9,
+        "reason": "Entrance needs a road"
+      },
+      {
+        "homeId": 7,
+        "x": 16,
+        "y": 9,
+        "reason": "Entrance needs a road"
+      }
+    ],
+    "disconnected": [
+      {
+        "homeId": 1,
+        "x": 2,
+        "y": 6,
+        "reason": "Entrance needs a road"
+      },
+      {
+        "homeId": 2,
+        "x": 4,
+        "y": 12,
+        "reason": "Entrance needs a road"
+      },
+      {
+        "homeId": 6,
+        "x": 10,
+        "y": 9,
+        "reason": "Entrance needs a road"
+      },
+      {
+        "homeId": 7,
+        "x": 16,
+        "y": 9,
+        "reason": "Entrance needs a road"
+      }
+    ],
+    "restored": [
+      {
+        "homeId": 6,
+        "x": 10,
+        "y": 9,
+        "reason": "Entrance needs a road"
+      },
+      {
+        "homeId": 7,
+        "x": 16,
+        "y": 9,
+        "reason": "Entrance needs a road"
+      }
+    ],
+    "errors": []
+  }
+]

@@ -23,12 +23,34 @@ export type TransitJourney = {
 const key = (p:Point) => `${p.x},${p.y}`;
 const same = (a:Point,b:Point) => a.x===b.x && a.y===b.y;
 const round6 = (n:number) => Math.round(n*1e6)/1e6;
+type WalkingRead = {roads?:Map<string,Point>; paths:Map<string,Point[]|null>};
+const walkingReads=new WeakMap<City,WalkingRead>();
+const NO_PEDESTRIAN_BLOCKS:ReadonlySet<string>=new Set();
+/** Synchronous report scope only: roads must not change during action. Nothing survives
+ * the report, so edits and newly loaded towns need no persistent cache invalidation. */
+export function withWalkingPathRead<T>(city:City,action:()=>T):T {
+  if(walkingReads.has(city))return action();
+  walkingReads.set(city,{paths:new Map()});
+  try{return action();}finally{walkingReads.delete(city);}
+}
 /** Sidewalks are bidirectional road adjacency. Carriageway closures do not block sidewalks;
  * callers pass explicit pedestrian closures separately. Never bridge empty/diagonal tiles. */
 export function walkingPath(city:City, from:Point, to:Point, maximum=WALK_RANGE,
-  pedestrianBlocked:ReadonlySet<string>=new Set()):Point[]|null {
+  pedestrianBlocked:ReadonlySet<string>=NO_PEDESTRIAN_BLOCKS):Point[]|null {
   if (!Number.isFinite(maximum) || maximum < 0) return null;
-  const roads=new Map(city.roads.map(p=>[key(p),p]));
+  // BFS admits the next whole step while distance < maximum, including fractional limits.
+  if(Math.abs(from.x-to.x)+Math.abs(from.y-to.y)>Math.ceil(maximum))return null;
+  const read=walkingReads.get(city);
+  const cacheKey=read && pedestrianBlocked.size===0 ? `${key(from)}>${key(to)}:${maximum}` : undefined;
+  if(cacheKey!==undefined && read!.paths.has(cacheKey))return read!.paths.get(cacheKey)?.map(p=>({...p}))??null;
+  const roads=read ? read.roads??=(new Map(city.roads.map(p=>[key(p),p]))) : new Map(city.roads.map(p=>[key(p),p]));
+  const path=searchWalkingPath(roads,from,to,maximum,pedestrianBlocked);
+  // Store a detached copy: callers may own and change returned journey paths.
+  if(cacheKey!==undefined)read!.paths.set(cacheKey,path?.map(p=>({...p}))??null);
+  return path;
+}
+function searchWalkingPath(roads:ReadonlyMap<string,Point>,from:Point,to:Point,maximum:number,
+  pedestrianBlocked:ReadonlySet<string>):Point[]|null {
   const first=key(from),last=key(to);
   if(!roads.has(first)||!roads.has(last)||pedestrianBlocked.has(first)||pedestrianBlocked.has(last))return null;
   const queue=[{point:from,distance:0}], previous=new Map<string,string|null>([[first,null]]);

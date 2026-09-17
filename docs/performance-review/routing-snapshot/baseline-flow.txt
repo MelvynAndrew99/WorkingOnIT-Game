@@ -1,0 +1,39 @@
+✖ FLOW-01: road bottleneck and two real solutions from the same queued demand (1212.608614ms)
+✔ FLOW-01: a preplanned good layout qualifies without a forced jam or rising demand (319.98818ms)
+✔ FLOW-01: full queued-save reload, pause, receipts and later recovery preserve the town (374.661132ms)
+✔ FLOW-01: completed shopping without a route home is not a returned journey (40.055584ms)
+✔ FLOW-01: full reachable stores, disconnected routes and traffic are distinct (34.426039ms)
+✔ FLOW-01: averages cannot conceal a disconnected household; demolition retains the fixed target (46.120872ms)
+✔ FLOW-01: legacy and malformed attribution preserve saves without inventing local service (32.251279ms)
+✔ FLOW-01: leisure and outside completions never masquerade as household shopping returns (36.681499ms)
+✔ FLOW-01: bounded history expires quietly and unknown samples cannot earn a grade (8.430226ms)
+✔ FLOW-01: long leisure journeys cannot starve shopping, including after reload (33.493877ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 9
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2147.020068
+
+✖ failing tests:
+
+test at ../../../../../tmp/won-routing-before/src/game/cityFlow.test.ts:26:1
+✖ FLOW-01: road bottleneck and two real solutions from the same queued demand (1212.608614ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(improved.returns > baseline.returns * 1.4)
+  
+      at TestContext.<anonymous> (file:///tmp/won-routing-before/src/game/cityFlow.test.ts:58:12)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1325:25)
+      at Test.start (node:internal/test_runner/test:1191:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:385:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

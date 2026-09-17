@@ -1,0 +1,113 @@
+✖ Level 2 stays quiet and serves all three households over ten simulated minutes (516.713289ms)
+✔ usage makes an unsigned crossing dangerous, while a stop remains sufficient at moderate demand (682.914893ms)
+✔ heavier conflicting traffic overloads stops; lights or separate routes serve the same 18 homes (3421.092621ms)
+✖ a long shared green exposes heavy opposing turns; a shorter phase safely serves every household (632.089383ms)
+✔ stationary waiting and ordinary red lights never turn stored exposure into an accident (8.288068ms)
+✔ opposing through traffic and right turns do not create a failed-left-turn hazard (0.532835ms)
+✔ a full warning cannot crash stationary cars or overlap an uninvolved vehicle at contact (0.689904ms)
+✔ multi-tile intersections share one meter and one encounter per tick (1.02639ms)
+✖ saved warning, encounter window and frame chunking preserve the same later collision (529.79997ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 6
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5805.312187
+
+✖ failing tests:
+
+test at src/game/cityIntersectionSafety.test.ts:24:1
+✖ Level 2 stays quiet and serves all three households over ten simulated minutes (516.713289ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 49.32499999999798
+  - undefined
+  
+      at TestContext.<anonymous> (file:///home/phil/Code/jams/won/src/game/cityIntersectionSafety.test.ts:26:39)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1325:25)
+      at Test.start (node:internal/test_runner/test:1191:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:385:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 49.32499999999798,
+    expected: undefined,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src/game/cityIntersectionSafety.test.ts:49:1
+✖ a long shared green exposes heavy opposing turns; a shorter phase safely serves every household (632.089383ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///home/phil/Code/jams/won/src/game/cityIntersectionSafety.test.ts:51:41)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1325:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+      at Test.postRun (node:internal/test_runner/test:1465:19)
+      at Test.run (node:internal/test_runner/test:1390:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src/game/cityIntersectionSafety.test.ts:115:1
+✖ saved warning, encounter window and frame chunking preserve the same later collision (529.79997ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    {
+      accidentCount: 1,
+      buildings: [
+        {
+          id: 1,
+  ...
+        envelopeWidth: 64,
+  +     freeUnlocks: 7,
+  -     freeUnlocks: 2,
+        origin: {
+  +       x: -24,
+  +       y: -24
+  -       x: 0,
+  -       y: 0
+        },
+        owned: [
+          0,
+  +       1,
+  +       2,
+  +       4,
+  +       5,
+  +       6,
+  +       8,
+  +       9,
+  +       10
+        ],
+        plotSize: 16,
+        purchased: 0,
+        version: 1
+      },
+  
+      at TestContext.<anonymous> (file:///home/phil/Code/jams/won/src/game/cityIntersectionSafety.test.ts:123:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1325:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+      at Test.postRun (node:internal/test_runner/test:1465:19)
+      at Test.run (node:internal/test_runner/test:1390:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [Object],
+    expected: [Object],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

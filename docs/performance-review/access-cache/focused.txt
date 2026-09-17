@@ -1,0 +1,25 @@
+✔ warnings update immediately for road edits, diversions, crashes, directions and roadwork (8.105598ms)
+✔ warnings track stores and every apartment entrance, including in-place building edits (2.956588ms)
+✔ unchanged access reuses results despite time, occupancy, funds and demand; cities stay isolated (6.390339ms)
+✔ warning reads preserve a live simulation through edits and reload (27.37326ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 64.819402
+✔ cached paths reproduce BFS tie order, isolated roads, diversions, incident blocks and avoid sets (150.84333ms)
+✔ road cache invalidates on in-place edits, same-count replacement, closures and incident clearance (8.974563ms)
+✔ cached paths remain isolated from caller mutation, other cities and tree eviction (16.368197ms)
+✔ planning through temporary blocks does not poison ordinary or emergency routes (1.950033ms)
+✔ warm path caches observe in-place directions and roadwork changes without advancing time (3.114153ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 200.647076

@@ -1,5 +1,5 @@
 import { communityEdgeSpeed } from './cityCommunityRoads.ts';
-import {allowsRoadStep, type RoadDirections} from './cityDirections.ts';
+import {allowsRoadStep, directionSignature, type RoadDirections} from './cityDirections.ts';
 /** Estimated route costs. Movement remains the authority for admission. */
 import {blockedTiles, entrances, type City, type Point, type Trip} from './cityModel.ts';
 import {bodyTile, roadIndex, governingControl, TRAVEL_TILES_PER_SECOND, EMERGENCY_TILES_PER_SECOND, STOP_DWELL, type RoadIndex} from './cityTraffic.ts';
@@ -13,7 +13,7 @@ export type RoutingSnapshot = {
   roadDirections?: RoadDirections;
   wideRoads?: City['wideRoads'];
   roadPoints?: Point[];
-  at: number; roads: ReadonlySet<string>; blocked: ReadonlySet<string>;
+  at: number; revision: string; roads: ReadonlySet<string>; blocked: ReadonlySet<string>;
   areas: ReadonlyMap<string,string>; controls: ReadonlyMap<string,number>;
   queues: ReadonlyMap<string,ReadonlyArray<{id:number; seconds:number}>>;
 };
@@ -38,13 +38,12 @@ export function routingSnapshot(city: City, index: RoadIndex = roadIndex(city), 
     queues.set(e,observations);
   }
   const controls=new Map<string,number>();
-  // Responders do not use ordinary control-delay estimates.
-  if (!response) for (const p of city.roads) {
+  for (const p of city.roads) {
     const c=governingControl(city,index,p), area=index.areas.get(key(p));
-    if(c&&area) controls.set(area,c.kind==='stop'?STOP_DWELL:CITY_RULES.routing.signalEstimateSeconds);
+    if(!response&&c&&area) controls.set(area,c.kind==='stop'?STOP_DWELL:CITY_RULES.routing.signalEstimateSeconds);
   }
   const blocked=blockedTiles(city,response);
-  return {at:city.elapsed,
+  return {at:city.elapsed, revision:(response?'response|':'ordinary|')+[...index.roads].sort().join(';')+'|'+[...blocked].sort().join(';')+'|'+JSON.stringify(city.controls)+'|'+directionSignature(city)+(index.communityRoads?.size ? '|community:'+ [...index.communityRoads].sort().join(';') : ''),
     ...(city.roadDirections?{roadDirections:{...city.roadDirections}}:{}),
     ...(city.wideRoads ? {wideRoads:city.wideRoads.map(s=>({...s})), roadPoints:city.roads.map(p=>({...p}))} : {}),
     ...(response ? {apartmentEntrances:new Map(city.buildings.filter(b=>b.kind==='apartment'||b.kind==='office').map(b=>[b.id,entrances(b)]))} : {}),

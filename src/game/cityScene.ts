@@ -7,7 +7,7 @@ import {transitionVehiclePose} from './cityRoadTransitions.ts';
 import {wideRoadArt} from './cityWideRoadArt.ts';
 import {wideRoadTopology,wideRoadFootprint} from './cityWideRoads.ts';
 import {busRiderCount, waitingBusRiders} from './cityBusRidership.ts';
-import {walkingPath} from './cityJourneys.ts';
+import {walkingPath, withWalkingPathRead} from './cityJourneys.ts';
 import {buyBus,sellBus,applyBusRoute,setBusRouteRunning,transitSummary,busStopIssue,busRoutePreview} from './cityTransit.ts';
 import {roadEdgePoints} from './cityDirections.ts';
 import {applyRoadDirections} from './cityDirectionEdits.ts';
@@ -16,7 +16,7 @@ import {flowReport} from './cityFlow.ts';
 import {withRoadPathRead} from './cityPathfinding.ts';
 import {CITY_RULES} from './cityRules.ts';
 import {cityDiagnostics} from './cityDiagnostics.ts';
-import {homeRoadIssue,residentialCarCapacity,officeVisitorCapacity} from './cityVisits.ts';
+import {homeRoadIssues,residentialCarCapacity,officeVisitorCapacity} from './cityVisits.ts';
 import {incidentServices} from './cityIncidents.ts';
 import { Container, Graphics, Sprite, Text, Rectangle, type Application, type FederatedPointerEvent } from 'pixi.js';
 import type { Stage } from './stage.ts';
@@ -168,9 +168,10 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
         put(layer, { name, tx: 0, ty: 0, tw: 1, th: 1, tint, alpha }, x, y);
 
     function report() {
-        withRoadPathRead(city, reportSnapshot);
+        withRoadPathRead(city, () => withWalkingPathRead(city, reportSnapshot));
     }
     function reportSnapshot() {
+        const accessIssues = homeRoadIssues(city);
         refreshMissions(city);
         const stopNotices=busStopNotices(city);
         passengerTimes=busPassengerTimes(city);
@@ -186,14 +187,14 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
             vehicleDebug:store.get().vehicleDebugOpen?debugVehicles(city):[],
             flow: flowReport(city, inspectedRoad),
             diagnostics: cityDiagnostics(city), missions: missionSnapshot(city), tutorial: tutorialSnapshot(city),
-            roadIssues: city.buildings.filter(isResidential).flatMap(b=>{const reason=homeRoadIssue(city,b);return reason?[{homeId:b.id,x:b.x,y:b.y,reason}]:[]}),
+            roadIssues: city.buildings.filter(isResidential).flatMap(b=>{const reason=accessIssues.get(b.id);return reason?[{homeId:b.id,x:b.x,y:b.y,reason}]:[]}),
             elapsedSeconds: Math.floor(city.elapsed),
             weatherLabel: weatherHudLabel(city.elapsed, store.get().weatherEnabled),
             map: worldBounds(), funds: city.funds, income: income(city), connected: connectedHomes(city),
             tripSeconds: averageTripSeconds(city), homes: city.buildings.filter(isResidential).length,
             completed: city.completed, activeTrips: city.trips.filter(t=>!t.service && t.phase!=='visiting' && t.phase!=='crashed').length,
             demand: demandSummary(city), pulse: cityPulse(city), incidentInfo: incidentSummary(city), rescued: city.rescuedCount, fatalities: city.fatalities,
-            inspected: (()=>{const b=city.buildings.find(b=>b.id===inspectedId);if(!b)return null;const status=buildingStatus(city,b),visitors=city.trips.filter(t=>!t.service&&t.storeId===b.id&&t.phase==='visiting');const next=visitors.length?Math.ceil(Math.min(...visitors.map(t=>t.visitRemaining??0))):null;return {id:b.id,name:BUILDING_LABELS[b.kind],...status,capacity:b.kind==='store'||b.kind==='park'||b.kind==='apartment'||b.kind==='office'?status.capacity:0,label:status.label+(next===0?' · Ready to leave; waiting for road access':next!==null?` · Next visit finishes in ${next}s`:'')};})(),
+            inspected: (()=>{const b=city.buildings.find(b=>b.id===inspectedId);if(!b)return null;const status=buildingStatus(city,b,accessIssues),visitors=city.trips.filter(t=>!t.service&&t.storeId===b.id&&t.phase==='visiting');const next=visitors.length?Math.ceil(Math.min(...visitors.map(t=>t.visitRemaining??0))):null;return {id:b.id,name:BUILDING_LABELS[b.kind],...status,capacity:b.kind==='store'||b.kind==='park'||b.kind==='apartment'||b.kind==='office'?status.capacity:0,label:status.label+(next===0?' · Ready to leave; waiting for road access':next!==null?` · Next visit finishes in ${next}s`:'')};})(),
             ...trafficMetrics(city), longestStop: Math.max(0,...city.trips.filter(t=>t.phase!=='visiting'&&t.phase!=='working'&&t.phase!=='crashed').map(t=>t.hold)),
         });
     }
@@ -649,6 +650,7 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
         withRoadPathRead(city, renderActivitySnapshot);
     }
     function renderActivitySnapshot() {
+        const accessIssues = homeRoadIssues(city);
         activity.clear();
         const live = new Set<string>();
         const liveBadges = new Set<string>();
@@ -737,8 +739,8 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
                 }
                 continue;
             }
-            if(b.kind==='home'){if(homeRoadIssue(city,b)&&city.buildings.some(b=>b.kind==='store')){for(const p of footprint(b))activity.rect(px(p.x)+1,py(p.y)+1,tile-2,tile-2).stroke({color:0xffb75e,width:2});label(`access-${b.id}`,'!',b.x+1,b.y-.25,0xffb75e);}continue;}
-            const s=shape(b), status=buildingStatus(city,b);
+            if(b.kind==='home'){if(accessIssues.get(b.id)&&city.buildings.some(b=>b.kind==='store')){for(const p of footprint(b))activity.rect(px(p.x)+1,py(p.y)+1,tile-2,tile-2).stroke({color:0xffb75e,width:2});label(`access-${b.id}`,'!',b.x+1,b.y-.25,0xffb75e);}continue;}
+            const s=shape(b), status=buildingStatus(city,b,accessIssues);
             const name=b.kind==='office'?'OFFICE':b.kind==='apartment'?'APT':b.kind==='hospital'?'Clinic':b.kind==='fireStation'?'FIRE':b.kind==='policeStation'?'POLICE':b.kind==='park'?'PARK':'SHOP';
             const destination = b.kind==='store'||b.kind==='park'||b.kind==='office';
             // Keep service names above the roof at every zoom, clear of their identity symbols.
