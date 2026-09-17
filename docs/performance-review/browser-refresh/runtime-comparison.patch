@@ -1,0 +1,191 @@
+--- before/src/game/cityJourneys.ts
++++ after/src/game/cityJourneys.ts
+@@ -23,12 +23,34 @@
+ const key = (p:Point) => `${p.x},${p.y}`;
+ const same = (a:Point,b:Point) => a.x===b.x && a.y===b.y;
+ const round6 = (n:number) => Math.round(n*1e6)/1e6;
++type WalkingRead = {roads?:Map<string,Point>; paths:Map<string,Point[]|null>};
++const walkingReads=new WeakMap<City,WalkingRead>();
++const NO_PEDESTRIAN_BLOCKS:ReadonlySet<string>=new Set();
++/** Synchronous report scope only: roads must not change during action. Nothing survives
++ * the report, so edits and newly loaded towns need no persistent cache invalidation. */
++export function withWalkingPathRead<T>(city:City,action:()=>T):T {
++  if(walkingReads.has(city))return action();
++  walkingReads.set(city,{paths:new Map()});
++  try{return action();}finally{walkingReads.delete(city);}
++}
+ /** Sidewalks are bidirectional road adjacency. Carriageway closures do not block sidewalks;
+  * callers pass explicit pedestrian closures separately. Never bridge empty/diagonal tiles. */
+ export function walkingPath(city:City, from:Point, to:Point, maximum=WALK_RANGE,
+-  pedestrianBlocked:ReadonlySet<string>=new Set()):Point[]|null {
++  pedestrianBlocked:ReadonlySet<string>=NO_PEDESTRIAN_BLOCKS):Point[]|null {
+   if (!Number.isFinite(maximum) || maximum < 0) return null;
+-  const roads=new Map(city.roads.map(p=>[key(p),p]));
++  // BFS admits the next whole step while distance < maximum, including fractional limits.
++  if(Math.abs(from.x-to.x)+Math.abs(from.y-to.y)>Math.ceil(maximum))return null;
++  const read=walkingReads.get(city);
++  const cacheKey=read && pedestrianBlocked.size===0 ? `${key(from)}>${key(to)}:${maximum}` : undefined;
++  if(cacheKey!==undefined && read!.paths.has(cacheKey))return read!.paths.get(cacheKey)?.map(p=>({...p}))??null;
++  const roads=read ? read.roads??=(new Map(city.roads.map(p=>[key(p),p]))) : new Map(city.roads.map(p=>[key(p),p]));
++  const path=searchWalkingPath(roads,from,to,maximum,pedestrianBlocked);
++  // Store a detached copy: callers may own and change returned journey paths.
++  if(cacheKey!==undefined)read!.paths.set(cacheKey,path?.map(p=>({...p}))??null);
++  return path;
++}
++function searchWalkingPath(roads:ReadonlyMap<string,Point>,from:Point,to:Point,maximum:number,
++  pedestrianBlocked:ReadonlySet<string>):Point[]|null {
+   const first=key(from),last=key(to);
+   if(!roads.has(first)||!roads.has(last)||pedestrianBlocked.has(first)||pedestrianBlocked.has(last))return null;
+   const queue=[{point:from,distance:0}], previous=new Map<string,string|null>([[first,null]]);
+--- before/src/game/cityTraffic.ts
++++ after/src/game/cityTraffic.ts
+@@ -1,3 +1,4 @@
++import {roadAccessToken, withRoadPathRead} from './cityPathfinding.ts';
+ import { communityRoadKeys, communityEdgeSpeed } from './cityCommunityRoads.ts';
+ import { wideRoadTopology } from './cityWideRoads.ts';
+ import {arriveBus} from './cityTransit.ts';
+@@ -493,6 +494,12 @@
+ 
+ /** Yield where there is space: passed cars hold their lane; cars inside junctions keep clearing. */
+ export function isYielding(city: City, trip: Trip, preparedIndex?: RoadIndex): boolean {
++  return yieldingWithOccupancy(city,trip,preparedIndex);
++}
++/** Prepared occupancy is only supplied by read-only inspection or the pre-movement
++ * conflict scan. Moving vehicles use a fresh lazy snapshot for each call. */
++function yieldingWithOccupancy(city:City,trip:Trip,preparedIndex?:RoadIndex,occupied?:Grid):boolean {
++  let byId:TripIndex|undefined;
+   if (isEmergencyResponse(trip) || !driving(trip) || !city.trips.some(isEmergencyResponse)) return false;
+   const k=bodyTile(trip), here=trip.path[k], next=trip.path[k+1];
+   const index=preparedIndex ?? roadIndex(city);
+@@ -512,7 +519,7 @@
+     // that traffic; active passing reservations retain priority above.
+     if (responder.hold >= REPLAN_PATIENCE && rk + 1 < responder.path.length
+       && !index.junctions.has(tileKey(responder.path[rk]))
+-      && !allowed(city,index,grid(city,index).grid,responder,rk,tripIndex(city))) continue;
++      && !allowed(city,index,occupied??=grid(city,index).grid,responder,rk,byId??=tripIndex(city))) continue;
+     // Yielding must not freeze the vehicle whose occupied space the responder needs.
+     // The ordinary movement gate still checks lanes, controls and a clear junction exit.
+     if(rk+1<responder.path.length){
+@@ -671,12 +678,12 @@
+  * rejoin as soon as a road exists again. Keep the approach segment and exact position; a car
+  * blocked just beyond a tile centre reverses within its owned tile before changing direction.
+  */
+-function tryRetarget(city:City,index:RoadIndex,trip:Trip,from:Point, avoid?: Set<string>):void {
++function tryRetarget(city:City,index:RoadIndex,trip:Trip,from:Point, avoid?: Set<string>):boolean {
+   const candidate={...trip};
+-  if(!retarget(city,candidate,from,avoid))return;
++  if(!retarget(city,candidate,from,avoid))return false;
+   // A congestion detour is optional; retain the current route if no alternate exists.
+-  if(avoid && candidate.phase==='waiting')return;
+-  commitTripRoute(city,index,trip,candidate);
++  if(avoid && candidate.phase==='waiting')return false;
++  return commitTripRoute(city,index,trip,candidate);
+ }
+ /** Commit a changed assignment only when its actual lane/junction space is free. */
+ export function commitTripRoute(city:City,index:RoadIndex,trip:Trip,candidate:Trip):boolean {
+@@ -701,8 +708,28 @@
+   if(candidate.laneChange===undefined)delete trip.laneChange;
+   Object.assign(trip,candidate);return true;
+ }
++type FailedWaitingReads={token:object;dependencies:string;trips:WeakMap<Trip,string>};
++const failedWaitingReads=new WeakMap<City,FailedWaitingReads>();
++/** Only topology-dependent civilian/bus failures qualify. Service planning can depend
++ * on live congestion and patrol restrictions, so it continues to run normally. */
++function failedWaitingRead(city:City):FailedWaitingReads {
++  const token=roadAccessToken(city);
++  const dependencies=JSON.stringify([city.buildings,city.transit?.routes,
++    city.transit?.fleet.map(b=>[b.id,b.routeId,b.stopIndex]),
++    city.incidents.filter(i=>i.status==='active').map(i=>[i.x,i.y,i.buildingId])]);
++  let read=failedWaitingReads.get(city);
++  if(!read || read.token!==token || read.dependencies!==dependencies) {
++    read={token,dependencies,trips:new WeakMap()};failedWaitingReads.set(city,read);
++  }
++  return read;
++}
++function waitingRouteKey(trip:Trip):string {
++  return JSON.stringify([trip.path,trip.progress,trip.target,trip.resume,trip.homeId,
++    trip.storeId,trip.purpose,trip.external,trip.busId,trip.trafficLane]);
++}
+ function replan(city: City, index: RoadIndex): Set<number> {
+   const reversing=new Set<number>();
++  let failed:FailedWaitingReads|undefined;
+   let snapshot:RoutingSnapshot|undefined, responseSnapshot:RoutingSnapshot|undefined, queries=0, responseQueries=0;
+   // Response work runs first; a separate ordinary quota cannot be consumed by it.
+   const ordered=[...city.trips].sort((a,b)=>Number(isEmergencyResponse(b))-Number(isEmergencyResponse(a))
+@@ -723,6 +750,15 @@
+         if(trip.progress>k+1e-9){
+           trip.progress=round6(Math.max(k,trip.progress-stepOf(trip, index)));
+           reversing.add(trip.id);
++        }else if(!trip.service && !trip.patrol) {
++          const read=failed??=failedWaitingRead(city),key=waitingRouteKey(trip);
++          if(read.trips.get(trip)!==key) {
++            read.trips.delete(trip);
++            // Cache only a committed no-route state. A route rejected for occupied
++            // lane space must retry admission against live traffic on the next tick.
++            if(tryRetarget(city,index,trip,trip.path[k]) && trip.phase==='waiting')
++              read.trips.set(trip,waitingRouteKey(trip));
++          }
+         }else tryRetarget(city,index,trip,trip.path[k]);
+       }
+       continue;
+@@ -866,7 +902,9 @@
+   const seen = new Set<string>();
+   let crashed = false;
+   for (const trip of city.trips) {
+-    if (trip.service || !driving(trip) || isYielding(city,trip,index)) continue;
++    // recordConflict can create a crash mid-scan. Subsequent yield checks must
++    // rebuild from the changed trips rather than reuse the pre-crash grid.
++    if (trip.service || !driving(trip) || yieldingWithOccupancy(city,trip,index,crashed?undefined:g)) continue;
+     const last = trip.path.length - 1;
+     if (trip.progress >= last - 1e-9) continue;
+     const k = cellIndex(trip.progress, last);
+@@ -974,7 +1012,8 @@
+ /** One fixed simulation tick. Ordering by waiting time keeps junction service fair. */
+ export function trafficTick(city: City, index: RoadIndex): void {
+   clearWrecks(city);
+-  const reversing=replan(city, index);
++  // Replanning changes trips only; incident/road mutations occur outside this scope.
++  const reversing=withRoadPathRead(city,()=>replan(city, index));
+   const { grid: g, held } = grid(city, index);
+   if(index.roundabouts?.rings.length)index.roundaboutGaps=roundaboutTrafficGaps(city,index.roundabouts);
+   // A crash rewrites who is standing where, so this tick's movement is abandoned.
+@@ -1183,7 +1222,7 @@
+       const slot=isEmergencyResponse(trip)&&i===trip.path.length-1?{...base,exclusive:true}:base;
+       for(const [id,slots] of g.get(slot.tile)??[])if(id!==trip.id&&slots.some(other=>!compatible(slot,other)))blockers.add(id);
+     }
+-    if(isYielding(city,trip,index))reason='Yielding to an approaching emergency vehicle';
++    if(yieldingWithOccupancy(city,trip,index,g))reason='Yielding to an approaching emergency vehicle';
+     else if(blockers.size)reason='Waiting for occupied lane, junction, or scene approach';
+     else if(!index.junctions.has(tileKey(position))&&index.junctions.has(tileKey(next))&&!gated(city,index,g,trip,k))
+       reason=isEmergencyResponse(trip)?'Waiting for traffic to clear the junction':control?`Waiting at ${control.kind}${control.kind==='signal'?` (${signalAxis(city,control)??'all red'})`:''}`:'Waiting for priority traffic at uncontrolled junction';
+--- before/src/game/cityScene.ts
++++ after/src/game/cityScene.ts
+@@ -7,7 +7,7 @@
+ import {wideRoadArt} from './cityWideRoadArt.ts';
+ import {wideRoadTopology,wideRoadFootprint} from './cityWideRoads.ts';
+ import {busRiderCount, waitingBusRiders} from './cityBusRidership.ts';
+-import {walkingPath} from './cityJourneys.ts';
++import {walkingPath, withWalkingPathRead} from './cityJourneys.ts';
+ import {buyBus,sellBus,applyBusRoute,setBusRouteRunning,transitSummary,busStopIssue,busRoutePreview} from './cityTransit.ts';
+ import {roadEdgePoints} from './cityDirections.ts';
+ import {applyRoadDirections} from './cityDirectionEdits.ts';
+@@ -168,7 +168,7 @@
+         put(layer, { name, tx: 0, ty: 0, tw: 1, th: 1, tint, alpha }, x, y);
+ 
+     function report() {
+-        withRoadPathRead(city, reportSnapshot);
++        withRoadPathRead(city, () => withWalkingPathRead(city, reportSnapshot));
+     }
+     function reportSnapshot() {
+         const accessIssues = homeRoadIssues(city);
+--- before/src/game/cityPathfinding.ts
++++ after/src/game/cityPathfinding.ts
+@@ -13,7 +13,7 @@
+ const graphs = new WeakMap<City, Map<number, Graph>>();
+ const readScopes = new WeakMap<City, Map<number, Graph>>();
+ 
+-/** Only for synchronous read-only reports/drawing: no roads, closures or incidents may change. */
++/** For synchronous topology-stable reads/planning: no roads, closures or incidents may change. */
+ export function withRoadPathRead<T>(city: City, action: () => T): T {
+   if (readScopes.has(city)) return action();
+   readScopes.set(city, new Map());

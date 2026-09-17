@@ -64,3 +64,7 @@ Reproduce final benchmark: `node --experimental-strip-types docs/performance-rev
 ## Occupancy-read reuse (2026-09-17)
 
 [Profiling, implementation and checks](occupancy-reads/README.md): repeated emergency-yield grid builds reduced within safe read scopes. Supplied-town grid builds fall70.2%; isolated model CPU falls36.4% against the immediate baseline, with exact state comparisons and sequential movement preserved.
+
+## Same-town browser comparison (2026-09-17)
+
+[Fresh before/after browser results](browser-refresh/README.md) confirm lower HUD and simulation CPU on the same export. Narrow frame-time tails improve; software-rendered desktop FPS remains limited and pan/zoom tails do not improve. Allocation/GC profiles and exact source comparison are retained.

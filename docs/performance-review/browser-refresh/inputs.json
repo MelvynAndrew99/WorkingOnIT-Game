@@ -1,0 +1,28 @@
+{
+  "fixture": "docs/performance-review/supplied-town-hitch/save.json",
+  "fixtureSha256": "d972b4aa885bcab979b7815e416cb1ce9b2aa0d433adb3f0cfaf0feb9388a968",
+  "baseline": "immediately before HUD walking optimization; traffic logic corrections included",
+  "changedRuntimeFiles": [
+    "game/cityJourneys.ts",
+    "game/cityTraffic.ts",
+    "game/cityScene.ts",
+    "game/cityPathfinding.ts"
+  ],
+  "viewports": [
+    [
+      1440,
+      900
+    ],
+    [
+      390,
+      900
+    ]
+  ],
+  "dpr": 1,
+  "warmupSeconds": 3,
+  "steadySeconds": 12,
+  "panZoomSeconds": 8,
+  "repeats": 2,
+  "rendering": "headless Chromium 151 / ANGLE SwiftShader",
+  "dependencies": "standalone production build with RUNDOT_GAME_DISABLE_EMBEDDED_LIBS=true"
+}
