@@ -354,3 +354,9 @@ Run one-time sandbox migration after validating and selecting the winning host/l
 ### Optional patrol boundaries must not trap the return journey (2026-09-12)
 
 The captured roundabout jam combines a radius-selected U-turn, exclusive turn occupancy and priority for a circulating car whose exit that turn blocks. Changing yield alone cannot release already-held ring reservations. Prevent the optional turnaround at route selection; recover existing trips through gradual movement and occupancy-checked legal rerouting. An interrupted patrol can leave its optional radius to return home, but must preserve explicit saved patrol identity: simply deleting `patrol` creates a service trip with no incident, which strict parsing correctly rejects. Verify the committed recovery state immediately through save/reload, and clear the return flag when dispatch reassigns that same car. Evidence: `cityRoundaboutJam.test.ts` and `cityPatrols.test.ts`.
+
+## Outside-city gateway sign (2026-09-17)
+
+A compact direction sign beside a gateway communicates outside access while keeping its pavement visible. Use screen-sized lettering and a short tile leader; shift inward at corners and show an explicit disconnected state. Verified in isolated desktop/narrow browser checks. [Evidence](city-gateway/README.md).
+
+Gateway correction: the user rejected the sign-only treatment because the curb still closed the road. Connection geometry must agree with the label: open the outgoing curb and visibly continue pavement beyond the boundary. The sign is secondary. Updated [evidence](city-gateway/README.md).

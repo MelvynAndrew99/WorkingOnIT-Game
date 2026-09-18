@@ -134,6 +134,7 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
         return land ? landEnvelope(land) : city.map;
     };
     let renderedWideRoads=city.wideRoads;
+    let renderedGateway=city.external?.gateway;
     let controlAreas: {control:JunctionControl;tiles:Point[];members:Set<string>}[]=[];
     let controlRoads = new Set<string>();
     const pointers = new Map<number, Point>();
@@ -384,8 +385,17 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
           .lineTo(cx+dx*length-dx*wing+dy*wing,cy+dy*length-dy*wing-dx*wing)
           .stroke({color,width:tile*.075,cap:'round',join:'round'});
     }
+    function gatewaySide():Side|undefined {
+        const p=city.external?.gateway,m=city.map;
+        if(!p)return;
+        if(p.x===m.x)return 'W';
+        if(p.x===m.x+m.width-1)return 'E';
+        if(p.y===m.y)return 'N';
+        if(p.y===m.y+m.height-1)return 'S';
+    }
     function renderWorld() {
         renderedWideRoads=city.wideRoads;
+        renderedGateway=city.external?.gateway;
         const index=roadIndex(city), areas=index.areas, roundabouts=roundaboutIndex(city);
         controlRoads=index.roads;
         controlAreas=city.controls.map(control=>{const tiles=areaTiles(areas,control);return {control,tiles,members:new Set(tiles.map(p=>`${p.x},${p.y}`))};}).filter(({control,tiles})=>!roundabouts.byTile.has(`${control.x},${control.y}`)&&!tiles.some(p=>roundabouts.byTile.has(`${p.x},${p.y}`)));
@@ -393,11 +403,15 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
         const roads = roadSet();
         const wideTiles=wideRoadTopology(city).tiles;
         const community=new Set(city.communityRoads?.map(p=>`${p.x},${p.y}`));
+        const gateway=city.external?.gateway,exitSide=gatewaySide();
         for (const p of city.roads) {
             if(wideTiles.has(`${p.x},${p.y}`))continue;
             let mask = 0;
             for (const [side, [dx, dy]] of Object.entries(SIDE_STEP))
                 if (roads.has(`${p.x + dx},${p.y + dy}`)) mask |= ROAD_BIT[side as Side];
+            // The outside connection is a visual continuation, not another
+            // simulated road tile. Remove the atlas curb facing that exit.
+            if(gateway&&exitSide&&same(p,gateway))mask|=ROAD_BIT[exitSide];
             if(community.has(`${p.x},${p.y}`)) {
                 // Clear scenery, then draw unmarked narrow pavement with grass shoulders.
                 cell(world, groundFrame(p.x,p.y),p.x,p.y);
@@ -416,6 +430,30 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
             } else cell(world, roadFrame(mask), p.x, p.y);
         }
         world.addChild(wideRoadArt(city,tile,px,py));
+        if(gateway&&exitSide) {
+            const [dx,dy]=SIDE_STEP[exitSide];
+            const exit=new Graphics();
+            // Draw in coordinates along/across the outward road. This covers the
+            // map rim and continues both curbs and centre dashes into the distance.
+            const strip=(along:number,across:number,length:number,width:number,color:number,alpha=1)=>{
+                const x=gateway.x+.5+dx*(.5+along)-dy*across;
+                const y=gateway.y+.5+dy*(.5+along)+dx*across;
+                exit.rect(px(Math.min(x,x+dx*length-dy*width)),py(Math.min(y,y+dy*length+dx*width)),
+                    tile*(dx?length:width),tile*(dy?length:width)).fill({color,alpha});
+            };
+            // Wide-road end caps also need an opening; never paint over a missing
+            // gateway tile, since that gap is what the player must reconnect.
+            if(roads.has(`${gateway.x},${gateway.y}`)&&wideTiles.has(`${gateway.x},${gateway.y}`))
+                strip(-.125,-.375,.125,.75,0x404040);
+            const length=2.5,step=1/16;
+            for(let a=0;a<length;a+=step) {
+                const alpha=Math.min(1,(length-a)/1.5);
+                strip(a,-.5,step,1,0x404040,alpha);
+                for(const curb of [-.5,.375])strip(a,curb,step,.125,0xd6dbe6,alpha);
+                if(a%1>=.25&&a%1<.75)strip(a,-.0625,step,.125,0xd6dbe6,alpha);
+            }
+            world.addChild(exit);
+        }
         // Buildings paint over any scenery on their plot; access markers sit on
         // the road, so they are drawn first and never hidden by a facade.
         for (const b of city.buildings) drawAccess(world, b, roads);
@@ -654,11 +692,11 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
         activity.clear();
         const live = new Set<string>();
         const liveBadges = new Set<string>();
-        function label(key:string,text:string,x:number,y:number,color=0xffeed6) {
+        function label(key:string,text:string,x:number,y:number,color=0xffeed6,screenSize=17.6) {
             live.add(key);
             let t=statusLabels.get(key);
             if(!t){t=new Text({text,style:{fontFamily:'system-ui',fontSize:12,fontWeight:'bold',fill:color,stroke:{color:0x122d26,width:3}}});t.anchor.set(.5);activityLabels.addChild(t);statusLabels.set(key,t);}
-            const fontSize=17.6/(stage.scale()*camera.zoom);
+            const fontSize=screenSize/(stage.scale()*camera.zoom);
             if(t.text!==text)t.text=text;
             if(t.style.fill!==color)t.style.fill=color;
             if(t.style.fontSize!==fontSize){
@@ -775,8 +813,27 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
         if(city.external?.gateway) {
             const p=city.external.gateway;
             const needsRoad=externalNeedsRoad(city),colour=needsRoad?0xffd22e:0x8edbfa;
-            activity.circle(px(p.x+.5),py(p.y+.5),tile*.42).stroke({color:colour,width:needsRoad?5:3});
-            label('gateway',needsRoad?'CONNECT TO CITY':'CITY',p.x+.5,p.y-.1,colour);
+            // A roadside direction sign, sized in screen pixels, leaves the gateway
+            // pavement visible. Keep the panel inside the map even at its corners.
+            const unit=1/(stage.scale()*camera.zoom),w=88*unit,h=(needsRoad?46:30)*unit;
+            const m=city.map,cx=px(p.x+.5),cy=py(p.y+.5);
+            const below=py(p.y-m.y)<h+8*unit;
+            const sx=Math.max(px(m.x)+w/2+3*unit,Math.min(px(m.x+m.width)-w/2-3*unit,cx));
+            const sy=below?py(p.y+1)+h/2+5*unit:py(p.y)-h/2-5*unit;
+            const left=sx-w/2,top=sy-h/2;
+            // Short leader identifies the exact tile when the sign shifts inward.
+            activity.moveTo(cx,cy+(below?1:-1)*tile*.36)
+                .lineTo(sx,sy+(below?-1:1)*h/2).stroke({color:0x183541,width:5*unit});
+            activity.moveTo(cx,cy+(below?1:-1)*tile*.36)
+                .lineTo(sx,sy+(below?-1:1)*h/2).stroke({color:colour,width:2*unit});
+            activity.roundRect(left+2*unit,top+3*unit,w,h,3*unit).fill({color:0x10252b,alpha:.4});
+            activity.roundRect(left,top,w,h,3*unit).fill(0x183541).stroke({color:colour,width:2*unit});
+            const side=gatewaySide(),arrow=side?{W:'←',E:'→',N:'↑',S:'↓'}[side]:'';
+            label('gateway',`CITY ${arrow}`,sx/tile,(top+15*unit)/tile,0xffeed6,15);
+            if(needsRoad){
+                label('gateway-connect','CONNECT',sx/tile,(top+35*unit)/tile,colour,10);
+                activity.rect(px(p.x+.06),py(p.y+.06),tile*.88,tile*.88).stroke({color:colour,width:2*unit});
+            }
         }
         for(const r of city.risks) if(r.exposure>=CITY_RULES.intersectionSafety.warningExposure) {
             activity.circle(px(r.x+.5),py(r.y+.5),tile*.46).stroke({color:0xffcb61,width:2,alpha:.65+.25*Math.sin(city.elapsed*5)});
@@ -1207,7 +1264,7 @@ export function createCityScene(app: Application, stage: Stage, session?: CitySc
         if(city.accidentCount>previousAccidents){
             for(const incident of city.incidents)if(incident.id>=firstNewId&&incident.severity==='minor')playMinorCrash();
         }
-        if(city.wideRoads!==renderedWideRoads)renderWorld();
+        if(city.wideRoads!==renderedWideRoads||city.external?.gateway!==renderedGateway)renderWorld();
         renderCars(); renderControls(); renderActivity();
         syncWeather();
         setFiretruckResponding(city.trips.some(t=>t.service==='fire'&&!t.patrol&&!t.responseCancelled&&isEmergencyResponse(t)));

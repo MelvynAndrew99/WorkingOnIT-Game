@@ -1,3 +1,11 @@
+## Outside-city road connection correction (2026-09-17)
+
+User rejects the sign-only change: the solid white edge still reads as a closed road. Renderer now opens the outward gateway curb and continues pavement, curbs and dashes beyond the boundary with a fade. Missing gateway road stays visibly missing; the exterior continuation is display-only, with no model roads or traffic/save changes. Automatic gateway creation invalidates cached road artwork. Typecheck/build and desktop/narrow connected/disconnected plus all four edge visual checks pass. [Updated screenshots](docs/city-gateway/README.md). This supersedes the sign-only visual solution below; no publication or active-save access.
+
+## Outside-city marker replaced with road sign (2026-09-17)
+
+User requests fixing the bare CITY circle. Installed Claude supplied a text-only highway-sign design consultation; Codex integrated a compact Pixi navy/cyan sign with cream CITY lettering, outward arrow and short tile leader. Disconnected state adds yellow CONNECT text and a road-tile outline. Fixed screen sizing and inward corner placement preserve readability. Typecheck/build and isolated desktop/narrow connected/disconnected plus other-edge/zoom visual checks pass. [Details and screenshots](docs/city-gateway/README.md). No sprite, traffic/save changes, active-save access, performance tests or publication.
+
 ## Same-town browser performance comparison (2026-09-17)
 
 User requests a fresh before/after browser profile on the same export. Compared pre-HUD source (traffic fixes included) with current HUD/failed-route/occupancy changes using eight isolated production contexts, two repeats per1440×900/390×900 layout, steady plus scripted pan/zoom, identical town and standalone assets. HUD means~79→9ms, traffic ticks~10–11→4–5ms. Narrow frame p95~133→67ms; software-rendered desktop FPS~5.9 unchanged and pan/zoom p95 worsens183→200ms. Separate8-second allocation/GC diagnostic shows less churn/fewer collections but a higher maximum major-GC pause; no leak or hardware-FPS claim. Traffic remains dominant game CPU; full rendering/hardware limit needs separate investigation. [Methods, raw profiles, caveats and runtime diff](docs/performance-review/browser-refresh/README.md). Measurement only; no runtime/save changes or publication. Temporary servers/browser stopped.
